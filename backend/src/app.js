@@ -12,6 +12,7 @@ const documentsRoutes = require('./routes/documents');
 const rolesRoutes = require('./routes/roles');
 const settingsRoutes = require('./routes/settings');
 const backupRoutes = require('./routes/backup');
+const learningsRoutes = require('./routes/learnings');
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api', applicationsRoutes);
 app.use('/api', documentsRoutes);
 app.use('/api', rolesRoutes);
 app.use('/api', settingsRoutes);
+app.use('/api', learningsRoutes);
 app.use('/api/backup', backupRoutes);
 
 app.use(express.static(config.frontendDir, {
