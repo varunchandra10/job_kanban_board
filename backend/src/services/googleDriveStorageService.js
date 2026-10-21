@@ -3,7 +3,7 @@ const path = require('path');
 const { Readable } = require('stream');
 const { google } = require('googleapis');
 const config = require('../config');
-const { BaseStorageService, getMimeType } = require('./storageService');
+const { BaseStorageService, getMimeType } = require('./baseStorageService');
 
 class GoogleDriveStorageService extends BaseStorageService {
   constructor(options = {}) {

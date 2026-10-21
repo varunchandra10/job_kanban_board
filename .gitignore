@@ -6,6 +6,10 @@ package-lock.json
 .env
 .env.local
 .env.*.local
+*service-account*.json
+job-tracker-*.json
+google-*.json
+credentials*.json
 
 # Operating System files
 Thumbs.db
