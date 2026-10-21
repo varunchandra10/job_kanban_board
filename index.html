@@ -30,6 +30,10 @@
     <button type="button" id="searchClear" class="search-clear" aria-label="Clear search">&times;</button>
   </div>
 
+  <button class="btn icon-only" id="themeToggleBtn" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+    <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="moon-icon" viewBox="0 0 24 24" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
   <button class="btn icon-only" id="linksBtn" title="Quick Links & Profiles (GitHub, LinkedIn, Portfolio, ORCID, Scholar)" aria-label="Quick Links">
     <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
   </button>
@@ -194,6 +198,28 @@
 </nav>
 
 <div class="stage-picker-bar" id="stagePickerBar">
+  <div class="mobile-stage-tabs" id="mobileStageTabs" role="tablist">
+    <button type="button" class="stage-tab active" data-stage="Applied" role="tab">
+      <span class="tab-dot" style="background:var(--applied-clr)"></span>
+      <span class="tab-label">Applied</span>
+      <span class="tab-count" id="mCountApplied">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-stage="Interviewing" role="tab">
+      <span class="tab-dot" style="background:var(--interview-clr)"></span>
+      <span class="tab-label">Interviewing</span>
+      <span class="tab-count" id="mCountInterviewing">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-stage="Offer" role="tab">
+      <span class="tab-dot" style="background:var(--offer-clr)"></span>
+      <span class="tab-label">Offer</span>
+      <span class="tab-count" id="mCountOffer">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-stage="Rejected" role="tab">
+      <span class="tab-dot" style="background:var(--rejected-clr)"></span>
+      <span class="tab-label">Rejected</span>
+      <span class="tab-count" id="mCountRejected">0</span>
+    </button>
+  </div>
   <div class="stage-select-wrap">
     <span class="stage-picker-dot" id="stagePickerDot"></span>
     <select id="stageSelect" class="stage-select" aria-label="Select stage">
@@ -211,6 +237,7 @@
 <div id="bd"></div>
 
 <aside id="panel" aria-modal="true">
+  <div class="sheet-pull-handle" id="sheetPullHandle" aria-hidden="true"></div>
   <div class="ph">
     <h3 id="pt"></h3>
     <span id="saved">Saved</span>
@@ -779,6 +806,15 @@ function render() {
       badge.textContent = curCnt;
     }
   }
+
+  // Synchronize Mobile Segmented Tabs
+  document.querySelectorAll('.mobile-stage-tabs .stage-tab').forEach(t => {
+    const st = t.dataset.stage;
+    const cnt = stageApps(st).filter(vis).length;
+    t.classList.toggle('active', st === activeMobileStage);
+    const badge = t.querySelector('.tab-count');
+    if (badge) badge.textContent = cnt;
+  });
   const cAll = S.apps.length;
   const cInd = S.apps.filter(a => (a.category || 'Industry') === 'Industry').length;
   const cGov = S.apps.filter(a => a.category === 'Government').length;
@@ -1566,6 +1602,122 @@ $('#backupZipBtn').onclick = () => {
   window.location.href = '/api/backup/export';
 };
 
+
+/* ----- Phase 2 UI/UX Engine: Theme, Skeletons & Mobile Bottom Sheet ----- */
+function initTheme() {
+  const saved = localStorage.getItem('tracker_theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  setTheme(theme);
+}
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  document.body.classList.toggle('dark-mode', theme === 'dark');
+  localStorage.setItem('tracker_theme', theme);
+  const sun = $('#themeToggleBtn .sun-icon');
+  const moon = $('#themeToggleBtn .moon-icon');
+  if (sun && moon) {
+    sun.style.display = theme === 'dark' ? 'none' : 'inline-block';
+    moon.style.display = theme === 'dark' ? 'inline-block' : 'none';
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initTheme();
+  const tBtn = $('#themeToggleBtn');
+  if (tBtn) {
+    tBtn.onclick = () => {
+      const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+      setTheme(cur === 'dark' ? 'light' : 'dark');
+    };
+  }
+});
+
+// Skeleton Loader Shimmer for instant perception of performance
+function renderSkeletons() {
+  const board = $('#board');
+  if (!board) return;
+  board.innerHTML = STAGES.map(st => `
+    <section class="col" data-stage="${st}">
+      <div class="col-header">
+        <span class="col-stage-dot" style="background:${DOT[st]}"></span>
+        <h2>${STAGE_ICON[st]} ${st}</h2>
+        <span class="col-count">...</span>
+      </div>
+      <div class="body">
+        ${[1, 2, 3].map(() => `
+          <div class="skeleton-card">
+            <div class="skeleton-top">
+              <div class="skeleton-avatar skeleton-shimmer"></div>
+              <div class="skeleton-text-group">
+                <div class="skeleton-line w-70 skeleton-shimmer"></div>
+                <div class="skeleton-line w-45 skeleton-shimmer"></div>
+              </div>
+            </div>
+            <div class="skeleton-line w-85 skeleton-shimmer"></div>
+            <div class="skeleton-tags-row">
+              <div class="skeleton-pill skeleton-shimmer"></div>
+              <div class="skeleton-pill skeleton-shimmer"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+// Touch & Stage Tabs Controller
+function initMobileNavigation() {
+  const tabs = document.querySelectorAll('.mobile-stage-tabs .stage-tab');
+  tabs.forEach(tab => {
+    tab.onclick = () => {
+      const st = tab.dataset.stage;
+      if (st) {
+        activeMobileStage = st;
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.stage === st));
+        const board = $('#board');
+        if (board) board.dataset.activeStage = st;
+        render();
+      }
+    };
+  });
+
+  // Touch swipe support for kanban board on mobile
+  const board = $('#board');
+  if (board) {
+    let startX = 0, startY = 0;
+    board.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+    }, { passive: true });
+
+    board.addEventListener('touchend', e => {
+      const diffX = e.changedTouches[0].clientX - startX;
+      const diffY = e.changedTouches[0].clientY - startY;
+      if (Math.abs(diffX) > 60 && Math.abs(diffY) < 50) {
+        const curIdx = STAGES.indexOf(activeMobileStage);
+        if (diffX < 0 && curIdx < STAGES.length - 1) {
+          // Swipe Left -> Next stage
+          activeMobileStage = STAGES[curIdx + 1];
+          render();
+        } else if (diffX > 0 && curIdx > 0) {
+          // Swipe Right -> Prev stage
+          activeMobileStage = STAGES[curIdx - 1];
+          render();
+        }
+      }
+    }, { passive: true });
+  }
+
+  // Mobile Bottom Sheet Pull-to-Dismiss
+  const sheetHandle = $('#sheetPullHandle');
+  const panel = $('#panel');
+  if (sheetHandle && panel) {
+    sheetHandle.onclick = closePanel;
+  }
+}
+
 /* ----- Drag & Drop ----- */
 function locate(body, y) {
   for (const c of body.querySelectorAll('.card:not(.drag)')) {
@@ -2074,6 +2226,9 @@ function openApp(id) {
 
 /* ----- Boot Initialization ----- */
 (async () => {
+  renderSkeletons();
+  initTheme();
+  initMobileNavigation();
   [S, LOGOS] = await Promise.all([
     api('GET', '/state'),
     fetch('/logos.json').then(r => r.json()).catch(() => ({}))
