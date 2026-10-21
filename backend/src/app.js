@@ -49,7 +49,7 @@ const handleShutdown = (req, res) => {
 app.post('/shutdown', handleShutdown);
 app.post('/api/shutdown', handleShutdown);
 
-app.use('/vendor', express.static(path.join(config.rootDir, 'vendor'), {
+app.use('/vendor', express.static(path.join(config.frontendDir, 'vendor'), {
   maxAge: '1d'
 }));
 
@@ -62,7 +62,7 @@ app.use('/api', rolesRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api/backup', backupRoutes);
 
-app.use(express.static(config.rootDir, {
+app.use(express.static(config.frontendDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -74,7 +74,7 @@ app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Endpoint not found' });
   }
-  res.sendFile(path.join(config.rootDir, 'index.html'));
+  res.sendFile(path.join(config.frontendDir, 'index.html'));
 });
 
 app.use(errorHandler);
