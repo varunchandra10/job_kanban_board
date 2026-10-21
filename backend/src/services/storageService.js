@@ -57,6 +57,11 @@ class LocalStorageService extends BaseStorageService {
     let p = cleanFilePath(inputPath);
     if (!p || p.toUpperCase() === 'NA') return null;
 
+    // Check if input is a Google Drive link
+    if (isGoogleDriveLink(p)) {
+      return p;
+    }
+
     if (!path.isAbsolute(p)) {
       p = path.resolve(this.rootDir, p);
     } else {
@@ -97,6 +102,19 @@ class LocalStorageService extends BaseStorageService {
   }
 
   getFileInfo(filePath) {
+    if (isGoogleDriveLink(filePath)) {
+      const fileId = extractGoogleDriveFileId(filePath);
+      return {
+        exists: true,
+        name: 'Google Drive Document',
+        size: 0,
+        ext: '.gdoc',
+        isGoogleDrive: true,
+        fileId,
+        resolvedPath: filePath
+      };
+    }
+
     const p = this.resolveSafePath(filePath);
     if (!p || !fs.existsSync(p)) {
       return { exists: false, error: 'File not found', resolvedPath: p };
@@ -145,11 +163,41 @@ class LocalStorageService extends BaseStorageService {
   }
 }
 
-const storageService = new LocalStorageService();
+function isGoogleDriveLink(input) {
+  if (!input || typeof input !== 'string') return false;
+  return /drive\.google\.com|docs\.google\.com/i.test(input) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(input);
+}
+
+function extractGoogleDriveFileId(input) {
+  if (!input || typeof input !== 'string') return null;
+  const match = input.match(/(?:\/d\/|id=|file\/d\/|gdrive:)([a-zA-Z0-9_-]{20,})/i);
+  return match ? match[1] : null;
+}
+
+// Storage Provider Factory
+const localService = new LocalStorageService();
+let storageService = localService;
+
+if (config.storageProvider === 'google_drive') {
+  try {
+    const GoogleDriveStorageService = require('./googleDriveStorageService');
+    const driveService = new GoogleDriveStorageService();
+    if (driveService.isConfigured()) {
+      storageService = driveService;
+      console.log('[Storage Service] Initialized Active Provider: Google Drive');
+    } else {
+      console.log('[Storage Service] Google Drive credentials not yet configured. Operating with Hybrid Local/Cloud Link parser.');
+    }
+  } catch (err) {
+    console.warn('[Storage Service] Failed to load Google Drive adapter:', err.message);
+  }
+}
 
 module.exports = {
   BaseStorageService,
   LocalStorageService,
   storageService,
-  getMimeType
+  getMimeType,
+  isGoogleDriveLink,
+  extractGoogleDriveFileId
 };

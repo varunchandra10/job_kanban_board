@@ -2786,3 +2786,43 @@ header .btn:active {
     right: 4px;
   }
 }
+
+
+/* ☁️ Phase 3: Google Drive Cloud Badges & Embed */
+.tag.gdrive {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: #059669 !important;
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+[data-theme="dark"] .tag.gdrive {
+  background: rgba(16, 185, 129, 0.2) !important;
+  color: #34d399 !important;
+  border-color: rgba(52, 211, 153, 0.4) !important;
+}
+.doc-ext-pill.gdrive {
+  background: #10b981 !important;
+  color: #ffffff !important;
+}
+.doc-badge-icon.gdrive {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #10b981 !important;
+}
+.gdrive-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border: 1px solid var(--bd2);
+  color: var(--tx2);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--r-sm, 6px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.gdrive-link-btn:hover {
+  background: var(--surface2);
+  color: #10b981;
+  border-color: #10b981;
+}
