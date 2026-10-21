@@ -36,6 +36,9 @@
   <button class="btn icon-only" id="statsBtn" title="Stats & Analytics" aria-label="Stats & Analytics">
     <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
   </button>
+  <button class="btn icon-only" id="backupZipBtn" title="1-Click Backup: Download complete ZIP (Database + Resumes & Documents)" aria-label="Export Full ZIP Backup">
+    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+  </button>
   <button class="btn icon-only" id="expBtn" title="Download / Export visible applications to CSV" aria-label="Download CSV">
     <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
   </button>
@@ -987,57 +990,40 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
       `;
     }
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = async () => {
-        try {
-          const base64 = reader.result;
-          const docType = type === 'resume' ? 'resume' : 'cover_letter';
-          const res = await api('POST', '/upload-document', { name: file.name, data: base64, type: docType, appId: appId || undefined });
-          if (res && res.ok) {
-            const savedPath = res.fullPath || res.path;
-            setPath(savedPath);
-            if (appId) {
-              const app = (S.apps || []).find(x => x.id === Number(appId));
-              if (app) {
-                app[key] = savedPath;
-                render();
-              }
-            }
-            toast(`✓ Upload completed: ${file.name}`);
-            const liveSlot = $(`#${prefix}_slot`);
-            if (liveSlot) {
-              liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, savedPath, appId);
-              wireDocSlot(prefix, type, label, iconSvg, appId, () => savedPath, setPath);
-              $(`#${prefix}_slot .doc-card-box`)?.classList.add('doc-upload-success-anim');
-            }
-          } else {
-            toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
-            const liveSlot = $(`#${prefix}_slot`);
-            if (liveSlot) {
-              liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, getPath(), appId);
-              wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath);
-            }
-          }
-        } catch (err) {
-          toast('Upload failed: ' + err.message, true);
-          const liveSlot = $(`#${prefix}_slot`);
-          if (liveSlot) {
-            liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, getPath(), appId);
-            wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath);
+      const docType = type === 'resume' ? 'resume' : 'cover_letter';
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', docType);
+      if (appId) formData.append('appId', appId);
+      const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
+      const res = await resp.json();
+      if (res && res.ok) {
+        const savedPath = res.fullPath || res.path;
+        setPath(savedPath);
+        if (appId) {
+          const app = (S.apps || []).find(x => x.id === Number(appId));
+          if (app) {
+            app[key] = savedPath;
+            render();
           }
         }
-      };
-      reader.onerror = () => {
-        toast('Error reading file from disk', true);
+        toast(`✔ Upload completed: ${file.name}`);
+        const liveSlot = $(`#${prefix}_slot`);
+        if (liveSlot) {
+          liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, savedPath, appId);
+          wireDocSlot(prefix, type, label, iconSvg, appId, () => savedPath, setPath);
+          $(`#${prefix}_slot .doc-card-box`)?.classList.add('doc-upload-success-anim');
+        }
+      } else {
+        toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
         const liveSlot = $(`#${prefix}_slot`);
         if (liveSlot) {
           liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, getPath(), appId);
           wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath);
         }
-      };
-    } catch (e) {
-      toast('File upload error: ' + e.message, true);
+      }
+    } catch (err) {
+      toast('Upload failed: ' + err.message, true);
       const liveSlot = $(`#${prefix}_slot`);
       if (liveSlot) {
         liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, getPath(), appId);
@@ -1575,6 +1561,10 @@ function exportCSV() {
   URL.revokeObjectURL(url);
 }
 $('#expBtn').onclick = exportCSV;
+$('#backupZipBtn').onclick = () => {
+  toast('Preparing full ZIP archive (Database + Documents)...');
+  window.location.href = '/api/backup/export';
+};
 
 /* ----- Drag & Drop ----- */
 function locate(body, y) {
@@ -2377,88 +2367,76 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
   toast(`Uploading ${file.name}...`);
 
   try {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
-      try {
-        const base64 = reader.result;
-        const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
-        const res = await api('POST', '/upload-document', { name: file.name, data: base64, type: docType, appId: appId || undefined });
-        if (res && res.ok) {
-          const savedPath = res.fullPath || res.path;
-          if (targetInputEl) {
-            targetInputEl.value = savedPath;
-            targetInputEl.dispatchEvent(new Event('input'));
-          }
-          const panelInput = $(`#panel [data-k="${key}"]`);
-          if (panelInput && panelInput !== targetInputEl) {
-            panelInput.value = savedPath;
-            panelInput.dispatchEvent(new Event('input'));
-          }
-          if (appId) {
-            const app = (S.apps || []).find(x => x.id === Number(appId));
-            if (app) {
-              app[key] = savedPath;
-              render(); // Updates card tags immediately from CV: N/A to document pill
-            }
-          }
+    const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', docType);
+    if (appId) formData.append('appId', appId);
 
-          // Visual feedback on button: "Upload Completed"
+    const resp = await fetch('/api/upload-document', {
+      method: 'POST',
+      body: formData
+    });
+    const res = await resp.json();
+
+    if (res && res.ok) {
+      const savedPath = res.fullPath || res.path;
+      if (targetInputEl) {
+        targetInputEl.value = savedPath;
+        targetInputEl.dispatchEvent(new Event('input'));
+      }
+      const panelInput = $(`#panel [data-k="${key}"]`);
+      if (panelInput && panelInput !== targetInputEl) {
+        panelInput.value = savedPath;
+        panelInput.dispatchEvent(new Event('input'));
+      }
+      if (appId) {
+        const app = (S.apps || []).find(x => x.id === Number(appId));
+        if (app) {
+          app[key] = savedPath;
+          render();
+        }
+      }
+
+      if (triggerBtn) {
+        triggerBtn.disabled = false;
+        triggerBtn.classList.remove('primary');
+        triggerBtn.classList.add('btn-success');
+        triggerBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align:middle;margin-right:3px"><polyline points="20 6 9 17 4 12"/></svg> Upload Completed';
+        setTimeout(() => {
           if (triggerBtn) {
-            triggerBtn.disabled = false;
-            triggerBtn.classList.remove('primary');
-            triggerBtn.classList.add('btn-success');
-            triggerBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align:middle;margin-right:3px"><polyline points="20 6 9 17 4 12"/></svg> Upload Completed';
-            setTimeout(() => {
-              if (triggerBtn) {
-                triggerBtn.classList.remove('btn-success');
-                triggerBtn.classList.add('primary');
-                triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
-              }
-            }, 5000);
-          }
-
-          // Visual feedback below input: "✓ Upload completed: filename"
-          const container = (targetInputEl || panelInput)?.closest('.doc-ref-group, .doc-input-row, div');
-          if (container) {
-            let succMsg = container.querySelector('.doc-upload-success');
-            if (!succMsg) {
-              succMsg = document.createElement('div');
-              succMsg.className = 'doc-upload-success';
-              container.appendChild(succMsg);
-            }
-            succMsg.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg> Upload completed: <strong>${esc(file.name)}</strong>`;
-          }
-
-          toast(`✓ Upload completed: ${file.name}`);
-        } else {
-          if (triggerBtn) {
-            triggerBtn.disabled = false;
+            triggerBtn.classList.remove('btn-success');
+            triggerBtn.classList.add('primary');
             triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
           }
-          toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
-        }
-      } catch (err) {
-        if (triggerBtn) {
-          triggerBtn.disabled = false;
-          triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
-        }
-        toast('Upload failed: ' + err.message, true);
+        }, 5000);
       }
-    };
-    reader.onerror = () => {
+
+      const container = (targetInputEl || panelInput)?.closest('.doc-ref-group, .doc-input-row, div');
+      if (container) {
+        let succMsg = container.querySelector('.doc-upload-success');
+        if (!succMsg) {
+          succMsg = document.createElement('div');
+          succMsg.className = 'doc-upload-success';
+          container.appendChild(succMsg);
+        }
+        succMsg.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg> Upload completed: <strong>${esc(file.name)}</strong>`;
+      }
+
+      toast(`✔ Upload completed: ${file.name}`);
+    } else {
       if (triggerBtn) {
         triggerBtn.disabled = false;
         triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
       }
-      toast('Error reading file from disk', true);
-    };
+      toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+    }
   } catch (err) {
     if (triggerBtn) {
       triggerBtn.disabled = false;
       triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
     }
-    toast('Error reading file: ' + err.message, true);
+    toast('Upload failed: ' + err.message, true);
   }
 }
 

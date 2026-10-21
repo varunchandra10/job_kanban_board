@@ -29,12 +29,14 @@ yarn-debug.log*
 *.safety_pre_git.db
 tracker*.db
 *.bak
+*.db-shm
+*.db-wal
 *.sqlite-journal
 *.db-journal
+backups/
+*.zip
 
 # IMPORTANT PRIVACY NOTE:
-# If you are making this GitHub repository PUBLIC:
-# Uncomment the lines below so your real resumes and portal passwords in tracker.db are not publicly exposed:
 tracker.db
 documents/resume/*
 documents/cover_letter/*
