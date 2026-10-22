@@ -69,6 +69,10 @@
     <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
     <svg class="moon-icon" viewBox="0 0 24 24" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
+  <button class="btn icon-only profile-header-btn" id="profileBtn" title="User Profile, GitHub Heatmap & Quick Links" aria-label="User Profile" onclick="switchViewMode('profile')">
+    <div class="profile-avatar-mini">VC</div>
+    <span class="profile-dot-online"></span>
+  </button>
   <button class="btn icon-only" id="linksBtn" title="Quick Links & Profiles (GitHub, LinkedIn, Portfolio, ORCID, Scholar)" aria-label="Quick Links">
     <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
   </button>
@@ -369,6 +373,192 @@
       <!-- Populated by JS -->
     </section>
   </main>
+
+  <!-- =========================================
+       USER PROFILE & CAREER HUB VIEW
+       ========================================= -->
+  <main class="profile-view-container" id="profileView" style="display:none;">
+    <!-- Profile Hero Card -->
+    <section class="profile-hero-card">
+      <div class="profile-identity">
+        <div class="profile-avatar-lg">VC</div>
+        <div class="profile-name-wrap">
+          <h2>
+            <span id="profUserName">Varun Chandra</span>
+            <span class="profile-pill-badge pill-active-applying">🚀 Actively Applying</span>
+          </h2>
+          <div class="profile-title-sub">
+            <span id="profUserTitle">Software Engineer · Full Stack &amp; Distributed Systems</span>
+            <span>·</span>
+            <span class="profile-pill-badge pill-rank" id="profUserRank">⭐ Level 1 Novice Seeker</span>
+            <span>·</span>
+            <span style="color:#f97316;font-weight:700" id="profUserStreak">🔥 0-Day Focus Streak</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons: Export CSV & Download Database as ZIP -->
+      <div class="profile-actions-top">
+        <button type="button" class="btn-action-glow btn-export-csv" id="profExportCsvBtn" onclick="exportCSV()" title="Export all Job Applications and Daily Learnings to CSV">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>Export as CSV</span>
+        </button>
+        <button type="button" class="btn-action-glow btn-download-zip" id="profDownloadZipBtn" onclick="window.location.href='/api/backup/export'" title="Download Full SQLite Database (.db) & Attached Resumes as ZIP">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Download Database as ZIP</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- GitHub Commit Styled Heatmap (Daily Applications + Learnings Momentum) -->
+    <section class="gh-heatmap-card">
+      <div class="gh-header">
+        <div class="gh-title-group">
+          <h3>
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--applied-clr)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Daily Activity &amp; Momentum (GitHub Commit Style)</span>
+          </h3>
+          <div class="gh-subtitle"><span id="profTotalActivities">0</span> contributions in the past year · Combined Job Applications submitted and Daily Learnings logged</div>
+        </div>
+        <div class="gh-stats-summary">
+          <div>Current Streak: <span class="gh-stat-highlight" id="profHeatmapStreak">0 Days 🔥</span></div>
+          <div>Active Days: <span class="gh-stat-highlight" id="profHeatmapActiveDays">0 Days</span></div>
+        </div>
+      </div>
+
+      <div class="gh-calendar-scroll">
+        <div class="gh-calendar-wrapper">
+          <!-- Month Labels -->
+          <div class="gh-months-row">
+            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+            <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+          </div>
+
+          <div class="gh-grid-body">
+            <!-- Day of Week Legend -->
+            <div class="gh-days-legend">
+              <span>Mon</span>
+              <span>Wed</span>
+              <span>Fri</span>
+            </div>
+
+            <!-- 52-Week Contribution Matrix -->
+            <div class="gh-matrix-weeks" id="profHeatmapMatrix">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Heatmap Legend -->
+          <div class="gh-footer-legend">
+            <span>Less</span>
+            <div class="gh-legend-cells">
+              <span class="gh-day-cell lvl-0"></span>
+              <span class="gh-day-cell lvl-1"></span>
+              <span class="gh-day-cell lvl-2"></span>
+              <span class="gh-day-cell lvl-3"></span>
+              <span class="gh-day-cell lvl-4"></span>
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quick Links Hub -->
+    <div class="section-title-wrap">
+      <h3>
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--accent)" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Quick Links &amp; Profiles</span>
+      </h3>
+      <span style="font-size:12px;color:var(--tx3)">Click to Open ↗ or 1-Click Copy 📋 for job applications</span>
+    </div>
+
+    <div class="quick-links-grid" id="profQuickLinksGrid">
+      <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Stats 2-Column: Job Applications Stats (Left) & Learnings Stats (Right) -->
+    <div class="profile-stats-grid">
+      <!-- Stats for Job Applications -->
+      <div class="stats-panel-card">
+        <div class="stats-panel-header">
+          <div class="stats-panel-title">
+            <span>💼</span>
+            <span>Job Applications Stats &amp; Pipeline</span>
+          </div>
+          <span class="stats-badge-tag" id="profTotalAppsBadge">0 TOTAL</span>
+        </div>
+
+        <div class="stats-metrics-row">
+          <div class="metric-box">
+            <div class="metric-val" id="profStatTotalApps" style="color:var(--accent)">0</div>
+            <div class="metric-lbl">Total Applied</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatInterviewing" style="color:var(--interview-clr)">0</div>
+            <div class="metric-lbl">Interviewing</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatOffers" style="color:var(--applied-clr)">0</div>
+            <div class="metric-lbl">Offers</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatResponseRate" style="color:var(--cyan, #06b6d4)">0%</div>
+            <div class="metric-lbl">Response Rate</div>
+          </div>
+        </div>
+
+        <div class="funnel-bar-wrap" id="profJobFunnelWrap">
+          <!-- Populated by JS -->
+        </div>
+
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--tx2)">
+          <span>Top Locations: <strong id="profTopLocations">-</strong></span>
+          <span>Archived/Rejected: <strong id="profStatRejected">0</strong></span>
+        </div>
+      </div>
+
+      <!-- Stats for Learnings -->
+      <div class="stats-panel-card">
+        <div class="stats-panel-header">
+          <div class="stats-panel-title">
+            <span>🧠</span>
+            <span>Daily Learnings &amp; Mastery Stats</span>
+          </div>
+          <span class="stats-badge-tag" id="profStreakBadge" style="color:#f97316;background:rgba(249,115,22,0.12)">🔥 0D STREAK</span>
+        </div>
+
+        <div class="stats-metrics-row">
+          <div class="metric-box">
+            <div class="metric-val" id="profStatStreak" style="color:#f97316">0</div>
+            <div class="metric-lbl">Active Streak</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatStudyHours">0.0h</div>
+            <div class="metric-lbl">Study Time</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatTotalXp" style="color:var(--cyan, #06b6d4)">0</div>
+            <div class="metric-lbl">Total XP</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="profStatLevel" style="color:var(--applied-clr)">Lvl 1</div>
+            <div class="metric-lbl">Current Rank</div>
+          </div>
+        </div>
+
+        <div class="funnel-bar-wrap" id="profLearningCategoryWrap">
+          <!-- Populated by JS -->
+        </div>
+
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--tx2)">
+          <span>Longest Streak: <strong id="profStatLongestStreak">0 Days</strong></span>
+          <span>Notes Count: <strong id="profStatNotesCount">0</strong></span>
+        </div>
+      </div>
+    </div>
+  </main>
+
 <div id="bd"></div>
 
 <aside id="panel" aria-modal="true">

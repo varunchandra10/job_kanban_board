@@ -904,6 +904,537 @@
       color: #c084fc;
     }
 
+
+    /* =========================================
+       THEME & PROFILE HEADER BUTTONS
+       ========================================= */
+    .theme-btn-hud {
+      width: 34px;
+      height: 34px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .theme-btn-hud:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .theme-btn-hud svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+    .profile-btn-hud {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 3px 8px 3px 4px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+    }
+    .profile-btn-hud:hover, .profile-btn-hud.active {
+      background: rgba(99, 102, 241, 0.18);
+      border-color: var(--accent);
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+    .profile-avatar-mini {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.5);
+    }
+    .profile-dot-online {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--emerald);
+      box-shadow: 0 0 6px var(--emerald);
+    }
+
+    /* Light Theme Overrides for mock */
+    body.light-theme {
+      --bg: #f8fafc;
+      --bg-surface: rgba(255, 255, 255, 0.85);
+      --bg-surface-elevated: rgba(241, 245, 249, 0.95);
+      --bg-card: rgba(255, 255, 255, 0.9);
+      --border: rgba(0, 0, 0, 0.08);
+      --border-hover: rgba(99, 102, 241, 0.5);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      background-image: 
+        radial-gradient(ellipse at 50% -20%, rgba(99, 102, 241, 0.08), transparent 60%),
+        radial-gradient(ellipse at 85% 15%, rgba(6, 182, 212, 0.05), transparent 50%);
+    }
+
+    /* =========================================
+       VIEW 4: USER PROFILE & ANALYTICS
+       ========================================= */
+    .profile-view { display: none; }
+    
+    .profile-hero-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .profile-hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981, #f97316);
+    }
+    .profile-identity {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .profile-avatar-lg {
+      width: 72px;
+      height: 72px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: #fff;
+      box-shadow: 0 0 24px var(--accent-glow);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+    .profile-name-wrap h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .profile-title-sub {
+      font-size: 13.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .profile-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .pill-active-applying { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .pill-rank { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+
+    .profile-actions-top {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn-action-glow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-export-csv {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-export-csv:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+    .btn-download-zip {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      box-shadow: 0 4px 18px var(--accent-glow);
+    }
+    .btn-download-zip:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 24px rgba(99, 102, 241, 0.5);
+    }
+
+    /* GitHub-style Contribution Heatmap */
+    .gh-heatmap-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      margin-bottom: 24px;
+    }
+    .gh-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .gh-title-group h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .gh-subtitle {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+    .gh-stats-summary {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .gh-stat-highlight {
+      font-weight: 700;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .gh-calendar-scroll {
+      overflow-x: auto;
+      padding-bottom: 8px;
+    }
+    .gh-calendar-wrapper {
+      min-width: 780px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .gh-months-row {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      padding-left: 28px;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .gh-grid-body {
+      display: flex;
+      gap: 8px;
+    }
+    .gh-days-legend {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 9.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+      padding: 2px 0;
+      width: 20px;
+    }
+    .gh-matrix-weeks {
+      display: grid;
+      grid-template-columns: repeat(52, 1fr);
+      gap: 3px;
+      flex: 1;
+    }
+    .gh-col-week {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .gh-day-cell {
+      width: 11px;
+      height: 11px;
+      border-radius: 2.5px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      transition: all 0.15s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .gh-day-cell:hover {
+      outline: 1.5px solid #fff;
+      transform: scale(1.3);
+      z-index: 10;
+    }
+    .gh-day-cell.lvl-0 { background: rgba(255, 255, 255, 0.04); }
+    .gh-day-cell.lvl-1 { background: #0e4429; border-color: rgba(16, 185, 129, 0.2); }
+    .gh-day-cell.lvl-2 { background: #006d32; border-color: rgba(16, 185, 129, 0.4); }
+    .gh-day-cell.lvl-3 { background: #26a641; border-color: rgba(16, 185, 129, 0.6); box-shadow: 0 0 6px rgba(38, 166, 65, 0.4); }
+    .gh-day-cell.lvl-4 { background: #39d353; border-color: #39d353; box-shadow: 0 0 8px rgba(57, 211, 83, 0.6); }
+
+    .gh-footer-legend {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 10px;
+    }
+    .gh-legend-cells {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    /* Quick Links Grid */
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .section-title-wrap h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .quick-links-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 26px;
+    }
+    @media (max-width: 1000px) {
+      .quick-links-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 600px) {
+      .quick-links-grid { grid-template-columns: 1fr; }
+    }
+
+    .quick-link-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s ease;
+    }
+    .quick-link-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .ql-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ql-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .ql-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .ql-url-preview {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11.5px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ql-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+    .ql-btn {
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+    .ql-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .ql-btn.primary {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: var(--accent);
+      color: #818cf8;
+    }
+    .ql-btn.primary:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    /* Stats 2-Column Grid */
+    .profile-stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 26px;
+    }
+    @media (max-width: 950px) {
+      .profile-stats-grid { grid-template-columns: 1fr; }
+    }
+
+    .stats-panel-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .stats-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .stats-panel-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stats-metrics-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .metric-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .metric-val {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .metric-lbl {
+      font-size: 10.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    /* Progress Funnel Bars */
+    .funnel-bar-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .funnel-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 12px;
+    }
+    .funnel-lbl {
+      width: 100px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+    .funnel-track {
+      flex: 1;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 9999px;
+      overflow: hidden;
+    }
+    .funnel-fill {
+      height: 100%;
+      border-radius: 9999px;
+    }
+    .funnel-num {
+      width: 45px;
+      text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: #fff;
+      font-size: 11.5px;
+    }
+
   </style>
 </head>
 <body>
@@ -962,6 +1493,18 @@
         <span class="streak-hud-text">2 Day Streak</span>
         <span class="xp-hud-tag">Lvl 4 · 2,150 XP</span>
       </div>
+
+      <!-- Light / Dark Theme Button -->
+      <button class="theme-btn-hud" id="btnThemeToggle" onclick="toggleTheme()" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+        <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+
+      <!-- Small User Profile button to complete right beside light/dark theme -->
+      <button class="profile-btn-hud" id="btnProfile" onclick="setMode('profile')" title="Open User Profile & Career Analytics" aria-label="User Profile">
+        <div class="profile-avatar-mini">VC</div>
+        <span class="profile-dot-online"></span>
+      </button>
     </div>
   </header>
 
@@ -1485,7 +2028,506 @@
     </div>
   </main>
 
+
+  <!-- =========================================
+       VIEW 4: USER PROFILE & CAREER HUB
+       ========================================= -->
+  <main class="view-content profile-view" id="viewProfile">
+    <!-- Profile Identity Hero Card -->
+    <div class="profile-hero-card">
+      <div class="profile-identity">
+        <div class="profile-avatar-lg">VC</div>
+        <div class="profile-name-wrap">
+          <h2>
+            <span>Varun Chandra</span>
+            <span class="profile-pill-badge pill-active-applying">🚀 Actively Applying</span>
+          </h2>
+          <div class="profile-title-sub">
+            <span>Software Engineer · Full Stack &amp; Distributed Systems</span>
+            <span>·</span>
+            <span class="profile-pill-badge pill-rank">⭐ Level 4 Knowledge Hunter</span>
+            <span>·</span>
+            <span style="color:#fb923c;font-weight:700">🔥 2 Day Focus Streak</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons: Export CSV & Download Database as ZIP -->
+      <div class="profile-actions-top">
+        <button class="btn-action-glow btn-export-csv" onclick="exportProfileCSV()" title="Export all Job Applications and Daily Learnings to CSV">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span>Export as CSV</span>
+        </button>
+        <button class="btn-action-glow btn-download-zip" onclick="downloadDatabaseZip()" title="Download Full SQLite Database (.db) & Attached Resumes as ZIP">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Download Database as ZIP</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- GitHub Commit Styled Heatmap (Daily Applications + Learnings Momentum) -->
+    <div class="gh-heatmap-card">
+      <div class="gh-header">
+        <div class="gh-title-group">
+          <h3>
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--emerald)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Daily Activity &amp; Momentum (GitHub Commit Style)</span>
+          </h3>
+          <div class="gh-subtitle">148 contributions in 2026 · Combined Job Applications submitted and Daily Learning sessions</div>
+        </div>
+        <div class="gh-stats-summary">
+          <div>Current Streak: <span class="gh-stat-highlight">2 Days 🔥</span></div>
+          <div>Longest Streak: <span class="gh-stat-highlight">14 Days</span></div>
+          <div>Total Active Days: <span class="gh-stat-highlight">78 Days</span></div>
+        </div>
+      </div>
+
+      <div class="gh-calendar-scroll">
+        <div class="gh-calendar-wrapper">
+          <!-- Month Labels -->
+          <div class="gh-months-row">
+            <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+            <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+          </div>
+
+          <div class="gh-grid-body">
+            <!-- Day of Week Legend -->
+            <div class="gh-days-legend">
+              <span>Mon</span>
+              <span>Wed</span>
+              <span>Fri</span>
+            </div>
+
+            <!-- 52-Week Contribution Matrix -->
+            <div class="gh-matrix-weeks" id="ghHeatmapMatrix">
+              <!-- Dynamically populated with 52 columns x 7 days -->
+            </div>
+          </div>
+
+          <!-- Heatmap Legend -->
+          <div class="gh-footer-legend">
+            <span>Less</span>
+            <div class="gh-legend-cells">
+              <span class="gh-day-cell lvl-0"></span>
+              <span class="gh-day-cell lvl-1"></span>
+              <span class="gh-day-cell lvl-2"></span>
+              <span class="gh-day-cell lvl-3"></span>
+              <span class="gh-day-cell lvl-4"></span>
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Links Hub -->
+    <div class="section-title-wrap">
+      <h3>
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--cyan)" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>Quick Links &amp; Profiles</span>
+      </h3>
+      <span style="font-size:12px;color:var(--text-dim)">Click to Open ↗ or 1-Click Copy 📋 for job applications</span>
+    </div>
+
+    <div class="quick-links-grid" id="quickLinksGrid">
+      <!-- Link 1: Portfolio -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">🌐</div>
+          <div>
+            <div class="ql-title">Portfolio Website</div>
+            <div class="ql-url-preview" id="url_portfolio">https://varunchandra.dev</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="https://varunchandra.dev" target="_blank" rel="noopener" class="ql-btn primary">Open ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('https://varunchandra.dev', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('portfolio')">Edit ✏️</button>
+        </div>
+      </div>
+
+      <!-- Link 2: GitHub -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">🐙</div>
+          <div>
+            <div class="ql-title">GitHub Profile</div>
+            <div class="ql-url-preview" id="url_github">https://github.com/varunchandra10</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="https://github.com/varunchandra10" target="_blank" rel="noopener" class="ql-btn primary">Open ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('https://github.com/varunchandra10', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('github')">Edit ✏️</button>
+        </div>
+      </div>
+
+      <!-- Link 3: LinkedIn -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">👔</div>
+          <div>
+            <div class="ql-title">LinkedIn Profile</div>
+            <div class="ql-url-preview" id="url_linkedin">https://linkedin.com/in/varunchandra</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="https://linkedin.com/in/varunchandra" target="_blank" rel="noopener" class="ql-btn primary">Open ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('https://linkedin.com/in/varunchandra', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('linkedin')">Edit ✏️</button>
+        </div>
+      </div>
+
+      <!-- Link 4: LeetCode -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">🧠</div>
+          <div>
+            <div class="ql-title">LeetCode / Problem Solving</div>
+            <div class="ql-url-preview" id="url_leetcode">https://leetcode.com/varun_chandra</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="https://leetcode.com/varun_chandra" target="_blank" rel="noopener" class="ql-btn primary">Open ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('https://leetcode.com/varun_chandra', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('leetcode')">Edit ✏️</button>
+        </div>
+      </div>
+
+      <!-- Link 5: Master Resume Drive -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">📄</div>
+          <div>
+            <div class="ql-title">Google Drive Master Resume</div>
+            <div class="ql-url-preview" id="url_resume">https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_" target="_blank" rel="noopener" class="ql-btn primary">Open ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('resume')">Edit ✏️</button>
+        </div>
+      </div>
+
+      <!-- Link 6: Contact Email -->
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">✉️</div>
+          <div>
+            <div class="ql-title">Primary Contact Email</div>
+            <div class="ql-url-preview" id="url_email">varun.chandra@example.com</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="mailto:varun.chandra@example.com" class="ql-btn primary">Send ↗</a>
+          <button type="button" class="ql-btn" onclick="copyQuickLink('varun.chandra@example.com', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editQuickLink('email')">Edit ✏️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats 2-Column: Job Applications Stats (Left) & Learnings Stats (Right) -->
+    <div class="profile-stats-grid">
+      <!-- Stats for Job Applications -->
+      <div class="stats-panel-card">
+        <div class="stats-panel-header">
+          <div class="stats-panel-title">
+            <span>💼</span>
+            <span>Job Applications Stats &amp; Pipeline</span>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:var(--accent);background:rgba(99,102,241,0.15);padding:2px 8px;border-radius:6px">15 TOTAL</span>
+        </div>
+
+        <div class="stats-metrics-row">
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--accent)">15</div>
+            <div class="metric-lbl">Total Applied</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--amber)">5</div>
+            <div class="metric-lbl">Interviewing</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--emerald)">2</div>
+            <div class="metric-lbl">Offers</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--cyan)">46.7%</div>
+            <div class="metric-lbl">Response Rate</div>
+          </div>
+        </div>
+
+        <div class="funnel-bar-wrap">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:2px">Stage Funnel Breakdown</div>
+          
+          <div class="funnel-row">
+            <span class="funnel-lbl">Applied (4)</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 27%; background: var(--accent);"></div></div>
+            <span class="funnel-num">27%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Interviewing (5)</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 33%; background: var(--amber);"></div></div>
+            <span class="funnel-num">33%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Offers (2)</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 13%; background: var(--emerald);"></div></div>
+            <span class="funnel-num">13%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Rejected (4)</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 27%; background: var(--rose);"></div></div>
+            <span class="funnel-num">27%</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-muted)">
+          <span>Top Target Regions: <strong>UK (60%), US (27%), IN (13%)</strong></span>
+          <span>Avg response: <strong>11 days</strong></span>
+        </div>
+      </div>
+
+      <!-- Stats for Learnings -->
+      <div class="stats-panel-card">
+        <div class="stats-panel-header">
+          <div class="stats-panel-title">
+            <span>🧠</span>
+            <span>Daily Learnings &amp; Mastery Stats</span>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:var(--flame);background:rgba(249,115,22,0.15);padding:2px 8px;border-radius:6px">🔥 2D STREAK</span>
+        </div>
+
+        <div class="stats-metrics-row">
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--flame)">2</div>
+            <div class="metric-lbl">Active Streak</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:#fff">2.8h</div>
+            <div class="metric-lbl">Study Time</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--cyan)">2,150</div>
+            <div class="metric-lbl">Total XP</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" style="color:var(--emerald)">Lvl 4</div>
+            <div class="metric-lbl">Current Rank</div>
+          </div>
+        </div>
+
+        <div class="funnel-bar-wrap">
+          <div style="font-size:11.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;margin-bottom:2px">Topic Category Breakdown</div>
+          
+          <div class="funnel-row">
+            <span class="funnel-lbl">System Design</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 40%; background: var(--cyan);"></div></div>
+            <span class="funnel-num">40%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Algorithms / DSA</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 35%; background: #c084fc;"></div></div>
+            <span class="funnel-num">35%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Web Dev</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 15%; background: var(--emerald);"></div></div>
+            <span class="funnel-num">15%</span>
+          </div>
+          <div class="funnel-row">
+            <span class="funnel-lbl">Cloud &amp; DevOps</span>
+            <div class="funnel-track"><div class="funnel-fill" style="width: 10%; background: var(--flame);"></div></div>
+            <span class="funnel-num">10%</span>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--text-muted)">
+          <span>Consistency: <strong>85% active days this month</strong></span>
+          <span>Next level in: <strong>150 XP</strong></span>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
+
+    // Theme toggle
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light-theme');
+      const sun = document.querySelector('#btnThemeToggle .sun-icon');
+      const moon = document.querySelector('#btnThemeToggle .moon-icon');
+      if (sun && moon) {
+        sun.style.display = isLight ? 'none' : 'inline-block';
+        moon.style.display = isLight ? 'inline-block' : 'none';
+      }
+    }
+
+    // Set View Mode
+    function setMode(mode) {
+      const isApps = mode === 'apps';
+      const isLearnings = mode === 'learnings';
+      const isCal = mode === 'calendar';
+      const isProfile = mode === 'profile';
+
+      const btnApps = document.getElementById('btnApps');
+      const btnLearnings = document.getElementById('btnLearnings');
+      const btnCal = document.getElementById('btnCalendar');
+      const btnProfile = document.getElementById('btnProfile');
+
+      if (btnApps) btnApps.classList.toggle('active', isApps);
+      if (btnLearnings) btnLearnings.classList.toggle('active', isLearnings);
+      if (btnCal) btnCal.classList.toggle('active', isCal);
+      if (btnProfile) btnProfile.classList.toggle('active', isProfile);
+
+      const viewApps = document.getElementById('viewApps');
+      const viewLearnings = document.getElementById('viewLearnings');
+      const viewCal = document.getElementById('viewCalendar');
+      const viewProfile = document.getElementById('viewProfile');
+
+      if (viewApps) viewApps.style.display = isApps ? 'block' : 'none';
+      if (viewLearnings) viewLearnings.style.display = isLearnings ? 'block' : 'none';
+      if (viewCal) viewCal.style.display = isCal ? 'block' : 'none';
+      if (viewProfile) {
+        viewProfile.style.display = isProfile ? 'block' : 'none';
+        if (isProfile) renderGitHubHeatmap();
+      }
+    }
+
+    // Render 52-Week GitHub Commit-Styled Activity Heatmap
+    function renderGitHubHeatmap() {
+      const container = document.getElementById('ghHeatmapMatrix');
+      if (!container || container.dataset.rendered) return;
+      container.dataset.rendered = 'true';
+      container.innerHTML = '';
+
+      // High activity seed dates (October 2026 and past months)
+      const activeMap = {
+        '2026-10-22': 3, // Today: 1 app + 2 learnings
+        '2026-10-21': 2,
+        '2026-10-18': 2,
+        '2026-10-10': 1,
+        '2026-10-05': 2,
+        '2026-10-02': 1,
+        '2026-09-28': 3,
+        '2026-09-25': 2,
+        '2026-09-18': 4,
+        '2026-09-15': 1,
+        '2026-09-10': 3,
+        '2026-09-05': 2,
+        '2026-09-02': 1,
+        '2026-08-29': 2,
+        '2026-08-20': 4,
+        '2026-08-14': 2,
+        '2026-08-08': 1,
+        '2026-07-30': 3,
+        '2026-07-22': 2,
+        '2026-07-15': 1,
+        '2026-07-08': 2,
+        '2026-06-25': 3,
+        '2026-06-18': 1,
+        '2026-06-10': 2,
+        '2026-05-28': 3,
+        '2026-05-20': 1,
+        '2026-05-12': 2,
+        '2026-04-20': 3,
+        '2026-04-10': 1,
+        '2026-03-24': 2,
+        '2026-03-15': 1,
+        '2026-02-18': 2,
+        '2026-01-20': 3
+      };
+
+      const baseDate = new Date(2026, 9, 22); // Oct 22, 2026
+
+      // Generate 52 weeks (364 days)
+      for (let w = 51; w >= 0; w--) {
+        const col = document.createElement('div');
+        col.className = 'gh-col-week';
+
+        for (let d = 0; d < 7; d++) {
+          const daysAgo = (w * 7) + (6 - d);
+          const cellDate = new Date(baseDate);
+          cellDate.setDate(baseDate.getDate() - daysAgo);
+
+          const ymd = cellDate.toISOString().slice(0, 10);
+          const count = activeMap[ymd] || (Math.random() < 0.22 ? Math.floor(Math.random() * 3) + 1 : 0);
+
+          let lvl = 0;
+          if (count === 1) lvl = 1;
+          else if (count === 2) lvl = 2;
+          else if (count === 3) lvl = 3;
+          else if (count >= 4) lvl = 4;
+
+          const cell = document.createElement('div');
+          cell.className = `gh-day-cell lvl-${lvl}`;
+          cell.title = count 
+            ? `${count} activities on ${cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+            : `No contributions on ${cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+          col.appendChild(cell);
+        }
+        container.appendChild(col);
+      }
+    }
+
+    // Quick Links Copy
+    function copyQuickLink(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        const oldText = btn.textContent;
+        btn.textContent = 'Copied! ✓';
+        btn.style.color = '#10b981';
+        btn.style.borderColor = '#10b981';
+        setTimeout(() => {
+          btn.textContent = oldText;
+          btn.style.color = '';
+          btn.style.borderColor = '';
+        }, 2000);
+      }).catch(() => {
+        prompt('Copy link:', text);
+      });
+    }
+
+    // Quick Links Edit
+    function editQuickLink(key) {
+      const el = document.getElementById(`url_${key}`);
+      const cur = el ? el.textContent.trim() : '';
+      const newVal = prompt(`Update URL for ${key}:`, cur);
+      if (newVal && newVal.trim()) {
+        if (el) el.textContent = newVal.trim();
+        alert(`Saved ${key} link!`);
+      }
+    }
+
+    // Export CSV Trigger
+    function exportProfileCSV() {
+      const rows = [
+        ['Type', 'Title / Role', 'Company / Topic', 'Stage / Category', 'Date', 'Notes'],
+        ['Job Application', 'Backend Infrastructure Engineer', 'Stripe', 'Applied', '2026-10-02', 'Referral submitted'],
+        ['Job Application', 'Software Engineer', 'Razorpay', 'Applied', '2026-10-05', 'System design interview scheduled'],
+        ['Job Application', 'Quant Research Intern', 'Jane Street', 'Interviewing', '2026-09-10', 'Technical round 2'],
+        ['Job Application', 'Software Engineer Intern', 'Google', 'Applied', '2026-10-18', 'Mountain View & Remote'],
+        ['Learning Log', 'Kafka Consumer Groups', 'Distributed Systems', 'System Design', '2026-10-22', 'Cooperative sticky rebalancing'],
+        ['Learning Log', 'Sliding Window Contraction', 'LeetCode Medium', 'Algorithms', '2026-10-22', 'Dynamic window substring'],
+        ['Learning Log', 'Redis Caching & Stampede Mitigation', 'Caching Patterns', 'System Design', '2026-10-21', 'XFetch probabilistic early expiration']
+      ];
+      const esc = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
+      const csv = '\uFEFF' + rows.map(r => r.map(esc).join(',')).join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `career_data_export_2026-10-22.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+
+    // Download Database ZIP Trigger
+    function downloadDatabaseZip() {
+      window.location.href = '/api/backup/export';
+    }
+
     
     function setMode(mode) {
       const isApps = mode === 'apps';

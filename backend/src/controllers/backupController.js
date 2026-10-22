@@ -70,3 +70,33 @@ exports.backupDatabase = (req, res, next) => {
     next(err);
   }
 };
+
+
+exports.exportCsv = (req, res, next) => {
+  try {
+    const { db } = require('../database/db');
+    const apps = db.prepare('SELECT * FROM applications ORDER BY id ASC').all();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 10);
+    const filename = `job-applications-${timestamp}.csv`;
+
+    res.attachment(filename);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+
+    const headers = [
+      'id', 'company', 'role', 'stage', 'category', 'date_applied', 'deadline',
+      'country', 'city', 'salary', 'currency', 'portal_url', 'portal_user',
+      'custom_tags', 'notes', 'created_at', 'updated_at'
+    ];
+
+    const esc = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const csvLines = [
+      headers.map(esc).join(','),
+      ...apps.map(a => headers.map(h => esc(a[h])).join(','))
+    ];
+
+    res.send('﻿' + csvLines.join('\r\n'));
+  } catch (err) {
+    next(err);
+  }
+};

@@ -3,6 +3,7 @@ const router = express.Router();
 const backupController = require('../controllers/backupController');
 
 router.get('/export', backupController.exportZip);
+router.get('/csv', backupController.exportCsv);
 router.post('/snapshot', backupController.backupDatabase);
 
 module.exports = router;

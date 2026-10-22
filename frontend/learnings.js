@@ -71,11 +71,14 @@ window.switchViewMode = function(mode) {
   const isApps = mode === 'apps';
   const isLearnings = mode === 'learnings';
   const isCal = mode === 'calendar';
+  const isProfile = mode === 'profile';
 
   // Toggle tab buttons
   const btnApps = document.getElementById('btnModeApps');
   const btnLearnings = document.getElementById('btnModeLearnings');
   const btnCal = document.getElementById('btnModeCalendar');
+  const btnProf = document.getElementById('profileBtn');
+
   if (btnApps) {
     btnApps.classList.toggle('active', isApps);
     btnApps.setAttribute('aria-selected', isApps ? 'true' : 'false');
@@ -88,6 +91,9 @@ window.switchViewMode = function(mode) {
     btnCal.classList.toggle('active', isCal);
     btnCal.setAttribute('aria-selected', isCal ? 'true' : 'false');
   }
+  if (btnProf) {
+    btnProf.classList.toggle('active', isProfile);
+  }
 
   // Toggle View Containers
   const boardEl = document.getElementById('board');
@@ -96,8 +102,19 @@ window.switchViewMode = function(mode) {
   const mobileTabsEl = document.querySelector('.mobile-stage-tabs');
   const searchWrapEl = document.querySelector('.search-wrap');
   const learningsViewEl = document.getElementById('learningsView');
+  const profileViewEl = document.getElementById('profileView');
 
-  if (isCal) {
+  if (isProfile) {
+    if (boardEl) boardEl.style.display = 'none';
+    if (secBarEl) secBarEl.style.display = 'none';
+    if (mobileNavEl) mobileNavEl.style.display = 'none';
+    if (mobileTabsEl) mobileTabsEl.style.display = 'none';
+    if (searchWrapEl) searchWrapEl.style.display = 'none';
+    if (learningsViewEl) learningsViewEl.style.display = 'none';
+    if (profileViewEl) profileViewEl.style.display = 'block';
+    renderProfileView();
+  } else if (isCal) {
+    if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'block';
     if (secBarEl) secBarEl.style.display = 'none';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
@@ -107,6 +124,7 @@ window.switchViewMode = function(mode) {
     if (typeof currentSec !== 'undefined') currentSec = 'Calendar';
     loadLearnings().then(() => { if (typeof render === 'function') render(); });
   } else if (isLearnings) {
+    if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'none';
     if (secBarEl) secBarEl.style.display = 'none';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
@@ -116,6 +134,7 @@ window.switchViewMode = function(mode) {
     loadGamificationStats();
     loadLearnings();
   } else {
+    if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'grid';
     if (secBarEl) secBarEl.style.display = 'flex';
     if (mobileNavEl) mobileNavEl.style.display = '';
@@ -506,3 +525,324 @@ document.addEventListener('DOMContentLoaded', () => {
   // Initial Gamification Load
   setTimeout(loadGamificationStats, 200);
 });
+
+
+/* ===============================================================
+   👤 USER PROFILE & CAREER HUB CONTROLLER
+   =============================================================== */
+
+// Default / cached quick links
+const DEFAULT_QUICK_LINKS = [
+  { id: 'portfolio', icon: '🌐', title: 'Portfolio Website', url: 'https://varunchandra.dev' },
+  { id: 'github', icon: '🐙', title: 'GitHub Profile', url: 'https://github.com/varunchandra10' },
+  { id: 'linkedin', icon: '👔', title: 'LinkedIn Profile', url: 'https://linkedin.com/in/varunchandra' },
+  { id: 'leetcode', icon: '🧠', title: 'LeetCode / DSA', url: 'https://leetcode.com/varun_chandra' },
+  { id: 'resume', icon: '📄', title: 'Google Drive Master Resume', url: 'https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_' },
+  { id: 'email', icon: '✉️', title: 'Contact Email', url: 'varun.chandra@example.com' }
+];
+
+function getQuickLinks() {
+  try {
+    const saved = localStorage.getItem('user_quick_links');
+    if (saved) return JSON.parse(saved);
+  } catch (_) {}
+  return DEFAULT_QUICK_LINKS;
+}
+
+function saveQuickLinks(links) {
+  try {
+    localStorage.setItem('user_quick_links', JSON.stringify(links));
+  } catch (_) {}
+}
+
+window.renderProfileView = function() {
+  const container = document.getElementById('profileView');
+  if (!container) return;
+
+  // 1. Sync User Info & Streak Badge
+  const streak = gamificationData?.currentStreak || 0;
+  const level = gamificationData?.level || 1;
+  const levelTitle = gamificationData?.levelTitle || 'Novice Seeker';
+  const totalXp = gamificationData?.totalXp || 0;
+
+  const profUserRank = document.getElementById('profUserRank');
+  if (profUserRank) profUserRank.textContent = `⭐ Level ${level} ${levelTitle}`;
+
+  const profUserStreak = document.getElementById('profUserStreak');
+  if (profUserStreak) profUserStreak.textContent = `🔥 ${streak}-Day Focus Streak`;
+
+  const profHeatmapStreak = document.getElementById('profHeatmapStreak');
+  if (profHeatmapStreak) profHeatmapStreak.textContent = `${streak} Days 🔥`;
+
+  // 2. Render GitHub-style Commit Heatmap
+  renderProfileHeatmap();
+
+  // 3. Render Quick Links
+  renderProfileQuickLinks();
+
+  // 4. Render Job Applications Stats
+  renderProfileJobStats();
+
+  // 5. Render Learnings Stats
+  renderProfileLearningStats();
+};
+
+function renderProfileHeatmap() {
+  const matrix = document.getElementById('profHeatmapMatrix');
+  if (!matrix) return;
+  matrix.innerHTML = '';
+
+  // Gather real dates from job applications and learnings
+  const activityCounts = {};
+
+  const apps = (typeof S !== 'undefined' && S.apps) ? S.apps : [];
+  apps.forEach(a => {
+    const d = a.date_applied || (a.created_at ? a.created_at.slice(0, 10) : '');
+    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+  });
+
+  learningsList.forEach(l => {
+    const d = (l.date_logged || '').slice(0, 10);
+    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+  });
+
+  // Calculate total contributions
+  let totalContribs = 0;
+  let activeDays = 0;
+  Object.values(activityCounts).forEach(cnt => {
+    totalContribs += cnt;
+    if (cnt > 0) activeDays++;
+  });
+
+  const profTotalActivities = document.getElementById('profTotalActivities');
+  if (profTotalActivities) profTotalActivities.textContent = totalContribs;
+
+  const profHeatmapActiveDays = document.getElementById('profHeatmapActiveDays');
+  if (profHeatmapActiveDays) profHeatmapActiveDays.textContent = `${activeDays} Days`;
+
+  // Generate 52 weeks grid (364 days ending today)
+  const todayDate = new Date();
+
+  for (let w = 51; w >= 0; w--) {
+    const col = document.createElement('div');
+    col.className = 'gh-col-week';
+
+    for (let d = 0; d < 7; d++) {
+      const daysAgo = (w * 7) + (6 - d);
+      const cellDate = new Date(todayDate);
+      cellDate.setDate(todayDate.getDate() - daysAgo);
+
+      const ymd = cellDate.toISOString().slice(0, 10);
+      const count = activityCounts[ymd] || 0;
+
+      let lvl = 0;
+      if (count === 1) lvl = 1;
+      else if (count === 2) lvl = 2;
+      else if (count === 3) lvl = 3;
+      else if (count >= 4) lvl = 4;
+
+      const cell = document.createElement('div');
+      cell.className = `gh-day-cell lvl-${lvl}`;
+      const dateFmt = cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      cell.title = count 
+        ? `${count} activities on ${dateFmt}` 
+        : `No activity on ${dateFmt}`;
+
+      col.appendChild(cell);
+    }
+    matrix.appendChild(col);
+  }
+}
+
+function renderProfileQuickLinks() {
+  const grid = document.getElementById('profQuickLinksGrid');
+  if (!grid) return;
+  const links = getQuickLinks();
+
+  grid.innerHTML = links.map(link => {
+    const isEmail = link.url.includes('@') && !link.url.startsWith('http');
+    const href = isEmail ? `mailto:${link.url}` : link.url;
+    return `
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">${link.icon}</div>
+          <div style="min-width:0;flex:1">
+            <div class="ql-title">${escapeHtml(link.title)}</div>
+            <div class="ql-url-preview" id="prof_url_${link.id}">${escapeHtml(link.url)}</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="ql-btn primary">${isEmail ? 'Send ↗' : 'Open ↗'}</a>
+          <button type="button" class="ql-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy 📋</button>
+          <button type="button" class="ql-btn" onclick="editProfileQuickLink('${link.id}')">Edit ✏️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.copyProfileQuickLink = function(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const oldText = btn.textContent;
+    btn.textContent = 'Copied! ✓';
+    btn.style.color = '#10b981';
+    btn.style.borderColor = '#10b981';
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  }).catch(() => {
+    prompt('Copy link:', text);
+  });
+};
+
+window.editProfileQuickLink = function(linkId) {
+  const links = getQuickLinks();
+  const item = links.find(l => l.id === linkId);
+  if (!item) return;
+
+  const newUrl = prompt(`Update URL for ${item.title}:`, item.url);
+  if (newUrl !== null && newUrl.trim() !== '') {
+    item.url = newUrl.trim();
+    saveQuickLinks(links);
+    renderProfileQuickLinks();
+  }
+};
+
+function renderProfileJobStats() {
+  const apps = (typeof S !== 'undefined' && S.apps) ? S.apps : [];
+  const total = apps.length;
+  const interviewing = apps.filter(a => a.stage === 'Interviewing').length;
+  const offers = apps.filter(a => a.stage === 'Offer').length;
+  const applied = apps.filter(a => a.stage === 'Applied').length;
+  const rejected = apps.filter(a => a.stage === 'Rejected').length;
+
+  const respRate = total > 0 ? (((interviewing + offers) / total) * 100).toFixed(1) : 0;
+
+  const elTotal = document.getElementById('profStatTotalApps');
+  if (elTotal) elTotal.textContent = total;
+  const elBadge = document.getElementById('profTotalAppsBadge');
+  if (elBadge) elBadge.textContent = `${total} TOTAL`;
+
+  const elInt = document.getElementById('profStatInterviewing');
+  if (elInt) elInt.textContent = interviewing;
+  const elOff = document.getElementById('profStatOffers');
+  if (elOff) elOff.textContent = offers;
+  const elRate = document.getElementById('profStatResponseRate');
+  if (elRate) elRate.textContent = `${respRate}%`;
+  const elRej = document.getElementById('profStatRejected');
+  if (elRej) elRej.textContent = rejected;
+
+  // Funnel Bars
+  const funnelWrap = document.getElementById('profJobFunnelWrap');
+  if (funnelWrap) {
+    const pct = val => total > 0 ? Math.round((val / total) * 100) : 0;
+    funnelWrap.innerHTML = `
+      <div style="font-size:11.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:2px">Stage Funnel Breakdown</div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Applied (${applied})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(applied)}%; background: var(--applied-clr, #3b82f6);"></div></div>
+        <span class="funnel-num">${pct(applied)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Interviewing (${interviewing})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(interviewing)}%; background: var(--interview-clr, #f59e0b);"></div></div>
+        <span class="funnel-num">${pct(interviewing)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Offers (${offers})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(offers)}%; background: var(--offer-clr, #10b981);"></div></div>
+        <span class="funnel-num">${pct(offers)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Rejected (${rejected})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(rejected)}%; background: var(--rejected-clr, #ef4444);"></div></div>
+        <span class="funnel-num">${pct(rejected)}%</span>
+      </div>
+    `;
+  }
+
+  // Top Locations
+  const countryCounts = {};
+  apps.forEach(a => {
+    const c = a.country || 'Remote';
+    countryCounts[c] = (countryCounts[c] || 0) + 1;
+  });
+  const topLocs = Object.entries(countryCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([c, n]) => `${c} (${n})`)
+    .join(', ');
+  const elLoc = document.getElementById('profTopLocations');
+  if (elLoc) elLoc.textContent = topLocs || 'Various';
+}
+
+function renderProfileLearningStats() {
+  const streak = gamificationData?.currentStreak || 0;
+  const longest = gamificationData?.longestStreak || 0;
+  const hours = gamificationData?.totalStudyHours || '0.0';
+  const totalXp = gamificationData?.totalXp || 0;
+  const level = gamificationData?.level || 1;
+  const notesCount = learningsList.length;
+
+  const elStreak = document.getElementById('profStatStreak');
+  if (elStreak) elStreak.textContent = streak;
+  const elStreakBadge = document.getElementById('profStreakBadge');
+  if (elStreakBadge) elStreakBadge.textContent = `🔥 ${streak}D STREAK`;
+
+  const elHours = document.getElementById('profStatStudyHours');
+  if (elHours) elHours.textContent = `${hours}h`;
+
+  const elXp = document.getElementById('profStatTotalXp');
+  if (elXp) elXp.textContent = totalXp;
+
+  const elLvl = document.getElementById('profStatLevel');
+  if (elLvl) elLvl.textContent = `Lvl ${level}`;
+
+  const elLong = document.getElementById('profStatLongestStreak');
+  if (elLong) elLong.textContent = `${longest} Days`;
+
+  const elNotes = document.getElementById('profStatNotesCount');
+  if (elNotes) elNotes.textContent = notesCount;
+
+  // Topic Categories Breakdown
+  const catWrap = document.getElementById('profLearningCategoryWrap');
+  if (catWrap) {
+    const catCounts = { 'System Design': 0, 'Algorithms': 0, 'Web Dev': 0, 'Cloud': 0 };
+    learningsList.forEach(l => {
+      const c = l.category || 'General';
+      if (c.includes('System')) catCounts['System Design']++;
+      else if (c.includes('Algo') || c.includes('DSA')) catCounts['Algorithms']++;
+      else if (c.includes('Web')) catCounts['Web Dev']++;
+      else if (c.includes('Cloud') || c.includes('DevOps')) catCounts['Cloud']++;
+    });
+
+    const totalNotes = notesCount || 1;
+    const pct = val => Math.round((val / totalNotes) * 100);
+
+    catWrap.innerHTML = `
+      <div style="font-size:11.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:2px">Topic Category Breakdown</div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">System Design</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(catCounts['System Design'])}%; background: #06b6d4;"></div></div>
+        <span class="funnel-num">${pct(catCounts['System Design'])}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Algorithms / DSA</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(catCounts['Algorithms'])}%; background: #c084fc;"></div></div>
+        <span class="funnel-num">${pct(catCounts['Algorithms'])}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Web Dev</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(catCounts['Web Dev'])}%; background: #10b981;"></div></div>
+        <span class="funnel-num">${pct(catCounts['Web Dev'])}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Cloud & DevOps</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(catCounts['Cloud'])}%; background: #f97316;"></div></div>
+        <span class="funnel-num">${pct(catCounts['Cloud'])}%</span>
+      </div>
+    `;
+  }
+}
