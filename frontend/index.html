@@ -73,21 +73,6 @@
     <div class="profile-avatar-mini">VC</div>
     <span class="profile-dot-online"></span>
   </button>
-  <button class="btn icon-only" id="linksBtn" title="Quick Links & Profiles (GitHub, LinkedIn, Portfolio, ORCID, Scholar)" aria-label="Quick Links">
-    <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-  </button>
-  <button class="btn icon-only" id="statsBtn" title="Stats & Analytics" aria-label="Stats & Analytics">
-    <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
-  </button>
-  <button class="btn icon-only" id="backupZipBtn" title="1-Click Backup: Download complete ZIP (Database + Resumes & Documents)" aria-label="Export Full ZIP Backup">
-    <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-  </button>
-  <button class="btn icon-only" id="expBtn" title="Download / Export visible applications to CSV" aria-label="Download CSV">
-    <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-  </button>
-  <button class="btn primary icon-only" id="addBtn" title="Add Application" aria-label="Add Application">
-    <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
-  </button>
   <button class="btn danger-soft icon-only" id="closeBtn" title="Stop server and exit" aria-label="Stop server and exit">
     <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
   </button>
@@ -234,6 +219,10 @@
     <button class="sec-btn" id="fbtn" title="Filter by Country">All countries &#9662;</button>
     <div class="pop" id="fpop"></div>
   </div>
+  <button type="button" class="btn primary add-app-toolbar-btn" id="secAddAppBtn" onclick="openAddPanel()" style="padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;border-radius:6px;margin-left:8px;">
+    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>+ Add Application</span>
+  </button>
 </nav>
 
 <div class="stage-picker-bar" id="stagePickerBar">
@@ -1637,7 +1626,7 @@ function openAddPanel(defaultStage = null) {
   };
 }
 
-$('#addBtn').onclick = () => openAddPanel();
+if ($('#addBtn')) $('#addBtn').onclick = () => openAddPanel();
 /* ----- Quick Links & Profiles Hub ----- */
 function openQuickLinksPanel() {
   openId = null;
@@ -1804,8 +1793,8 @@ function openQuickLinksPanel() {
   }
 }
 
-$('#linksBtn').onclick = openQuickLinksPanel;
-$('#statsBtn').onclick = openStatsPanel;
+if ($('#linksBtn')) $('#linksBtn').onclick = openQuickLinksPanel;
+if ($('#statsBtn')) $('#statsBtn').onclick = openStatsPanel;
 const shutdownModal = $('#shutdownModal');
 $('#closeBtn').onclick = () => {
   if (shutdownModal) shutdownModal.style.display = 'flex';
@@ -1949,8 +1938,8 @@ function exportCSV() {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
-$('#expBtn').onclick = exportCSV;
-$('#backupZipBtn').onclick = () => {
+if ($('#expBtn')) $('#expBtn').onclick = exportCSV;
+if ($('#backupZipBtn')) $('#backupZipBtn').onclick = () => {
   toast('Preparing full ZIP archive (Database + Documents)...');
   window.location.href = '/api/backup/export';
 };
