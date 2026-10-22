@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mock 1: Obsidian Cyber-Glass | Job Tracker & Learnings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #07090e;
+      --bg-surface: rgba(13, 18, 28, 0.75);
+      --bg-surface-elevated: rgba(22, 30, 46, 0.85);
+      --bg-card: rgba(18, 25, 38, 0.65);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(99, 102, 241, 0.4);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.35);
+      --cyan: #06b6d4;
+      --flame: #f97316;
+      --emerald: #10b981;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(ellipse at 50% -20%, rgba(99, 102, 241, 0.15), transparent 60%),
+        radial-gradient(ellipse at 85% 15%, rgba(6, 182, 212, 0.08), transparent 50%),
+        radial-gradient(ellipse at 15% 45%, rgba(249, 115, 22, 0.05), transparent 45%);
+      color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Top Comparison Switcher Banner */
+    .concept-banner {
+      background: rgba(10, 14, 23, 0.9);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .concept-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      color: var(--cyan);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .concept-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .concept-link {
+      padding: 4px 12px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 11.5px;
+      transition: all 0.2s ease;
+    }
+    .concept-link:hover, .concept-link.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+
+    /* Main Header */
+    header {
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 11, 17, 0.7);
+      backdrop-filter: blur(20px);
+      position: sticky;
+      top: 37px;
+      z-index: 100;
+    }
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 16px rgba(99, 102, 241, 0.4);
+    }
+    .brand-logo svg { width: 20px; height: 20px; stroke: #fff; stroke-width: 2.2; fill: none; }
+    .brand-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    /* Central Mode Switcher: 2 Major Buttons */
+    .mode-switcher {
+      display: flex;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      padding: 4px;
+      border-radius: 9999px;
+      gap: 4px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    }
+    .mode-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 18px;
+      border-radius: 9999px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mode-btn:hover { color: #fff; }
+    .mode-btn.active {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.9), rgba(79, 70, 229, 0.9));
+      color: #fff;
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+    .mode-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      background: rgba(0, 0, 0, 0.3);
+    }
+    .mode-btn.active .mode-badge {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Gamified Streak HUD */
+    .header-hud {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .streak-hud-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(249, 115, 22, 0.1);
+      border: 1px solid rgba(249, 115, 22, 0.35);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 12px rgba(249, 115, 22, 0.15);
+    }
+    .streak-hud-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 0 18px rgba(249, 115, 22, 0.3);
+      border-color: var(--flame);
+    }
+    .flame-icon {
+      font-size: 16px;
+      animation: flamePulse 1.8s infinite alternate ease-in-out;
+    }
+    .streak-hud-text {
+      font-family: 'Outfit', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fb923c;
+    }
+    .xp-hud-tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      color: #fff;
+    }
+
+    @keyframes flamePulse {
+      0% { transform: scale(1) rotate(-3deg); filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.6)); }
+      100% { transform: scale(1.15) rotate(3deg); filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)); }
+    }
+
+    /* Container Views */
+    .view-content {
+      padding: 24px 32px;
+      max-width: 1540px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+    }
+
+    /* =========================================
+       VIEW 1: KANBAN BOARD (Obsidian Glass)
+       ========================================= */
+    .kanban-view { display: block; }
+    .kanban-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+    }
+    .pill {
+      padding: 6px 14px;
+      border-radius: 9999px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .pill.active {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      border-color: rgba(255,255,255,0.25);
+    }
+    .kanban-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-cyber {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 16px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px var(--accent-glow);
+      transition: all 0.2s ease;
+    }
+    .btn-cyber:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    /* Board Columns */
+    .board-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    @media (max-width: 1100px) {
+      .board-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 650px) {
+      .board-grid { grid-template-columns: 1fr; }
+    }
+
+    .column {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(16px);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .column-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 6px;
+    }
+    .column-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .stage-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .dot-applied { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+    .dot-interview { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+    .dot-offer { background: var(--emerald); box-shadow: 0 0 8px var(--emerald); }
+    .dot-rejected { background: var(--rose); box-shadow: 0 0 8px var(--rose); }
+
+    .column-count {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-dim);
+      background: rgba(255,255,255,0.05);
+      padding: 2px 7px;
+      border-radius: 9999px;
+    }
+
+    /* Cards */
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .app-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      cursor: grab;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .app-card:hover {
+      transform: translateY(-3px) scale(1.01);
+      border-color: var(--border-hover);
+      box-shadow: 0 10px 24px -5px rgba(0,0,0,0.6), 0 0 16px rgba(99,102,241,0.15);
+      background: var(--bg-surface-elevated);
+    }
+    .app-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .company-group {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+    .company-avatar {
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .company-name {
+      font-family: 'Outfit', sans-serif;
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .app-date {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+    .role-title {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+    .card-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .tag-cyber {
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      color: var(--text-muted);
+    }
+    .tag-cyber.location { color: var(--cyan); border-color: rgba(6, 182, 212, 0.25); background: rgba(6, 182, 212, 0.08); }
+    .tag-cyber.drive { color: var(--emerald); border-color: rgba(16, 185, 129, 0.25); background: rgba(16, 185, 129, 0.08); }
+
+    /* =========================================
+       VIEW 2: DAILY LEARNINGS & GAMIFICATION
+       ========================================= */
+    .learnings-view { display: none; }
+    .hero-gamify-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    @media (max-width: 900px) {
+      .hero-gamify-grid { grid-template-columns: 1fr; }
+    }
+
+    .hero-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #6366f1, #06b6d4, #f97316);
+    }
+
+    /* Streak Hero Widget */
+    .streak-hero-wrap {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+    .flame-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(239, 68, 68, 0.25));
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      box-shadow: 0 0 24px rgba(249, 115, 22, 0.3);
+    }
+    .streak-big-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 38px;
+      font-weight: 800;
+      color: #fb923c;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .streak-big-lbl {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .streak-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .stat-mini-lbl { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 600; }
+    .stat-mini-val { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #fff; margin-top: 2px; }
+
+    /* XP Level Gauge Widget */
+    .level-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .level-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .level-num {
+      padding: 3px 8px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #6366f1, #06b6d4);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .xp-points-big {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    .xp-track {
+      height: 10px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .xp-fill {
+      height: 100%;
+      width: 73%;
+      background: linear-gradient(90deg, #6366f1, #06b6d4, #10b981);
+      border-radius: 9999px;
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.5);
+    }
+    .xp-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    /* 7-Day Punchcard */
+    .punchcard-track {
+      display: flex;
+      justify-content: space-between;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .punch-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    .punch-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-dim);
+    }
+    .punch-dot.active {
+      background: linear-gradient(135deg, #10b981, #059669);
+      border-color: #10b981;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+    .punch-dot.today {
+      border-color: var(--flame);
+      outline: 2px solid rgba(249, 115, 22, 0.4);
+    }
+    .punch-lbl { font-size: 10.5px; color: var(--text-dim); font-weight: 600; }
+
+    /* Learnings Feed */
+    .learnings-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .learnings-timeline-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 600px) {
+      .learnings-timeline-grid { grid-template-columns: 1fr; }
+    }
+
+    .learning-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      backdrop-filter: blur(16px);
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .learning-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .learning-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .badge-cat {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 9999px;
+      letter-spacing: 0.4px;
+    }
+    .badge-system { background: rgba(6, 182, 212, 0.12); color: #22d3ee; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .badge-algo { background: rgba(168, 85, 247, 0.12); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
+    .badge-cloud { background: rgba(249, 115, 22, 0.12); color: #fb923c; border: 1px solid rgba(249, 115, 22, 0.3); }
+
+    .time-badge {
+      font-size: 11.5px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .learning-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .learning-notes {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .learning-notes code {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--cyan);
+      background: rgba(6, 182, 212, 0.1);
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    .learning-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .learning-res-btn {
+      color: var(--cyan);
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Showcase Navigation -->
+  <aside class="concept-banner">
+    <div class="concept-tag">
+      <span>⚡ Design Concept 1</span>
+      <span style="color:var(--text-dim)">—</span>
+      <span style="color:#fff">Obsidian Cyber-Glass (Linear / Raycast Dark Aesthetic)</span>
+    </div>
+    <div class="concept-nav">
+      <span style="color:var(--text-dim);margin-right:4px;">Switch Mock:</span>
+      <a href="mock1_obsidian.html" class="concept-link active">1. Obsidian</a>
+      <a href="mock2_nordic.html" class="concept-link">2. Nordic Minimal</a>
+      <a href="mock3_bento.html" class="concept-link">3. Bento Synth</a>
+      <a href="mock_preview_hub.html" class="concept-link" style="background:var(--flame);color:#fff;border-color:var(--flame)">Compare All 3</a>
+    </div>
+  </aside>
+
+  <!-- Application Header -->
+  <header>
+    <div class="brand-wrap">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div class="brand-name">CareerOS</div>
+        <div style="font-size:11px;color:var(--text-dim);letter-spacing:0.3px;">TRACKER &amp; MASTERY</div>
+      </div>
+    </div>
+
+    <!-- The 2 Main Requested Buttons -->
+    <nav class="mode-switcher" role="tablist">
+      <button type="button" class="mode-btn active" id="btnApps" onclick="setMode('apps')">
+        <span>💼</span>
+        <span>Job Applications</span>
+        <span class="mode-badge">15</span>
+      </button>
+      <button type="button" class="mode-btn" id="btnLearnings" onclick="setMode('learnings')">
+        <span>🧠</span>
+        <span>Daily Learnings</span>
+        <span class="mode-badge" style="background:rgba(249,115,22,0.3);color:#fb923c">🔥 2d</span>
+      </button>
+    </nav>
+
+    <!-- Gamified Score Streak HUD -->
+    <div class="header-hud">
+      <div class="streak-hud-pill" onclick="setMode('learnings')" title="View Gamified Streak & Mastery">
+        <span class="flame-icon">🔥</span>
+        <span class="streak-hud-text">2 Day Streak</span>
+        <span class="xp-hud-tag">Lvl 4 · 2,150 XP</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- VIEW 1: KANBAN BOARD -->
+  <main class="view-content kanban-view" id="viewApps">
+    <div class="kanban-toolbar">
+      <div class="filter-pills">
+        <button class="pill active">All Categories (15)</button>
+        <button class="pill">Tech Industry (11)</button>
+        <button class="pill">Quant &amp; Finance (3)</button>
+        <button class="pill">Research Labs (1)</button>
+      </div>
+      <div class="kanban-actions">
+        <button class="btn-cyber" onclick="alert('Mock demo: In full implementation, opens Add Application modal')">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Application
+        </button>
+      </div>
+    </div>
+
+    <div class="board-grid">
+      <!-- Column: Applied -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="stage-dot dot-applied"></span>
+            <span>Applied</span>
+          </div>
+          <span class="column-count">3</span>
+        </div>
+        <div class="card-list">
+          <div class="app-card">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#4285F4">G</div>
+                <div class="company-name">Google</div>
+              </div>
+              <span class="app-date">Sep 18</span>
+            </div>
+            <div class="role-title">Software Engineer Intern · Mountain View</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 Mountain View, US</span>
+              <span class="tag-cyber drive">☁️ Drive CV Linked</span>
+            </div>
+          </div>
+
+          <div class="app-card">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#6366F1">S</div>
+                <div class="company-name">Stripe</div>
+              </div>
+              <span class="app-date">Sep 02</span>
+            </div>
+            <div class="role-title">Backend Infrastructure Intern · San Francisco</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 San Francisco, US</span>
+              <span class="tag-cyber">Referral</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column: Interviewing -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="stage-dot dot-interview"></span>
+            <span>Interviewing</span>
+          </div>
+          <span class="column-count">2</span>
+        </div>
+        <div class="card-list">
+          <div class="app-card">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#10B981">J</div>
+                <div class="company-name">Jane Street</div>
+              </div>
+              <span class="app-date">Sep 10</span>
+            </div>
+            <div class="role-title">Quantitative Trading Intern · London Office</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 London, GB</span>
+              <span class="tag-cyber" style="color:var(--amber);border-color:rgba(245,158,11,0.3)">Round 2 Tech</span>
+            </div>
+          </div>
+
+          <div class="app-card">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#06B6D4">G</div>
+                <div class="company-name">Grab</div>
+              </div>
+              <span class="app-date">Aug 29</span>
+            </div>
+            <div class="role-title">Data Science &amp; ML Intern · Singapore</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 Singapore, SG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column: Offer -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="stage-dot dot-offer"></span>
+            <span>Offer Received</span>
+          </div>
+          <span class="column-count">1</span>
+        </div>
+        <div class="card-list">
+          <div class="app-card" style="border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.06)">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#059669">S</div>
+                <div class="company-name">SAP</div>
+              </div>
+              <span class="app-date" style="color:var(--emerald);font-weight:700;">OFFER 🎉</span>
+            </div>
+            <div class="role-title">Software Engineering Intern · Walldorf HQ</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 Walldorf, DE</span>
+              <span class="tag-cyber drive">☁️ Cloud Contract</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Column: Rejected -->
+      <div class="column">
+        <div class="column-header">
+          <div class="column-title">
+            <span class="stage-dot dot-rejected"></span>
+            <span>Archive</span>
+          </div>
+          <span class="column-count">1</span>
+        </div>
+        <div class="card-list">
+          <div class="app-card" style="opacity:0.7">
+            <div class="app-card-top">
+              <div class="company-group">
+                <div class="company-avatar" style="background:#334155">C</div>
+                <div class="company-name">Citadel</div>
+              </div>
+              <span class="app-date">Jul 30</span>
+            </div>
+            <div class="role-title">Quant Research Intern · Chicago</div>
+            <div class="card-tags">
+              <span class="tag-cyber location">📍 Chicago, US</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- VIEW 2: DAILY LEARNINGS & GAMIFICATION -->
+  <main class="view-content learnings-view" id="viewLearnings">
+    <!-- Hero Gamification Grid -->
+    <div class="hero-gamify-grid">
+      <!-- Streak Card -->
+      <div class="hero-card">
+        <div class="streak-hero-wrap">
+          <div class="flame-avatar">🔥</div>
+          <div>
+            <div class="streak-big-num">2 Days</div>
+            <div class="streak-big-lbl">Active Daily Focus Streak</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <span style="display:inline-block;padding:4px 10px;border-radius:9999px;background:rgba(16,185,129,0.15);color:var(--emerald);border:1px solid rgba(16,185,129,0.3);font-size:11.5px;font-weight:700">✓ Today Logged</span>
+          </div>
+        </div>
+        <div class="streak-stats-row">
+          <div>
+            <div class="stat-mini-lbl">All-Time Best</div>
+            <div class="stat-mini-val">3 Days</div>
+          </div>
+          <div>
+            <div class="stat-mini-lbl">Total Time</div>
+            <div class="stat-mini-val">2.8 Hours</div>
+          </div>
+          <div>
+            <div class="stat-mini-lbl">Mastered Notes</div>
+            <div class="stat-mini-val">3 Topics</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- XP & Level Gauge -->
+      <div class="hero-card">
+        <div class="level-header-row">
+          <div class="level-pill-badge">
+            <span class="level-num">LEVEL 4</span>
+            <span>Knowledge Hunter</span>
+          </div>
+          <span class="xp-points-big">2,150 XP</span>
+        </div>
+        <div class="xp-track">
+          <div class="xp-fill"></div>
+        </div>
+        <div class="xp-labels">
+          <span>1,400 XP</span>
+          <span style="color:#fff;font-weight:700">73% to Level 5: Consistent Master</span>
+          <span>2,300 XP</span>
+        </div>
+
+        <!-- 7-Day Consistency Punchcard -->
+        <div class="punchcard-track">
+          <div class="punch-node">
+            <div class="punch-dot active">✓</div>
+            <span class="punch-lbl">Fri</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot active">✓</div>
+            <span class="punch-lbl">Sat</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot">·</div>
+            <span class="punch-lbl">Sun</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot">·</div>
+            <span class="punch-lbl">Mon</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot">·</div>
+            <span class="punch-lbl">Tue</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot active">✓</div>
+            <span class="punch-lbl">Wed</span>
+          </div>
+          <div class="punch-node">
+            <div class="punch-dot active today">✓</div>
+            <span class="punch-lbl" style="color:var(--flame)">Today</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learnings Toolbar -->
+    <div class="learnings-header-bar">
+      <div class="filter-pills">
+        <button class="pill active">All Topics</button>
+        <button class="pill">System Design</button>
+        <button class="pill">Algorithms / DSA</button>
+        <button class="pill">Cloud &amp; Distributed</button>
+      </div>
+      <button class="btn-cyber" style="background:linear-gradient(135deg,#f97316,#ea580c)" onclick="alert('Mock demo: Launches Log Daily Learning Modal with +50 XP bonus')">
+        <span>🔥 + Log Today's Learning</span>
+      </button>
+    </div>
+
+    <!-- Timeline Grid -->
+    <div class="learnings-timeline-grid">
+      <!-- Note 1 -->
+      <article class="learning-card">
+        <div class="learning-meta">
+          <span class="badge-cat badge-system">System Design</span>
+          <span class="time-badge">⏱️ 60 MINS · TODAY</span>
+        </div>
+        <div class="learning-title">Kafka Consumer Lag &amp; Cooperative Sticky Partition Rebalancing</div>
+        <div class="learning-notes">
+          Compared <code>Eager Rebalancing</code> (stop-the-world reassign) vs <code>CooperativeStickyAssignor</code>. Cooperative rebalances incrementally without halting active consumers, eliminating throughput spikes.
+        </div>
+        <div class="learning-footer">
+          <a href="#" class="learning-res-btn">🔗 Apache Kafka Protocol Docs</a>
+          <span style="font-size:11px;color:var(--text-dim)">+70 XP Awarded</span>
+        </div>
+      </article>
+
+      <!-- Note 2 -->
+      <article class="learning-card">
+        <div class="learning-meta">
+          <span class="badge-cat badge-algo">Algorithms / DSA</span>
+          <span class="time-badge">⏱️ 45 MINS · TODAY</span>
+        </div>
+        <div class="learning-title">Sliding Window &amp; Two-Pointer Optimal Substring Mastery</div>
+        <div class="learning-notes">
+          Solved Minimum Window Substring using frequency map and dynamic left-right contraction. Maintained linear time <code>O(N)</code> with <code>O(1)</code> auxiliary alphabet memory.
+        </div>
+        <div class="learning-footer">
+          <a href="#" class="learning-res-btn">🔗 LeetCode Problem #76</a>
+          <span style="font-size:11px;color:var(--text-dim)">+50 XP Awarded</span>
+        </div>
+      </article>
+
+      <!-- Note 3 -->
+      <article class="learning-card">
+        <div class="learning-meta">
+          <span class="badge-cat badge-cloud">Distributed Caching</span>
+          <span class="time-badge">⏱️ 60 MINS · YESTERDAY</span>
+        </div>
+        <div class="learning-title">Redis Eviction Strategies &amp; Cache Stampede Mitigation</div>
+        <div class="learning-notes">
+          Studied LRU vs LFU in memory-constrained clusters. Mitigated thundering herd cache stampede using probabilistic early recomputation (XFetch algorithm).
+        </div>
+        <div class="learning-footer">
+          <a href="#" class="learning-res-btn">🔗 Redis Architecture Guide</a>
+          <span style="font-size:11px;color:var(--text-dim)">+70 XP Awarded</span>
+        </div>
+      </article>
+    </div>
+  </main>
+
+  <script>
+    function setMode(mode) {
+      const isApps = mode === 'apps';
+      document.getElementById('btnApps').classList.toggle('active', isApps);
+      document.getElementById('btnLearnings').classList.toggle('active', !isApps);
+      document.getElementById('viewApps').style.display = isApps ? 'block' : 'none';
+      document.getElementById('viewLearnings').style.display = isApps ? 'none' : 'block';
+    }
+  </script>
+</body>
+</html>
