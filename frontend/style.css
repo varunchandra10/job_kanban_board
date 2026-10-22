@@ -4356,3 +4356,23 @@ body.dark-mode .gh-day-cell {
 body.dark-mode .gamify-hud-pill.streak-pill-compact .hud-streak-count {
   color: #fb923c;
 }
+
+/* Standalone Page Scrollable Support (Profile / Full-Page Views) */
+body.page-scrollable {
+  height: auto !important;
+  min-height: 100vh !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+body.page-scrollable header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+body.page-scrollable .profile-view-container {
+  display: flex !important;
+  min-height: calc(100vh - 56px);
+  padding: 24px 32px 64px;
+}

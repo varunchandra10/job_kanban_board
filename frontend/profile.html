@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Varun Chandra - User Profile & Career Hub | Job Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Profile Page Specific Refinements */
+    body.page-scrollable {
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      background: var(--bg);
+    }
+    .profile-nav-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--tx2);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: var(--r-sm);
+      background: var(--surface);
+      border: 1px solid var(--bd2);
+      transition: all 0.15s ease;
+      margin-bottom: -10px;
+      align-self: flex-start;
+    }
+    .profile-nav-back:hover {
+      background: var(--bg2);
+      color: var(--tx);
+      border-color: var(--bd3);
+      transform: translateX(-2px);
+    }
+    .ql-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px dashed var(--bd3);
+      color: var(--tx2);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .ql-add-btn:hover {
+      background: var(--bg2);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+    /* Link Modal */
+    .link-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .link-modal-box {
+      background: var(--surface);
+      border: 1px solid var(--bd2);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 440px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+    }
+    .link-modal-box h3 { margin: 0 0 16px; font-size: 16px; font-weight: 700; color: var(--tx); }
+    .link-field { margin-bottom: 14px; }
+    .link-field label { display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 5px; }
+    .link-field input { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--bd2); background: var(--bg); color: var(--tx); font-size: 13px; }
+    .link-field input:focus { outline: none; border-color: var(--accent); }
+    .link-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  </style>
+</head>
+<body class="page-scrollable">
+
+<!-- Top Header Navigation -->
+<header>
+  <!-- Logo -->
+  <a href="index.html" class="h-logo" title="Back to Kanban Board">
+    <div class="h-logo-icon">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 3v18M15 3v18"/></svg>
+    </div>
+    <span class="h-title">Job Tracker</span>
+  </a>
+
+  <!-- Top View Switcher Pills -->
+  <div class="h-mode-switcher" role="tablist">
+    <a href="index.html" class="h-mode-btn" role="tab" id="btnModeApps">
+      <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+      <span>Job Applications</span>
+      <span class="h-mode-badge" id="appModeBadge">0</span>
+    </a>
+    <a href="index.html?view=learnings" class="h-mode-btn" role="tab" id="btnModeLearnings">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <span>Learnings</span>
+      <span class="h-mode-badge learning-badge" id="learningsModeBadge">0d</span>
+    </a>
+  </div>
+
+  <span style="flex:1"></span>
+
+  <!-- Right Side Controls -->
+  <div class="gamify-hud-pill streak-pill-compact" id="gamifyHudPill" title="Daily Learning Streak">
+    <span class="hud-flame-icon"><svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2.2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
+    <span class="hud-streak-count" id="hudStreakCount">0</span>
+  </div>
+
+  <button class="btn icon-only" id="themeToggleBtn" title="Toggle Dark / Light Theme" aria-label="Toggle Theme">
+    <svg class="sun-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    <svg class="moon-icon" viewBox="0 0 24 24" style="display:none;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+
+  <a href="profile.html" class="btn icon-only profile-header-btn active" id="profileBtn" title="User Profile, GitHub Heatmap & Quick Links" aria-label="User Profile">
+    <div class="profile-avatar-mini">VC</div>
+    <span class="profile-dot-online"></span>
+  </a>
+
+  <button class="btn danger-soft icon-only" id="closeBtn" title="Stop server and exit" aria-label="Stop server and exit">
+    <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
+  </button>
+</header>
+
+<!-- Main Scrollable Profile View -->
+<main class="profile-view-container" id="profileView">
+
+  <a href="index.html" class="profile-nav-back">
+    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.2" fill="none"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+    <span>Back to Board</span>
+  </a>
+
+  <!-- Profile Hero Card -->
+  <section class="profile-hero-card">
+    <div class="profile-identity">
+      <div class="profile-avatar-lg">VC</div>
+      <div class="profile-name-wrap">
+        <h2>
+          <span id="profUserName">Varun Chandra</span>
+          <span class="profile-pill-badge pill-active-applying">
+            <svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" stroke="#10b981" stroke-width="2" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
+            Actively Applying
+          </span>
+        </h2>
+        <div class="profile-title-sub">
+          <span id="profUserTitle">Software Engineer • Full Stack &amp; Distributed Systems</span>
+          <span>•</span>
+          <span class="profile-pill-badge pill-rank" id="profUserRank">
+            <svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="#f59e0b" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            Level 1 Novice Seeker
+          </span>
+          <span>•</span>
+          <span style="color:#f97316;font-weight:700" id="profUserStreak">
+            <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            0-Day Focus Streak
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Action Buttons: Export CSV & Download Database as ZIP -->
+    <div class="profile-actions-top">
+      <button type="button" class="btn-action-glow btn-export-csv" id="profExportCsvBtn" onclick="exportProfileCSV()" title="Export all Job Applications to CSV">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        <span>Export as CSV</span>
+      </button>
+      <button type="button" class="btn-action-glow btn-download-zip" id="profDownloadZipBtn" onclick="window.location.href='/api/backup/export'" title="Download Full SQLite Database (.db) & Attached Resumes as ZIP">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        <span>Download Database as ZIP</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- GitHub Commit Styled Heatmap (Daily Activity & Momentum) -->
+  <section class="gh-heatmap-card">
+    <div class="gh-header">
+      <div class="gh-title-group">
+        <h3>
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--applied-clr)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Daily Activity &amp; Momentum (GitHub Commit Style)</span>
+        </h3>
+        <div class="gh-subtitle"><span id="profTotalActivities">0</span> contributions in the past year • Combined Job Applications submitted and Daily Learnings logged</div>
+      </div>
+      <div class="gh-stats-summary">
+        <div>Current Streak: <span class="gh-stat-highlight" id="profHeatmapStreak">0 Days <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span></div>
+        <div>Active Days: <span class="gh-stat-highlight" id="profHeatmapActiveDays">0 Days</span></div>
+      </div>
+    </div>
+
+    <div class="gh-calendar-scroll">
+      <div class="gh-calendar-wrapper">
+        <!-- Month Labels -->
+        <div class="gh-months-row">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
+          <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+        </div>
+
+        <div class="gh-grid-body">
+          <!-- Day of Week Legend -->
+          <div class="gh-days-legend">
+            <span>Mon</span>
+            <span>Wed</span>
+            <span>Fri</span>
+          </div>
+
+          <!-- 52-Week Contribution Matrix -->
+          <div class="gh-matrix-weeks" id="profHeatmapMatrix">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Heatmap Legend -->
+        <div class="gh-footer-legend">
+          <span>Less</span>
+          <div class="gh-legend-cells">
+            <span class="gh-day-cell lvl-0"></span>
+            <span class="gh-day-cell lvl-1"></span>
+            <span class="gh-day-cell lvl-2"></span>
+            <span class="gh-day-cell lvl-3"></span>
+            <span class="gh-day-cell lvl-4"></span>
+          </div>
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Links Hub -->
+  <div>
+    <div class="section-title-wrap" style="display:flex;align-items:center;justify-content:space-between;">
+      <div>
+        <h3>
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--accent)" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>Quick Links &amp; Profiles</span>
+        </h3>
+        <span style="font-size:12px;color:var(--tx3)">Click to Open ↗ or 1-Click Copy for job applications</span>
+      </div>
+      <button type="button" class="ql-add-btn" onclick="openAddLinkModal()">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add Link</span>
+      </button>
+    </div>
+
+    <div class="quick-links-grid" id="profQuickLinksGrid" style="margin-top:14px;">
+      <!-- Populated dynamically -->
+    </div>
+  </div>
+
+  <!-- Stats 2-Column: Job Applications Stats (Left) & Learnings Stats (Right) -->
+  <div class="profile-stats-grid">
+    <!-- Stats for Job Applications -->
+    <div class="stats-panel-card">
+      <div class="stats-panel-header">
+        <div class="stats-panel-title">
+          <span><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+          <span>Job Applications Stats &amp; Pipeline</span>
+        </div>
+        <span class="stats-badge-tag" id="profTotalAppsBadge">0 TOTAL</span>
+      </div>
+
+      <div class="stats-metrics-row">
+        <div class="metric-box">
+          <div class="metric-val" id="profStatTotalApps" style="color:var(--accent)">0</div>
+          <div class="metric-lbl">Total Applied</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatInterviewing" style="color:var(--interview-clr)">0</div>
+          <div class="metric-lbl">Interviewing</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatOffers" style="color:var(--applied-clr)">0</div>
+          <div class="metric-lbl">Offers</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatResponseRate" style="color:var(--cyan, #06b6d4)">0%</div>
+          <div class="metric-lbl">Response Rate</div>
+        </div>
+      </div>
+
+      <div class="funnel-bar-wrap" id="profJobFunnelWrap">
+        <!-- Populated by JS -->
+      </div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--tx2)">
+        <span>Top Locations: <strong id="profTopLocations">-</strong></span>
+        <span>Archived/Rejected: <strong id="profStatRejected">0</strong></span>
+      </div>
+    </div>
+
+    <!-- Stats for Learnings -->
+    <div class="stats-panel-card">
+      <div class="stats-panel-header">
+        <div class="stats-panel-title">
+          <span><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
+          <span>Daily Learnings &amp; Mastery Stats</span>
+        </div>
+        <span class="stats-badge-tag" id="profStreakBadge" style="color:#f97316;background:rgba(249,115,22,0.12)">
+          <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          0D STREAK
+        </span>
+      </div>
+
+      <div class="stats-metrics-row">
+        <div class="metric-box">
+          <div class="metric-val" id="profStatStreak" style="color:#f97316">0</div>
+          <div class="metric-lbl">Active Streak</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatStudyHours">0.0h</div>
+          <div class="metric-lbl">Study Time</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatTotalXp" style="color:var(--cyan, #06b6d4)">0</div>
+          <div class="metric-lbl">Total XP</div>
+        </div>
+        <div class="metric-box">
+          <div class="metric-val" id="profStatLevel" style="color:var(--applied-clr)">Lvl 1</div>
+          <div class="metric-lbl">Current Rank</div>
+        </div>
+      </div>
+
+      <div class="xp-progress-bar-wrap">
+        <div class="xp-progress-header">
+          <span>Rank Progress to Next Level</span>
+          <span id="profStatXpProgress">0 / 200 XP</span>
+        </div>
+        <div class="xp-progress-track">
+          <div class="xp-progress-fill" id="profStatXpFill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--tx2)">
+        <span>Total Logs: <strong id="profStatTotalLogs">0 Topics</strong></span>
+        <span>Mastery Ratio: <strong id="profStatMastery">100% Active</strong></span>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Add / Edit Quick Link Modal -->
+<div id="linkModal" class="link-modal-overlay" style="display:none;">
+  <div class="link-modal-box">
+    <h3 id="linkModalTitle">Add Quick Link</h3>
+    <input type="hidden" id="linkIdInput">
+    <div class="link-field">
+      <label for="linkTitleInput">Title</label>
+      <input type="text" id="linkTitleInput" placeholder="e.g. Portfolio, GitHub, LeetCode">
+    </div>
+    <div class="link-field">
+      <label for="linkUrlInput">URL / Email</label>
+      <input type="text" id="linkUrlInput" placeholder="https://... or user@example.com">
+    </div>
+    <div class="link-modal-actions">
+      <button type="button" class="btn" onclick="closeLinkModal()">Cancel</button>
+      <button type="button" class="btn primary" onclick="saveLinkModal()">Save Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- Shutdown Modal -->
+<div id="shutdownModal" class="confirm-modal-overlay" style="display:none;">
+  <div class="confirm-modal-box">
+    <div class="confirm-modal-icon">
+      <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
+    </div>
+    <h3>Stop Server & Close?</h3>
+    <p>This will stop the background Node.js server on port 3000. You can restart anytime with <code>start.bat</code>.</p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn" id="cancelShutdownBtn" onclick="document.getElementById('shutdownModal').style.display='none'">Cancel</button>
+      <button type="button" class="btn danger" id="confirmShutdownBtn">Stop Server</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===============================================================
+   User Profile Page Engine & Data Sync
+   =============================================================== */
+let appsList = [];
+let learningsList = [];
+let gamifyStats = null;
+
+const DEFAULT_QUICK_LINKS = [
+  { id: 'portfolio', title: 'Portfolio Website', url: 'https://varunchandra.dev', icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' },
+  { id: 'github', title: 'GitHub Profile', url: 'https://github.com/varunchandra10', icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>' },
+  { id: 'linkedin', title: 'LinkedIn', url: 'https://linkedin.com/in/varunchandra', icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>' },
+  { id: 'email', title: 'Contact Email', url: 'varunchandra10@gmail.com', icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>' },
+  { id: 'resume', title: 'Resume Drive Link', url: 'https://drive.google.com/file/d/your-resume', icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>' }
+];
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/* Theme Initialization */
+function initTheme() {
+  const saved = localStorage.getItem('tracker_theme');
+  const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = saved || (prefersDark ? 'dark' : 'light');
+  setTheme(theme);
+}
+
+function setTheme(theme) {
+  document.body.classList.toggle('dark-mode', theme === 'dark');
+  localStorage.setItem('tracker_theme', theme);
+  const sun = document.querySelector('#themeToggleBtn .sun-icon');
+  const moon = document.querySelector('#themeToggleBtn .moon-icon');
+  if (sun && moon) {
+    sun.style.display = theme === 'dark' ? 'none' : 'block';
+    moon.style.display = theme === 'dark' ? 'block' : 'none';
+  }
+}
+
+document.getElementById('themeToggleBtn').onclick = () => {
+  const isDark = document.body.classList.contains('dark-mode');
+  setTheme(isDark ? 'light' : 'dark');
+};
+
+/* Data Fetching */
+async function loadAllProfileData() {
+  try {
+    const [resApps, resLearnings, resStats] = await Promise.all([
+      fetch('/api/applications').then(r => r.json()).catch(() => []),
+      fetch('/api/learnings').then(r => r.json()).catch(() => []),
+      fetch('/api/learnings/stats').then(r => r.json()).catch(() => ({}))
+    ]);
+
+    appsList = Array.isArray(resApps) ? resApps : [];
+    learningsList = Array.isArray(resLearnings) ? resLearnings : [];
+    gamifyStats = resStats || {};
+
+    // Update Header Badges
+    const appBadge = document.getElementById('appModeBadge');
+    if (appBadge) appBadge.textContent = appsList.length;
+
+    const streakVal = gamifyStats.currentStreak || 0;
+    const hudCount = document.getElementById('hudStreakCount');
+    if (hudCount) hudCount.textContent = streakVal;
+
+    const learnBadge = document.getElementById('learningsModeBadge');
+    if (learnBadge) learnBadge.textContent = streakVal + 'd';
+
+    renderAllViews();
+  } catch (e) {
+    console.error('Failed to load profile data:', e);
+  }
+}
+
+function renderAllViews() {
+  renderProfileHero();
+  renderProfileHeatmap();
+  renderQuickLinks();
+  renderJobStats();
+  renderLearningStats();
+}
+
+/* 1. Hero Card */
+function renderProfileHero() {
+  const streak = gamifyStats?.currentStreak || 0;
+  const level = gamifyStats?.level || 1;
+  const levelTitle = gamifyStats?.levelTitle || 'Novice Seeker';
+
+  const profUserRank = document.getElementById('profUserRank');
+  if (profUserRank) {
+    profUserRank.innerHTML = `<svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="#f59e0b" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Level ${level} ${levelTitle}`;
+  }
+
+  const profUserStreak = document.getElementById('profUserStreak');
+  if (profUserStreak) {
+    profUserStreak.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}-Day Focus Streak`;
+  }
+
+  const profHeatmapStreak = document.getElementById('profHeatmapStreak');
+  if (profHeatmapStreak) {
+    profHeatmapStreak.innerHTML = `${streak} Days <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`;
+  }
+}
+
+/* 2. GitHub Heatmap (52-week activity) */
+function renderProfileHeatmap() {
+  const matrix = document.getElementById('profHeatmapMatrix');
+  if (!matrix) return;
+  matrix.innerHTML = '';
+
+  const activityCounts = {};
+
+  appsList.forEach(a => {
+    const d = a.date_applied || (a.created_at ? a.created_at.slice(0, 10) : '');
+    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+  });
+
+  learningsList.forEach(l => {
+    const d = (l.date_logged || '').slice(0, 10);
+    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+  });
+
+  let totalContribs = 0;
+  let activeDays = 0;
+  Object.values(activityCounts).forEach(cnt => {
+    totalContribs += cnt;
+    if (cnt > 0) activeDays++;
+  });
+
+  const profTotalActivities = document.getElementById('profTotalActivities');
+  if (profTotalActivities) profTotalActivities.textContent = totalContribs;
+
+  const profHeatmapActiveDays = document.getElementById('profHeatmapActiveDays');
+  if (profHeatmapActiveDays) profHeatmapActiveDays.textContent = `${activeDays} Days`;
+
+  const today = new Date();
+
+  for (let w = 51; w >= 0; w--) {
+    const col = document.createElement('div');
+    col.className = 'gh-col-week';
+
+    for (let d = 0; d < 7; d++) {
+      const daysAgo = (w * 7) + (6 - d);
+      const cellDate = new Date(today);
+      cellDate.setDate(today.getDate() - daysAgo);
+
+      const ymd = cellDate.toISOString().slice(0, 10);
+      const count = activityCounts[ymd] || 0;
+
+      let lvl = 0;
+      if (count === 1) lvl = 1;
+      else if (count === 2) lvl = 2;
+      else if (count === 3) lvl = 3;
+      else if (count >= 4) lvl = 4;
+
+      const cell = document.createElement('div');
+      cell.className = `gh-day-cell lvl-${lvl}`;
+      const dateFmt = cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      cell.title = count ? `${count} activities on ${dateFmt}` : `No activity on ${dateFmt}`;
+
+      col.appendChild(cell);
+    }
+    matrix.appendChild(col);
+  }
+}
+
+/* 3. Quick Links */
+function getQuickLinks() {
+  try {
+    const saved = localStorage.getItem('user_quick_links');
+    if (saved) return JSON.parse(saved);
+  } catch (e) {}
+  return DEFAULT_QUICK_LINKS;
+}
+
+function saveQuickLinks(links) {
+  try {
+    localStorage.setItem('user_quick_links', JSON.stringify(links));
+  } catch (e) {}
+}
+
+function renderQuickLinks() {
+  const grid = document.getElementById('profQuickLinksGrid');
+  if (!grid) return;
+  const links = getQuickLinks();
+
+  grid.innerHTML = links.map(link => {
+    const isEmail = link.url.includes('@') && !link.url.startsWith('http');
+    const href = isEmail ? `mailto:${link.url}` : link.url;
+    return `
+      <div class="quick-link-card">
+        <div class="ql-head">
+          <div class="ql-icon">${link.icon || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'}</div>
+          <div style="min-width:0;flex:1">
+            <div class="ql-title">${escapeHtml(link.title)}</div>
+            <div class="ql-url-preview">${escapeHtml(link.url)}</div>
+          </div>
+        </div>
+        <div class="ql-actions">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="ql-btn primary">${isEmail ? 'Send ↗' : 'Open ↗'}</a>
+          <button type="button" class="ql-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy</button>
+          <button type="button" class="ql-btn" onclick="openEditLinkModal('${link.id}')">Edit</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.copyProfileQuickLink = function(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const oldText = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.style.color = '#10b981';
+    btn.style.borderColor = '#10b981';
+    setTimeout(() => {
+      btn.textContent = oldText;
+      btn.style.color = '';
+      btn.style.borderColor = '';
+    }, 2000);
+  }).catch(() => {
+    prompt('Copy link:', text);
+  });
+};
+
+/* Link Modal Management */
+window.openAddLinkModal = function() {
+  document.getElementById('linkModalTitle').textContent = 'Add Quick Link';
+  document.getElementById('linkIdInput').value = '';
+  document.getElementById('linkTitleInput').value = '';
+  document.getElementById('linkUrlInput').value = '';
+  document.getElementById('linkModal').style.display = 'flex';
+  document.getElementById('linkTitleInput').focus();
+};
+
+window.openEditLinkModal = function(id) {
+  const links = getQuickLinks();
+  const link = links.find(l => l.id === id);
+  if (!link) return;
+
+  document.getElementById('linkModalTitle').textContent = 'Edit Quick Link';
+  document.getElementById('linkIdInput').value = link.id;
+  document.getElementById('linkTitleInput').value = link.title;
+  document.getElementById('linkUrlInput').value = link.url;
+  document.getElementById('linkModal').style.display = 'flex';
+  document.getElementById('linkUrlInput').focus();
+};
+
+window.closeLinkModal = function() {
+  document.getElementById('linkModal').style.display = 'none';
+};
+
+window.saveLinkModal = function() {
+  const id = document.getElementById('linkIdInput').value;
+  const title = document.getElementById('linkTitleInput').value.trim();
+  const url = document.getElementById('linkUrlInput').value.trim();
+
+  if (!title || !url) {
+    alert('Please enter both title and URL/email.');
+    return;
+  }
+
+  const links = getQuickLinks();
+  if (id) {
+    const existing = links.find(l => l.id === id);
+    if (existing) {
+      existing.title = title;
+      existing.url = url;
+    }
+  } else {
+    links.push({
+      id: 'custom_' + Date.now(),
+      title,
+      url,
+      icon: '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+    });
+  }
+
+  saveQuickLinks(links);
+  renderQuickLinks();
+  closeLinkModal();
+};
+
+/* 4. Job Applications Stats */
+function renderJobStats() {
+  const total = appsList.length;
+  const interviewing = appsList.filter(a => a.stage === 'Interviewing').length;
+  const offers = appsList.filter(a => a.stage === 'Offer').length;
+  const applied = appsList.filter(a => a.stage === 'Applied').length;
+  const rejected = appsList.filter(a => a.stage === 'Rejected').length;
+
+  const respRate = total > 0 ? (((interviewing + offers) / total) * 100).toFixed(1) : 0;
+
+  const elTotal = document.getElementById('profStatTotalApps');
+  if (elTotal) elTotal.textContent = total;
+  const elBadge = document.getElementById('profTotalAppsBadge');
+  if (elBadge) elBadge.textContent = `${total} TOTAL`;
+
+  const elInt = document.getElementById('profStatInterviewing');
+  if (elInt) elInt.textContent = interviewing;
+  const elOff = document.getElementById('profStatOffers');
+  if (elOff) elOff.textContent = offers;
+  const elRate = document.getElementById('profStatResponseRate');
+  if (elRate) elRate.textContent = `${respRate}%`;
+  const elRej = document.getElementById('profStatRejected');
+  if (elRej) elRej.textContent = rejected;
+
+  // Funnel Bars
+  const funnelWrap = document.getElementById('profJobFunnelWrap');
+  if (funnelWrap) {
+    const pct = val => total > 0 ? Math.round((val / total) * 100) : 0;
+    funnelWrap.innerHTML = `
+      <div style="font-size:11.5px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:2px">Stage Funnel Breakdown</div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Applied (${applied})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(applied)}%; background: var(--applied-clr, #3b82f6);"></div></div>
+        <span class="funnel-num">${pct(applied)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Interviewing (${interviewing})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(interviewing)}%; background: var(--interview-clr, #f59e0b);"></div></div>
+        <span class="funnel-num">${pct(interviewing)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Offers (${offers})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(offers)}%; background: var(--offer-clr, #10b981);"></div></div>
+        <span class="funnel-num">${pct(offers)}%</span>
+      </div>
+      <div class="funnel-row">
+        <span class="funnel-lbl">Rejected (${rejected})</span>
+        <div class="funnel-track"><div class="funnel-fill" style="width: ${pct(rejected)}%; background: var(--rejected-clr, #ef4444);"></div></div>
+        <span class="funnel-num">${pct(rejected)}%</span>
+      </div>
+    `;
+  }
+
+  // Top Locations
+  const countryCounts = {};
+  appsList.forEach(a => {
+    const c = a.country || 'Remote';
+    countryCounts[c] = (countryCounts[c] || 0) + 1;
+  });
+
+  const sortedCountries = Object.entries(countryCounts)
+    .sort((a,b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([c, n]) => `${c} (${n})`)
+    .join(', ');
+
+  const elLoc = document.getElementById('profTopLocations');
+  if (elLoc) elLoc.textContent = sortedCountries || 'Remote';
+}
+
+/* 5. Learnings & Mastery Stats */
+function renderLearningStats() {
+  const streak = gamifyStats?.currentStreak || 0;
+  const totalMinutes = gamifyStats?.totalMinutes || 0;
+  const hours = (totalMinutes / 60).toFixed(1);
+  const totalXp = gamifyStats?.totalXp || 0;
+  const level = gamifyStats?.level || 1;
+  const levelTitle = gamifyStats?.levelTitle || 'Novice';
+  const xpIntoLevel = gamifyStats?.xpIntoLevel || 0;
+  const xpForNextLevel = gamifyStats?.xpForNextLevel || 200;
+
+  const elStreak = document.getElementById('profStatStreak');
+  if (elStreak) elStreak.textContent = streak;
+
+  const elBadge = document.getElementById('profStreakBadge');
+  if (elBadge) {
+    elBadge.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}D STREAK`;
+  }
+
+  const elHours = document.getElementById('profStatStudyHours');
+  if (elHours) elHours.textContent = `${hours}h`;
+
+  const elXp = document.getElementById('profStatTotalXp');
+  if (elXp) elXp.textContent = totalXp;
+
+  const elLevel = document.getElementById('profStatLevel');
+  if (elLevel) elLevel.textContent = `Lvl ${level}`;
+
+  const elXpProg = document.getElementById('profStatXpProgress');
+  if (elXpProg) elXpProg.textContent = `${xpIntoLevel} / ${xpForNextLevel} XP`;
+
+  const elXpFill = document.getElementById('profStatXpFill');
+  if (elXpFill) {
+    const pct = Math.min(100, Math.round((xpIntoLevel / xpForNextLevel) * 100));
+    elXpFill.style.width = `${pct}%`;
+  }
+
+  const elLogs = document.getElementById('profStatTotalLogs');
+  if (elLogs) elLogs.textContent = `${learningsList.length} Topics`;
+}
+
+/* 6. Export CSV Handler */
+window.exportProfileCSV = function() {
+  if (!appsList.length) {
+    alert('No applications found to export.');
+    return;
+  }
+  const headers = ['Company','Role','Country','City','Stage','Date Applied','Deadline','Salary','Currency','Category','Resume','Cover Letter','Custom Tags','Portal URL','Portal User','Recruiter Name','Recruiter Email','Recruiter Notes'];
+  const escCSV = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
+  const rows = appsList.map(a => [
+    a.company,
+    a.role,
+    a.country,
+    a.city,
+    a.stage,
+    a.date_applied,
+    a.deadline,
+    a.salary,
+    a.currency,
+    a.category || 'Industry',
+    a.resume_name,
+    a.cover_letter_name,
+    a.custom_tags,
+    a.portal_url,
+    a.portal_username,
+    a.recruiter_name,
+    a.recruiter_email,
+    a.recruiter_notes
+  ].map(escCSV).join(','));
+
+  const csvContent = [headers.map(escCSV).join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `job_applications_export_${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+/* 7. Shutdown Server Handler */
+document.getElementById('closeBtn').onclick = () => {
+  document.getElementById('shutdownModal').style.display = 'flex';
+};
+
+document.getElementById('confirmShutdownBtn').onclick = async () => {
+  try {
+    await fetch('/api/shutdown', { method: 'POST' });
+  } catch (e) {}
+  document.body.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);color:var(--tx);font-family:sans-serif;text-align:center;padding:20px;">
+      <div style="font-size:48px;margin-bottom:16px;">⏻</div>
+      <h2>Server Stopped</h2>
+      <p style="color:var(--tx2);margin-top:8px;">Job Tracker has stopped. You may now close this browser tab.</p>
+    </div>
+  `;
+  try { window.close(); } catch (e) {}
+};
+
+// Bootstrap
+initTheme();
+loadAllProfileData();
+</script>
+
+</body>
+</html>
