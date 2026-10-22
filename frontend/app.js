@@ -740,20 +740,18 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
 
     return `
       <div class="doc-slot-container" id="${prefix}_slot">
-        <div class="doc-slot-header">
-          <label>${iconSvg} ${label}</label>
-        </div>
         <div class="doc-card-box">
           <div class="doc-type-icon-badge ${badgeCls}">
             ${badgeIcon}
             <span>${badgeTxt}</span>
           </div>
           <div class="doc-card-details">
-            <div class="doc-card-filename" title="${esc(fn)}">${esc(fn)}</div>
-            <div class="doc-card-meta">
-              <span class="doc-status-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Uploaded</span>
-              <span class="doc-path-snippet" title="${esc(p)}">${esc(p)}</span>
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+              <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx2);letter-spacing:0.4px;">${label}</span>
+              <span class="doc-status-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Attached</span>
             </div>
+            <div class="doc-card-filename" title="${esc(fn)}">${esc(fn)}</div>
+            <div class="doc-path-snippet" title="${esc(p)}">${esc(p)}</div>
           </div>
           <div class="doc-card-actions">
             ${appId ? `<button type="button" class="btn sm" id="${prefix}_btn_prev" title="Preview document in viewer">${ICON.eye} Preview</button>` : ''}
@@ -769,17 +767,22 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
   } else {
     return `
       <div class="doc-slot-container" id="${prefix}_slot">
-        <div class="doc-slot-header">
-          <label>${iconSvg} ${label}</label>
-        </div>
-        <div class="doc-dropzone-box" id="${prefix}_dropzone">
-          <div class="doc-dropzone-icon-circle">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" fill="none" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-            </svg>
+        <div class="doc-modern-slot" id="${prefix}_dropzone">
+          <div class="doc-modern-slot-left">
+            <div class="doc-modern-icon-badge ${type}">
+              ${iconSvg}
+            </div>
+            <div class="doc-modern-text">
+              <div class="doc-modern-label">${label}</div>
+              <div class="doc-modern-sub">Drop PDF, Word (.docx) or <span class="doc-link-text">browse files</span></div>
+            </div>
           </div>
-          <div class="doc-dropzone-title">Upload ${label}</div>
-          <div class="doc-dropzone-sub">Drop PDF, Word (.docx) or <span>click to browse</span></div>
+          <div class="doc-modern-action">
+            <span class="doc-browse-btn">
+              <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <span>Upload</span>
+            </span>
+          </div>
           <input type="file" id="${prefix}_file_inp" accept=".pdf,.docx,.doc,.txt" style="display:none">
           <input type="hidden" ${appId ? `data-k="${key}"` : ''} id="${prefix}_hidden_path" value="">
         </div>

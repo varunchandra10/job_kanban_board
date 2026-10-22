@@ -5775,3 +5775,160 @@ body.dark-mode .learning-form-card,
   border-top: 1px solid var(--bd);
   margin-top: 4px;
 }
+
+
+/* ===============================================================
+   MODERN APPLICATION DOCUMENTS UPLOAD SLOTS
+   =============================================================== */
+.doc-slots-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 9px !important;
+}
+
+.doc-slot-header {
+  display: none !important;
+}
+
+.doc-modern-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px dashed var(--bd2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+body.dark-mode .doc-modern-slot,
+[data-theme="dark"] .doc-modern-slot {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.doc-modern-slot:hover,
+.doc-modern-slot.dragover {
+  border-color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.1);
+}
+body.dark-mode .doc-modern-slot:hover,
+body.dark-mode .doc-modern-slot.dragover,
+[data-theme="dark"] .doc-modern-slot:hover,
+[data-theme="dark"] .doc-modern-slot.dragover {
+  background: rgba(37, 99, 235, 0.12) !important;
+  border-color: var(--accent) !important;
+}
+
+.doc-modern-slot-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.doc-modern-icon-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.doc-modern-slot:hover .doc-modern-icon-badge {
+  transform: scale(1.05);
+}
+.doc-modern-icon-badge.resume {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #dc2626;
+}
+body.dark-mode .doc-modern-icon-badge.resume,
+[data-theme="dark"] .doc-modern-icon-badge.resume {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.doc-modern-icon-badge.cover {
+  background: rgba(37, 99, 235, 0.1);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  color: #2563eb;
+}
+body.dark-mode .doc-modern-icon-badge.cover,
+[data-theme="dark"] .doc-modern-icon-badge.cover {
+  background: rgba(37, 99, 235, 0.18);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: #60a5fa;
+}
+.doc-modern-icon-badge svg,
+.doc-modern-icon-badge .icon {
+  width: 18px !important;
+  height: 18px !important;
+  stroke: currentColor !important;
+  fill: none !important;
+}
+
+.doc-modern-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.doc-modern-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+  letter-spacing: -0.1px;
+}
+.doc-modern-sub {
+  font-size: 11px;
+  color: var(--tx3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-link-text {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.doc-modern-action {
+  flex-shrink: 0;
+}
+.doc-browse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--bd2);
+  color: var(--tx2);
+  transition: all 0.15s ease;
+}
+.doc-modern-slot:hover .doc-browse-btn {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.doc-card-box {
+  background: var(--surface);
+  border: 1px solid var(--bd2);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+body.dark-mode .doc-card-box,
+[data-theme="dark"] .doc-card-box {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.14);
+}
