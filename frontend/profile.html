@@ -176,79 +176,115 @@
     </div>
   </section>
 
-  <!-- GitHub Commit Styled Heatmap (Daily Activity & Momentum) -->
-  <section class="gh-heatmap-card">
-    <div class="gh-header">
-      <div class="gh-title-group">
-        <h3>
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--applied-clr)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span>Daily Activity &amp; Momentum (GitHub Commit Style)</span>
-        </h3>
-        <div class="gh-subtitle"><span id="profTotalActivities">0</span> contributions in the past year • Combined Job Applications submitted and Daily Learnings logged</div>
+  <!-- 2-Card Row: Left = Quick Links & Profiles | Right = Last 2 Months Activity & Momentum -->
+  <div class="profile-two-col-grid">
+    <!-- Left Card: Quick Links -->
+    <section class="profile-card-panel profile-links-card">
+      <div class="profile-card-header">
+        <div class="profile-card-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--accent)" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>Quick Links &amp; Profiles</span>
+        </div>
+        <button type="button" class="ql-add-btn" onclick="openAddLinkModal()">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span>Add Link</span>
+        </button>
       </div>
-      <div class="gh-stats-summary">
-        <div>Current Streak: <span class="gh-stat-highlight" id="profHeatmapStreak">0 Days <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span></div>
-        <div>Active Days: <span class="gh-stat-highlight" id="profHeatmapActiveDays">0 Days</span></div>
-      </div>
-    </div>
 
-    <div class="gh-calendar-scroll">
-      <div class="gh-calendar-wrapper">
-        <!-- Month Labels -->
-        <div class="gh-months-row">
-          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span>
-          <span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+      <div class="links-list-container" id="profQuickLinksList">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- Right Card: 2-Month Activity Matrix with Month & Year Change Controls -->
+    <section class="profile-card-panel profile-momentum-card">
+      <div class="profile-card-header">
+        <div>
+          <div class="profile-card-title">
+            <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--applied-clr)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>Activity &amp; Momentum (2 Months)</span>
+          </div>
+          <div class="momentum-subtitle">
+            <span id="profPeriodContribs">0</span> activities in <strong id="profPeriodLabel">Sep – Oct 2026</strong>
+          </div>
         </div>
 
-        <div class="gh-grid-body">
-          <!-- Day of Week Legend -->
-          <div class="gh-days-legend">
+        <!-- Month & Year Controls -->
+        <div class="momentum-controls">
+          <button type="button" class="momentum-btn" onclick="stepTwoMonths(-1)" title="Previous 2 Months">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          
+          <select id="momentumMonthSelect" class="momentum-select" onchange="onMomentumDateChange()">
+            <option value="0">Jan</option>
+            <option value="1">Feb</option>
+            <option value="2">Mar</option>
+            <option value="3">Apr</option>
+            <option value="4">May</option>
+            <option value="5">Jun</option>
+            <option value="6">Jul</option>
+            <option value="7">Aug</option>
+            <option value="8">Sep</option>
+            <option value="9">Oct</option>
+            <option value="10">Nov</option>
+            <option value="11">Dec</option>
+          </select>
+
+          <select id="momentumYearSelect" class="momentum-select" onchange="onMomentumDateChange()">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+          </select>
+
+          <button type="button" class="momentum-btn" onclick="stepTwoMonths(1)" title="Next 2 Months">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          
+          <button type="button" class="momentum-btn text-btn" onclick="resetToCurrentTwoMonths()" title="Jump to Current Month">
+            Today
+          </button>
+        </div>
+      </div>
+
+      <!-- Matrix Container -->
+      <div class="momentum-matrix-wrap">
+        <!-- Month Header Labels -->
+        <div class="momentum-month-labels" id="momentumMonthLabels"></div>
+
+        <div class="momentum-grid-body">
+          <!-- Weekday Labels -->
+          <div class="momentum-days-legend">
             <span>Mon</span>
             <span>Wed</span>
             <span>Fri</span>
           </div>
 
-          <!-- 52-Week Contribution Matrix -->
-          <div class="gh-matrix-weeks" id="profHeatmapMatrix">
+          <!-- 2-Month Columns Matrix -->
+          <div class="momentum-weeks-row" id="profHeatmapMatrix">
             <!-- Dynamically populated -->
           </div>
         </div>
+      </div>
 
-        <!-- Heatmap Legend -->
-        <div class="gh-footer-legend">
+      <!-- Footer Legend & Stats -->
+      <div class="momentum-footer">
+        <div class="momentum-footer-stat">
+          <span>Active Days:</span>
+          <strong id="profHeatmapActiveDays">0 Days</strong>
+        </div>
+
+        <div class="momentum-legend">
           <span>Less</span>
-          <div class="gh-legend-cells">
-            <span class="gh-day-cell lvl-0"></span>
-            <span class="gh-day-cell lvl-1"></span>
-            <span class="gh-day-cell lvl-2"></span>
-            <span class="gh-day-cell lvl-3"></span>
-            <span class="gh-day-cell lvl-4"></span>
-          </div>
+          <span class="momentum-day-cell lvl-0"></span>
+          <span class="momentum-day-cell lvl-1"></span>
+          <span class="momentum-day-cell lvl-2"></span>
+          <span class="momentum-day-cell lvl-3"></span>
+          <span class="momentum-day-cell lvl-4"></span>
           <span>More</span>
         </div>
       </div>
-    </div>
-  </section>
-
-  <!-- Quick Links Hub -->
-  <div>
-    <div class="section-title-wrap" style="display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <h3>
-          <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--accent)" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          <span>Quick Links &amp; Profiles</span>
-        </h3>
-        <span style="font-size:12px;color:var(--tx3)">Click to Open ↗ or 1-Click Copy for job applications</span>
-      </div>
-      <button type="button" class="ql-add-btn" onclick="openAddLinkModal()">
-        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        <span>Add Link</span>
-      </button>
-    </div>
-
-    <div class="quick-links-grid" id="profQuickLinksGrid" style="margin-top:14px;">
-      <!-- Populated dynamically -->
-    </div>
+    </section>
   </div>
 
   <!-- Stats 2-Column: Job Applications Stats (Left) & Learnings Stats (Right) -->
@@ -489,15 +525,67 @@ function renderProfileHero() {
   }
 }
 
-/* 2. GitHub Heatmap (52-week activity) */
+/* 2. 2-Month Activity & Momentum Matrix with Month/Year Switcher */
+let momentumEndMonth = new Date().getMonth(); // 0-11
+let momentumYear = new Date().getFullYear();
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+window.stepTwoMonths = function(step) {
+  momentumEndMonth += step;
+  while (momentumEndMonth < 0) {
+    momentumEndMonth += 12;
+    momentumYear -= 1;
+  }
+  while (momentumEndMonth > 11) {
+    momentumEndMonth -= 12;
+    momentumYear += 1;
+  }
+  syncMomentumControls();
+  renderProfileHeatmap();
+};
+
+window.onMomentumDateChange = function() {
+  const mSel = document.getElementById('momentumMonthSelect');
+  const ySel = document.getElementById('momentumYearSelect');
+  if (mSel) momentumEndMonth = parseInt(mSel.value, 10);
+  if (ySel) momentumYear = parseInt(ySel.value, 10);
+  renderProfileHeatmap();
+};
+
+window.resetToCurrentTwoMonths = function() {
+  const now = new Date();
+  momentumEndMonth = now.getMonth();
+  momentumYear = now.getFullYear();
+  syncMomentumControls();
+  renderProfileHeatmap();
+};
+
+function syncMomentumControls() {
+  const mSel = document.getElementById('momentumMonthSelect');
+  const ySel = document.getElementById('momentumYearSelect');
+  if (mSel) mSel.value = momentumEndMonth;
+  if (ySel) {
+    if (![...ySel.options].some(o => o.value == momentumYear)) {
+      const opt = document.createElement('option');
+      opt.value = momentumYear;
+      opt.textContent = momentumYear;
+      ySel.appendChild(opt);
+    }
+    ySel.value = momentumYear;
+  }
+}
+
 function renderProfileHeatmap() {
+  syncMomentumControls();
   const matrix = document.getElementById('profHeatmapMatrix');
   if (!matrix) return;
   matrix.innerHTML = '';
 
+  // Aggregate daily counts across Apps & Learnings
   const activityCounts = {};
 
-  // Aggregate Applications
   appsList.forEach(a => {
     const raw = a.date_applied || a.created_at || '';
     const d = raw.slice(0, 10);
@@ -506,7 +594,6 @@ function renderProfileHeatmap() {
     }
   });
 
-  // Aggregate Learnings
   learningsList.forEach(l => {
     const raw = l.date_logged || l.created_at || '';
     const d = raw.slice(0, 10);
@@ -515,20 +602,49 @@ function renderProfileHeatmap() {
     }
   });
 
-  let totalContribs = 0;
-  let activeDays = 0;
-  Object.values(activityCounts).forEach(cnt => {
-    totalContribs += cnt;
-    if (cnt > 0) activeDays++;
-  });
+  // Calculate the 2-month window:
+  // Month 1: previous month
+  // Month 2: momentumEndMonth
+  const m2 = momentumEndMonth;
+  const y2 = momentumYear;
+  const m1 = m2 === 0 ? 11 : m2 - 1;
+  const y1 = m2 === 0 ? y2 - 1 : y2;
 
-  const profTotalActivities = document.getElementById('profTotalActivities');
-  if (profTotalActivities) profTotalActivities.textContent = totalContribs;
+  // Start Date: 1st day of Month 1
+  const firstDayM1 = new Date(y1, m1, 1);
+  // End Date: Last day of Month 2
+  const lastDayM2 = new Date(y2, m2 + 1, 0);
 
-  const profHeatmapActiveDays = document.getElementById('profHeatmapActiveDays');
-  if (profHeatmapActiveDays) profHeatmapActiveDays.textContent = `${activeDays} Days`;
+  // Update Period Label
+  const periodLabel = document.getElementById('profPeriodLabel');
+  if (periodLabel) {
+    if (y1 === y2) {
+      periodLabel.textContent = `${MONTH_NAMES[m1]} – ${MONTH_NAMES[m2]} ${y2}`;
+    } else {
+      periodLabel.textContent = `${MONTH_NAMES[m1]} ${y1} – ${MONTH_NAMES[m2]} ${y2}`;
+    }
+  }
 
-  // Local date helper YYYY-MM-DD
+  // Update Month Header Labels
+  const labelsEl = document.getElementById('momentumMonthLabels');
+  if (labelsEl) {
+    labelsEl.innerHTML = `<span>${MONTH_FULL[m1]} ${y1}</span><span>${MONTH_FULL[m2]} ${y2}</span>`;
+  }
+
+  // Align grid to week boundaries:
+  // Start on Monday (day index 1, where Sun=0)
+  const gridStart = new Date(firstDayM1);
+  const startDay = gridStart.getDay(); // 0 is Sun, 1 is Mon
+  const diffToMon = startDay === 0 ? 6 : startDay - 1;
+  gridStart.setDate(gridStart.getDate() - diffToMon);
+
+  // End on Sunday
+  const gridEnd = new Date(lastDayM2);
+  const endDay = gridEnd.getDay();
+  const diffToSun = endDay === 0 ? 0 : 7 - endDay;
+  gridEnd.setDate(gridEnd.getDate() + diffToSun);
+
+  // Local YYYY-MM-DD
   const toYMD = d => {
     const yr = d.getFullYear();
     const mo = String(d.getMonth() + 1).padStart(2, '0');
@@ -536,21 +652,25 @@ function renderProfileHeatmap() {
     return `${yr}-${mo}-${da}`;
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  let periodContribs = 0;
+  let activeDays = 0;
 
-  // Generate 52 weeks ending today
-  for (let w = 51; w >= 0; w--) {
+  // Build weeks
+  const curr = new Date(gridStart);
+  while (curr <= gridEnd) {
     const col = document.createElement('div');
-    col.className = 'gh-col-week';
+    col.className = 'momentum-col-week';
 
-    for (let d = 0; d < 7; d++) {
-      const daysAgo = (w * 7) + (6 - d);
-      const cellDate = new Date(today);
-      cellDate.setDate(today.getDate() - daysAgo);
+    for (let i = 0; i < 7; i++) {
+      const ymd = toYMD(curr);
+      const cellDate = new Date(curr);
+      const isWithinPeriod = cellDate >= firstDayM1 && cellDate <= lastDayM2;
 
-      const ymd = toYMD(cellDate);
-      const count = activityCounts[ymd] || 0;
+      const count = isWithinPeriod ? (activityCounts[ymd] || 0) : 0;
+      if (isWithinPeriod && count > 0) {
+        periodContribs += count;
+        activeDays++;
+      }
 
       let lvl = 0;
       if (count === 1) lvl = 1;
@@ -559,17 +679,30 @@ function renderProfileHeatmap() {
       else if (count >= 4) lvl = 4;
 
       const cell = document.createElement('div');
-      cell.className = `gh-day-cell lvl-${lvl}`;
+      cell.className = `momentum-day-cell lvl-${lvl}`;
+      if (!isWithinPeriod) {
+        cell.style.opacity = '0.2';
+      }
+
       const dateFmt = cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      cell.title = count ? `${count} activities on ${dateFmt}` : `No activity on ${dateFmt}`;
+      cell.title = count 
+        ? `${count} activities on ${dateFmt}` 
+        : (isWithinPeriod ? `No activity on ${dateFmt}` : `${dateFmt}`);
 
       col.appendChild(cell);
+      curr.setDate(curr.getDate() + 1);
     }
     matrix.appendChild(col);
   }
+
+  const periodContribsEl = document.getElementById('profPeriodContribs');
+  if (periodContribsEl) periodContribsEl.textContent = periodContribs;
+
+  const activeDaysEl = document.getElementById('profHeatmapActiveDays');
+  if (activeDaysEl) activeDaysEl.textContent = `${activeDays} Days`;
 }
 
-/* 3. Quick Links */
+/* 3. Quick Links List */
 function getQuickLinks() {
   try {
     const saved = localStorage.getItem('user_quick_links');
@@ -585,26 +718,24 @@ function saveQuickLinks(links) {
 }
 
 function renderQuickLinks() {
-  const grid = document.getElementById('profQuickLinksGrid');
-  if (!grid) return;
+  const container = document.getElementById('profQuickLinksList');
+  if (!container) return;
   const links = getQuickLinks();
 
-  grid.innerHTML = links.map(link => {
+  container.innerHTML = links.map(link => {
     const isEmail = link.url.includes('@') && !link.url.startsWith('http');
     const href = isEmail ? `mailto:${link.url}` : link.url;
     return `
-      <div class="quick-link-card">
-        <div class="ql-head">
-          <div class="ql-icon">${link.icon || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'}</div>
-          <div style="min-width:0;flex:1">
-            <div class="ql-title">${escapeHtml(link.title)}</div>
-            <div class="ql-url-preview">${escapeHtml(link.url)}</div>
-          </div>
+      <div class="link-item-row">
+        <div class="link-item-icon">${link.icon || '<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'}</div>
+        <div class="link-item-details">
+          <div class="link-item-title">${escapeHtml(link.title)}</div>
+          <div class="link-item-url">${escapeHtml(link.url)}</div>
         </div>
-        <div class="ql-actions">
-          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="ql-btn primary">${isEmail ? 'Send ↗' : 'Open ↗'}</a>
-          <button type="button" class="ql-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy</button>
-          <button type="button" class="ql-btn" onclick="openEditLinkModal('${link.id}')">Edit</button>
+        <div class="link-item-actions">
+          <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="link-action-btn primary">${isEmail ? 'Send ↗' : 'Open ↗'}</a>
+          <button type="button" class="link-action-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy</button>
+          <button type="button" class="link-action-btn" onclick="openEditLinkModal('${link.id}')">Edit</button>
         </div>
       </div>
     `;
@@ -684,6 +815,7 @@ window.saveLinkModal = function() {
   renderQuickLinks();
   closeLinkModal();
 };
+
 
 /* 4. Job Applications Stats */
 function renderJobStats() {
