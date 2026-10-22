@@ -911,57 +911,114 @@ function openAddPanel(defaultStage = null) {
   const roles = [...new Set([...(S?.roles || []), ...(S?.apps || []).map(a => a.role).filter(Boolean)])].sort();
 
   const formHtml = `
-    <h4>New Application</h4>
-    <label class="f">Section / Category</label>
-    <div class="sec-pills" id="af_secs">
-      <label class="sec-pill ${initialCat === 'Industry' ? 'active' : ''}" data-c="Industry"><input type="radio" name="af_cat" value="Industry" ${initialCat === 'Industry' ? 'checked' : ''}>${ICON.briefcase} Industry</label>
-      <label class="sec-pill ${initialCat === 'Government' ? 'active' : ''}" data-c="Government"><input type="radio" name="af_cat" value="Government" ${initialCat === 'Government' ? 'checked' : ''}>${ICON.landmark} Government</label>
-      <label class="sec-pill ${initialCat === 'Research' ? 'active' : ''}" data-c="Research"><input type="radio" name="af_cat" value="Research" ${initialCat === 'Research' ? 'checked' : ''}>${ICON.beaker} Research</label>
-    </div>
-
-    <label class="f">Company / Institution <span style="color:var(--rejected-clr)">*</span></label>
-    <div><input type="text" id="afc" placeholder="Search or type a company name" autocomplete="off" required></div>
-
-    <label class="f">Role</label>
-    <div>
-      <input type="text" id="afr" placeholder="e.g. Software Engineer, Data Scientist" list="af_roleList" autocomplete="off">
-      <datalist id="af_roleList">
-        ${roles.filter(x => x !== '__new').map(x => `<option value="${esc(x)}">`).join('')}
-      </datalist>
-    </div>
-
-    <div class="row">
-      <div>
-        <label class="f">Stage</label>
-        <select id="af_stage">
-          ${STAGES.map(s => `<option value="${s}" ${s === initialStage ? 'selected' : ''}>${s}</option>`).join('')}
-        </select>
+    <!-- Track Selection Card -->
+    <div class="panel-section-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">${ICON.briefcase} Target Category</span>
+        <span class="panel-card-subtitle">Choose track</span>
       </div>
-      <div>
-        <label class="f">Date applied</label>
-        <input type="date" id="afd" value="${today()}">
-      </div>
-    </div>
-
-    <div class="row">
-      <div>
-        <label class="f">Country</label>
-        <div><input type="text" id="afk" placeholder="Search countries" autocomplete="off"></div>
-      </div>
-      <div>
-        <label class="f">City / Location</label>
-        <input type="text" id="afcity" placeholder="e.g. London, Remote">
+      <div class="add-app-category-grid" id="af_secs">
+        <label class="sec-pill ${initialCat === 'Industry' ? 'active' : ''}" data-c="Industry">
+          <input type="radio" name="af_cat" value="Industry" ${initialCat === 'Industry' ? 'checked' : ''}>
+          <span class="cat-pill-icon">${ICON.briefcase}</span>
+          <span class="cat-pill-text">
+            <strong>Industry</strong>
+            <small>Corporate & Tech</small>
+          </span>
+        </label>
+        <label class="sec-pill ${initialCat === 'Government' ? 'active' : ''}" data-c="Government">
+          <input type="radio" name="af_cat" value="Government" ${initialCat === 'Government' ? 'checked' : ''}>
+          <span class="cat-pill-icon">${ICON.landmark}</span>
+          <span class="cat-pill-text">
+            <strong>Government</strong>
+            <small>Public Sector</small>
+          </span>
+        </label>
+        <label class="sec-pill ${initialCat === 'Research' ? 'active' : ''}" data-c="Research">
+          <input type="radio" name="af_cat" value="Research" ${initialCat === 'Research' ? 'checked' : ''}>
+          <span class="cat-pill-icon">${ICON.beaker}</span>
+          <span class="cat-pill-text">
+            <strong>Research</strong>
+            <small>Labs & Academia</small>
+          </span>
+        </label>
       </div>
     </div>
 
-    <label class="f">Deadline (optional)</label>
-    <input type="date" id="af_deadline">
-
-    <div style="margin-top:14px">
-      ${renderDocSlotHtml('resume', 'Resume', ICON.filePdf, '', null)}
-      ${renderDocSlotHtml('cover', 'Cover Letter', ICON.fileWord, '', null)}
+    <!-- Company & Role Card -->
+    <div class="panel-section-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">${ICON.document} Organization & Role</span>
+        <span class="panel-card-badge required-badge">Required</span>
+      </div>
+      <div class="panel-field-group">
+        <label class="f" for="afc">Company / Institution <span style="color:var(--rejected-clr)">*</span></label>
+        <div><input type="text" id="afc" placeholder="e.g. Google, ISRO, Microsoft, IISc" autocomplete="off" required></div>
+      </div>
+      <div class="panel-field-group">
+        <label class="f" for="afr">Role / Designation</label>
+        <div>
+          <input type="text" id="afr" placeholder="e.g. Senior Software Engineer, Data Scientist" list="af_roleList" autocomplete="off">
+          <datalist id="af_roleList">
+            ${roles.filter(x => x !== '__new').map(x => `<option value="${esc(x)}">`).join('')}
+          </datalist>
+        </div>
+      </div>
     </div>
 
+    <!-- Stage & Timeline Card -->
+    <div class="panel-section-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">${ICON.clock} Stage & Timeline</span>
+      </div>
+      <div class="row">
+        <div>
+          <label class="f" for="af_stage">Pipeline Stage</label>
+          <select id="af_stage">
+            ${STAGES.map(s => `<option value="${s}" ${s === initialStage ? 'selected' : ''}>${s}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="f" for="afd">Date Applied</label>
+          <input type="date" id="afd" value="${today()}">
+        </div>
+      </div>
+      <div class="panel-field-group" style="margin-top:6px;">
+        <label class="f" for="af_deadline">Application Deadline <span class="f-hint">(optional)</span></label>
+        <input type="date" id="af_deadline">
+      </div>
+    </div>
+
+    <!-- Work Location Card -->
+    <div class="panel-section-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">${ICON.pin} Location & Workplace</span>
+      </div>
+      <div class="row">
+        <div>
+          <label class="f" for="afk">Country</label>
+          <div><input type="text" id="afk" placeholder="Search countries..." autocomplete="off"></div>
+        </div>
+        <div>
+          <label class="f" for="afcity">City / Workplace</label>
+          <input type="text" id="afcity" placeholder="e.g. Bengaluru, Remote, London">
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Card -->
+    <div class="panel-section-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">${ICON.filePdf} Application Documents</span>
+        <span class="panel-card-badge">Optional</span>
+      </div>
+      <div class="doc-slots-grid">
+        ${renderDocSlotHtml('resume', 'Resume', ICON.filePdf, '', null)}
+        ${renderDocSlotHtml('cover', 'Cover Letter', ICON.fileWord, '', null)}
+      </div>
+    </div>
+
+    <!-- Portal Credentials Card -->
     <div id="af_cred_box" class="cred-card" style="${(initialCat === 'Government' || initialCat === 'Research') ? '' : 'display:none'}">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <h4 style="margin:0;border:0;padding:0;font-size:12px;font-weight:700">Portal Credentials</h4>
@@ -970,20 +1027,30 @@ function openAddPanel(defaultStage = null) {
       <div class="cred-sub">Store login credentials for government or research portals</div>
       <label class="f">Portal Login URL</label>
       <input type="url" id="af_purl" placeholder="https://portal.example.gov/login">
-      <label class="f">User ID / Username</label>
-      <input type="text" id="af_puser" placeholder="e.g. applicant_user42">
-      <label class="f">Password / PIN</label>
-      <div class="input-act">
-        <input type="password" id="af_ppass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
-        <button type="button" class="btn" id="af_tpass" title="Show/Hide">${ICON.eye}</button>
+      <div class="row">
+        <div>
+          <label class="f">User ID / Username</label>
+          <input type="text" id="af_puser" placeholder="e.g. applicant_user42">
+        </div>
+        <div>
+          <label class="f">Password / PIN</label>
+          <div class="input-act">
+            <input type="password" id="af_ppass" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+            <button type="button" class="btn" id="af_tpass" title="Show/Hide">${ICON.eye}</button>
+          </div>
+        </div>
       </div>
       <label class="f">Portal Notes</label>
       <input type="text" id="af_pnotes" placeholder="Confirmation PIN, security question answer...">
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:28px;padding-top:16px;border-top:1px solid var(--bd);">
+    <!-- Pinned Sticky Footer -->
+    <div class="panel-sticky-footer">
       <button type="button" class="btn" id="afx">Cancel</button>
-      <button type="button" class="btn primary" id="afs" style="padding:8px 20px;font-weight:600;">Add Application</button>
+      <button type="button" class="btn primary add-app-submit-btn" id="afs">
+        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add Application</span>
+      </button>
     </div>
   `;
 
@@ -1010,8 +1077,6 @@ function openAddPanel(defaultStage = null) {
     inp.type = isPass ? 'text' : 'password';
     q('#af_tpass').innerHTML = isPass ? ICON.eyeOff : ICON.eye;
   };
-
-
 
   countryField(q('#afk'), () => st.country, c => st.country = c);
 

@@ -108,10 +108,21 @@
   <div class="learning-modal-box">
     <div class="learning-modal-header">
       <div class="learning-modal-header-left">
-        <div class="learning-modal-icon"><svg viewBox="0 0 24 24" width="22" height="22" stroke="var(--cyan)" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+        <div class="learning-modal-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </div>
         <div>
-          <h3 id="learningModalTitle">Log Daily Learning</h3>
-          <p class="learning-modal-subtitle">Earn +50 XP and maintain your daily streak!</p>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <h3 id="learningModalTitle">Log Daily Learning</h3>
+            <span class="learning-xp-badge">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="color:#f59e0b"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              +50 XP
+            </span>
+          </div>
+          <p class="learning-modal-subtitle">Track your core technical insights & level up daily</p>
         </div>
       </div>
       <button type="button" class="btn icon-only" id="closeLearningModal" aria-label="Close">&times;</button>
@@ -119,15 +130,47 @@
 
     <form id="learningForm" class="learning-modal-form" onsubmit="return false;">
       <input type="hidden" id="learningEditId" value="">
-      <div class="f-group">
-        <label class="f-label" for="l_title">What did you learn today? <span class="required-star">*</span></label>
-        <input type="text" id="l_title" class="f-input" placeholder="e.g., Redis Distributed Locking with Redlock & TTLs" required autocomplete="off">
-      </div>
 
-      <div class="f-row">
+      <!-- Card 1: Track & Concept -->
+      <div class="learning-form-card">
+        <div class="learning-form-card-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Learning Track
+        </div>
+        <div class="learning-cat-chips" id="learningCatChips">
+          <button type="button" class="learning-cat-chip active" data-cat="DSA">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span>DSA</span>
+          </button>
+          <button type="button" class="learning-cat-chip" data-cat="AI/ML/NLP/CV">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <span>AI / ML</span>
+          </button>
+          <button type="button" class="learning-cat-chip" data-cat="CS SUBJECTS">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/></svg>
+            <span>CS Core</span>
+          </button>
+          <button type="button" class="learning-cat-chip" data-cat="GENERAL APTITUDE">
+            <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg>
+            <span>Aptitude</span>
+          </button>
+        </div>
+        <!-- Keep select for robust fallback / DOM queries -->
+        <select id="l_category" class="f-input" style="display:none;">
+          <option value="DSA" selected>DSA</option>
+          <option value="AI/ML/NLP/CV">AI/ML/NLP/CV</option>
+          <option value="CS SUBJECTS">CS SUBJECTS</option>
+          <option value="GENERAL APTITUDE">GENERAL APTITUDE</option>
+        </select>
+
+        <div class="f-group" style="margin-top:2px;">
+          <label class="f-label" for="l_title">What did you learn today? <span class="required-star">*</span></label>
+          <input type="text" id="l_title" class="f-input" placeholder="e.g., Redis Distributed Locking with Redlock & TTLs" required autocomplete="off">
+        </div>
+
         <div class="f-group">
           <label class="f-label" for="l_topic">Topic / Sub-concept</label>
-          <input type="text" id="l_topic" class="f-input" list="aptitudeTopicsList" placeholder="e.g., Reading Comprehension, Percentages, Syllogisms" autocomplete="off">
+          <input type="text" id="l_topic" class="f-input" list="aptitudeTopicsList" placeholder="e.g., Sliding Window, System Design, Divisibility" autocomplete="off">
           <datalist id="aptitudeTopicsList">
             <option value="Reading Comprehension (English)"></option>
             <option value="Sentence Correction & Grammar (English)"></option>
@@ -154,56 +197,66 @@
             <option value="Clocks & Calendars (Reasoning)"></option>
           </datalist>
         </div>
-        <div class="f-group">
-          <label class="f-label" for="l_category">Category</label>
-          <select id="l_category" class="f-input">
-            <option value="DSA" selected>DSA</option>
-            <option value="AI/ML/NLP/CV">AI/ML/NLP/CV</option>
-            <option value="CS SUBJECTS">CS SUBJECTS</option>
-            <option value="GENERAL APTITUDE">GENERAL APTITUDE</option>
-          </select>
-        </div>
       </div>
 
-      <div class="f-row">
-        <div class="f-group">
-          <label class="f-label" for="l_date">Date Logged</label>
-          <input type="date" id="l_date" class="f-input">
+      <!-- Card 2: Schedule & Duration -->
+      <div class="learning-form-card">
+        <div class="learning-form-card-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          Study Session & Time
         </div>
-        <div class="f-group">
-          <label class="f-label" for="l_duration">Study Duration</label>
-          <div class="duration-input-wrapper">
-            <input type="number" id="l_duration" class="f-input" min="5" max="600" step="5" value="45">
-            <span class="duration-unit">minutes</span>
+        <div class="f-row">
+          <div class="f-group">
+            <label class="f-label" for="l_date">Date Logged</label>
+            <input type="date" id="l_date" class="f-input">
           </div>
+          <div class="f-group">
+            <label class="f-label" for="l_duration">Study Duration</label>
+            <div class="duration-input-wrapper">
+              <input type="number" id="l_duration" class="f-input" min="5" max="600" step="5" value="45">
+              <span class="duration-unit">minutes</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="f-label" style="font-size:11px;color:var(--tx3);margin-bottom:4px;display:block;">Quick duration presets</label>
           <div class="duration-presets" id="l_duration_presets">
+            <button type="button" class="preset-pill" data-m="15">15m</button>
             <button type="button" class="preset-pill" data-m="25">25m (Pomo)</button>
             <button type="button" class="preset-pill active" data-m="45">45m</button>
-            <button type="button" class="preset-pill" data-m="60">1 hr</button>
-            <button type="button" class="preset-pill" data-m="120">2 hrs</button>
+            <button type="button" class="preset-pill" data-m="60">60m (1 hr)</button>
+            <button type="button" class="preset-pill" data-m="90">90m</button>
+            <button type="button" class="preset-pill" data-m="120">120m (2 hrs)</button>
           </div>
         </div>
       </div>
 
-      <div class="f-group">
-        <label class="f-label" for="l_resource">Resource / Reference URL</label>
-        <input type="url" id="l_resource" class="f-input" placeholder="https://leetcode.com/problems/... or article link" autocomplete="off">
-      </div>
+      <!-- Card 3: Deep Dive, Notes & Reference -->
+      <div class="learning-form-card">
+        <div class="learning-form-card-title">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Insights & Reference
+        </div>
+        <div class="f-group">
+          <label class="f-label" for="l_resource">Resource / Reference Link</label>
+          <input type="url" id="l_resource" class="f-input" placeholder="https://leetcode.com/... or article URL" autocomplete="off">
+        </div>
 
-      <div class="f-group">
-        <label class="f-label" for="l_notes">Key Insights / Summary Notes</label>
-        <textarea id="l_notes" class="f-input f-textarea" rows="4" placeholder="Summarize core patterns, tricky edge cases, time/space complexity, or architectural trade-offs..."></textarea>
-      </div>
+        <div class="f-group">
+          <label class="f-label" for="l_notes">Key Insights / Summary Notes</label>
+          <textarea id="l_notes" class="f-input f-textarea" rows="3" placeholder="Summarize core patterns, tricky edge cases, time/space complexity, or trade-offs..."></textarea>
+        </div>
 
-      <div class="f-group">
-        <label class="f-label" for="l_tags">Tags (comma-separated)</label>
-        <input type="text" id="l_tags" class="f-input" placeholder="e.g., LeetCode, SlidingWindow, Redis, Hard" autocomplete="off">
+        <div class="f-group">
+          <label class="f-label" for="l_tags">Tags (comma-separated)</label>
+          <input type="text" id="l_tags" class="f-input" placeholder="e.g., LeetCode, SlidingWindow, Redis, Hard" autocomplete="off">
+        </div>
       </div>
 
       <div class="learning-modal-actions">
         <button type="button" class="btn" id="cancelLearningModal">Cancel</button>
         <button type="button" class="btn primary add-learning-btn" id="submitLearningBtn">
-          <span>Log Learning (+50 XP)</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;">🔥 Log Learning (+50 XP)</span>
         </button>
       </div>
     </form>

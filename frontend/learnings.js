@@ -629,6 +629,12 @@ window.openLearningModal = function(editId = null) {
     if (btnSpan) btnSpan.textContent = 'Log Learning (+50 XP)';
   }
 
+  // Update category chips state in modal
+  const catVal = document.getElementById("l_category")?.value || "DSA";
+  document.querySelectorAll("#learningCatChips .learning-cat-chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.cat === catVal);
+  });
+
   // Update preset buttons state
   const durVal = Number(document.getElementById('l_duration').value);
   document.querySelectorAll('#l_duration_presets .preset-pill').forEach(p => {
@@ -731,6 +737,24 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === lModal) closeLearningModal();
     });
   }
+
+  // Modal Category Chips
+  document.querySelectorAll("#learningCatChips .learning-cat-chip").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const cat = btn.dataset.cat;
+      const catSelect = document.getElementById("l_category");
+      if (catSelect) catSelect.value = cat;
+      document.querySelectorAll("#learningCatChips .learning-cat-chip").forEach(b => b.classList.toggle("active", b === btn));
+    });
+  });
+
+  // Sync duration input changes with preset pills
+  document.getElementById("l_duration")?.addEventListener("input", e => {
+    const durVal = Number(e.target.value);
+    document.querySelectorAll("#l_duration_presets .preset-pill").forEach(p => {
+      p.classList.toggle("active", Number(p.dataset.m) === durVal);
+    });
+  });
 
   // Duration Presets
   document.querySelectorAll('#l_duration_presets .preset-pill').forEach(btn => {
