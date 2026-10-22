@@ -98,6 +98,7 @@ window.switchViewMode = function(mode) {
   // Toggle View Containers
   const boardEl = document.getElementById('board');
   const secBarEl = document.getElementById('secBar');
+  const learningsSecBarEl = document.getElementById('learningsSecBar');
   const mobileNavEl = document.querySelector('.mobile-stage-nav');
   const mobileTabsEl = document.querySelector('.mobile-stage-tabs');
   const searchWrapEl = document.querySelector('.search-wrap');
@@ -107,6 +108,7 @@ window.switchViewMode = function(mode) {
   if (isProfile) {
     if (boardEl) boardEl.style.display = 'none';
     if (secBarEl) secBarEl.style.display = 'none';
+    if (learningsSecBarEl) learningsSecBarEl.style.display = 'none';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
     if (mobileTabsEl) mobileTabsEl.style.display = 'none';
     if (searchWrapEl) searchWrapEl.style.display = 'none';
@@ -117,6 +119,7 @@ window.switchViewMode = function(mode) {
     if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'block';
     if (secBarEl) secBarEl.style.display = 'none';
+    if (learningsSecBarEl) learningsSecBarEl.style.display = 'none';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
     if (mobileTabsEl) mobileTabsEl.style.display = 'none';
     if (searchWrapEl) searchWrapEl.style.display = 'flex';
@@ -127,6 +130,7 @@ window.switchViewMode = function(mode) {
     if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'none';
     if (secBarEl) secBarEl.style.display = 'none';
+    if (learningsSecBarEl) learningsSecBarEl.style.display = 'flex';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
     if (mobileTabsEl) mobileTabsEl.style.display = 'none';
     if (searchWrapEl) searchWrapEl.style.display = 'none';
@@ -137,6 +141,7 @@ window.switchViewMode = function(mode) {
     if (profileViewEl) profileViewEl.style.display = 'none';
     if (boardEl) boardEl.style.display = 'grid';
     if (secBarEl) secBarEl.style.display = 'flex';
+    if (learningsSecBarEl) learningsSecBarEl.style.display = 'none';
     if (mobileNavEl) mobileNavEl.style.display = '';
     if (mobileTabsEl) mobileTabsEl.style.display = '';
     if (searchWrapEl) searchWrapEl.style.display = 'flex';
@@ -254,19 +259,21 @@ async function loadLearnings() {
     const list = await res.json();
     learningsList = list || [];
     renderLearningsFeed();
+    updateLearningsBarBadges();
   } catch (err) {
     console.error('Failed to load learnings:', err);
   }
 }
 
 function getCategoryClass(cat) {
-  const norm = String(cat || '').toLowerCase().replace(/[^a-z]/g, '');
-  if (norm.includes('system')) return 'cat-system-design';
-  if (norm.includes('algo')) return 'cat-algorithms';
-  if (norm.includes('web')) return 'cat-web-dev';
-  if (norm.includes('cloud')) return 'cat-cloud';
-  if (norm.includes('ai') || norm.includes('ml')) return 'cat-ai-ml';
-  return 'cat-general';
+  const norm = String(cat || '').toLowerCase();
+  if (norm.includes('dsa') || norm.includes('algo')) return 'cat-dsa';
+  if (norm.includes('ai') || norm.includes('ml') || norm.includes('nlp') || norm.includes('cv')) return 'cat-ai-ml';
+  if (norm.includes('cs') || norm.includes('subject') || norm.includes('system') || norm.includes('os') || norm.includes('dbms')) return 'cat-cs';
+  if (norm.includes('reasoning')) return 'cat-reasoning';
+  if (norm.includes('quant') || norm.includes('math')) return 'cat-quants';
+  if (norm.includes('english') || norm.includes('verbal')) return 'cat-english';
+  return 'cat-dsa';
 }
 
 function escapeHtml(str) {
@@ -279,6 +286,32 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
+
+function updateLearningsBarBadges() {
+  const total = learningsList.length;
+  let countDSA = 0, countAI = 0, countCS = 0, countReasoning = 0, countQuants = 0, countEnglish = 0;
+
+  learningsList.forEach(l => {
+    const c = String(l.category || '').toLowerCase();
+    if (c.includes('dsa') || c.includes('algo')) countDSA++;
+    else if (c.includes('ai') || c.includes('ml') || c.includes('nlp') || c.includes('cv')) countAI++;
+    else if (c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms')) countCS++;
+    else if (c.includes('reasoning')) countReasoning++;
+    else if (c.includes('quant') || c.includes('math')) countQuants++;
+    else if (c.includes('english') || c.includes('verbal')) countEnglish++;
+    else countDSA++; // default
+  });
+
+  const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setT('lc-All', total);
+  setT('lc-DSA', countDSA);
+  setT('lc-AI', countAI);
+  setT('lc-CS', countCS);
+  setT('lc-REASONING', countReasoning);
+  setT('lc-QUANTS', countQuants);
+  setT('lc-ENGLISH', countEnglish);
+}
+
 function renderLearningsFeed() {
   const feed = document.getElementById('learningsFeed');
   if (!feed) return;
@@ -287,7 +320,15 @@ function renderLearningsFeed() {
     if (activeLearningCategory !== 'All') {
       const c = String(item.category || '').toLowerCase();
       const target = activeLearningCategory.toLowerCase();
-      if (!c.includes(target) && !target.includes(c)) return false;
+      let match = false;
+      if (target === 'dsa' && (c.includes('dsa') || c.includes('algo'))) match = true;
+      else if (target.includes('ai') && (c.includes('ai') || c.includes('ml') || c.includes('nlp') || c.includes('cv'))) match = true;
+      else if (target.includes('cs') && (c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms'))) match = true;
+      else if (target.includes('reasoning') && c.includes('reasoning')) match = true;
+      else if (target.includes('quant') && (c.includes('quant') || c.includes('math'))) match = true;
+      else if (target.includes('english') && (c.includes('english') || c.includes('verbal'))) match = true;
+      else if (c.includes(target) || target.includes(c)) match = true;
+      if (!match) return false;
     }
     if (learningSearchQuery) {
       const q = learningSearchQuery.toLowerCase();
@@ -517,6 +558,24 @@ document.addEventListener('DOMContentLoaded', () => {
   const lSearch = document.getElementById('learningsSearchInput');
   if (lSearch) {
     lSearch.addEventListener('input', e => {
+      learningSearchQuery = e.target.value.trim();
+      renderLearningsFeed();
+    });
+  }
+
+  // Learnings Second Bar Category Filter Buttons
+  document.querySelectorAll('#learningsSecBar .sec-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeLearningCategory = btn.dataset.cat || 'All';
+      document.querySelectorAll('#learningsSecBar .sec-btn').forEach(b => b.classList.toggle('active', b === btn));
+      renderLearningsFeed();
+    });
+  });
+
+  // Learnings Second Bar Search Input
+  const lSecSearch = document.getElementById('learningsSecSearch');
+  if (lSecSearch) {
+    lSecSearch.addEventListener('input', e => {
       learningSearchQuery = e.target.value.trim();
       renderLearningsFeed();
     });

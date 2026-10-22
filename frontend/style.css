@@ -343,7 +343,7 @@ input#search.search-input:focus {
 }
 
 /* ───── Section Nav Bar ───── */
-#secBar {
+#secBar, #learningsSecBar {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -1877,7 +1877,7 @@ header .btn:active {
 .sec-sp {
   flex: 1;
 }
-#secBar #fbtn {
+#secBar #fbtn, #learningsSecBar #fbtn {
   border: 1px solid var(--bd2);
   background: var(--surface);
   border-radius: var(--r-sm);
@@ -1891,7 +1891,7 @@ header .btn:active {
   gap: 5px;
   transition: all .15s ease;
 }
-#secBar #fbtn:hover {
+#secBar #fbtn:hover, #learningsSecBar #fbtn:hover {
   background: var(--bg2);
   border-color: var(--bd3);
   color: var(--tx);
@@ -4723,3 +4723,19 @@ body.dark-mode .momentum-day-cell.lvl-4 { background: #34d399; border-color: #86
 .momentum-legend .momentum-day-cell:hover {
   transform: none;
 }
+
+
+/* Learnings Category Badges */
+.cat-dsa { background: #f3e8ff; color: #7e22ce; }
+.cat-ai-ml { background: #fce7f3; color: #be185d; }
+.cat-cs { background: #e0f2fe; color: #0369a1; }
+.cat-reasoning { background: #ffedd5; color: #c2410c; }
+.cat-quants { background: #ecfdf5; color: #047857; }
+.cat-english { background: #f1f5f9; color: #475569; }
+
+body.dark-mode .cat-dsa, [data-theme="dark"] .cat-dsa { background: rgba(126, 34, 206, 0.2); color: #c084fc; }
+body.dark-mode .cat-ai-ml, [data-theme="dark"] .cat-ai-ml { background: rgba(190, 24, 93, 0.2); color: #f472b6; }
+body.dark-mode .cat-cs, [data-theme="dark"] .cat-cs { background: rgba(3, 105, 161, 0.2); color: #38bdf8; }
+body.dark-mode .cat-reasoning, [data-theme="dark"] .cat-reasoning { background: rgba(194, 65, 12, 0.2); color: #fb923c; }
+body.dark-mode .cat-quants, [data-theme="dark"] .cat-quants { background: rgba(4, 120, 87, 0.2); color: #34d399; }
+body.dark-mode .cat-english, [data-theme="dark"] .cat-english { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
