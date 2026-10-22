@@ -134,7 +134,7 @@ window.switchViewMode = function(mode) {
     if (mobileNavEl) mobileNavEl.style.display = 'none';
     if (mobileTabsEl) mobileTabsEl.style.display = 'none';
     if (searchWrapEl) searchWrapEl.style.display = 'none';
-    if (learningsViewEl) learningsViewEl.style.display = 'flex';
+    if (learningsViewEl) learningsViewEl.style.display = 'grid';
     loadGamificationStats();
     loadLearnings();
   } else {
@@ -265,15 +265,57 @@ async function loadLearnings() {
   }
 }
 
-function getCategoryClass(cat) {
-  const norm = String(cat || '').toLowerCase();
-  if (norm.includes('dsa') || norm.includes('algo')) return 'cat-dsa';
-  if (norm.includes('ai') || norm.includes('ml') || norm.includes('nlp') || norm.includes('cv')) return 'cat-ai-ml';
-  if (norm.includes('cs') || norm.includes('subject') || norm.includes('system') || norm.includes('os') || norm.includes('dbms')) return 'cat-cs';
-  if (norm.includes('reasoning')) return 'cat-reasoning';
-  if (norm.includes('quant') || norm.includes('math')) return 'cat-quants';
-  if (norm.includes('english') || norm.includes('verbal')) return 'cat-english';
-  return 'cat-dsa';
+const LEARNING_CATEGORIES = [
+  {
+    key: 'DSA',
+    label: 'DSA',
+    dot: '#a855f7',
+    icon: '<svg viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+    match: c => c.includes('dsa') || c.includes('algo')
+  },
+  {
+    key: 'AI/ML/NLP/CV',
+    label: 'AI/ML/NLP/CV',
+    dot: '#ec4899',
+    icon: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+    match: c => c.includes('ai') || c.includes('ml') || c.includes('nlp') || c.includes('cv')
+  },
+  {
+    key: 'CS SUBJECTS',
+    label: 'CS SUBJECTS',
+    dot: '#0284c7',
+    icon: '<svg viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>',
+    match: c => c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms') || c.includes('network')
+  },
+  {
+    key: 'REASONING',
+    label: 'REASONING',
+    dot: '#ea580c',
+    icon: '<svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>',
+    match: c => c.includes('reasoning') || c.includes('logic') || c.includes('aptitude')
+  },
+  {
+    key: 'QUANTS',
+    label: 'QUANTS',
+    dot: '#10b981',
+    icon: '<svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+    match: c => c.includes('quant') || c.includes('math')
+  },
+  {
+    key: 'ENGLISH',
+    label: 'ENGLISH',
+    dot: '#64748b',
+    icon: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+    match: c => c.includes('english') || c.includes('verbal')
+  }
+];
+
+function getCategoryForLearning(item) {
+  const c = String(item.category || '').toLowerCase();
+  for (const cat of LEARNING_CATEGORIES) {
+    if (cat.match(c)) return cat.key;
+  }
+  return 'DSA';
 }
 
 function escapeHtml(str) {
@@ -286,117 +328,115 @@ function escapeHtml(str) {
     .replace(/'/g, '&#039;');
 }
 
-
 function updateLearningsBarBadges() {
   const total = learningsList.length;
-  let countDSA = 0, countAI = 0, countCS = 0, countReasoning = 0, countQuants = 0, countEnglish = 0;
+  const counts = { 'DSA': 0, 'AI/ML/NLP/CV': 0, 'CS SUBJECTS': 0, 'REASONING': 0, 'QUANTS': 0, 'ENGLISH': 0 };
 
   learningsList.forEach(l => {
-    const c = String(l.category || '').toLowerCase();
-    if (c.includes('dsa') || c.includes('algo')) countDSA++;
-    else if (c.includes('ai') || c.includes('ml') || c.includes('nlp') || c.includes('cv')) countAI++;
-    else if (c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms')) countCS++;
-    else if (c.includes('reasoning')) countReasoning++;
-    else if (c.includes('quant') || c.includes('math')) countQuants++;
-    else if (c.includes('english') || c.includes('verbal')) countEnglish++;
-    else countDSA++; // default
+    const k = getCategoryForLearning(l);
+    if (counts[k] !== undefined) counts[k]++;
+    else counts['DSA']++;
   });
 
   const setT = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
   setT('lc-All', total);
-  setT('lc-DSA', countDSA);
-  setT('lc-AI', countAI);
-  setT('lc-CS', countCS);
-  setT('lc-REASONING', countReasoning);
-  setT('lc-QUANTS', countQuants);
-  setT('lc-ENGLISH', countEnglish);
+  setT('lc-DSA', counts['DSA']);
+  setT('lc-AI', counts['AI/ML/NLP/CV']);
+  setT('lc-CS', counts['CS SUBJECTS']);
+  setT('lc-REASONING', counts['REASONING']);
+  setT('lc-QUANTS', counts['QUANTS']);
+  setT('lc-ENGLISH', counts['ENGLISH']);
 }
 
-function renderLearningsFeed() {
-  const feed = document.getElementById('learningsFeed');
-  if (!feed) return;
+window.openLearningModalWithCat = function(catKey) {
+  openLearningModal();
+  const sel = document.getElementById('l_category');
+  if (sel) sel.value = catKey;
+};
 
-  let filtered = learningsList.filter(item => {
-    if (activeLearningCategory !== 'All') {
-      const c = String(item.category || '').toLowerCase();
-      const target = activeLearningCategory.toLowerCase();
-      let match = false;
-      if (target === 'dsa' && (c.includes('dsa') || c.includes('algo'))) match = true;
-      else if (target.includes('ai') && (c.includes('ai') || c.includes('ml') || c.includes('nlp') || c.includes('cv'))) match = true;
-      else if (target.includes('cs') && (c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms'))) match = true;
-      else if (target.includes('reasoning') && c.includes('reasoning')) match = true;
-      else if (target.includes('quant') && (c.includes('quant') || c.includes('math'))) match = true;
-      else if (target.includes('english') && (c.includes('english') || c.includes('verbal'))) match = true;
-      else if (c.includes(target) || target.includes(c)) match = true;
-      if (!match) return false;
-    }
-    if (learningSearchQuery) {
-      const q = learningSearchQuery.toLowerCase();
-      const combined = [item.title, item.topic, item.category, item.notes, item.tags].join(' ').toLowerCase();
-      if (!combined.includes(q)) return false;
-    }
-    return true;
-  });
+function renderLearningsBoard() {
+  const container = document.getElementById('learningsView');
+  if (!container) return;
 
-  if (!filtered.length) {
-    feed.innerHTML = 
-      '<div class="learnings-empty-state">' +
-        '<div class="empty-icon-giant"><svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--accent)" stroke-width="1.8" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>' +
-        '<h4 class="empty-headline">No Learnings Found</h4>' +
-        '<p class="empty-subtext">' +
-          (learningSearchQuery ? 'No notes match your current search query.' : 'Capture what you practiced, watched, or read today to build your streak and level up!') +
-        '</p>' +
-        '<button type="button" class="btn primary add-learning-btn" onclick="openLearningModal()">' +
-          '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>' +
-          '<span>Log Your First Learning</span>' +
-        '</button>' +
-      '</div>';
-    return;
+  const isSingle = (activeLearningCategory && activeLearningCategory !== 'All');
+  container.classList.toggle('single-col', isSingle);
+
+  let colsToRender = LEARNING_CATEGORIES;
+  if (isSingle) {
+    colsToRender = LEARNING_CATEGORIES.filter(c => c.key === activeLearningCategory);
   }
 
-  feed.innerHTML = filtered.map(item => {
-    const tags = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
-    const catClass = getCategoryClass(item.category);
-    const hasUrl = item.resource_url && /^https?:\/\//i.test(item.resource_url.trim());
+  container.innerHTML = colsToRender.map(cat => {
+    const catItems = learningsList.filter(item => {
+      const itemCat = getCategoryForLearning(item);
+      if (itemCat !== cat.key) return false;
 
-    return (
-      '<article class="learning-card" data-id="' + item.id + '">' +
-        '<div class="learning-card-header">' +
-          '<div class="learning-card-badges">' +
-            '<span class="learning-cat-badge ' + catClass + '">' + escapeHtml(item.category || 'General') + '</span>' +
-            '<span class="learning-duration-tag"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:3px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + (item.duration_minutes || 30) + 'm</span>' +
-          '</div>' +
-          '<span class="learning-card-date">' + (item.date_logged || 'Today') + '</span>' +
-        '</div>' +
+      if (learningSearchQuery) {
+        const q = learningSearchQuery.toLowerCase();
+        const combined = [item.title, item.topic, item.category, item.notes, item.tags].join(' ').toLowerCase();
+        if (!combined.includes(q)) return false;
+      }
+      return true;
+    });
 
-        '<h3 class="learning-card-title">' + escapeHtml(item.title) + '</h3>' +
-        (item.topic ? '<span class="learning-card-topic">' + escapeHtml(item.topic) + '</span>' : '') +
+    const bodyHtml = catItems.length === 0 ? `
+      <div class="empty-col-msg">
+        <span>No ${escapeHtml(cat.label)} notes yet</span>
+        <button type="button" class="empty-add-btn" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}')">+ Add Note</button>
+      </div>
+    ` : catItems.map(item => {
+      const tags = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+      const hasUrl = Boolean(item.resource_url && /^https?:\/\//i.test(item.resource_url.trim()));
 
-        (item.notes ? '<div class="learning-card-notes">' + escapeHtml(item.notes) + '</div>' : '') +
+      return `
+        <div class="card learning-kanban-card" onclick="openLearningModal(${item.id})">
+          <button type="button" class="x" title="Delete Note" onclick="event.stopPropagation(); deleteLearning(${item.id})">×</button>
+          <div class="top">
+            <div class="logo" style="background:${cat.dot}15; color:${cat.dot}; border-color:${cat.dot}30;">
+              ${cat.icon}
+            </div>
+            <div style="min-width:0;flex:1">
+              <div class="co" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+              <div class="role" title="${escapeHtml(item.topic || cat.label)}">${escapeHtml(item.topic || cat.label)}</div>
+            </div>
+          </div>
+          ${item.notes ? `<div class="card-notes-preview">${escapeHtml(item.notes)}</div>` : ''}
+          <div class="meta">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span>${item.duration_minutes || 45}m</span>
+            <span>•</span>
+            <span>${escapeHtml(item.date_logged || 'Today')}</span>
+            ${hasUrl ? `<span>•</span><a href="${escapeHtml(item.resource_url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()" class="card-resource-link">Link ↗</a>` : ''}
+          </div>
+          ${tags.length ? `
+            <div class="tags" style="margin-top:6px;">
+              ${tags.map(t => `<span class="tag">#${escapeHtml(t)}</span>`).join('')}
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
 
-        (tags.length ? (
-          '<div class="learning-card-tags">' +
-            tags.map(t => '<span class="learning-tag-chip">#' + escapeHtml(t) + '</span>').join('') +
-          '</div>'
-        ) : '') +
-
-        '<div class="learning-card-footer">' +
-          (hasUrl ? (
-            '<a href="' + escapeHtml(item.resource_url) + '" target="_blank" rel="noopener noreferrer" class="learning-resource-link">' +
-              '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>' +
-              '<span>Resource Link</span>' +
-            '</a>'
-          ) : '<span></span>') +
-
-          '<div class="learning-card-actions">' +
-            '<button type="button" class="learning-act-btn" onclick="openLearningModal(' + item.id + ')">Edit</button>' +
-            '<button type="button" class="learning-act-btn del" onclick="deleteLearning(' + item.id + ')">Delete</button>' +
-          '</div>' +
-        '</div>' +
-      '</article>'
-    );
+    return `
+      <section class="col" data-cat="${escapeHtml(cat.key)}">
+        <div class="col-header">
+          <span class="col-stage-dot" style="background:${cat.dot}"></span>
+          <h2>${cat.icon} ${escapeHtml(cat.label)}</h2>
+          <span class="col-count">${catItems.length}</span>
+          <button type="button" class="col-quick-add" title="Add note in ${escapeHtml(cat.label)}" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}')">+</button>
+        </div>
+        <div class="body" data-cat="${escapeHtml(cat.key)}">
+          ${bodyHtml}
+        </div>
+      </section>
+    `;
   }).join('');
 }
+
+const renderLearningsFeed = renderLearningsBoard;
+window.renderLearningsFeed = renderLearningsBoard;
+window.renderLearningsBoard = renderLearningsBoard;
+
 
 // Modal Handlers
 window.openLearningModal = function(editId = null) {
