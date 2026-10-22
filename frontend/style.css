@@ -350,7 +350,9 @@ input#search.search-input:focus {
   padding: 8px 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--bd);
-  overflow-x: auto;
+  position: relative;
+  z-index: 50;
+  overflow: visible !important;
   flex-shrink: 0;
 }
 .sec-btn {
@@ -818,19 +820,54 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
 .opt:hover, .opt:first-child { background: var(--bg2); }
 .opt small { color: var(--tx3); margin-left: auto; font-size: 11px; }
 
-/* ───── Country Filter Popup ───── */
+/* Country Filter Popup */
+.country-filter-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  z-index: 60;
+}
 .pop {
   position: absolute;
   right: 0;
-  top: 38px;
-  z-index: 40;
+  top: calc(100% + 6px);
+  z-index: 1000 !important;
   background: var(--surface);
   border: 1px solid var(--bd2);
   border-radius: var(--r);
   padding: 6px;
-  min-width: 230px;
+  min-width: 240px;
+  max-width: 320px;
+  max-height: 360px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   display: none;
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  animation: popScaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes popScaleIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.pop::-webkit-scrollbar {
+  width: 5px;
+}
+.pop::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pop::-webkit-scrollbar-thumb {
+  background: var(--bd2);
+  border-radius: 999px;
+}
+.pop::-webkit-scrollbar-thumb:hover {
+  background: var(--bd3);
 }
 .pop label {
   display: flex;
@@ -843,6 +880,11 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
 }
 .pop label:hover { background: var(--bg2); }
 .pop label b { margin-left: auto; font-weight: 600; color: var(--tx3); font-size: 11.5px; }
+body.dark-mode .pop {
+  background: var(--surface);
+  border-color: var(--bd2);
+  box-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.55), 0 6px 16px -2px rgba(0, 0, 0, 0.35);
+}
 
 /* ───── Slideout Panel ───── */
 #bd {
@@ -1373,8 +1415,7 @@ textarea { resize: vertical; min-height: 70px; line-height: 1.5; }
   #secBar {
     padding: 6px 12px;
     gap: 5px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow: visible;
   }
   .sec-btn {
     padding: 5px 10px;
@@ -1856,7 +1897,8 @@ header .btn:active {
   color: var(--tx);
 }
 #secBar .pop {
-  top: 32px;
+  top: calc(100% + 6px);
+  right: 0;
 }
 
 /* ===============================================================
