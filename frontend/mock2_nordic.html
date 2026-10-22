@@ -424,10 +424,13 @@
 
     /* Learning Feed */
     .journal-feed {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
     }
+    @media (max-width: 1100px) { .journal-feed { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 680px) { .journal-feed { grid-template-columns: 1fr; } }
+    .journal-entry { min-height: 260px; justify-content: space-between; }
     .journal-entry {
       background: var(--surface);
       border: 1px solid var(--border);

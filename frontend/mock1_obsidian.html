@@ -593,10 +593,13 @@
     }
     .learnings-timeline-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
     }
-    @media (max-width: 600px) {
+    @media (max-width: 1100px) {
+      .learnings-timeline-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 680px) {
       .learnings-timeline-grid { grid-template-columns: 1fr; }
     }
 
@@ -604,12 +607,15 @@
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 18px;
+      padding: 20px;
       backdrop-filter: blur(16px);
-      transition: all 0.25s ease;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      justify-content: space-between;
+      min-height: 290px;
+      gap: 14px;
+      position: relative;
     }
     .learning-card:hover {
       border-color: var(--border-hover);
@@ -795,17 +801,31 @@
       gap: 8px;
     }
     .cal-cell {
-      min-height: 105px;
+      min-height: 80px;
       background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
       border-radius: var(--radius-sm);
-      padding: 8px;
+      padding: 10px;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      justify-content: space-between;
       transition: all 0.2s ease;
       position: relative;
     }
+    .cal-dot-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: auto;
+    }
+    .cal-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    .cal-dot.blue { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+    .cal-dot.orange { background: var(--flame); box-shadow: 0 0 6px var(--flame); }
+    .cal-dot.green { background: var(--emerald); box-shadow: 0 0 6px var(--emerald); }
     .cal-cell:hover {
       background: rgba(255,255,255,0.04);
       border-color: var(--border-hover);
@@ -1199,58 +1219,167 @@
     </div>
 
     <!-- Timeline Grid -->
+    
+    <!-- 3-Per-Row Rectangular Cards Grid -->
     <div class="learnings-timeline-grid">
-      <!-- Note 1 -->
+      <!-- Card 1 -->
       <article class="learning-card">
-        <div class="learning-meta">
-          <span class="badge-cat badge-system">System Design</span>
-          <span class="time-badge">⏱️ 60 MINS · TODAY</span>
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-system">System Design</span>
+            <span class="time-badge">⏱️ 60 MINS · TODAY</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Kafka Consumer Groups &amp; Cooperative Sticky Rebalancing</h3>
+          <div style="font-size:12px;color:var(--cyan);font-weight:600;margin-top:4px">Topic: Event Streaming Protocols</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Incremental cooperative rebalances eliminate stop-the-world cluster pauses. Eager partition assignments halt throughput during scale-out.
+          </div>
         </div>
-        <div class="learning-title">Kafka Consumer Lag &amp; Cooperative Sticky Partition Rebalancing</div>
-        <div class="learning-notes">
-          Compared <code>Eager Rebalancing</code> (stop-the-world reassign) vs <code>CooperativeStickyAssignor</code>. Cooperative rebalances incrementally without halting active consumers, eliminating throughput spikes.
-        </div>
-        <div class="learning-footer">
-          <a href="#" class="learning-res-btn">🔗 Apache Kafka Protocol Docs</a>
-          <span style="font-size:11px;color:var(--text-dim)">+70 XP Awarded</span>
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#Kafka</span>
+            <span class="tag-cyber">#Streaming</span>
+            <span class="tag-cyber">#Distributed</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 Apache Kafka Docs</a>
+            <span style="font-size:11px;color:var(--text-dim)">+70 XP</span>
+          </div>
         </div>
       </article>
 
-      <!-- Note 2 -->
+      <!-- Card 2 -->
       <article class="learning-card">
-        <div class="learning-meta">
-          <span class="badge-cat badge-algo">Algorithms / DSA</span>
-          <span class="time-badge">⏱️ 45 MINS · TODAY</span>
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-algo">Algorithms / DSA</span>
+            <span class="time-badge">⏱️ 45 MINS · TODAY</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Sliding Window &amp; Dynamic Substring Contraction</h3>
+          <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:4px">Topic: LeetCode Medium / Hard</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Dynamic two-pointer window: expand right pointer to satisfy match condition, then contract left to find minimum valid substring in <code>O(N)</code> time.
+          </div>
         </div>
-        <div class="learning-title">Sliding Window &amp; Two-Pointer Optimal Substring Mastery</div>
-        <div class="learning-notes">
-          Solved Minimum Window Substring using frequency map and dynamic left-right contraction. Maintained linear time <code>O(N)</code> with <code>O(1)</code> auxiliary alphabet memory.
-        </div>
-        <div class="learning-footer">
-          <a href="#" class="learning-res-btn">🔗 LeetCode Problem #76</a>
-          <span style="font-size:11px;color:var(--text-dim)">+50 XP Awarded</span>
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#DSA</span>
+            <span class="tag-cyber">#TwoPointer</span>
+            <span class="tag-cyber">#SlidingWindow</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 LeetCode #76</a>
+            <span style="font-size:11px;color:var(--text-dim)">+50 XP</span>
+          </div>
         </div>
       </article>
 
-      <!-- Note 3 -->
+      <!-- Card 3 -->
       <article class="learning-card">
-        <div class="learning-meta">
-          <span class="badge-cat badge-cloud">Distributed Caching</span>
-          <span class="time-badge">⏱️ 60 MINS · YESTERDAY</span>
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-cloud">Distributed Caching</span>
+            <span class="time-badge">⏱️ 60 MINS · YESTERDAY</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Redis Eviction Strategies &amp; Cache Stampede Mitigation</h3>
+          <div style="font-size:12px;color:var(--flame);font-weight:600;margin-top:4px">Topic: High-Throughput Memory</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Prevented thundering herd effect using XFetch early background computation. Compared LRU approximate sampling against exact LFU tracking.
+          </div>
         </div>
-        <div class="learning-title">Redis Eviction Strategies &amp; Cache Stampede Mitigation</div>
-        <div class="learning-notes">
-          Studied LRU vs LFU in memory-constrained clusters. Mitigated thundering herd cache stampede using probabilistic early recomputation (XFetch algorithm).
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#Redis</span>
+            <span class="tag-cyber">#Caching</span>
+            <span class="tag-cyber">#Distributed</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 Redis Guide</a>
+            <span style="font-size:11px;color:var(--text-dim)">+70 XP</span>
+          </div>
         </div>
-        <div class="learning-footer">
-          <a href="#" class="learning-res-btn">🔗 Redis Architecture Guide</a>
-          <span style="font-size:11px;color:var(--text-dim)">+70 XP Awarded</span>
+      </article>
+
+      <!-- Card 4 -->
+      <article class="learning-card">
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-system">System Design</span>
+            <span class="time-badge">⏱️ 45 MINS · 2 DAYS AGO</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Database Sharding &amp; Consistent Hashing Rings</h3>
+          <div style="font-size:12px;color:var(--cyan);font-weight:600;margin-top:4px">Topic: Horizontal Scaling</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Consistent hashing with virtual nodes ensures minimal key migration when adding or removing database nodes from cluster.
+          </div>
+        </div>
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#Sharding</span>
+            <span class="tag-cyber">#Hashing</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 Architecture Notes</a>
+            <span style="font-size:11px;color:var(--text-dim)">+50 XP</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 5 -->
+      <article class="learning-card">
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-algo">Algorithms / DSA</span>
+            <span class="time-badge">⏱️ 50 MINS · 3 DAYS AGO</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Binary Search on Answer Space &amp; Monotonic Predicates</h3>
+          <div style="font-size:12px;color:var(--accent);font-weight:600;margin-top:4px">Topic: Search Optimization</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Applied feasibility check <code>isValid(mid)</code> to solve Koko Eating Bananas and Capacity To Ship Packages within D Days in <code>O(N log(max))</code>.
+          </div>
+        </div>
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#BinarySearch</span>
+            <span class="tag-cyber">#Optimization</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 LeetCode Patterns</a>
+            <span style="font-size:11px;color:var(--text-dim)">+60 XP</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 6 -->
+      <article class="learning-card">
+        <div>
+          <div class="learning-meta">
+            <span class="badge-cat badge-cloud">Cloud &amp; DevOps</span>
+            <span class="time-badge">⏱️ 30 MINS · 4 DAYS AGO</span>
+          </div>
+          <h3 class="learning-title" style="margin-top:8px">Docker Multi-Stage Builds &amp; Alpine Layer Optimization</h3>
+          <div style="font-size:12px;color:var(--flame);font-weight:600;margin-top:4px">Topic: Containerization</div>
+          <div class="learning-notes" style="margin-top:10px">
+            Separated builder stage from minimal distroless runtime. Reduced image footprint from 850MB down to 48MB without compromising security.
+          </div>
+        </div>
+        <div>
+          <div class="card-tags" style="margin-bottom:10px">
+            <span class="tag-cyber">#Docker</span>
+            <span class="tag-cyber">#DevOps</span>
+          </div>
+          <div class="learning-footer">
+            <a href="#" class="learning-res-btn">🔗 Docker Best Practices</a>
+            <span style="font-size:11px;color:var(--text-dim)">+40 XP</span>
+          </div>
         </div>
       </article>
     </div>
+
   </main>
 
   <!-- VIEW 3: UNIFIED CALENDAR (APPLIED JOBS + DAILY LEARNINGS) -->
+  <!-- VIEW 3: CLEAN CALENDAR (WITHOUT CARDS - JUST CALENDAR) -->
   <main class="view-content calendar-view" id="viewCalendar">
     <div class="cal-glass-container">
       <div class="cal-topbar">
@@ -1266,12 +1395,10 @@
           </div>
         </div>
 
-        <!-- Filter Legend -->
-        <div class="cal-filter-legend">
-          <button class="cal-filter-pill active" onclick="filterCal('all', this)">All Events (7)</button>
-          <button class="cal-filter-pill jobs" onclick="filterCal('jobs', this)">💼 Applied Jobs (3)</button>
-          <button class="cal-filter-pill deadlines" onclick="filterCal('deadlines', this)">⏰ Deadlines (1)</button>
-          <button class="cal-filter-pill learnings" onclick="filterCal('learnings', this)">🧠 Learnings (3)</button>
+        <div style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:14px">
+          <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px"></span>Applied Jobs</span>
+          <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--flame);margin-right:5px"></span>Deadlines</span>
+          <span><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--cyan);margin-right:5px"></span>Daily Learnings</span>
         </div>
       </div>
 
@@ -1287,73 +1414,72 @@
           <div class="cal-day-name">Sat</div>
         </div>
 
-        <!-- Month Day Grid -->
+        <!-- Clean Month Grid -->
         <div class="cal-matrix" id="calMatrix">
-          <!-- Previous Month Fillers -->
-          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">27</span></div></div>
-          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">28</span></div></div>
-          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">29</span></div></div>
-          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">30</span></div></div>
-
-          <!-- October Days -->
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">1</span></div></div>
+          <div class="cal-cell other-mo"><span class="cal-cell-num">27</span></div>
+          <div class="cal-cell other-mo"><span class="cal-cell-num">28</span></div>
+          <div class="cal-cell other-mo"><span class="cal-cell-num">29</span></div>
+          <div class="cal-cell other-mo"><span class="cal-cell-num">30</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">1</span></div>
           <div class="cal-cell">
-            <div class="cal-cell-head"><span class="cal-cell-num">2</span></div>
-            <div class="cal-event-pill job-applied" onclick="alert('Applied: Stripe - Backend Infrastructure')" title="Applied to Stripe">💼 Stripe · Backend</div>
+            <span class="cal-cell-num">2</span>
+            <div class="cal-dot-row"><span class="cal-dot blue" title="Applied: Stripe"></span></div>
           </div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">3</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">3</span></div>
 
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">4</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">4</span></div>
           <div class="cal-cell">
-            <div class="cal-cell-head"><span class="cal-cell-num">5</span></div>
-            <div class="cal-event-pill job-applied" onclick="alert('Applied: Razorpay - Product Engineering')" title="Applied to Razorpay">💼 Razorpay · SWE</div>
+            <span class="cal-cell-num">5</span>
+            <div class="cal-dot-row"><span class="cal-dot blue" title="Applied: Razorpay"></span></div>
           </div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">6</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">7</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">8</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">9</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">6</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">7</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">8</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">9</span></div>
           <div class="cal-cell">
-            <div class="cal-cell-head"><span class="cal-cell-num">10</span></div>
-            <div class="cal-event-pill job-deadline" onclick="alert('Deadline: Jane Street Quant Research')" title="Deadline: Jane Street">⏰ Jane Street Due</div>
+            <span class="cal-cell-num">10</span>
+            <div class="cal-dot-row"><span class="cal-dot orange" title="Deadline: Jane Street"></span></div>
           </div>
 
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">11</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">12</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">13</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">14</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">15</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">16</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">17</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">11</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">12</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">13</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">14</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">15</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">16</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">17</span></div>
 
           <div class="cal-cell">
-            <div class="cal-cell-head"><span class="cal-cell-num">18</span></div>
-            <div class="cal-event-pill job-applied" onclick="alert('Applied: Google - Software Engineer Intern')" title="Applied to Google">💼 Google · SWE</div>
+            <span class="cal-cell-num">18</span>
+            <div class="cal-dot-row"><span class="cal-dot blue" title="Applied: Google"></span></div>
           </div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">19</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">20</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">19</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">20</span></div>
           <div class="cal-cell">
-            <div class="cal-cell-head"><span class="cal-cell-num">21</span></div>
-            <div class="cal-event-pill learning-entry" onclick="alert('Learning Log: Redis Caching & Stampede Mitigation (60 mins)')" title="Learned: Redis Caching (60m)">🧠 Redis Caching (60m)</div>
+            <span class="cal-cell-num">21</span>
+            <div class="cal-dot-row"><span class="cal-dot green" title="Learning: Redis Caching (60m)"></span></div>
           </div>
           <!-- Today: Oct 22 -->
           <div class="cal-cell is-today">
-            <div class="cal-cell-head">
+            <div style="display:flex;justify-content:space-between;align-items:center">
               <span class="cal-cell-num">22</span>
               <span class="cal-today-tag">TODAY</span>
             </div>
-            <div class="cal-event-pill learning-entry" onclick="alert('Learning Log: Kafka Consumer Groups & Partition Rebalancing (60 mins)')" title="Learned: Kafka Consumer Groups (60m)">🧠 Kafka Groups (60m)</div>
-            <div class="cal-event-pill learning-entry algo" onclick="alert('Learning Log: Sliding Window & Two-Pointer Optimal Substrings (45 mins)')" title="Learned: LeetCode Sliding Window (45m)">🧠 Sliding Window (45m)</div>
+            <div class="cal-dot-row">
+              <span class="cal-dot green" title="Learning: Kafka Groups (60m)"></span>
+              <span class="cal-dot green" title="Learning: Sliding Window (45m)"></span>
+            </div>
           </div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">23</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">24</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">23</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">24</span></div>
 
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">25</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">26</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">27</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">28</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">29</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">30</span></div></div>
-          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">31</span></div></div>
+          <div class="cal-cell"><span class="cal-cell-num">25</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">26</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">27</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">28</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">29</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">30</span></div>
+          <div class="cal-cell"><span class="cal-cell-num">31</span></div>
         </div>
       </div>
     </div>

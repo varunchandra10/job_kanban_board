@@ -81,7 +81,7 @@ window.switchViewMode = function(mode) {
     btnApps.setAttribute('aria-selected', isApps ? 'true' : 'false');
   }
   if (btnLearnings) {
-    btnLearnings.classList.toggle('active', !isApps);
+    btnLearnings.classList.toggle('active', isLearnings);
     btnLearnings.setAttribute('aria-selected', isLearnings ? 'true' : 'false');
   }
   if (btnCal) {

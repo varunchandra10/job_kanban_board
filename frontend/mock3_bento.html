@@ -425,10 +425,13 @@
 
     /* Learnings List */
     .bento-learnings-list {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
     }
+    @media (max-width: 1100px) { .bento-learnings-list { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 680px) { .bento-learnings-list { grid-template-columns: 1fr; } }
+    .bento-learning-item { min-height: 260px; justify-content: space-between; }
     .bento-learning-item {
       background: var(--surface);
       border: 1px solid var(--border);

@@ -3377,9 +3377,19 @@ header .btn:active {
 /* --- Learnings Feed Grid --- */
 .learnings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 18px;
+  align-items: stretch;
+}
+@media (max-width: 1100px) {
+  .learnings-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 680px) {
+  .learnings-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 @media (max-width: 600px) {
   .learnings-grid {
@@ -3391,11 +3401,13 @@ header .btn:active {
   background: var(--surface);
   border: 1px solid var(--bd);
   border-radius: var(--r2);
-  padding: 16px 18px;
+  padding: 20px;
   box-shadow: var(--shadow-xs);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  justify-content: space-between;
+  min-height: 290px;
+  gap: 14px;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
 }
@@ -3727,3 +3739,29 @@ header .btn:active {
   color: #38bdf8;
   border-color: rgba(6, 182, 212, 0.35);
 }
+
+/* Rectangular 3-per-row learning cards */
+.learning-card {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 270px;
+  gap: 12px;
+}
+
+/* Minimal clean calendar indicators (No bulky cards) */
+.cal-dot-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+}
+.cal-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.cal-dot.blue { background: var(--applied-clr); box-shadow: 0 0 4px var(--applied-clr); }
+.cal-dot.amber { background: var(--interview-clr); box-shadow: 0 0 4px var(--interview-clr); }
+.cal-dot.green { background: var(--offer-clr); box-shadow: 0 0 4px var(--offer-clr); }
