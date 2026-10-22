@@ -1101,3 +1101,56 @@ function renderProfileLearningStats() {
     `;
   }
 }
+
+// Standalone page initialization for learnings.html
+document.addEventListener('DOMContentLoaded', () => {
+  // Sync live application count from API
+  fetch('/api/state')
+    .then(r => r.json())
+    .then(s => {
+      const b = document.getElementById('appModeBadge');
+      if (b && s && s.apps) b.textContent = s.apps.length;
+    })
+    .catch(() => {});
+
+  // Header search input for learnings
+  const searchInp = document.getElementById('search');
+  const searchWrap = document.querySelector('.search-wrap');
+  const searchClear = document.getElementById('searchClear');
+  if (searchInp) {
+    searchInp.addEventListener('input', e => {
+      learningSearchQuery = e.target.value.trim();
+      searchWrap?.classList.toggle('has-val', !!e.target.value);
+      renderLearningsBoard();
+    });
+  }
+  if (searchClear && searchInp) {
+    searchClear.addEventListener('click', e => {
+      e.stopPropagation();
+      searchInp.value = '';
+      learningSearchQuery = '';
+      searchWrap?.classList.remove('has-val');
+      renderLearningsBoard();
+      searchInp.focus();
+    });
+  }
+
+  // Standalone theme toggle
+  const tbtn = document.getElementById('tbtn');
+  if (tbtn) {
+    tbtn.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    });
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+  }
+
+  // Load learnings & gamification
+  loadGamificationStats();
+  loadLearnings();
+});
