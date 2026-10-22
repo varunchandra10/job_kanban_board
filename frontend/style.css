@@ -4744,7 +4744,7 @@ body.dark-mode .cat-english, [data-theme="dark"] .cat-english { background: rgba
 #learningsView.learnings-board {
   flex: 1;
   display: grid;
-  grid-template-columns: repeat(6, minmax(260px, 1fr));
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
   gap: 16px;
   padding: 20px 24px;
   overflow-x: auto;
@@ -4956,3 +4956,144 @@ body.dark-mode .cat-english, [data-theme="dark"] .cat-english { background: rgba
   color: var(--accent);
   border-color: var(--accent-bd);
 }
+
+/* ───── General Aptitude Column Toolbar & Dropdown ───── */
+.aptitude-filter-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+  margin-bottom: 8px;
+}
+
+.apt-stream-pills {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg2);
+  padding: 3px;
+  border-radius: var(--r-sm);
+}
+
+.apt-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  border: none;
+  background: transparent;
+  color: var(--tx2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.apt-pill:hover {
+  color: var(--tx);
+  background: var(--surface);
+}
+.apt-pill.active {
+  background: var(--surface);
+  color: var(--tx);
+  box-shadow: var(--shadow-xs);
+  font-weight: 700;
+}
+
+.apt-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.apt-topic-dropdown-wrap {
+  width: 100%;
+}
+
+.apt-select-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.apt-filter-icon {
+  position: absolute;
+  left: 8px;
+  width: 12px;
+  height: 12px;
+  stroke: var(--tx3);
+  fill: none;
+  stroke-width: 2;
+  pointer-events: none;
+}
+
+.apt-topic-select {
+  width: 100%;
+  padding: 5px 8px 5px 26px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--tx);
+  background: var(--bg2);
+  border: 1px solid var(--bd);
+  border-radius: var(--r-sm);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.apt-topic-select:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.active-topic-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-bd);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.active-topic-chip button {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: 6px;
+}
+.active-topic-chip button:hover {
+  font-weight: 700;
+}
+
+.apt-stream-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.apt-stream-tag.english { background: #f1f5f9; color: #475569; }
+.apt-stream-tag.quants { background: #ecfdf5; color: #047857; }
+.apt-stream-tag.reasoning { background: #ffedd5; color: #c2410c; }
+
+body.dark-mode .apt-stream-tag.english, [data-theme="dark"] .apt-stream-tag.english { background: rgba(100, 116, 139, 0.2); color: #94a3b8; }
+body.dark-mode .apt-stream-tag.quants, [data-theme="dark"] .apt-stream-tag.quants { background: rgba(4, 120, 87, 0.2); color: #34d399; }
+body.dark-mode .apt-stream-tag.reasoning, [data-theme="dark"] .apt-stream-tag.reasoning { background: rgba(194, 65, 12, 0.2); color: #fb923c; }

@@ -265,6 +265,61 @@ async function loadLearnings() {
   }
 }
 
+const APTITUDE_TOPICS = {
+  'English': [
+    'Reading Comprehension',
+    'Sentence Correction & Grammar',
+    'Vocabulary, Synonyms & Antonyms',
+    'Para Jumbles & Sentence Rearrangement',
+    'Spotting Errors',
+    'Idioms & Phrases',
+    'Fill in the Blanks / Cloze Test',
+    'One Word Substitution',
+    'Active & Passive Voice',
+    'Direct & Indirect Speech'
+  ],
+  'Quants': [
+    'Percentages, Profit & Loss',
+    'Time, Speed & Distance',
+    'Time & Work, Pipes & Cisterns',
+    'Permutations, Combinations & Probability',
+    'Ratio, Proportion & Averages',
+    'Number Systems & Divisibility',
+    'Simple & Compound Interest',
+    'Algebra & Quadratic Equations',
+    'Geometry & Mensuration',
+    'Data Interpretation (Charts & Tables)',
+    'Mixtures & Alligations'
+  ],
+  'Reasoning': [
+    'Blood Relations & Family Tree',
+    'Direction Sense Test',
+    'Syllogisms & Venn Diagrams',
+    'Coding-Decoding & Analogy',
+    'Number & Letter Series',
+    'Seating Arrangement (Linear & Circular)',
+    'Puzzles & Order / Ranking',
+    'Clocks & Calendars',
+    'Statement & Assumptions / Arguments',
+    'Input-Output & Machine Reasoning',
+    'Dice, Cubes & Paper Folding'
+  ]
+};
+
+let currentAptitudeStream = 'All'; // 'All' | 'English' | 'Quants' | 'Reasoning'
+let currentAptitudeTopic = 'All';  // 'All' | string
+
+window.setAptitudeStream = function(stream) {
+  currentAptitudeStream = stream;
+  currentAptitudeTopic = 'All';
+  renderLearningsBoard();
+};
+
+window.setAptitudeTopic = function(topic) {
+  currentAptitudeTopic = topic;
+  renderLearningsBoard();
+};
+
 const LEARNING_CATEGORIES = [
   {
     key: 'DSA',
@@ -288,25 +343,11 @@ const LEARNING_CATEGORIES = [
     match: c => c.includes('cs') || c.includes('subject') || c.includes('system') || c.includes('os') || c.includes('dbms') || c.includes('network')
   },
   {
-    key: 'REASONING',
-    label: 'REASONING',
-    dot: '#ea580c',
+    key: 'GENERAL APTITUDE',
+    label: 'GENERAL APTITUDE',
+    dot: '#f59e0b',
     icon: '<svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/><line x1="9" y1="21" x2="15" y2="21"/></svg>',
-    match: c => c.includes('reasoning') || c.includes('logic') || c.includes('aptitude')
-  },
-  {
-    key: 'QUANTS',
-    label: 'QUANTS',
-    dot: '#10b981',
-    icon: '<svg viewBox="0 0 24 24"><line x1="19" y1="5" x2="5" y2="19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
-    match: c => c.includes('quant') || c.includes('math')
-  },
-  {
-    key: 'ENGLISH',
-    label: 'ENGLISH',
-    dot: '#64748b',
-    icon: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
-    match: c => c.includes('english') || c.includes('verbal')
+    match: c => c.includes('apt') || c.includes('reasoning') || c.includes('quant') || c.includes('math') || c.includes('english') || c.includes('verbal')
   }
 ];
 
@@ -316,6 +357,24 @@ function getCategoryForLearning(item) {
     if (cat.match(c)) return cat.key;
   }
   return 'DSA';
+}
+
+function getAptitudeStreamForItem(item) {
+  const text = (String(item.category || '') + ' ' + String(item.topic || '') + ' ' + String(item.title || '') + ' ' + String(item.notes || '')).toLowerCase();
+  if (text.includes('english') || text.includes('verbal') || text.includes('reading comprehension') || text.includes('grammar') || text.includes('vocabulary') || text.includes('synonym') || text.includes('jumble')) {
+    return 'English';
+  }
+  if (text.includes('quant') || text.includes('math') || text.includes('percent') || text.includes('profit') || text.includes('speed') || text.includes('time and work') || text.includes('probability') || text.includes('ratio') || text.includes('algebra') || text.includes('geometry') || text.includes('interest')) {
+    return 'Quants';
+  }
+  if (text.includes('reasoning') || text.includes('logic') || text.includes('blood relation') || text.includes('direction') || text.includes('syllogism') || text.includes('puzzle') || text.includes('seating') || text.includes('series') || text.includes('analogy') || text.includes('coding-decod') || text.includes('clock')) {
+    return 'Reasoning';
+  }
+  const cat = String(item.category || '').toLowerCase();
+  if (cat.includes('english')) return 'English';
+  if (cat.includes('quant')) return 'Quants';
+  if (cat.includes('reasoning')) return 'Reasoning';
+  return 'Quants';
 }
 
 function escapeHtml(str) {
@@ -330,7 +389,7 @@ function escapeHtml(str) {
 
 function updateLearningsBarBadges() {
   const total = learningsList.length;
-  const counts = { 'DSA': 0, 'AI/ML/NLP/CV': 0, 'CS SUBJECTS': 0, 'REASONING': 0, 'QUANTS': 0, 'ENGLISH': 0 };
+  const counts = { 'DSA': 0, 'AI/ML/NLP/CV': 0, 'CS SUBJECTS': 0, 'GENERAL APTITUDE': 0 };
 
   learningsList.forEach(l => {
     const k = getCategoryForLearning(l);
@@ -343,15 +402,21 @@ function updateLearningsBarBadges() {
   setT('lc-DSA', counts['DSA']);
   setT('lc-AI', counts['AI/ML/NLP/CV']);
   setT('lc-CS', counts['CS SUBJECTS']);
-  setT('lc-REASONING', counts['REASONING']);
-  setT('lc-QUANTS', counts['QUANTS']);
-  setT('lc-ENGLISH', counts['ENGLISH']);
+  setT('lc-APTITUDE', counts['GENERAL APTITUDE']);
 }
 
-window.openLearningModalWithCat = function(catKey) {
+window.openLearningModalWithCat = function(catKey, stream, topic) {
   openLearningModal();
   const sel = document.getElementById('l_category');
-  if (sel) sel.value = catKey;
+  if (sel) sel.value = (catKey === 'GENERAL APTITUDE' ? 'GENERAL APTITUDE' : catKey);
+
+  if (topic && topic !== 'All') {
+    const topicInput = document.getElementById('l_topic');
+    if (topicInput) topicInput.value = topic;
+  } else if (stream && stream !== 'All') {
+    const topicInput = document.getElementById('l_topic');
+    if (topicInput && !topicInput.value) topicInput.value = stream;
+  }
 };
 
 function renderLearningsBoard() {
@@ -367,10 +432,26 @@ function renderLearningsBoard() {
   }
 
   container.innerHTML = colsToRender.map(cat => {
-    const catItems = learningsList.filter(item => {
+    const isAptitudeCol = (cat.key === 'GENERAL APTITUDE');
+
+    let catItems = learningsList.filter(item => {
       const itemCat = getCategoryForLearning(item);
       if (itemCat !== cat.key) return false;
 
+      // Aptitude stream filter
+      if (isAptitudeCol && currentAptitudeStream !== 'All') {
+        const stream = getAptitudeStreamForItem(item);
+        if (stream !== currentAptitudeStream) return false;
+      }
+
+      // Aptitude topic filter
+      if (isAptitudeCol && currentAptitudeTopic !== 'All') {
+        const topicQuery = currentAptitudeTopic.toLowerCase();
+        const text = [item.title, item.topic, item.notes, item.tags].join(' ').toLowerCase();
+        if (!text.includes(topicQuery)) return false;
+      }
+
+      // Global search filter
       if (learningSearchQuery) {
         const q = learningSearchQuery.toLowerCase();
         const combined = [item.title, item.topic, item.category, item.notes, item.tags].join(' ').toLowerCase();
@@ -379,14 +460,73 @@ function renderLearningsBoard() {
       return true;
     });
 
+    // Toolbar for General Aptitude column
+    let toolbarHtml = '';
+    if (isAptitudeCol) {
+      let optionsHtml = '';
+      if (currentAptitudeStream === 'English') {
+        optionsHtml = `<option value="All" ${currentAptitudeTopic === 'All' ? 'selected' : ''}>All English Topics (${APTITUDE_TOPICS['English'].length})</option>` +
+          APTITUDE_TOPICS['English'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
+      } else if (currentAptitudeStream === 'Quants') {
+        optionsHtml = `<option value="All" ${currentAptitudeTopic === 'All' ? 'selected' : ''}>All Quants Topics (${APTITUDE_TOPICS['Quants'].length})</option>` +
+          APTITUDE_TOPICS['Quants'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
+      } else if (currentAptitudeStream === 'Reasoning') {
+        optionsHtml = `<option value="All" ${currentAptitudeTopic === 'All' ? 'selected' : ''}>All Reasoning Topics (${APTITUDE_TOPICS['Reasoning'].length})</option>` +
+          APTITUDE_TOPICS['Reasoning'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('');
+      } else {
+        optionsHtml = `<option value="All" ${currentAptitudeTopic === 'All' ? 'selected' : ''}>All Aptitude Topics</option>
+          <optgroup label="English Topics">
+            ${APTITUDE_TOPICS['English'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+          </optgroup>
+          <optgroup label="Quants Topics">
+            ${APTITUDE_TOPICS['Quants'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+          </optgroup>
+          <optgroup label="Reasoning Topics">
+            ${APTITUDE_TOPICS['Reasoning'].map(t => `<option value="${escapeHtml(t)}" ${currentAptitudeTopic === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+          </optgroup>`;
+      }
+
+      toolbarHtml = `
+        <div class="aptitude-filter-toolbar">
+          <div class="apt-stream-pills">
+            <button type="button" class="apt-pill ${currentAptitudeStream === 'All' ? 'active' : ''}" onclick="setAptitudeStream('All')">All</button>
+            <button type="button" class="apt-pill ${currentAptitudeStream === 'English' ? 'active' : ''}" onclick="setAptitudeStream('English')">
+              <span class="apt-pill-dot" style="background:#64748b;"></span>English
+            </button>
+            <button type="button" class="apt-pill ${currentAptitudeStream === 'Quants' ? 'active' : ''}" onclick="setAptitudeStream('Quants')">
+              <span class="apt-pill-dot" style="background:#10b981;"></span>Quants
+            </button>
+            <button type="button" class="apt-pill ${currentAptitudeStream === 'Reasoning' ? 'active' : ''}" onclick="setAptitudeStream('Reasoning')">
+              <span class="apt-pill-dot" style="background:#ea580c;"></span>Reasoning
+            </button>
+          </div>
+          <div class="apt-topic-dropdown-wrap">
+            <div class="apt-select-box">
+              <svg viewBox="0 0 24 24" class="apt-filter-icon"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <select id="aptTopicSelect" class="apt-topic-select" onchange="setAptitudeTopic(this.value)">
+                ${optionsHtml}
+              </select>
+            </div>
+          </div>
+          ${currentAptitudeTopic !== 'All' ? `
+            <div class="active-topic-chip">
+              <span>Topic: <strong>${escapeHtml(currentAptitudeTopic)}</strong></span>
+              <button type="button" title="Clear topic filter" onclick="setAptitudeTopic('All')">&times;</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
     const bodyHtml = catItems.length === 0 ? `
       <div class="empty-col-msg">
-        <span>No ${escapeHtml(cat.label)} notes yet</span>
-        <button type="button" class="empty-add-btn" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}')">+ Add Note</button>
+        <span>No ${escapeHtml(cat.label)} notes yet${currentAptitudeTopic !== 'All' ? ' for ' + escapeHtml(currentAptitudeTopic) : ''}</span>
+        <button type="button" class="empty-add-btn" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}', '${currentAptitudeStream}', '${currentAptitudeTopic}')">+ Add Note</button>
       </div>
     ` : catItems.map(item => {
       const tags = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
       const hasUrl = Boolean(item.resource_url && /^https?:\/\//i.test(item.resource_url.trim()));
+      const stream = isAptitudeCol ? getAptitudeStreamForItem(item) : '';
 
       return `
         <div class="card learning-kanban-card" onclick="openLearningModal(${item.id})">
@@ -397,7 +537,10 @@ function renderLearningsBoard() {
             </div>
             <div style="min-width:0;flex:1">
               <div class="co" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
-              <div class="role" title="${escapeHtml(item.topic || cat.label)}">${escapeHtml(item.topic || cat.label)}</div>
+              <div class="role" title="${escapeHtml(item.topic || cat.label)}">
+                ${stream ? `<span class="apt-stream-tag ${stream.toLowerCase()}">${stream}</span> ` : ''}
+                ${escapeHtml(item.topic || cat.label)}
+              </div>
             </div>
           </div>
           ${item.notes ? `<div class="card-notes-preview">${escapeHtml(item.notes)}</div>` : ''}
@@ -423,8 +566,9 @@ function renderLearningsBoard() {
           <span class="col-stage-dot" style="background:${cat.dot}"></span>
           <h2>${cat.icon} ${escapeHtml(cat.label)}</h2>
           <span class="col-count">${catItems.length}</span>
-          <button type="button" class="col-quick-add" title="Add note in ${escapeHtml(cat.label)}" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}')">+</button>
+          <button type="button" class="col-quick-add" title="Add note in ${escapeHtml(cat.label)}" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}', '${currentAptitudeStream}', '${currentAptitudeTopic}')">+</button>
         </div>
+        ${toolbarHtml}
         <div class="body" data-cat="${escapeHtml(cat.key)}">
           ${bodyHtml}
         </div>
