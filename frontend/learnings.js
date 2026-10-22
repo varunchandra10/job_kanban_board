@@ -133,8 +133,14 @@ window.switchViewMode = function(mode) {
     if (learningsSecBarEl) learningsSecBarEl.style.display = 'flex';
     if (mobileNavEl) mobileNavEl.style.display = 'none';
     if (mobileTabsEl) mobileTabsEl.style.display = 'none';
-    if (searchWrapEl) searchWrapEl.style.display = 'none';
+    if (searchWrapEl) searchWrapEl.style.display = 'flex';
     if (learningsViewEl) learningsViewEl.style.display = 'grid';
+    const sInp = document.getElementById('search');
+    if (sInp) {
+      sInp.placeholder = 'Search concepts, notes, topics, tags...';
+      sInp.value = learningSearchQuery || '';
+      searchWrapEl?.classList.toggle('has-val', !!sInp.value);
+    }
     loadGamificationStats();
     loadLearnings();
   } else {
@@ -146,6 +152,12 @@ window.switchViewMode = function(mode) {
     if (mobileTabsEl) mobileTabsEl.style.display = '';
     if (searchWrapEl) searchWrapEl.style.display = 'flex';
     if (learningsViewEl) learningsViewEl.style.display = 'none';
+    const sInp = document.getElementById('search');
+    if (sInp) {
+      sInp.placeholder = 'Search company, role, notes...';
+      sInp.value = (typeof searchQuery !== 'undefined') ? searchQuery : '';
+      searchWrapEl?.classList.toggle('has-val', !!sInp.value);
+    }
     if (typeof currentSec !== 'undefined' && currentSec === 'Calendar') currentSec = 'All';
     if (typeof render === 'function') render();
   }

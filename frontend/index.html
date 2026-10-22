@@ -233,10 +233,6 @@
     GENERAL APTITUDE <span class="badge" id="lc-APTITUDE">0</span>
   </button>
   <span class="sec-sp"></span>
-  <div class="search-wrap" style="width:230px;">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="learningsSecSearch" class="search-input" placeholder="Search notes, concepts, tags..." autocomplete="off">
-  </div>
   <button type="button" class="btn primary add-app-toolbar-btn" id="secAddLearningBtn" onclick="openLearningModal()" style="padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;border-radius:6px;margin-left:8px;" title="Log Daily Learning">
     <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
     <span>Log Learning</span>
@@ -1808,15 +1804,27 @@ if (searchWrap && searchInp) {
     if (e.target !== $('#searchClear')) searchInp.focus();
   };
   searchInp.oninput = e => {
-    searchQuery = e.target.value.trim();
+    const val = e.target.value.trim();
     searchWrap.classList.toggle('has-val', !!e.target.value);
+    if (typeof currentViewMode !== 'undefined' && currentViewMode === 'learnings') {
+      learningSearchQuery = val;
+      if (typeof renderLearningsBoard === 'function') renderLearningsBoard();
+      return;
+    }
+    searchQuery = val;
     render();
   };
   $('#searchClear').onclick = e => {
     e.stopPropagation();
     searchInp.value = '';
-    searchQuery = '';
     searchWrap.classList.remove('has-val');
+    if (typeof currentViewMode !== 'undefined' && currentViewMode === 'learnings') {
+      learningSearchQuery = '';
+      if (typeof renderLearningsBoard === 'function') renderLearningsBoard();
+      searchInp.focus();
+      return;
+    }
+    searchQuery = '';
     render();
     searchInp.focus();
   };
