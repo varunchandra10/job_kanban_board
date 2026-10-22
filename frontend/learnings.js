@@ -1,5 +1,5 @@
 /* ===============================================================
-   🧠 Gamified Score Streak & Daily Learnings Client Controller
+   Gamified Score Streak & Daily Learnings Client Controller
    =============================================================== */
 let currentViewMode = 'apps'; // 'apps' | 'learnings'
 let learningsList = [];
@@ -180,7 +180,7 @@ async function loadGamificationStats() {
     if (hudStreak) hudStreak.textContent = stats.streak;
     if (hudLvlNum) hudLvlNum.textContent = 'Lvl ' + stats.level;
     if (hudXp) hudXp.textContent = Number(stats.totalXP).toLocaleString() + ' XP';
-    if (modeBadge) modeBadge.textContent = '🔥 ' + stats.streak + 'd';
+    if (modeBadge) modeBadge.textContent = stats.streak + 'd';
 
     // Hero Streak Card
     const daysEl = document.getElementById('gamifyStreakDays');
@@ -201,12 +201,12 @@ async function loadGamificationStats() {
         statusEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Today Logged';
       } else {
         statusEl.className = 'streak-status-badge pending';
-        statusEl.innerHTML = '⚡ Log Today to Keep Streak';
+        statusEl.innerHTML = 'Log Today to Keep Streak';
       }
     }
 
     if (subtextEl) {
-      if (stats.streak >= 7) subtextEl.textContent = '🔥 Master consistency! Over a full week unbroken streak!';
+      if (stats.streak >= 7) subtextEl.textContent = 'Master consistency! Over a full week unbroken streak!';
       else if (stats.streak >= 3) subtextEl.textContent = 'Awesome momentum! You are building deep technical mastery.';
       else if (stats.streak > 0) subtextEl.textContent = 'Great start! Log daily to build your habit and XP.';
       else subtextEl.textContent = 'Start your streak today! Log your key learnings and concepts.';
@@ -235,7 +235,7 @@ async function loadGamificationStats() {
       punchRow.innerHTML = stats.weekPunchcard.map(day => 
         '<div class="punch-day-col">' +
           '<div class="punch-circle ' + (day.active ? 'active' : '') + ' ' + (day.isToday ? 'today-ring' : '') + '" title="' + day.date + ': ' + (day.active ? 'Activity Logged' : 'No activity') + '">' +
-            (day.active ? '✓' : '·') +
+            (day.active ? '&#10003;' : '&middot;') +
           '</div>' +
           '<span class="punch-day-label">' + day.day + '</span>' +
         '</div>'
@@ -300,7 +300,7 @@ function renderLearningsFeed() {
   if (!filtered.length) {
     feed.innerHTML = 
       '<div class="learnings-empty-state">' +
-        '<div class="empty-icon-giant">🧠</div>' +
+        '<div class="empty-icon-giant"><svg viewBox="0 0 24 24" width="48" height="48" stroke="var(--accent)" stroke-width="1.8" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>' +
         '<h4 class="empty-headline">No Learnings Found</h4>' +
         '<p class="empty-subtext">' +
           (learningSearchQuery ? 'No notes match your current search query.' : 'Capture what you practiced, watched, or read today to build your streak and level up!') +
@@ -323,7 +323,7 @@ function renderLearningsFeed() {
         '<div class="learning-card-header">' +
           '<div class="learning-card-badges">' +
             '<span class="learning-cat-badge ' + catClass + '">' + escapeHtml(item.category || 'General') + '</span>' +
-            '<span class="learning-duration-tag">⏱️ ' + (item.duration_minutes || 30) + 'm</span>' +
+            '<span class="learning-duration-tag"><svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:3px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' + (item.duration_minutes || 30) + 'm</span>' +
           '</div>' +
           '<span class="learning-card-date">' + (item.date_logged || 'Today') + '</span>' +
         '</div>' +
@@ -389,7 +389,7 @@ window.openLearningModal = function(editId = null) {
     document.getElementById('l_date').value = todayStr;
     document.getElementById('l_duration').value = 45;
     const btnSpan = document.querySelector('#submitLearningBtn span');
-    if (btnSpan) btnSpan.textContent = '🚀 Log Learning (+50 XP)';
+    if (btnSpan) btnSpan.textContent = 'Log Learning (+50 XP)';
   }
 
   // Update preset buttons state
@@ -446,7 +446,7 @@ window.saveLearning = async function() {
 
     if (!editId) {
       burstConfetti();
-      if (typeof toast === 'function') toast('🎉 Awesome! +50 XP Earned! Streak Maintained!');
+      if (typeof toast === 'function') toast('Awesome! +50 XP Earned! Streak Maintained!');
     } else {
       if (typeof toast === 'function') toast('Learning updated successfully');
     }
@@ -528,17 +528,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 /* ===============================================================
-   👤 USER PROFILE & CAREER HUB CONTROLLER
+   USER PROFILE & CAREER HUB CONTROLLER
    =============================================================== */
 
 // Default / cached quick links
 const DEFAULT_QUICK_LINKS = [
-  { id: 'portfolio', icon: '🌐', title: 'Portfolio Website', url: 'https://varunchandra.dev' },
-  { id: 'github', icon: '🐙', title: 'GitHub Profile', url: 'https://github.com/varunchandra10' },
-  { id: 'linkedin', icon: '👔', title: 'LinkedIn Profile', url: 'https://linkedin.com/in/varunchandra' },
-  { id: 'leetcode', icon: '🧠', title: 'LeetCode / DSA', url: 'https://leetcode.com/varun_chandra' },
-  { id: 'resume', icon: '📄', title: 'Google Drive Master Resume', url: 'https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_' },
-  { id: 'email', icon: '✉️', title: 'Contact Email', url: 'varun.chandra@example.com' }
+  { id: 'portfolio', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>`, title: 'Portfolio Website', url: 'https://varunchandra.dev' },
+  { id: 'github', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>`, title: 'GitHub Profile', url: 'https://github.com/varunchandra10' },
+  { id: 'linkedin', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>`, title: 'LinkedIn Profile', url: 'https://linkedin.com/in/varunchandra' },
+  { id: 'leetcode', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`, title: 'LeetCode / DSA', url: 'https://leetcode.com/varun_chandra' },
+  { id: 'resume', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`, title: 'Google Drive Master Resume', url: 'https://drive.google.com/drive/folders/1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_' },
+  { id: 'email', icon: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`, title: 'Contact Email', url: 'varun.chandra@example.com' }
 ];
 
 function getQuickLinks() {
@@ -566,13 +566,13 @@ window.renderProfileView = function() {
   const totalXp = gamificationData?.totalXp || 0;
 
   const profUserRank = document.getElementById('profUserRank');
-  if (profUserRank) profUserRank.textContent = `⭐ Level ${level} ${levelTitle}`;
+  if (profUserRank) profUserRank.textContent = `Level ${level} ${levelTitle}`;
 
   const profUserStreak = document.getElementById('profUserStreak');
-  if (profUserStreak) profUserStreak.textContent = `🔥 ${streak}-Day Focus Streak`;
+  if (profUserStreak) profUserStreak.textContent = `${streak}-Day Focus Streak`;
 
   const profHeatmapStreak = document.getElementById('profHeatmapStreak');
-  if (profHeatmapStreak) profHeatmapStreak.textContent = `${streak} Days 🔥`;
+  if (profHeatmapStreak) profHeatmapStreak.textContent = `${streak} Days`;
 
   // 2. Render GitHub-style Commit Heatmap
   renderProfileHeatmap();
@@ -673,8 +673,8 @@ function renderProfileQuickLinks() {
         </div>
         <div class="ql-actions">
           <a href="${escapeHtml(href)}" target="_blank" rel="noopener noreferrer" class="ql-btn primary">${isEmail ? 'Send ↗' : 'Open ↗'}</a>
-          <button type="button" class="ql-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy 📋</button>
-          <button type="button" class="ql-btn" onclick="editProfileQuickLink('${link.id}')">Edit ✏️</button>
+          <button type="button" class="ql-btn" onclick="copyProfileQuickLink('${escapeHtml(link.url)}', this)">Copy</button>
+          <button type="button" class="ql-btn" onclick="editProfileQuickLink('${link.id}')">Edit</button>
         </div>
       </div>
     `;
@@ -684,7 +684,7 @@ function renderProfileQuickLinks() {
 window.copyProfileQuickLink = function(text, btn) {
   navigator.clipboard.writeText(text).then(() => {
     const oldText = btn.textContent;
-    btn.textContent = 'Copied! ✓';
+    btn.textContent = 'Copied!';
     btn.style.color = '#10b981';
     btn.style.borderColor = '#10b981';
     setTimeout(() => {
@@ -789,7 +789,7 @@ function renderProfileLearningStats() {
   const elStreak = document.getElementById('profStatStreak');
   if (elStreak) elStreak.textContent = streak;
   const elStreakBadge = document.getElementById('profStreakBadge');
-  if (elStreakBadge) elStreakBadge.textContent = `🔥 ${streak}D STREAK`;
+  if (elStreakBadge) elStreakBadge.textContent = `${streak}D STREAK`;
 
   const elHours = document.getElementById('profStatStudyHours');
   if (elHours) elHours.textContent = `${hours}h`;
