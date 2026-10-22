@@ -4592,38 +4592,58 @@ body.page-scrollable .profile-view-container {
   padding: 4px 10px;
 }
 
-.momentum-matrix-wrap {
-  margin: 16px 0 12px;
+.momentum-dual-months {
+  display: flex;
+  gap: 20px;
+  align-items: stretch;
+  justify-content: space-around;
+  margin: 14px 0 10px;
   background: var(--bg);
   border: 1px solid var(--bd);
   border-radius: var(--r);
-  padding: 16px 18px;
+  padding: 16px 20px;
   overflow-x: auto;
 }
-.momentum-month-labels {
+.momentum-month-block {
   display: flex;
-  justify-content: space-between;
-  padding: 0 4px 8px 32px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: var(--tx2);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.momentum-grid-body {
-  display: flex;
+  flex-direction: column;
   gap: 10px;
+  flex: 1;
+  min-width: 170px;
+}
+.momentum-month-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--tx);
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--bd);
+  padding-bottom: 6px;
+}
+.momentum-month-title span.count-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: rgba(99,102,241,0.08);
+  padding: 1px 6px;
+  border-radius: 99px;
+}
+.momentum-month-grid-wrap {
+  display: flex;
+  gap: 8px;
   align-items: flex-start;
 }
 .momentum-days-legend {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 128px;
+  height: 148px;
   font-size: 10px;
   font-weight: 600;
   color: var(--tx3);
-  padding-top: 1px;
+  padding-top: 2px;
 }
 .momentum-weeks-row {
   display: flex;
@@ -4636,9 +4656,9 @@ body.page-scrollable .profile-view-container {
   gap: 6px;
 }
 .momentum-day-cell {
-  width: 14px;
-  height: 14px;
-  border-radius: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 3.5px;
   background: rgba(0,0,0,0.05);
   border: 1px solid rgba(0,0,0,0.03);
   transition: all 0.15s ease;
@@ -4649,6 +4669,22 @@ body.page-scrollable .profile-view-container {
   box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
   z-index: 5;
 }
+.momentum-day-cell.empty-pad {
+  background: transparent !important;
+  border-color: transparent !important;
+  cursor: default !important;
+}
+.momentum-day-cell.empty-pad:hover {
+  transform: none;
+  box-shadow: none;
+}
+.momentum-month-divider {
+  width: 1px;
+  background: var(--bd);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
 .momentum-day-cell.lvl-0 { background: rgba(0,0,0,0.05); border-color: transparent; }
 body.dark-mode .momentum-day-cell.lvl-0 { background: rgba(255,255,255,0.05); }
 
