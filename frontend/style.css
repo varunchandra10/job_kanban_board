@@ -468,19 +468,39 @@ body.dark-mode .sec-btn.active, [data-theme="dark"] .sec-btn.active {
   flex-direction: column;
   min-width: 0;
   background: var(--bg2);
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd2);
   border-radius: 14px;
   padding: 12px;
   height: 100%;
   min-height: 250px;
   transition: border-color 0.2s ease, background 0.2s ease;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
+body.dark-mode .col, [data-theme="dark"] .col {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Distinct Stage Accent Tops for column differentiation */
+.col[data-stage="Applied"], .col[data-stage="APPLIED"] { border-top: 3.5px solid #3b82f6; }
+.col[data-stage="Interviewing"], .col[data-stage="INTERVIEWING"] { border-top: 3.5px solid #f59e0b; }
+.col[data-stage="Offer"], .col[data-stage="OFFER"] { border-top: 3.5px solid #10b981; }
+.col[data-stage="Rejected"], .col[data-stage="REJECTED"] { border-top: 3.5px solid #ef4444; }
+
+.col[data-cat="DSA"] { border-top: 3.5px solid #8b5cf6; }
+.col[data-cat="AI/ML/NLP/CV"] { border-top: 3.5px solid #ec4899; }
+.col[data-cat="CS SUBJECTS"] { border-top: 3.5px solid #0284c7; }
+.col[data-cat="GENERAL APTITUDE"] { border-top: 3.5px solid #f97316; }
+
 .col-header {
   display: flex;
   align-items: center;
   gap: 8px;
   margin: 0 0 12px;
-  padding: 2px 4px;
+  padding: 2px 4px 10px 4px;
+  border-bottom: 1px solid var(--bd2);
+}
+body.dark-mode .col-header, [data-theme="dark"] .col-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 .col-header h2 {
   font-size: 12px;
@@ -577,24 +597,25 @@ body.dark-mode .sec-btn.active, [data-theme="dark"] .sec-btn.active {
 /* ───── Cards ───── */
 .card {
   position: relative;
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd2);
   border-radius: 12px;
-  padding: 14px 15px;
+  padding: 13px 14px;
   background: var(--surface);
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 .card:hover {
-  border-color: var(--bd2);
+  border-color: var(--accent);
   transform: translateY(-2.5px);
   box-shadow: 0 10px 22px -3px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
 }
 body.dark-mode .card, [data-theme="dark"] .card {
+  border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 body.dark-mode .card:hover, [data-theme="dark"] .card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
   box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -2px rgba(0, 0, 0, 0.4);
 }
 .card:active {
@@ -630,8 +651,13 @@ body.dark-mode .card:hover, [data-theme="dark"] .card:hover {
   display: flex;
   gap: 10px;
   align-items: flex-start;
-  margin-bottom: 8px;
+  margin-bottom: 9px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--bd);
   padding-right: 56px;
+}
+body.dark-mode .top, [data-theme="dark"] .top {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .logo {
   width: 32px;
@@ -689,8 +715,13 @@ body.dark-mode .card:hover, [data-theme="dark"] .card:hover {
 .tags {
   display: flex;
   gap: 5px;
-  margin-top: 10px;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid var(--bd);
   flex-wrap: wrap;
+}
+body.dark-mode .tags, [data-theme="dark"] .tags {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
 }
 .tag {
   font-size: 11px;
@@ -999,7 +1030,7 @@ body.dark-mode #fpop, [data-theme="dark"] #fpop {
   bottom: 0;
   width: min(540px, 100%);
   background: var(--surface);
-  border-left: 1px solid var(--bd);
+  border-left: 1px solid var(--bd2);
   z-index: 60;
   transform: translateX(100%);
   transition: transform .22s cubic-bezier(.4, 0, .2, 1);
@@ -1007,15 +1038,21 @@ body.dark-mode #fpop, [data-theme="dark"] #fpop {
   flex-direction: column;
   box-shadow: var(--shadow-xl);
 }
+body.dark-mode #panel, [data-theme="dark"] #panel {
+  border-left: 1px solid rgba(255, 255, 255, 0.16);
+}
 #panel.open { transform: none; }
 .ph {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 14px 22px;
-  border-bottom: 1px solid var(--bd);
+  border-bottom: 1px solid var(--bd2);
   background: var(--surface);
   flex-shrink: 0;
+}
+body.dark-mode .ph, [data-theme="dark"] .ph {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 .ph h3 { margin: 0; font-size: 15px; font-weight: 700; flex: 1; color: var(--tx); }
 #saved { color: var(--offer-clr); font-size: 12px; font-weight: 500; opacity: 0; transition: opacity .3s; }
@@ -1027,12 +1064,15 @@ body.dark-mode #fpop, [data-theme="dark"] #fpop {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--tx3);
-  margin: 22px 0 6px;
+  margin: 22px 0 8px;
   padding-top: 18px;
-  border-top: 1px solid var(--bd);
+  border-top: 1px solid var(--bd2);
   display: flex;
   align-items: center;
   gap: 6px;
+}
+body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 .pb h4 svg { width: 13px; height: 13px; stroke: currentColor; }
 .pb h4:first-child { border: 0; margin-top: 10px; padding: 0; }
@@ -4018,7 +4058,7 @@ body.dark-mode #themeToggleBtn .moon-icon,
 
 .profile-hero-card {
   background: var(--surface);
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd2);
   border-radius: var(--r2);
   padding: 24px 28px;
   box-shadow: var(--shadow);
@@ -4555,7 +4595,7 @@ body.page-scrollable .profile-view-container {
 
 .profile-card-panel {
   background: var(--surface);
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd2);
   border-radius: var(--r2);
   padding: 22px 24px;
   box-shadow: var(--shadow);
@@ -5019,26 +5059,27 @@ body.dark-mode .cat-english, [data-theme="dark"] .cat-english { background: rgba
 
 .learning-kanban-card {
   position: relative;
-  border: 1px solid var(--bd);
+  border: 1px solid var(--bd2);
   border-radius: 12px;
-  padding: 14px 15px;
+  padding: 13px 14px;
   background: var(--surface);
   cursor: pointer;
   transition: border-color 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 1px 2px rgba(15, 23, 42, 0.02);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
   display: flex;
   flex-direction: column;
 }
 .learning-kanban-card:hover {
-  border-color: var(--bd2);
+  border-color: var(--accent);
   transform: translateY(-2.5px);
   box-shadow: 0 10px 22px -3px rgba(15, 23, 42, 0.08), 0 3px 6px -2px rgba(15, 23, 42, 0.04);
 }
 body.dark-mode .learning-kanban-card, [data-theme="dark"] .learning-kanban-card {
+  border-color: rgba(255, 255, 255, 0.15);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 body.dark-mode .learning-kanban-card:hover, [data-theme="dark"] .learning-kanban-card:hover {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
   box-shadow: 0 12px 28px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -2px rgba(0, 0, 0, 0.4);
 }
 .learning-kanban-card:active {
