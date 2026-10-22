@@ -1291,20 +1291,34 @@ document.querySelectorAll('#secBar .sec-btn').forEach(btn => {
 });
 
 /* ----- Country Filter ----- */
-$('#fbtn').onclick = e => {
-  e.stopPropagation();
-  $('#fpop').style.display = $('#fpop').style.display === 'block' ? 'none' : 'block';
-};
-$('#fpop').onclick = e => e.stopPropagation();
-$('#fpop').onchange = e => {
-  const c = e.target.dataset.c;
-  let f = activeFilter();
-  f = c === '' ? [] : e.target.checked ? [...f, c] : f.filter(x => x !== c);
-  S.filter = f;
-  api('PUT', '/settings/filter', { value: JSON.stringify(f) });
-  render();
-};
-document.addEventListener('click', () => $('#fpop').style.display = 'none');
+const fBtn = $('#fbtn');
+const fPop = $('#fpop');
+const fWrap = $('#fwrap');
+if (fBtn && fPop) {
+  fBtn.onclick = e => {
+    e.stopPropagation();
+    const isBlock = fPop.style.display === 'block';
+    fPop.style.display = isBlock ? 'none' : 'block';
+    if (fWrap) fWrap.classList.toggle('open', !isBlock);
+    fBtn.setAttribute('aria-expanded', !isBlock);
+  };
+  fPop.onclick = e => e.stopPropagation();
+  fPop.onchange = e => {
+    const c = e.target.dataset.c;
+    let f = activeFilter();
+    f = c === '' ? [] : e.target.checked ? [...f, c] : f.filter(x => x !== c);
+    S.filter = f;
+    api('PUT', '/settings/filter', { value: JSON.stringify(f) });
+    render();
+  };
+  document.addEventListener('click', () => {
+    if (fPop.style.display === 'block') {
+      fPop.style.display = 'none';
+      if (fWrap) fWrap.classList.remove('open');
+      fBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
 
 /* ----- Small Screen Stage Dropdown ----- */
 const stageSelectEl = $('#stageSelect');
