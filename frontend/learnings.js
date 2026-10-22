@@ -595,59 +595,65 @@ window.renderLearningsBoard = renderLearningsBoard;
 
 
 // Modal Handlers
+// Side Slideout Drawer Handlers (Exact match to Job Applications drawer)
 window.openLearningModal = function(editId = null) {
-  const modal = document.getElementById('learningModal');
-  const titleEl = document.getElementById('learningModalTitle');
-  const editIdEl = document.getElementById('learningEditId');
-  const form = document.getElementById('learningForm');
-  if (!modal || !form) return;
+  const panel = document.getElementById("panel");
+  const bd = document.getElementById("bd");
+  const titleEl = document.getElementById("pt") || document.getElementById("learningModalTitle");
+  const editIdEl = document.getElementById("learningEditId");
+  const form = document.getElementById("learningForm");
+  if (!panel || !form) return;
 
   const todayStr = new Date().toISOString().slice(0, 10);
 
   if (editId) {
     const item = learningsList.find(x => x.id === Number(editId));
     if (!item) return;
-    titleEl.textContent = 'Edit Learning Log';
+    if (titleEl) titleEl.textContent = "Edit Learning Log";
     editIdEl.value = item.id;
-    document.getElementById('l_title').value = item.title || '';
-    document.getElementById('l_topic').value = item.topic || '';
-    document.getElementById('l_category').value = item.category || 'General';
-    document.getElementById('l_date').value = item.date_logged || todayStr;
-    document.getElementById('l_duration').value = item.duration_minutes || 45;
-    document.getElementById('l_resource').value = item.resource_url || '';
-    document.getElementById('l_notes').value = item.notes || '';
-    document.getElementById('l_tags').value = item.tags || '';
-    const btnSpan = document.querySelector('#submitLearningBtn span');
-    if (btnSpan) btnSpan.textContent = 'Update Learning';
+    document.getElementById("l_title").value = item.title || "";
+    document.getElementById("l_topic").value = item.topic || "";
+    document.getElementById("l_category").value = item.category || "General";
+    document.getElementById("l_date").value = item.date_logged || todayStr;
+    document.getElementById("l_duration").value = item.duration_minutes || 45;
+    document.getElementById("l_resource").value = item.resource_url || "";
+    document.getElementById("l_notes").value = item.notes || "";
+    document.getElementById("l_tags").value = item.tags || "";
+    const btnSpan = document.querySelector("#submitLearningBtn span");
+    if (btnSpan) btnSpan.textContent = "Update Learning";
   } else {
-    titleEl.textContent = 'Log Daily Learning';
-    editIdEl.value = '';
+    if (titleEl) titleEl.textContent = "Log Daily Learning";
+    editIdEl.value = "";
     form.reset();
-    document.getElementById('l_date').value = todayStr;
-    document.getElementById('l_duration').value = 45;
-    const btnSpan = document.querySelector('#submitLearningBtn span');
-    if (btnSpan) btnSpan.textContent = 'Log Learning (+50 XP)';
+    document.getElementById("l_date").value = todayStr;
+    document.getElementById("l_duration").value = 45;
+    const btnSpan = document.querySelector("#submitLearningBtn span");
+    if (btnSpan) btnSpan.innerHTML = "<span style=\"display:inline-flex;align-items:center;gap:6px;\">🔥 Log Learning (+50 XP)</span>";
   }
 
-  // Update category chips state in modal
+  // Update category chips state in drawer
   const catVal = document.getElementById("l_category")?.value || "DSA";
   document.querySelectorAll("#learningCatChips .learning-cat-chip").forEach(c => {
     c.classList.toggle("active", c.dataset.cat === catVal);
   });
 
   // Update preset buttons state
-  const durVal = Number(document.getElementById('l_duration').value);
-  document.querySelectorAll('#l_duration_presets .preset-pill').forEach(p => {
-    p.classList.toggle('active', Number(p.dataset.m) === durVal);
+  const durVal = Number(document.getElementById("l_duration").value);
+  document.querySelectorAll("#l_duration_presets .preset-pill").forEach(p => {
+    p.classList.toggle("active", Number(p.dataset.m) === durVal);
   });
 
-  modal.style.display = 'flex';
-  setTimeout(() => document.getElementById('l_title').focus(), 100);
+  // Open side drawer with backdrop
+  if (bd) bd.style.display = "block";
+  requestAnimationFrame(() => panel.classList.add("open"));
+  setTimeout(() => document.getElementById("l_title")?.focus(), 150);
 };
 
 window.closeLearningModal = function() {
-  const modal = document.getElementById('learningModal');
-  if (modal) modal.style.display = 'none';
+  const panel = document.getElementById("panel");
+  const bd = document.getElementById("bd");
+  if (panel) panel.classList.remove("open");
+  if (bd) bd.style.display = "none";
 };
 
 window.saveLearning = async function() {
@@ -727,6 +733,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Learning Modal Controls
   document.getElementById('openAddLearningBtn')?.addEventListener('click', () => openLearningModal());
   document.getElementById('closeLearningModal')?.addEventListener('click', closeLearningModal);
+  document.getElementById('pc')?.addEventListener('click', closeLearningModal);
+  document.getElementById('bd')?.addEventListener('click', closeLearningModal);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLearningModal();
+  });
   document.getElementById('cancelLearningModal')?.addEventListener('click', closeLearningModal);
   document.getElementById('submitLearningBtn')?.addEventListener('click', saveLearning);
 

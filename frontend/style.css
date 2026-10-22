@@ -939,7 +939,7 @@ label.f {
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
-input[type=text]:not(.search-input), input[type=email], input[type=url], input[type=date], select, textarea, input:not([type]):not(.search-input) {
+input[type=text]:not(.search-input), input[type=number], input[type=email], input[type=url], input[type=date], input[type=password], select, textarea, input:not([type]):not(.search-input) {
   width: 100%;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
@@ -948,7 +948,7 @@ input[type=text]:not(.search-input), input[type=email], input[type=url], input[t
   color: var(--tx);
   transition: border-color .15s, box-shadow .15s;
 }
-body.dark-mode input[type=text]:not(.search-input), body.dark-mode input[type=email], body.dark-mode input[type=url], body.dark-mode input[type=date], body.dark-mode select, body.dark-mode textarea, [data-theme="dark"] input:not(.search-input), [data-theme="dark"] select, [data-theme="dark"] textarea {
+body.dark-mode input[type=text]:not(.search-input), body.dark-mode input[type=number], body.dark-mode input[type=email], body.dark-mode input[type=url], body.dark-mode input[type=date], body.dark-mode input[type=password], body.dark-mode select, body.dark-mode textarea, [data-theme="dark"] input:not(.search-input), [data-theme="dark"] select, [data-theme="dark"] textarea {
   border-color: rgba(255, 255, 255, 0.22);
 }
 input:not(.search-input):focus, select:focus, textarea:focus {

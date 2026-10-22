@@ -103,39 +103,43 @@
 
 <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;"></canvas>
 
-<!-- Log Daily Learning Modal -->
-<div id="learningModal" class="confirm-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
-  <div class="learning-modal-box">
-    <div class="learning-modal-header">
-      <div class="learning-modal-header-left">
-        <div class="learning-modal-icon">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-          </svg>
-        </div>
-        <div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <h3 id="learningModalTitle">Log Daily Learning</h3>
-            <span class="learning-xp-badge">
-              <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="color:#f59e0b"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              +50 XP
-            </span>
-          </div>
-          <p class="learning-modal-subtitle">Track your core technical insights & level up daily</p>
-        </div>
+<!-- Log Daily Learning Slideout Drawer (Matches Job Applications Side Panel) -->
+<div id="bd"></div>
+<aside id="panel" aria-modal="true">
+  <div class="sheet-pull-handle" id="sheetPullHandle" aria-hidden="true"></div>
+  <div class="ph">
+    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+      <div class="learning-modal-icon">
+        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
       </div>
-      <button type="button" class="btn icon-only" id="closeLearningModal" aria-label="Close">&times;</button>
+      <div style="min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <h3 id="pt" style="margin:0;font-size:15px;font-weight:700;color:var(--tx);white-space:nowrap;">Log Daily Learning</h3>
+          <span class="learning-xp-badge">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="color:#f59e0b"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            +50 XP
+          </span>
+        </div>
+        <p class="learning-modal-subtitle" style="margin:2px 0 0;font-size:11.5px;color:var(--tx3);">Track concepts & level up daily</p>
+      </div>
     </div>
-
-    <form id="learningForm" class="learning-modal-form" onsubmit="return false;">
+    <button class="btn icon-only" id="pc" aria-label="Close">&times;</button>
+  </div>
+  <div class="pb" id="pbody">
+    <form id="learningForm" onsubmit="return false;">
       <input type="hidden" id="learningEditId" value="">
 
       <!-- Card 1: Track & Concept -->
-      <div class="learning-form-card">
-        <div class="learning-form-card-title">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Learning Track
+      <div class="panel-section-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Learning Track
+          </span>
+          <span class="panel-card-subtitle">Choose track</span>
         </div>
         <div class="learning-cat-chips" id="learningCatChips">
           <button type="button" class="learning-cat-chip active" data-cat="DSA">
@@ -163,14 +167,14 @@
           <option value="GENERAL APTITUDE">GENERAL APTITUDE</option>
         </select>
 
-        <div class="f-group" style="margin-top:2px;">
-          <label class="f-label" for="l_title">What did you learn today? <span class="required-star">*</span></label>
-          <input type="text" id="l_title" class="f-input" placeholder="e.g., Redis Distributed Locking with Redlock & TTLs" required autocomplete="off">
+        <div class="panel-field-group" style="margin-top:4px;">
+          <label class="f" for="l_title">What did you learn today? <span class="required-star" style="color:var(--rejected-clr)">*</span></label>
+          <input type="text" id="l_title" placeholder="e.g., Redis Distributed Locking with Redlock & TTLs" required autocomplete="off">
         </div>
 
-        <div class="f-group">
-          <label class="f-label" for="l_topic">Topic / Sub-concept</label>
-          <input type="text" id="l_topic" class="f-input" list="aptitudeTopicsList" placeholder="e.g., Sliding Window, System Design, Divisibility" autocomplete="off">
+        <div class="panel-field-group">
+          <label class="f" for="l_topic">Topic / Sub-concept</label>
+          <input type="text" id="l_topic" list="aptitudeTopicsList" placeholder="e.g., Sliding Window, System Design, Divisibility" autocomplete="off">
           <datalist id="aptitudeTopicsList">
             <option value="Reading Comprehension (English)"></option>
             <option value="Sentence Correction & Grammar (English)"></option>
@@ -200,26 +204,28 @@
       </div>
 
       <!-- Card 2: Schedule & Duration -->
-      <div class="learning-form-card">
-        <div class="learning-form-card-title">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-          Study Session & Time
+      <div class="panel-section-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            Study Session & Time
+          </span>
         </div>
-        <div class="f-row">
-          <div class="f-group">
-            <label class="f-label" for="l_date">Date Logged</label>
-            <input type="date" id="l_date" class="f-input">
+        <div class="row">
+          <div>
+            <label class="f" for="l_date">Date Logged</label>
+            <input type="date" id="l_date">
           </div>
-          <div class="f-group">
-            <label class="f-label" for="l_duration">Study Duration</label>
+          <div>
+            <label class="f" for="l_duration">Study Duration</label>
             <div class="duration-input-wrapper">
-              <input type="number" id="l_duration" class="f-input" min="5" max="600" step="5" value="45">
+              <input type="number" id="l_duration" min="5" max="600" step="5" value="45">
               <span class="duration-unit">minutes</span>
             </div>
           </div>
         </div>
-        <div>
-          <label class="f-label" style="font-size:11px;color:var(--tx3);margin-bottom:4px;display:block;">Quick duration presets</label>
+        <div style="margin-top:4px;">
+          <label class="f" style="font-size:11px;color:var(--tx3);margin-bottom:4px;display:block;">Quick duration presets</label>
           <div class="duration-presets" id="l_duration_presets">
             <button type="button" class="preset-pill" data-m="15">15m</button>
             <button type="button" class="preset-pill" data-m="25">25m (Pomo)</button>
@@ -232,36 +238,39 @@
       </div>
 
       <!-- Card 3: Deep Dive, Notes & Reference -->
-      <div class="learning-form-card">
-        <div class="learning-form-card-title">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          Insights & Reference
+      <div class="panel-section-card">
+        <div class="panel-card-header">
+          <span class="panel-card-title">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" fill="none" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Insights & Reference
+          </span>
         </div>
-        <div class="f-group">
-          <label class="f-label" for="l_resource">Resource / Reference Link</label>
-          <input type="url" id="l_resource" class="f-input" placeholder="https://leetcode.com/... or article URL" autocomplete="off">
-        </div>
-
-        <div class="f-group">
-          <label class="f-label" for="l_notes">Key Insights / Summary Notes</label>
-          <textarea id="l_notes" class="f-input f-textarea" rows="3" placeholder="Summarize core patterns, tricky edge cases, time/space complexity, or trade-offs..."></textarea>
+        <div class="panel-field-group">
+          <label class="f" for="l_resource">Resource / Reference Link</label>
+          <input type="url" id="l_resource" placeholder="https://leetcode.com/... or article URL" autocomplete="off">
         </div>
 
-        <div class="f-group">
-          <label class="f-label" for="l_tags">Tags (comma-separated)</label>
-          <input type="text" id="l_tags" class="f-input" placeholder="e.g., LeetCode, SlidingWindow, Redis, Hard" autocomplete="off">
+        <div class="panel-field-group">
+          <label class="f" for="l_notes">Key Insights / Summary Notes</label>
+          <textarea id="l_notes" rows="3" placeholder="Summarize core patterns, tricky edge cases, time/space complexity, or trade-offs..."></textarea>
+        </div>
+
+        <div class="panel-field-group">
+          <label class="f" for="l_tags">Tags (comma-separated)</label>
+          <input type="text" id="l_tags" placeholder="e.g., LeetCode, SlidingWindow, Redis, Hard" autocomplete="off">
         </div>
       </div>
 
-      <div class="learning-modal-actions">
+      <!-- Pinned Sticky Footer -->
+      <div class="panel-sticky-footer">
         <button type="button" class="btn" id="cancelLearningModal">Cancel</button>
         <button type="button" class="btn primary add-learning-btn" id="submitLearningBtn">
           <span style="display:inline-flex;align-items:center;gap:6px;">🔥 Log Learning (+50 XP)</span>
-        </button>
+        </button
       </div>
     </form>
   </div>
-</div>
+</aside>
 
 <script src="/learnings.js"></script>
 </body>
