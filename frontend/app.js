@@ -51,7 +51,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const $ = (s, r = document) => r.querySelector(s);
 const api = (m, u, b) => fetch('/api' + u, { method: m, headers: { 'content-type': 'application/json' }, body: b ? JSON.stringify(b) : undefined }).then(r => r.json());
 
-let S, LOGOS = {}, openId = null, adding = false, dragId = null, currentSec = 'All', searchQuery = '';
+let S = { apps: [], roles: [], companies: [], settings: {} }, LOGOS = {}, openId = null, adding = false, dragId = null, currentSec = 'All', searchQuery = '';
 
 /* ----- Tags Palette (Clean Muted Light Hues) ----- */
 const TAG_PALETTE = [
@@ -899,7 +899,7 @@ function openAddPanel(defaultStage = null) {
   const initialCat = (currentSec && currentSec !== 'All' && currentSec !== 'Calendar') ? currentSec : 'Industry';
   const st = { country: '', category: initialCat };
 
-  const roles = [...new Set([...S.roles, ...S.apps.map(a => a.role).filter(Boolean)])].sort();
+  const roles = [...new Set([...(S?.roles || []), ...(S?.apps || []).map(a => a.role).filter(Boolean)])].sort();
 
   const formHtml = `
     <h4>New Application</h4>
@@ -1231,20 +1231,28 @@ function openQuickLinksPanel() {
 if ($('#linksBtn')) $('#linksBtn').onclick = openQuickLinksPanel;
 if ($('#statsBtn')) $('#statsBtn').onclick = openStatsPanel;
 const shutdownModal = $('#shutdownModal');
-$('#closeBtn').onclick = () => {
-  if (shutdownModal) shutdownModal.style.display = 'flex';
-};
-$('#cancelShutdown').onclick = () => {
-  if (shutdownModal) shutdownModal.style.display = 'none';
-};
+const closeBtn = $('#shutdownBtn') || $('#closeBtn');
+if (closeBtn) {
+  closeBtn.onclick = () => {
+    if (shutdownModal) shutdownModal.style.display = 'flex';
+  };
+}
+const cancelBtn = $('#cancelShutdownBtn') || $('#cancelShutdown');
+if (cancelBtn) {
+  cancelBtn.onclick = () => {
+    if (shutdownModal) shutdownModal.style.display = 'none';
+  };
+}
 if (shutdownModal) {
   shutdownModal.onclick = e => {
     if (e.target === shutdownModal) shutdownModal.style.display = 'none';
   };
 }
 
-$('#confirmShutdown').onclick = async () => {
-  const btn = $('#confirmShutdown');
+const confirmBtn = $('#confirmShutdownBtn') || $('#confirmShutdown');
+if (confirmBtn) {
+  confirmBtn.onclick = async () => {
+    const btn = confirmBtn;
   btn.textContent = 'Stopping...';
   btn.disabled = true;
 
@@ -1270,7 +1278,8 @@ $('#confirmShutdown').onclick = async () => {
     </div>
   `;
   try { window.close(); } catch (e) {}
-};
+  };
+}
 
 /* ----- Section Tabs ----- */
 document.querySelectorAll('#secBar .sec-btn').forEach(btn => {
