@@ -461,6 +461,74 @@
       padding: 10px 14px;
       border-radius: 8px;
     }
+  
+    /* VIEW 3: BENTO SYNTH CALENDAR */
+    .calendar-view { display: none; }
+    .bento-cal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .b-cal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .b-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .b-cal-dname {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 6px 0;
+    }
+    .b-cal-tile {
+      min-height: 100px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .b-cal-tile:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+    .b-cal-tile.is-today {
+      border: 1.5px solid var(--emerald);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+    }
+    .b-cal-pill {
+      font-size: 10.5px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 6px;
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border: 1px solid transparent;
+    }
+    .b-cal-pill.job { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+    .b-cal-pill.deadline { background: rgba(245, 158, 11, 0.15); color: #fde68a; border-color: rgba(245, 158, 11, 0.3); }
+    .b-cal-pill.learning { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3); }
+
   </style>
 </head>
 <body>
@@ -502,6 +570,11 @@
         <span>🧠</span>
         <span>Daily Learnings</span>
         <span class="b-badge" style="background:rgba(245,158,11,0.25);color:#fbbf24">🔥 2d</span>
+      </button>
+      <button type="button" class="b-tab-btn" id="btnCalendar" onclick="setMode('calendar')">
+        <span>📅</span>
+        <span>Calendar</span>
+        <span class="b-badge">7</span>
       </button>
     </nav>
 
@@ -692,14 +765,78 @@
     </div>
   </main>
 
+  <!-- VIEW 3: BENTO SYNTH CALENDAR -->
+  <main class="view-content calendar-view" id="viewCalendar">
+    <div class="bento-cal-box">
+      <div class="b-cal-head">
+        <div style="font-family:'Space Grotesk';font-size:18px;font-weight:700">Unified Monthly Matrix · October 2026</div>
+        <div style="font-size:12px;color:var(--text-dim);font-family:'JetBrains Mono'">[ Applied Jobs + Daily Learnings ]</div>
+      </div>
+
+      <div class="b-cal-grid">
+        <div class="b-cal-dname">Sun</div><div class="b-cal-dname">Mon</div><div class="b-cal-dname">Tue</div>
+        <div class="b-cal-dname">Wed</div><div class="b-cal-dname">Thu</div><div class="b-cal-dname">Fri</div><div class="b-cal-dname">Sat</div>
+
+        <div class="b-cal-tile" style="opacity:0.35"><span style="font-size:11px;color:var(--text-dim)">27</span></div>
+        <div class="b-cal-tile" style="opacity:0.35"><span style="font-size:11px;color:var(--text-dim)">28</span></div>
+        <div class="b-cal-tile" style="opacity:0.35"><span style="font-size:11px;color:var(--text-dim)">29</span></div>
+        <div class="b-cal-tile" style="opacity:0.35"><span style="font-size:11px;color:var(--text-dim)">30</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">1</span></div>
+        <div class="b-cal-tile">
+          <span style="font-size:11px;color:var(--text-dim)">2</span>
+          <div class="b-cal-pill job">💼 Stripe · Backend</div>
+        </div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">3</span></div>
+
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">4</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">5</span><div class="b-cal-pill job">💼 Razorpay · SWE</div></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">6</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">7</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">8</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">9</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">10</span><div class="b-cal-pill deadline">⏰ Jane Street Due</div></div>
+
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">11</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">12</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">13</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">14</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">15</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">16</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">17</span></div>
+
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">18</span><div class="b-cal-pill job">💼 Google · SWE</div></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">19</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">20</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">21</span><div class="b-cal-pill learning">🧠 Redis Caching (60m)</div></div>
+        <div class="b-cal-tile is-today">
+          <div style="display:flex;justify-content:space-between"><span style="font-size:11px;color:var(--emerald);font-weight:800">22</span><span style="font-size:9px;color:var(--emerald)">TODAY</span></div>
+          <div class="b-cal-pill learning">🧠 Kafka Groups (60m)</div>
+          <div class="b-cal-pill learning">🧠 Sliding Window (45m)</div>
+        </div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">23</span></div>
+        <div class="b-cal-tile"><span style="font-size:11px;color:var(--text-dim)">24</span></div>
+      </div>
+    </div>
+  </main>
+
   <script>
+    
     function setMode(mode) {
       const isApps = mode === 'apps';
+      const isLearnings = mode === 'learnings';
+      const isCal = mode === 'calendar';
+
       document.getElementById('btnApps').classList.toggle('active', isApps);
-      document.getElementById('btnLearnings').classList.toggle('active', !isApps);
+      document.getElementById('btnLearnings').classList.toggle('active', isLearnings);
+      const btnCal = document.getElementById('btnCalendar');
+      if (btnCal) btnCal.classList.toggle('active', isCal);
+
       document.getElementById('viewApps').style.display = isApps ? 'block' : 'none';
-      document.getElementById('viewLearnings').style.display = isApps ? 'none' : 'block';
+      document.getElementById('viewLearnings').style.display = isLearnings ? 'block' : 'none';
+      const viewCal = document.getElementById('viewCalendar');
+      if (viewCal) viewCal.style.display = isCal ? 'block' : 'none';
     }
+
   </script>
 </body>
 </html>

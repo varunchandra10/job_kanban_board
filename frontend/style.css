@@ -3716,3 +3716,14 @@ header .btn:active {
   border-top: 1px solid var(--bd);
   margin-top: 6px;
 }
+
+.cal-pill.learning {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-bd);
+}
+[data-theme="dark"] .cal-pill.learning {
+  background: rgba(6, 182, 212, 0.15);
+  color: #38bdf8;
+  border-color: rgba(6, 182, 212, 0.35);
+}

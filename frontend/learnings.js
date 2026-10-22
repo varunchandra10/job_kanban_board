@@ -69,17 +69,24 @@ function burstConfetti() {
 window.switchViewMode = function(mode) {
   currentViewMode = mode;
   const isApps = mode === 'apps';
+  const isLearnings = mode === 'learnings';
+  const isCal = mode === 'calendar';
 
   // Toggle tab buttons
   const btnApps = document.getElementById('btnModeApps');
   const btnLearnings = document.getElementById('btnModeLearnings');
+  const btnCal = document.getElementById('btnModeCalendar');
   if (btnApps) {
     btnApps.classList.toggle('active', isApps);
     btnApps.setAttribute('aria-selected', isApps ? 'true' : 'false');
   }
   if (btnLearnings) {
     btnLearnings.classList.toggle('active', !isApps);
-    btnLearnings.setAttribute('aria-selected', !isApps ? 'true' : 'false');
+    btnLearnings.setAttribute('aria-selected', isLearnings ? 'true' : 'false');
+  }
+  if (btnCal) {
+    btnCal.classList.toggle('active', isCal);
+    btnCal.setAttribute('aria-selected', isCal ? 'true' : 'false');
   }
 
   // Toggle View Containers
@@ -90,12 +97,34 @@ window.switchViewMode = function(mode) {
   const searchWrapEl = document.querySelector('.search-wrap');
   const learningsViewEl = document.getElementById('learningsView');
 
-  if (boardEl) boardEl.style.display = isApps ? 'grid' : 'none';
-  if (secBarEl) secBarEl.style.display = isApps ? 'flex' : 'none';
-  if (mobileNavEl) mobileNavEl.style.display = isApps ? '' : 'none';
-  if (mobileTabsEl) mobileTabsEl.style.display = isApps ? '' : 'none';
-  if (searchWrapEl) searchWrapEl.style.display = isApps ? 'flex' : 'none';
-  if (learningsViewEl) learningsViewEl.style.display = isApps ? 'none' : 'flex';
+  if (isCal) {
+    if (boardEl) boardEl.style.display = 'block';
+    if (secBarEl) secBarEl.style.display = 'none';
+    if (mobileNavEl) mobileNavEl.style.display = 'none';
+    if (mobileTabsEl) mobileTabsEl.style.display = 'none';
+    if (searchWrapEl) searchWrapEl.style.display = 'flex';
+    if (learningsViewEl) learningsViewEl.style.display = 'none';
+    if (typeof currentSec !== 'undefined') currentSec = 'Calendar';
+    loadLearnings().then(() => { if (typeof render === 'function') render(); });
+  } else if (isLearnings) {
+    if (boardEl) boardEl.style.display = 'none';
+    if (secBarEl) secBarEl.style.display = 'none';
+    if (mobileNavEl) mobileNavEl.style.display = 'none';
+    if (mobileTabsEl) mobileTabsEl.style.display = 'none';
+    if (searchWrapEl) searchWrapEl.style.display = 'none';
+    if (learningsViewEl) learningsViewEl.style.display = 'flex';
+    loadGamificationStats();
+    loadLearnings();
+  } else {
+    if (boardEl) boardEl.style.display = 'grid';
+    if (secBarEl) secBarEl.style.display = 'flex';
+    if (mobileNavEl) mobileNavEl.style.display = '';
+    if (mobileTabsEl) mobileTabsEl.style.display = '';
+    if (searchWrapEl) searchWrapEl.style.display = 'flex';
+    if (learningsViewEl) learningsViewEl.style.display = 'none';
+    if (typeof currentSec !== 'undefined' && currentSec === 'Calendar') currentSec = 'All';
+    if (typeof render === 'function') render();
+  }
 
   // Adapt Add Button in Header
   const addBtn = document.getElementById('addBtn');
@@ -430,6 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Mode Switcher Buttons
   document.getElementById('btnModeApps')?.addEventListener('click', () => switchViewMode('apps'));
   document.getElementById('btnModeLearnings')?.addEventListener('click', () => switchViewMode('learnings'));
+  document.getElementById('btnModeCalendar')?.addEventListener('click', () => switchViewMode('calendar'));
   document.getElementById('gamifyHudPill')?.addEventListener('click', () => switchViewMode('learnings'));
 
   // Learning Modal Controls

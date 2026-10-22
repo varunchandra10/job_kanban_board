@@ -677,6 +677,213 @@
       align-items: center;
       gap: 4px;
     }
+  
+    /* =========================================
+       VIEW 3: OBSIDIAN GLASS CALENDAR
+       ========================================= */
+    .calendar-view { display: none; }
+    .cal-glass-container {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      padding: 22px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .cal-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-month-nav {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .cal-month-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cal-btn-group {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .cal-nav-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 5px 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.15s ease;
+    }
+    .cal-nav-btn:hover {
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+    }
+
+    .cal-filter-legend {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .cal-filter-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .cal-filter-pill:hover, .cal-filter-pill.active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border-color: rgba(255,255,255,0.25);
+    }
+    .cal-filter-pill.active.jobs { border-color: var(--accent); color: #818cf8; background: rgba(99, 102, 241, 0.15); }
+    .cal-filter-pill.active.learnings { border-color: var(--cyan); color: #22d3ee; background: rgba(6, 182, 212, 0.15); }
+    .cal-filter-pill.active.deadlines { border-color: var(--amber); color: #fbbf24; background: rgba(245, 158, 11, 0.15); }
+
+    /* Calendar Grid */
+    .cal-table {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .cal-days-head {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .cal-day-name {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-dim);
+      padding: 6px 0;
+    }
+    .cal-matrix {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+    .cal-cell {
+      min-height: 105px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .cal-cell:hover {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border-hover);
+    }
+    .cal-cell.other-mo {
+      opacity: 0.35;
+      background: transparent;
+    }
+    .cal-cell.is-today {
+      border-color: var(--cyan);
+      box-shadow: inset 0 0 14px rgba(6, 182, 212, 0.12), 0 0 10px rgba(6, 182, 212, 0.25);
+    }
+    .cal-cell-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2px;
+    }
+    .cal-cell-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cal-cell.is-today .cal-cell-num {
+      color: var(--cyan);
+    }
+    .cal-today-tag {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--cyan);
+      color: #07090e;
+      letter-spacing: 0.4px;
+    }
+
+    /* Event Pills inside Day Cell */
+    .cal-event-pill {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 6px;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+    }
+    .cal-event-pill:hover {
+      transform: translateX(1px);
+      filter: brightness(1.2);
+    }
+    .cal-event-pill.job-applied {
+      background: rgba(99, 102, 241, 0.15);
+      border-color: rgba(99, 102, 241, 0.35);
+      color: #a5b4fc;
+    }
+    .cal-event-pill.job-deadline {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+    .cal-event-pill.learning-entry {
+      background: rgba(6, 182, 212, 0.14);
+      border-color: rgba(6, 182, 212, 0.35);
+      color: #38bdf8;
+    }
+    .cal-event-pill.learning-entry.algo {
+      background: rgba(168, 85, 247, 0.14);
+      border-color: rgba(168, 85, 247, 0.35);
+      color: #c084fc;
+    }
+
   </style>
 </head>
 <body>
@@ -720,6 +927,11 @@
         <span>🧠</span>
         <span>Daily Learnings</span>
         <span class="mode-badge" style="background:rgba(249,115,22,0.3);color:#fb923c">🔥 2d</span>
+      </button>
+      <button type="button" class="mode-btn" id="btnCalendar" onclick="setMode('calendar')">
+        <span>📅</span>
+        <span>Calendar</span>
+        <span class="mode-badge" id="calBadge">7</span>
       </button>
     </nav>
 
@@ -1038,14 +1250,151 @@
     </div>
   </main>
 
+  <!-- VIEW 3: UNIFIED CALENDAR (APPLIED JOBS + DAILY LEARNINGS) -->
+  <main class="view-content calendar-view" id="viewCalendar">
+    <div class="cal-glass-container">
+      <div class="cal-topbar">
+        <div class="cal-month-nav">
+          <div class="cal-month-title">
+            <span>📅</span>
+            <span>October 2026</span>
+          </div>
+          <div class="cal-btn-group">
+            <button class="cal-nav-btn" onclick="alert('Previous month')">&lsaquo;</button>
+            <button class="cal-nav-btn" onclick="alert('Returned to current month')">Today</button>
+            <button class="cal-nav-btn" onclick="alert('Next month')">&rsaquo;</button>
+          </div>
+        </div>
+
+        <!-- Filter Legend -->
+        <div class="cal-filter-legend">
+          <button class="cal-filter-pill active" onclick="filterCal('all', this)">All Events (7)</button>
+          <button class="cal-filter-pill jobs" onclick="filterCal('jobs', this)">💼 Applied Jobs (3)</button>
+          <button class="cal-filter-pill deadlines" onclick="filterCal('deadlines', this)">⏰ Deadlines (1)</button>
+          <button class="cal-filter-pill learnings" onclick="filterCal('learnings', this)">🧠 Learnings (3)</button>
+        </div>
+      </div>
+
+      <div class="cal-table">
+        <!-- Weekday Headers -->
+        <div class="cal-days-head">
+          <div class="cal-day-name">Sun</div>
+          <div class="cal-day-name">Mon</div>
+          <div class="cal-day-name">Tue</div>
+          <div class="cal-day-name">Wed</div>
+          <div class="cal-day-name">Thu</div>
+          <div class="cal-day-name">Fri</div>
+          <div class="cal-day-name">Sat</div>
+        </div>
+
+        <!-- Month Day Grid -->
+        <div class="cal-matrix" id="calMatrix">
+          <!-- Previous Month Fillers -->
+          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">27</span></div></div>
+          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">28</span></div></div>
+          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">29</span></div></div>
+          <div class="cal-cell other-mo"><div class="cal-cell-head"><span class="cal-cell-num">30</span></div></div>
+
+          <!-- October Days -->
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">1</span></div></div>
+          <div class="cal-cell">
+            <div class="cal-cell-head"><span class="cal-cell-num">2</span></div>
+            <div class="cal-event-pill job-applied" onclick="alert('Applied: Stripe - Backend Infrastructure')" title="Applied to Stripe">💼 Stripe · Backend</div>
+          </div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">3</span></div></div>
+
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">4</span></div></div>
+          <div class="cal-cell">
+            <div class="cal-cell-head"><span class="cal-cell-num">5</span></div>
+            <div class="cal-event-pill job-applied" onclick="alert('Applied: Razorpay - Product Engineering')" title="Applied to Razorpay">💼 Razorpay · SWE</div>
+          </div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">6</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">7</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">8</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">9</span></div></div>
+          <div class="cal-cell">
+            <div class="cal-cell-head"><span class="cal-cell-num">10</span></div>
+            <div class="cal-event-pill job-deadline" onclick="alert('Deadline: Jane Street Quant Research')" title="Deadline: Jane Street">⏰ Jane Street Due</div>
+          </div>
+
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">11</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">12</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">13</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">14</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">15</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">16</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">17</span></div></div>
+
+          <div class="cal-cell">
+            <div class="cal-cell-head"><span class="cal-cell-num">18</span></div>
+            <div class="cal-event-pill job-applied" onclick="alert('Applied: Google - Software Engineer Intern')" title="Applied to Google">💼 Google · SWE</div>
+          </div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">19</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">20</span></div></div>
+          <div class="cal-cell">
+            <div class="cal-cell-head"><span class="cal-cell-num">21</span></div>
+            <div class="cal-event-pill learning-entry" onclick="alert('Learning Log: Redis Caching & Stampede Mitigation (60 mins)')" title="Learned: Redis Caching (60m)">🧠 Redis Caching (60m)</div>
+          </div>
+          <!-- Today: Oct 22 -->
+          <div class="cal-cell is-today">
+            <div class="cal-cell-head">
+              <span class="cal-cell-num">22</span>
+              <span class="cal-today-tag">TODAY</span>
+            </div>
+            <div class="cal-event-pill learning-entry" onclick="alert('Learning Log: Kafka Consumer Groups & Partition Rebalancing (60 mins)')" title="Learned: Kafka Consumer Groups (60m)">🧠 Kafka Groups (60m)</div>
+            <div class="cal-event-pill learning-entry algo" onclick="alert('Learning Log: Sliding Window & Two-Pointer Optimal Substrings (45 mins)')" title="Learned: LeetCode Sliding Window (45m)">🧠 Sliding Window (45m)</div>
+          </div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">23</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">24</span></div></div>
+
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">25</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">26</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">27</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">28</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">29</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">30</span></div></div>
+          <div class="cal-cell"><div class="cal-cell-head"><span class="cal-cell-num">31</span></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
   <script>
+    
     function setMode(mode) {
       const isApps = mode === 'apps';
+      const isLearnings = mode === 'learnings';
+      const isCal = mode === 'calendar';
+
       document.getElementById('btnApps').classList.toggle('active', isApps);
-      document.getElementById('btnLearnings').classList.toggle('active', !isApps);
+      document.getElementById('btnLearnings').classList.toggle('active', isLearnings);
+      const btnCal = document.getElementById('btnCalendar');
+      if (btnCal) btnCal.classList.toggle('active', isCal);
+
       document.getElementById('viewApps').style.display = isApps ? 'block' : 'none';
-      document.getElementById('viewLearnings').style.display = isApps ? 'none' : 'block';
+      document.getElementById('viewLearnings').style.display = isLearnings ? 'block' : 'none';
+      const viewCal = document.getElementById('viewCalendar');
+      if (viewCal) viewCal.style.display = isCal ? 'block' : 'none';
     }
+
+    function filterCal(type, btn) {
+      document.querySelectorAll('.cal-filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      const pills = document.querySelectorAll('#calMatrix .cal-event-pill');
+      pills.forEach(p => {
+        if (type === 'all') {
+          p.style.display = 'flex';
+        } else if (type === 'jobs') {
+          p.style.display = p.classList.contains('job-applied') ? 'flex' : 'none';
+        } else if (type === 'deadlines') {
+          p.style.display = p.classList.contains('job-deadline') ? 'flex' : 'none';
+        } else if (type === 'learnings') {
+          p.style.display = p.classList.contains('learning-entry') ? 'flex' : 'none';
+        }
+      });
+    }
+
   </script>
 </body>
 </html>
