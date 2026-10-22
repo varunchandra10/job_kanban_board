@@ -630,6 +630,15 @@ function render() {
 
     const body = $('.body', col);
 
+    if (!list.length) {
+      body.innerHTML = `
+        <div class="empty">
+          <svg viewBox="0 0 24 24"><path d="M22 12h-6l-2 3h-4l-2-3H2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8z"/><path d="M5.45 5.11L2 12v0h20v0l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+          <div style="font-weight:600">No applications in ${esc(st)}</div>
+          <div style="font-size:11px;opacity:0.75">Drag cards here or click + Add</div>
+        </div>`;
+    }
+
     list.forEach(a => {
       const tags = [];
       const cat = a.category || 'Industry';
