@@ -441,24 +441,30 @@ document.getElementById('themeToggleBtn').onclick = () => {
   setTheme(isDark ? 'light' : 'dark');
 };
 
-/* Data Fetching */
+/* Data Fetching & Sync */
 async function loadAllProfileData() {
   try {
-    const [resApps, resLearnings, resStats] = await Promise.all([
-      fetch('/api/applications').then(r => r.json()).catch(() => []),
+    const [resState, resLearnings, resGamify] = await Promise.all([
+      fetch('/api/state').then(r => r.json()).catch(() => ({ apps: [] })),
       fetch('/api/learnings').then(r => r.json()).catch(() => []),
-      fetch('/api/learnings/stats').then(r => r.json()).catch(() => ({}))
+      fetch('/api/gamification').then(r => r.json()).catch(() => ({}))
     ]);
 
-    appsList = Array.isArray(resApps) ? resApps : [];
+    appsList = Array.isArray(resState?.apps) ? resState.apps : [];
     learningsList = Array.isArray(resLearnings) ? resLearnings : [];
-    gamifyStats = resStats || {};
+    gamifyStats = resGamify || {};
+
+    console.log('[Profile] Loaded data:', {
+      appsCount: appsList.length,
+      learningsCount: learningsList.length,
+      gamifyStats
+    });
 
     // Update Header Badges
     const appBadge = document.getElementById('appModeBadge');
     if (appBadge) appBadge.textContent = appsList.length;
 
-    const streakVal = gamifyStats.currentStreak || 0;
+    const streakVal = gamifyStats.streak ?? gamifyStats.currentStreak ?? 0;
     const hudCount = document.getElementById('hudStreakCount');
     if (hudCount) hudCount.textContent = streakVal;
 
@@ -481,9 +487,9 @@ function renderAllViews() {
 
 /* 1. Hero Card */
 function renderProfileHero() {
-  const streak = gamifyStats?.currentStreak || 0;
-  const level = gamifyStats?.level || 1;
-  const levelTitle = gamifyStats?.levelTitle || 'Novice Seeker';
+  const streak = gamifyStats?.streak ?? gamifyStats?.currentStreak ?? 0;
+  const level = gamifyStats?.level ?? 1;
+  const levelTitle = gamifyStats?.title ?? gamifyStats?.levelTitle ?? 'Novice Seeker';
 
   const profUserRank = document.getElementById('profUserRank');
   if (profUserRank) {
@@ -509,14 +515,22 @@ function renderProfileHeatmap() {
 
   const activityCounts = {};
 
+  // Aggregate Applications
   appsList.forEach(a => {
-    const d = a.date_applied || (a.created_at ? a.created_at.slice(0, 10) : '');
-    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+    const raw = a.date_applied || a.created_at || '';
+    const d = raw.slice(0, 10);
+    if (d && d.length === 10) {
+      activityCounts[d] = (activityCounts[d] || 0) + 1;
+    }
   });
 
+  // Aggregate Learnings
   learningsList.forEach(l => {
-    const d = (l.date_logged || '').slice(0, 10);
-    if (d) activityCounts[d] = (activityCounts[d] || 0) + 1;
+    const raw = l.date_logged || l.created_at || '';
+    const d = raw.slice(0, 10);
+    if (d && d.length === 10) {
+      activityCounts[d] = (activityCounts[d] || 0) + 1;
+    }
   });
 
   let totalContribs = 0;
@@ -532,8 +546,18 @@ function renderProfileHeatmap() {
   const profHeatmapActiveDays = document.getElementById('profHeatmapActiveDays');
   if (profHeatmapActiveDays) profHeatmapActiveDays.textContent = `${activeDays} Days`;
 
-  const today = new Date();
+  // Local date helper YYYY-MM-DD
+  const toYMD = d => {
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  };
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Generate 52 weeks ending today
   for (let w = 51; w >= 0; w--) {
     const col = document.createElement('div');
     col.className = 'gh-col-week';
@@ -543,7 +567,7 @@ function renderProfileHeatmap() {
       const cellDate = new Date(today);
       cellDate.setDate(today.getDate() - daysAgo);
 
-      const ymd = cellDate.toISOString().slice(0, 10);
+      const ymd = toYMD(cellDate);
       const count = activityCounts[ymd] || 0;
 
       let lvl = 0;
@@ -751,14 +775,14 @@ function renderJobStats() {
 
 /* 5. Learnings & Mastery Stats */
 function renderLearningStats() {
-  const streak = gamifyStats?.currentStreak || 0;
-  const totalMinutes = gamifyStats?.totalMinutes || 0;
+  const streak = gamifyStats?.streak ?? gamifyStats?.currentStreak ?? 0;
+  const totalMinutes = gamifyStats?.totalMinutes ?? 0;
   const hours = (totalMinutes / 60).toFixed(1);
-  const totalXp = gamifyStats?.totalXp || 0;
-  const level = gamifyStats?.level || 1;
-  const levelTitle = gamifyStats?.levelTitle || 'Novice';
-  const xpIntoLevel = gamifyStats?.xpIntoLevel || 0;
-  const xpForNextLevel = gamifyStats?.xpForNextLevel || 200;
+  const totalXp = gamifyStats?.totalXP ?? gamifyStats?.totalXp ?? 0;
+  const level = gamifyStats?.level ?? 1;
+  const levelTitle = gamifyStats?.title ?? gamifyStats?.levelTitle ?? 'Novice';
+  const progressPercent = gamifyStats?.progressPercent ?? 0;
+  const nextLevelXP = gamifyStats?.nextLevelXP ?? 200;
 
   const elStreak = document.getElementById('profStatStreak');
   if (elStreak) elStreak.textContent = streak;
@@ -778,12 +802,11 @@ function renderLearningStats() {
   if (elLevel) elLevel.textContent = `Lvl ${level}`;
 
   const elXpProg = document.getElementById('profStatXpProgress');
-  if (elXpProg) elXpProg.textContent = `${xpIntoLevel} / ${xpForNextLevel} XP`;
+  if (elXpProg) elXpProg.textContent = `${totalXp} / ${nextLevelXP} XP (${progressPercent}%)`;
 
   const elXpFill = document.getElementById('profStatXpFill');
   if (elXpFill) {
-    const pct = Math.min(100, Math.round((xpIntoLevel / xpForNextLevel) * 100));
-    elXpFill.style.width = `${pct}%`;
+    elXpFill.style.width = `${progressPercent}%`;
   }
 
   const elLogs = document.getElementById('profStatTotalLogs');
