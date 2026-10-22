@@ -1136,14 +1136,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Standalone theme toggle
-  const tbtn = document.getElementById('tbtn');
+  const tbtn = document.getElementById('tbtn') || document.getElementById('themeToggleBtn');
   if (tbtn) {
-    tbtn.addEventListener('click', () => {
+    tbtn.onclick = () => {
       const isDark = document.body.classList.toggle('dark-mode');
-      document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    });
-    const savedTheme = localStorage.getItem('theme');
+      const theme = isDark ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', theme);
+      try {
+        localStorage.setItem('theme', theme);
+        localStorage.setItem('tracker_theme', theme);
+      } catch (e) {}
+    };
+    const savedTheme = localStorage.getItem('theme') || localStorage.getItem('tracker_theme');
     if (savedTheme === 'dark') {
       document.body.classList.add('dark-mode');
       document.documentElement.setAttribute('data-theme', 'dark');

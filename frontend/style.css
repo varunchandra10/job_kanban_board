@@ -1874,6 +1874,41 @@ header .btn:hover {
 header .btn:active {
   transform: translateY(1px);
 }
+
+/* Header Theme Toggle (Dark / Light Switcher) */
+#tbtn, #themeToggleBtn {
+  position: relative;
+}
+#tbtn svg, #themeToggleBtn svg {
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+}
+#tbtn:hover svg, #themeToggleBtn:hover svg {
+  transform: rotate(15deg) scale(1.08);
+}
+
+/* Default (Light Theme): Display Moon icon, hide Sun icon */
+#tbtn .i-sun,
+#themeToggleBtn .sun-icon {
+  display: none !important;
+}
+#tbtn .i-moon,
+#themeToggleBtn .moon-icon {
+  display: inline-block !important;
+}
+
+/* Dark Theme: Display Sun icon, hide Moon icon */
+body.dark-mode #tbtn .i-sun,
+[data-theme="dark"] #tbtn .i-sun,
+body.dark-mode #themeToggleBtn .sun-icon,
+[data-theme="dark"] #themeToggleBtn .sun-icon {
+  display: inline-block !important;
+}
+body.dark-mode #tbtn .i-moon,
+[data-theme="dark"] #tbtn .i-moon,
+body.dark-mode #themeToggleBtn .moon-icon,
+[data-theme="dark"] #themeToggleBtn .moon-icon {
+  display: none !important;
+}
 .sec-sp {
   flex: 1;
 }

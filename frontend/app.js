@@ -1403,7 +1403,7 @@ if ($('#backupZipBtn')) $('#backupZipBtn').onclick = () => {
 
 /* ----- Phase 2 UI/UX Engine: Theme, Skeletons & Mobile Bottom Sheet ----- */
 function initTheme() {
-  const saved = localStorage.getItem('tracker_theme');
+  const saved = localStorage.getItem('theme') || localStorage.getItem('tracker_theme');
   const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   const theme = saved || (prefersDark ? 'dark' : 'light');
   setTheme(theme);
@@ -1412,24 +1412,25 @@ function initTheme() {
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   document.body.classList.toggle('dark-mode', theme === 'dark');
-  localStorage.setItem('tracker_theme', theme);
-  const sun = $('#themeToggleBtn .sun-icon');
-  const moon = $('#themeToggleBtn .moon-icon');
-  if (sun && moon) {
-    sun.style.display = theme === 'dark' ? 'none' : 'inline-block';
-    moon.style.display = theme === 'dark' ? 'inline-block' : 'none';
+  try {
+    localStorage.setItem('theme', theme);
+    localStorage.setItem('tracker_theme', theme);
+  } catch (e) {}
+}
+
+function bindThemeToggle() {
+  const tBtn = document.getElementById('tbtn') || document.getElementById('themeToggleBtn');
+  if (tBtn) {
+    tBtn.onclick = () => {
+      const isDark = document.body.classList.contains('dark-mode') || document.documentElement.getAttribute('data-theme') === 'dark';
+      setTheme(isDark ? 'light' : 'dark');
+    };
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
-  const tBtn = $('#themeToggleBtn');
-  if (tBtn) {
-    tBtn.onclick = () => {
-      const cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
-      setTheme(cur === 'dark' ? 'light' : 'dark');
-    };
-  }
+  bindThemeToggle();
 });
 
 // Skeleton Loader Shimmer for instant perception of performance
@@ -2037,6 +2038,7 @@ function openApp(id) {
 (async () => {
   renderSkeletons();
   initTheme();
+  bindThemeToggle();
   initMobileNavigation();
   [S, LOGOS] = await Promise.all([
     api('GET', '/state'),
