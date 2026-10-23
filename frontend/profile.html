@@ -1588,53 +1588,80 @@ function switchToDefaultUser() {
 </script>
 
 
-<!-- Multi-User Account Switcher Modal -->
-<div class="gdrive-modal-overlay" id="userModalOverlay" onclick="if(event.target===this)closeUserModal()">
-  <div class="gdrive-modal-box" style="max-width: 500px;">
-    <div class="gdrive-modal-header">
-      <div class="gdrive-modal-badge" style="background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); color: #818cf8;">
-        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        <span>Multi-User Account Manager</span>
+<!-- Multi-User Account Switcher Modal (Enhanced) -->
+<div class="user-modal-overlay" id="userModalOverlay" onclick="if(event.target===this)closeUserModal()">
+  <div class="user-modal-box" role="dialog" aria-modal="true">
+    <div class="user-modal-header">
+      <div class="user-title-wrap">
+        <div class="user-icon-badge">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        </div>
+        <div>
+          <h3 class="user-modal-title">Switch or Test New User</h3>
+          <p class="user-modal-subtitle">Each user gets their own isolated workspace with separate job applications, learnings, and storage settings.</p>
+        </div>
       </div>
-      <button type="button" class="gdrive-modal-close" onclick="closeUserModal()">&times;</button>
+      <button type="button" class="user-close-btn" onclick="closeUserModal()" aria-label="Close modal">&times;</button>
     </div>
 
-    <h3 class="gdrive-modal-title">Switch or Test New User</h3>
-    <p class="gdrive-modal-subtitle">Each user gets a dedicated, isolated database partition. Applications, daily learnings, and storage settings are completely separate.</p>
-
-    <!-- Current User Card -->
-    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border, #2a2e39); border-radius: 12px; padding: 14px 16px; margin: 16px 0; display: flex; align-items: center; justify-content: space-between;">
-      <div>
-        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--tx-dim, #71717a); font-weight: 600;">Active Account</div>
-        <div id="modalActiveUserName" style="font-size: 15px; font-weight: 700; color: var(--tx, #fff); margin-top: 2px;">Default User (Varun)</div>
-        <div id="modalActiveUserEmail" style="font-size: 12px; color: var(--tx-dim, #a1a1aa);">local@jobtracker.app</div>
+    <div class="user-modal-body">
+      <!-- Active Account Card -->
+      <div class="user-active-card">
+        <div class="user-active-info">
+          <div class="user-avatar-circle" id="modalActiveAvatar">VC</div>
+          <div class="user-active-details">
+            <span class="user-active-badge">Active Session</span>
+            <span class="user-active-name" id="modalActiveUserName">Default User (Varun)</span>
+            <span class="user-active-email" id="modalActiveUserEmail">local@jobtracker.app</span>
+          </div>
+        </div>
+        <button type="button" class="btn-reset-user" onclick="switchToDefaultUser()" title="Reset session back to default local user">
+          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset Default</span>
+        </button>
       </div>
-      <button type="button" class="btn sm" onclick="switchToDefaultUser()" style="font-size: 11.5px; padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border, #3f3f46); border-radius: 6px; cursor: pointer; color: var(--tx, #fff);">
-        Reset to Default
+
+      <!-- Input Form -->
+      <div class="user-form-group">
+        <label class="user-input-label" for="userSwitchEmail">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Email Address</span>
+        </label>
+        <input type="email" id="userSwitchEmail" class="user-input-field" placeholder="e.g. alice@example.com or user2@test.com" autocomplete="off">
+      </div>
+
+      <div class="user-form-group">
+        <label class="user-input-label" for="userSwitchName">
+          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>Display Name (Optional)</span>
+        </label>
+        <input type="text" id="userSwitchName" class="user-input-field" placeholder="e.g. Alice Smith" autocomplete="off">
+      </div>
+
+      <!-- Quick Test Presets -->
+      <div class="user-presets-row">
+        <span class="user-presets-label">Quick test presets:</span>
+        <button type="button" class="user-preset-chip" onclick="quickFillUser('alice@example.com', 'Alice Smith')">
+          <span class="chip-dot"></span>
+          <span>Alice Smith</span>
+        </button>
+        <button type="button" class="user-preset-chip" onclick="quickFillUser('bob@example.com', 'Bob Johnson')">
+          <span class="chip-dot"></span>
+          <span>Bob Johnson</span>
+        </button>
+        <button type="button" class="user-preset-chip" onclick="quickFillUser('user2@test.com', 'Test User 2')">
+          <span class="chip-dot"></span>
+          <span>User 2</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="user-modal-footer">
+      <button type="button" class="btn-user-cancel" onclick="closeUserModal()">Cancel</button>
+      <button type="button" class="btn-user-submit" onclick="submitUserSwitch()">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span>Switch Account</span>
       </button>
-    </div>
-
-    <!-- Login / Switch Form -->
-    <div style="margin-top: 18px;">
-      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx, #fff); margin-bottom: 6px;">Email Address</label>
-      <input type="email" id="userSwitchEmail" placeholder="e.g. alice@example.com or user2@test.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border, #3f3f46); border-radius: 8px; color: var(--tx, #fff); font-size: 13.5px; outline: none;">
-      
-      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx, #fff); margin: 12px 0 6px 0;">Name (Optional)</label>
-      <input type="text" id="userSwitchName" placeholder="e.g. Alice Smith" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border, #3f3f46); border-radius: 8px; color: var(--tx, #fff); font-size: 13.5px; outline: none;">
-    </div>
-
-    <!-- Quick switch presets -->
-    <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-      <span style="font-size: 11px; color: var(--tx-dim, #71717a);">Quick test presets:</span>
-      <button type="button" class="btn sm" onclick="quickFillUser('alice@example.com', 'Alice Smith')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Alice</button>
-      <button type="button" class="btn sm" onclick="quickFillUser('bob@example.com', 'Bob Johnson')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Bob</button>
-      <button type="button" class="btn sm" onclick="quickFillUser('user2@test.com', 'Test User 2')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">User 2</button>
-    </div>
-
-    <!-- Actions -->
-    <div style="margin-top: 22px; display: flex; gap: 10px; justify-content: flex-end;">
-      <button type="button" class="btn" onclick="closeUserModal()" style="padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Cancel</button>
-      <button type="button" class="btn primary" onclick="submitUserSwitch()" style="padding: 8px 18px; border-radius: 8px; background: #6366f1; color: #fff; font-weight: 600; border: none; cursor: pointer;">Switch Account</button>
     </div>
   </div>
 </div>
