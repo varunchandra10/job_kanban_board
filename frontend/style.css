@@ -541,7 +541,8 @@ body.dark-mode .sec-btn.active .badge, [data-theme="dark"] .sec-btn.active .badg
 .stage-picker-bar {
   display: none !important;
 }
-.mobile-stage-actions {
+.mobile-stage-actions,
+.mobile-utility-bar {
   display: none !important;
 }
 
@@ -6312,115 +6313,91 @@ body.dark-mode .confirm-modal-icon.info-icon,
     flex-shrink: 0 !important;
   }
 
-  /* Secondary Toolbar on Job Applications (#secBar) */
-  #secBar {
-    display: flex !important;
-    flex-wrap: nowrap !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    padding: 8px 12px !important;
-    gap: 6px !important;
-    align-items: center !important;
-    position: relative !important;
-    z-index: 80 !important;
-  }
-  #secBar::-webkit-scrollbar {
-    display: none !important;
-  }
-  .sec-btn,
-  .country-filter-wrap,
-  .add-app-toolbar-btn {
-    flex-shrink: 0 !important;
-    white-space: nowrap !important;
-  }
-  .sec-btn {
-    padding: 6px 11px !important;
-    font-size: 12px !important;
-    min-height: 40px !important;
-  }
-  .sec-sp {
+  /* Remove search bar from top header on smaller screens */
+  header .search-wrap {
     display: none !important;
   }
 
-  /* Hide Desktop Learnings SecBar on mobile in favor of Stage Picker Bar */
+  /* Hide old desktop secondary toolbars on smaller screens to eliminate empty gap */
+  #secBar,
   #learningsSecBar {
     display: none !important;
   }
 
-  /* Hide duplicate country filter and add button in #secBar on mobile since they are now in the sticky stage bar */
-  #secBar #fwrap,
-  #secBar #addBtn {
-    display: none !important;
-  }
-
-  /* Stage / Category Picker Bar (Pinned at top: 52px on mobile) */
-  .stage-picker-bar {
+  /* Mobile Sub-Bar (Between Topbar and Stage/Category Bar): Search Bar + All Countries + Add Button */
+  .mobile-utility-bar {
     display: flex !important;
     align-items: center !important;
-    justify-content: space-between !important;
-    padding: 6px 10px !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
     background: var(--surface) !important;
     border-bottom: 1px solid var(--bd) !important;
     position: sticky !important;
-    top: 52px !important;
-    z-index: 95 !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
-    gap: 8px !important;
-    width: 100% !important;
+    top: 50px !important;
+    z-index: 96 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
     box-sizing: border-box !important;
+    width: 100% !important;
   }
-  .stage-picker-select-wrap,
-  .stage-select-wrap {
-    display: none !important;
-  }
-  .mobile-stage-tabs {
-    display: flex !important;
-    gap: 6px !important;
+  .mobile-utility-bar .mobile-search-wrap {
     flex: 1 1 auto !important;
     min-width: 0 !important;
     max-width: none !important;
-    width: auto !important;
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none !important;
-    padding: 2px 0 !important;
-  }
-  .mobile-stage-tabs::-webkit-scrollbar {
-    display: none !important;
-  }
-  .stage-tab {
-    flex-shrink: 0 !important;
-    padding: 6px 12px !important;
-    min-height: 36px !important;
-    font-size: 12px !important;
-    border-radius: 18px !important;
-    white-space: nowrap !important;
-  }
-
-  /* Mobile Stage Actions (Country Filter + Add Application / Add Learning) */
-  .mobile-stage-actions {
+    position: relative !important;
     display: flex !important;
     align-items: center !important;
-    gap: 6px !important;
-    flex-shrink: 0 !important;
   }
-  .mobile-fwrap {
+  .mobile-utility-bar .mobile-search-wrap .search-input {
+    width: 100% !important;
+    height: 36px !important;
+    padding: 6px 28px 6px 32px !important;
+    font-size: 13px !important;
+    border-radius: 18px !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--bd) !important;
+    color: var(--tx) !important;
+    box-sizing: border-box !important;
+  }
+  .mobile-utility-bar .mobile-search-wrap .search-icon {
+    position: absolute !important;
+    left: 10px !important;
+    width: 14px !important;
+    height: 14px !important;
+    color: var(--tx3) !important;
+    pointer-events: none !important;
+  }
+  .mobile-utility-bar .mobile-search-wrap .search-clear {
+    position: absolute !important;
+    right: 8px !important;
+    font-size: 16px !important;
+    color: var(--tx3) !important;
+    cursor: pointer !important;
+    background: none !important;
+    border: none !important;
+    display: none;
+  }
+  .mobile-utility-bar .mobile-search-wrap.has-val .search-clear {
+    display: block !important;
+  }
+
+  /* Country Filter & Add Button in Mobile Utility Bar */
+  .mobile-utility-bar .mobile-fwrap {
     position: relative !important;
     display: inline-flex !important;
     align-items: center !important;
+    flex-shrink: 0 !important;
   }
-  .mobile-fbtn {
+  .mobile-utility-bar .mobile-fbtn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 4px !important;
     padding: 5px 9px !important;
     font-size: 11.5px !important;
+    height: 36px !important;
     min-height: 36px !important;
     border-radius: 18px !important;
-    max-width: 110px !important;
+    max-width: 105px !important;
     white-space: nowrap !important;
     background: var(--bg) !important;
     border: 1px solid var(--bd) !important;
@@ -6429,24 +6406,24 @@ body.dark-mode .confirm-modal-icon.info-icon,
     box-sizing: border-box !important;
     transition: background 0.15s ease, border-color 0.15s ease !important;
   }
-  .mobile-fbtn:hover,
-  .mobile-fbtn:active {
+  .mobile-utility-bar .mobile-fbtn:hover,
+  .mobile-utility-bar .mobile-fbtn:active {
     background: var(--bg2) !important;
     border-color: var(--bd2) !important;
   }
-  .mobile-fbtn svg {
+  .mobile-utility-bar .mobile-fbtn svg {
     color: var(--tx2) !important;
     flex-shrink: 0 !important;
   }
-  .mobile-fbtn-text {
+  .mobile-utility-bar .mobile-fbtn-text {
     display: inline-block !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    max-width: 55px !important;
+    max-width: 52px !important;
     font-weight: 600 !important;
   }
-  .mobile-fpop {
+  .mobile-utility-bar .mobile-fpop {
     position: absolute !important;
     right: 0 !important;
     top: calc(100% + 8px) !important;
@@ -6458,13 +6435,14 @@ body.dark-mode .confirm-modal-icon.info-icon,
     border: 1px solid var(--bd2) !important;
     border-radius: 12px !important;
   }
-  .mobile-add-app-btn,
-  .mobile-add-learning-btn {
+  .mobile-utility-bar .mobile-add-app-btn,
+  .mobile-utility-bar .mobile-add-learning-btn {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 4px !important;
     flex-shrink: 0 !important;
+    height: 36px !important;
     min-height: 36px !important;
     padding: 6px 12px !important;
     border-radius: 18px !important;
@@ -6473,6 +6451,46 @@ body.dark-mode .confirm-modal-icon.info-icon,
     cursor: pointer !important;
     box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
     box-sizing: border-box !important;
+    white-space: nowrap !important;
+  }
+
+  /* Stage / Category Picker Bar (Pinned at top: 98px on mobile, directly under sub-bar) */
+  .stage-picker-bar {
+    display: flex !important;
+    align-items: center !important;
+    padding: 6px 12px !important;
+    background: var(--surface) !important;
+    border-bottom: 1px solid var(--bd) !important;
+    position: sticky !important;
+    top: 98px !important;
+    z-index: 95 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .stage-picker-select-wrap,
+  .stage-select-wrap {
+    display: none !important;
+  }
+  .mobile-stage-tabs {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+    flex: 1 !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding: 2px 0 !important;
+  }
+  .mobile-stage-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  .stage-tab {
+    flex-shrink: 0 !important;
+    padding: 6px 13px !important;
+    min-height: 36px !important;
+    font-size: 12px !important;
+    border-radius: 18px !important;
     white-space: nowrap !important;
   }
 

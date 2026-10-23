@@ -1308,6 +1308,41 @@ function openAddPanel(defaultStage = null) {
 
 if ($('#addBtn')) $('#addBtn').onclick = () => openAddPanel();
 if ($('#mobileAddBtn')) $('#mobileAddBtn').onclick = () => openAddPanel();
+
+/* Mobile Sub-Bar Search Wiring */
+const mSearchInp = $('#mobileSearch');
+const mSearchWrap = $('.mobile-search-wrap');
+const mSearchClear = $('#mobileSearchClear');
+if (mSearchInp) {
+  mSearchInp.oninput = e => {
+    const val = e.target.value.trim();
+    if (mSearchWrap) mSearchWrap.classList.toggle('has-val', !!e.target.value);
+    const mainSearch = $('#search');
+    if (mainSearch) {
+      mainSearch.value = e.target.value;
+      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
+      if (mainWrap) mainWrap.classList.toggle('has-val', !!e.target.value);
+    }
+    searchQuery = val;
+    render();
+  };
+}
+if (mSearchClear) {
+  mSearchClear.onclick = e => {
+    e.stopPropagation();
+    if (mSearchInp) mSearchInp.value = '';
+    if (mSearchWrap) mSearchWrap.classList.remove('has-val');
+    const mainSearch = $('#search');
+    if (mainSearch) {
+      mainSearch.value = '';
+      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
+      if (mainWrap) mainWrap.classList.remove('has-val');
+    }
+    searchQuery = '';
+    render();
+    if (mSearchInp) mSearchInp.focus();
+  };
+}
 /* ----- Quick Links & Profiles Hub ----- */
 function openQuickLinksPanel() {
   openId = null;

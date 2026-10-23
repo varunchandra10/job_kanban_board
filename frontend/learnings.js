@@ -779,6 +779,38 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('openAddLearningBtn')?.addEventListener('click', () => openLearningModal());
   document.getElementById('secAddLearningBtn')?.addEventListener('click', () => openLearningModal());
   document.getElementById('mobileAddLearningBtn')?.addEventListener('click', () => openLearningModal());
+
+  // Mobile Sub-Bar Learning Search Wiring
+  const mLearnSearchInp = document.getElementById('mobileLearningSearch');
+  const mLearnSearchWrap = document.querySelector('.mobile-utility-bar .mobile-search-wrap');
+  const mLearnSearchClear = document.getElementById('mobileLearningSearchClear');
+  if (mLearnSearchInp) {
+    mLearnSearchInp.addEventListener('input', e => {
+      learningSearchQuery = e.target.value.trim();
+      mLearnSearchWrap?.classList.toggle('has-val', !!e.target.value);
+      const topSearch = document.getElementById('search');
+      if (topSearch) {
+        topSearch.value = e.target.value;
+        document.querySelector('header .search-wrap')?.classList.toggle('has-val', !!e.target.value);
+      }
+      renderLearningsBoard();
+    });
+  }
+  if (mLearnSearchClear) {
+    mLearnSearchClear.addEventListener('click', e => {
+      e.stopPropagation();
+      if (mLearnSearchInp) mLearnSearchInp.value = '';
+      learningSearchQuery = '';
+      mLearnSearchWrap?.classList.remove('has-val');
+      const topSearch = document.getElementById('search');
+      if (topSearch) {
+        topSearch.value = '';
+        document.querySelector('header .search-wrap')?.classList.remove('has-val');
+      }
+      renderLearningsBoard();
+      mLearnSearchInp?.focus();
+    });
+  }
   document.getElementById('closeLearningModal')?.addEventListener('click', closeLearningModal);
   document.getElementById('pc')?.addEventListener('click', closeLearningModal);
   document.getElementById('bd')?.addEventListener('click', closeLearningModal);
