@@ -2573,3 +2573,11 @@ async function openDriveFilePicker(type, onSelect) {
     toast('Error connecting to Google Drive: ' + err.message, true);
   }
 }
+
+
+function handleIndexLogout() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
+  localStorage.setItem('logged_out', '1');
+  window.location.href = '/profile.html';
+}

@@ -127,6 +127,13 @@
     <svg class="icon i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
 
+    <button class="btn icon-only" id="profLogoutBtn" onclick="handleLogout()" title="Log out of session" aria-label="Log Out" style="color: #ef4444;">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+      <polyline points="16 17 21 12 16 7"></polyline>
+      <line x1="21" y1="12" x2="9" y2="12"></line>
+    </svg>
+  </button>
   <button class="btn danger-soft icon-only" id="closeBtn" title="Stop server and exit" aria-label="Stop server and exit">
     <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
   </button>
@@ -161,6 +168,10 @@
         <span id="profUserStatusLabel">Switch User</span>
       </button>
 
+            <button type="button" class="btn-action-glow btn-logout" id="profActionLogoutBtn" onclick="handleLogout()" title="Log Out & Switch User">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span>Log Out</span>
+      </button>
       <button type="button" class="btn-action-glow btn-gdrive-storage" id="profGdriveStorageBtn" onclick="openDriveSettingsModal()" title="Manage Your Google Drive Storage & Setup">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><path d="M2 19.5l5-8.5h10l5 8.5H2z"/></svg>
         <span>Google Drive Storage</span>
@@ -1585,20 +1596,123 @@ function switchToDefaultUser() {
   }
 })();
 
+
+function switchAuthTab(tab) {
+  const tabGoogle = document.getElementById('tabGoogleAuth');
+  const tabCasual = document.getElementById('tabCasualAuth');
+  const contentGoogle = document.getElementById('authContentGoogle');
+  const contentCasual = document.getElementById('authContentCasual');
+
+  if (tab === 'google') {
+    if (tabGoogle) tabGoogle.classList.add('active');
+    if (tabCasual) tabCasual.classList.remove('active');
+    if (contentGoogle) contentGoogle.style.display = 'flex';
+    if (contentCasual) contentCasual.style.display = 'none';
+  } else {
+    if (tabGoogle) tabGoogle.classList.remove('active');
+    if (tabCasual) tabCasual.classList.add('active');
+    if (contentGoogle) contentGoogle.style.display = 'none';
+    if (contentCasual) contentCasual.style.display = 'flex';
+  }
+}
+
+async function triggerGoogleSignIn() {
+  const testEmail = prompt('Enter your Google Account email for OAuth sign-in:', 'varun.google@gmail.com');
+  if (!testEmail || !testEmail.includes('@')) return;
+  const name = testEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  await simulateGoogleAuth(testEmail, name, 'https://lh3.googleusercontent.com/a/default-user');
+}
+
+async function simulateGoogleAuth(email, name, picture) {
+  try {
+    const feedback = document.getElementById('authLiveFeedback');
+    if (feedback) {
+      feedback.style.display = 'flex';
+      feedback.textContent = 'Authenticating with Google OAuth...';
+    }
+
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        profile: {
+          email,
+          name,
+          picture,
+          sub: 'g_' + Math.abs(hashCode(email))
+        }
+      })
+    }).then(r => r.json());
+
+    if (res.ok && res.token) {
+      localStorage.setItem('auth_token', res.token);
+      localStorage.setItem('auth_user', JSON.stringify(res.user));
+      localStorage.removeItem('logged_out');
+      if (feedback) {
+        feedback.innerHTML = '<strong>Success!</strong> Authenticated via Google OAuth as ' + (res.user.name || res.user.email);
+      }
+      setTimeout(() => window.location.reload(), 600);
+    } else {
+      alert(res.error || 'Google authentication failed');
+    }
+  } catch (err) {
+    alert('Google authentication error: ' + err.message);
+  }
+}
+
+function hashCode(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+function handleLogout() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
+  localStorage.setItem('logged_out', '1');
+  
+  // Open the Auth modal immediately so user can test Google vs Casual auth
+  openUserModal();
+}
+
+function handleLogoutInsideModal() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
+  localStorage.setItem('logged_out', '1');
+
+  document.getElementById('modalActiveUserName').textContent = 'Logged Out (No Active Session)';
+  document.getElementById('modalActiveUserEmail').textContent = 'Please sign in with Google or Email below';
+  document.getElementById('modalActiveAvatar').textContent = '??';
+  document.getElementById('modalSessionBadge').textContent = 'Logged Out';
+  document.getElementById('modalSessionBadge').style.color = '#ef4444';
+
+  const feedback = document.getElementById('authLiveFeedback');
+  if (feedback) {
+    feedback.style.display = 'flex';
+    feedback.style.color = '#ef4444';
+    feedback.style.background = 'rgba(239, 68, 68, 0.1)';
+    feedback.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+    feedback.textContent = 'Session terminated. Select an authentication method to log back in.';
+  }
+}
+
 </script>
 
 
-<!-- Multi-User Account Switcher Modal (Enhanced) -->
+<!-- Comprehensive Authentication & Multi-User Switcher Modal -->
 <div class="user-modal-overlay" id="userModalOverlay" onclick="if(event.target===this)closeUserModal()">
-  <div class="user-modal-box" role="dialog" aria-modal="true">
+  <div class="user-modal-box" role="dialog" aria-modal="true" style="max-width: 530px;">
     <div class="user-modal-header">
       <div class="user-title-wrap">
-        <div class="user-icon-badge">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <div class="user-icon-badge" id="authBadgeIcon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
         <div>
-          <h3 class="user-modal-title">Switch or Test New User</h3>
-          <p class="user-modal-subtitle">Each user gets their own isolated workspace with separate job applications, learnings, and storage settings.</p>
+          <h3 class="user-modal-title" id="authModalHeading">Authentication &amp; User Access</h3>
+          <p class="user-modal-subtitle">Sign in via Google OAuth or Casual Email Auth to access your isolated workspace.</p>
         </div>
       </div>
       <button type="button" class="user-close-btn" onclick="closeUserModal()" aria-label="Close modal">&times;</button>
@@ -1606,62 +1720,117 @@ function switchToDefaultUser() {
 
     <div class="user-modal-body">
       <!-- Active Account Card -->
-      <div class="user-active-card">
+      <div class="user-active-card" id="userActiveCardWrap">
         <div class="user-active-info">
           <div class="user-avatar-circle" id="modalActiveAvatar">VC</div>
           <div class="user-active-details">
-            <span class="user-active-badge">Active Session</span>
+            <span class="user-active-badge" id="modalSessionBadge">Active Session</span>
             <span class="user-active-name" id="modalActiveUserName">Default User (Varun)</span>
             <span class="user-active-email" id="modalActiveUserEmail">local@jobtracker.app</span>
           </div>
         </div>
-        <button type="button" class="btn-reset-user" onclick="switchToDefaultUser()" title="Reset session back to default local user">
-          <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-          <span>Reset Default</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button type="button" class="btn-reset-user" onclick="switchToDefaultUser()" title="Reset session back to default local user">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Default</span>
+          </button>
+          <button type="button" class="btn-reset-user" onclick="handleLogoutInsideModal()" title="Log out of current user" style="color:#ef4444;border-color:rgba(239,68,68,0.25);">
+            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Logout</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Auth Method Selector Tabs -->
+      <div class="auth-tabs-row" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="tabGoogleAuth" onclick="switchAuthTab('google')">
+          <svg class="google-icon-svg" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Google OAuth</span>
+        </button>
+        <button type="button" class="auth-tab-btn" id="tabCasualAuth" onclick="switchAuthTab('casual')">
+          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <span>Casual Email Auth</span>
         </button>
       </div>
 
-      <!-- Input Form -->
-      <div class="user-form-group">
-        <label class="user-input-label" for="userSwitchEmail">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>Email Address</span>
-        </label>
-        <input type="email" id="userSwitchEmail" class="user-input-field" placeholder="e.g. alice@example.com or user2@test.com" autocomplete="off">
+      <!-- Google OAuth Tab Content -->
+      <div id="authContentGoogle" style="display:flex;flex-direction:column;gap:14px;">
+        <button type="button" class="btn-google-auth" onclick="triggerGoogleSignIn()">
+          <svg class="google-icon-svg" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+          </svg>
+          <span>Sign In with Google Account</span>
+        </button>
+
+        <div class="user-presets-row">
+          <span class="user-presets-label">Google 1-Click Test Accounts:</span>
+          <button type="button" class="user-preset-chip" onclick="simulateGoogleAuth('varun.dev@gmail.com', 'Varun Chandra', 'https://lh3.googleusercontent.com/a/default-user')">
+            <span class="chip-dot" style="background:#4285F4;"></span>
+            <span>Varun (Google)</span>
+          </button>
+          <button type="button" class="user-preset-chip" onclick="simulateGoogleAuth('alex.pm@gmail.com', 'Alex Rivera', 'https://lh3.googleusercontent.com/a/default-user')">
+            <span class="chip-dot" style="background:#34A853;"></span>
+            <span>Alex (Google)</span>
+          </button>
+        </div>
       </div>
 
-      <div class="user-form-group">
-        <label class="user-input-label" for="userSwitchName">
-          <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span>Display Name (Optional)</span>
-        </label>
-        <input type="text" id="userSwitchName" class="user-input-field" placeholder="e.g. Alice Smith" autocomplete="off">
+      <!-- Casual Email Auth Tab Content -->
+      <div id="authContentCasual" style="display:none;flex-direction:column;gap:14px;">
+        <div class="user-form-group">
+          <label class="user-input-label" for="userSwitchEmail">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <span>Email Address</span>
+          </label>
+          <input type="email" id="userSwitchEmail" class="user-input-field" placeholder="e.g. alice@example.com or user2@test.com" autocomplete="off">
+        </div>
+
+        <div class="user-form-group">
+          <label class="user-input-label" for="userSwitchName">
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span>Display Name (Optional)</span>
+          </label>
+          <input type="text" id="userSwitchName" class="user-input-field" placeholder="e.g. Alice Smith" autocomplete="off">
+        </div>
+
+        <div class="user-presets-row">
+          <span class="user-presets-label">Quick presets:</span>
+          <button type="button" class="user-preset-chip" onclick="quickFillUser('alice@example.com', 'Alice Smith')">
+            <span class="chip-dot"></span>
+            <span>Alice Smith</span>
+          </button>
+          <button type="button" class="user-preset-chip" onclick="quickFillUser('bob@example.com', 'Bob Johnson')">
+            <span class="chip-dot"></span>
+            <span>Bob Johnson</span>
+          </button>
+          <button type="button" class="user-preset-chip" onclick="quickFillUser('user2@test.com', 'Test User 2')">
+            <span class="chip-dot"></span>
+            <span>User 2</span>
+          </button>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+          <button type="button" class="btn-user-submit" onclick="submitUserSwitch()">
+            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span>Sign In with Email</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Quick Test Presets -->
-      <div class="user-presets-row">
-        <span class="user-presets-label">Quick test presets:</span>
-        <button type="button" class="user-preset-chip" onclick="quickFillUser('alice@example.com', 'Alice Smith')">
-          <span class="chip-dot"></span>
-          <span>Alice Smith</span>
-        </button>
-        <button type="button" class="user-preset-chip" onclick="quickFillUser('bob@example.com', 'Bob Johnson')">
-          <span class="chip-dot"></span>
-          <span>Bob Johnson</span>
-        </button>
-        <button type="button" class="user-preset-chip" onclick="quickFillUser('user2@test.com', 'Test User 2')">
-          <span class="chip-dot"></span>
-          <span>User 2</span>
-        </button>
-      </div>
+      <!-- Live Feedback Notice -->
+      <div id="authLiveFeedback" style="display:none;" class="auth-feedback-toast"></div>
     </div>
 
     <div class="user-modal-footer">
-      <button type="button" class="btn-user-cancel" onclick="closeUserModal()">Cancel</button>
-      <button type="button" class="btn-user-submit" onclick="submitUserSwitch()">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        <span>Switch Account</span>
-      </button>
+      <button type="button" class="btn-user-cancel" onclick="closeUserModal()">Close</button>
     </div>
   </div>
 </div>
