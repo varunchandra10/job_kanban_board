@@ -1,200 +1,868 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Job Tracker - Applications Board</title>
-  <meta name="description" content="Professional internship and job application tracker with clean Kanban board, activity timeline, and analytics.">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Tracker - Visual Kanban Board &amp; Career Hub</title>
+  <meta name="description" content="Personal Kanban board to track job applications, daily learnings, and resume storage.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261023_v6">
-  <script src="/auth.js?v=20261023"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css?v=20261023_v10">
+  <script src="/auth.js?v=20261023_v8"></script>
+  <style>
+    /* Premium Design Tokens */
+    :root {
+      --bg-base: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --card-border: #e2e8f0;
+      --card-hover-border: #93c5fd;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-glow: rgba(37, 99, 235, 0.25);
+      --accent-gradient: linear-gradient(135deg, #2563eb 0%, #6366f1 50%, #8b5cf6 100%);
+      --footer-bg: #0f172a;
+      --footer-heading: #f8fafc;
+      --footer-text: #94a3b8;
+      --footer-border: rgba(255, 255, 255, 0.08);
+      --radial-mesh: radial-gradient(circle at 50% 12%, rgba(99, 102, 241, 0.12) 0%, rgba(59, 130, 246, 0.05) 35%, transparent 65%);
+    }
+
+    body.dark-mode {
+      --bg-base: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(99, 102, 241, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #4f46e5;
+      --primary-hover: #4338ca;
+      --primary-glow: rgba(79, 70, 229, 0.35);
+      --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+      --footer-bg: #05070d;
+      --footer-heading: #f1f5f9;
+      --footer-text: #64748b;
+      --footer-border: rgba(255, 255, 255, 0.05);
+      --radial-mesh: radial-gradient(circle at 50% 12%, rgba(99, 102, 241, 0.22) 0%, rgba(14, 165, 233, 0.08) 40%, transparent 70%);
+    }
+
+    /* Scroll fix */
+    html, body {
+      height: auto !important;
+      min-height: 100% !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg-base);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    /* Ambient background glow & pattern */
+    .bg-mesh-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 900px;
+      background: var(--radial-mesh);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .bg-grid-dots {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 750px;
+      background-image: radial-gradient(rgba(148, 163, 184, 0.15) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, black 20%, transparent 80%);
+      -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 80%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top Navigation */
+    .top-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: var(--topbar-bg, rgba(255, 255, 255, 0.85));
+      border-bottom: 1px solid var(--card-border);
+      padding: 0.85rem 2.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text-main);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+    .nav-brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #2563eb, #6366f1);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .nav-center-links {
+      display: flex;
+      align-items: center;
+      gap: 1.75rem;
+    }
+    .nav-center-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.94rem;
+      font-weight: 600;
+      transition: color 0.15s ease;
+    }
+    .nav-center-links a:hover {
+      color: var(--primary);
+    }
+    @media (max-width: 768px) {
+      .nav-center-links { display: none; }
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    /* Main Container */
+    .main-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Hero Section */
+    .hero-box {
+      padding: 5.5rem 1rem 4rem;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero-pill-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      color: #6366f1;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 1.75rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .badge-pulse {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6366f1;
+      box-shadow: 0 0 10px #6366f1;
+    }
+    .hero-h1 {
+      font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+      font-size: clamp(2.4rem, 5.2vw, 4.2rem);
+      font-weight: 900;
+      letter-spacing: -0.035em;
+      line-height: 1.12;
+      max-width: 900px;
+      margin: 0 0 1.35rem;
+    }
+    .gradient-title {
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-desc {
+      font-size: clamp(1.05rem, 2vw, 1.25rem);
+      color: var(--text-muted);
+      max-width: 720px;
+      line-height: 1.65;
+      margin: 0 0 2.5rem;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.25rem;
+    }
+    .btn-cta-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #ffffff;
+      padding: 0.95rem 2.2rem;
+      font-size: 1.05rem;
+      font-weight: 700;
+      border-radius: 12px;
+      text-decoration: none;
+      box-shadow: 0 10px 25px -4px var(--primary-glow);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: none;
+      cursor: pointer;
+    }
+    .btn-cta-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 35px -4px var(--primary-glow);
+      color: #ffffff;
+    }
+    .btn-cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--card-bg);
+      color: var(--text-main);
+      padding: 0.92rem 1.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      text-decoration: none;
+      border: 1px solid var(--card-border);
+      transition: all 0.15s ease;
+    }
+    .btn-cta-secondary:hover {
+      border-color: #94a3b8;
+      transform: translateY(-1px);
+    }
+
+    .trust-strip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2rem;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+    .trust-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 500;
+    }
+    .trust-item svg {
+      color: #10b981;
+    }
+
+    /* Section Headers */
+    .section-head {
+      text-align: center;
+      max-width: 680px;
+      margin: 0 auto 3.5rem;
+    }
+    .section-eyebrow {
+      text-transform: uppercase;
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: #6366f1;
+      margin-bottom: 0.5rem;
+    }
+    .section-h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(1.9rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      margin: 0 0 0.85rem;
+    }
+    .section-sub {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* Features Grid (Polished Cards) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 6rem;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 2.25rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+    }
+    .feature-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 36px -8px rgba(0, 0, 0, 0.08);
+      border-color: var(--card-hover-border);
+    }
+    .card-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .feature-icon-box {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+    .feature-tag-pill {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--text-muted);
+    }
+    .feature-card-h3 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.015em;
+      margin: 0;
+    }
+    .feature-card-p {
+      color: var(--text-muted);
+      font-size: 0.96rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* How It Helps Grid (Structured Impact) */
+    .helps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 6rem;
+    }
+    .help-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 2rem 1.75rem;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .help-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--card-hover-border);
+    }
+    .help-num {
+      font-family: 'Outfit', sans-serif;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--primary);
+      line-height: 1;
+      margin-bottom: 0.75rem;
+      opacity: 0.85;
+    }
+    .help-card-h4 {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0 0 0.5rem;
+      letter-spacing: -0.01em;
+    }
+    .help-card-p {
+      color: var(--text-muted);
+      font-size: 0.93rem;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* Ready Banner */
+    .ready-banner {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+      color: #ffffff;
+      border-radius: 24px;
+      padding: 4rem 2.5rem;
+      text-align: center;
+      margin-bottom: 6rem;
+      box-shadow: 0 20px 40px -10px rgba(49, 46, 129, 0.4);
+    }
+    .ready-banner h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 3.8vw, 2.8rem);
+      font-weight: 800;
+      margin: 0 0 1rem;
+      letter-spacing: -0.02em;
+    }
+    .ready-banner p {
+      font-size: 1.15rem;
+      color: #c7d2fe;
+      max-width: 620px;
+      margin: 0 auto 2.25rem;
+      line-height: 1.6;
+    }
+
+    /* ==========================================================================
+       PROPER, CLEAN, MULTI-COLUMN FOOTER
+       ========================================================================== */
+    .proper-footer {
+      background: var(--footer-bg);
+      color: var(--footer-text);
+      border-top: 1px solid var(--footer-border);
+      padding: 4.5rem 2rem 2.5rem;
+      font-size: 0.92rem;
+    }
+    .footer-inner {
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1fr;
+      gap: 3.5rem;
+      margin-bottom: 3.5rem;
+    }
+    @media (max-width: 900px) {
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 2.5rem;
+      }
+    }
+    @media (max-width: 580px) {
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    .footer-brand-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .footer-brand-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      color: var(--footer-heading);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .footer-desc {
+      color: var(--footer-text);
+      font-size: 0.93rem;
+      line-height: 1.6;
+      max-width: 340px;
+      margin: 0;
+    }
+
+    .footer-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .footer-col-title {
+      color: var(--footer-heading);
+      font-size: 0.85rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 0;
+    }
+    .footer-links-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+    .footer-links-list a {
+      color: var(--footer-text);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.15s ease, transform 0.15s ease;
+      display: inline-block;
+    }
+    .footer-links-list a:hover {
+      color: #818cf8;
+      transform: translateX(2px);
+    }
+
+    .footer-bottom-row {
+      border-top: 1px solid var(--footer-border);
+      padding-top: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      font-size: 0.86rem;
+    }
+    .btn-scroll-top {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--footer-border);
+      color: var(--footer-text);
+      padding: 0.4rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+    .btn-scroll-top:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #ffffff;
+    }
+  </style>
 </head>
-<body>
+<body class="dark-mode">
 
-<header>
-  <a href="/index.html" class="h-logo" style="text-decoration:none;color:inherit;">
-    <div class="h-logo-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
-    </div>
-    <h1>Job Tracker</h1>
-  </a>
-  <!-- Main Navigation: 2 Mode Buttons (Job Applications & Learnings) -->
-  <div class="mode-switcher-container" role="tablist" aria-label="View Modes">
-    <a href="/index.html" class="mode-tab-btn active" id="btnModeApps" role="tab" aria-selected="true" title="Kanban Board & Job Applications" style="text-decoration:none;">
-      <span class="mode-tab-icon"><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-      <span class="mode-tab-text">Job Applications</span>
-      <span class="mode-tab-badge" id="appModeBadge">0</span>
+  <div class="bg-mesh-glow"></div>
+  <div class="bg-grid-dots"></div>
+
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <a href="/index.html" class="nav-brand">
+      <img src="/logo.svg" alt="Job Tracker Logo" width="34" height="34" style="border-radius:10px;box-shadow:0 3px 10px rgba(99,102,241,0.35);">
+      <span>Job Tracker</span>
     </a>
-    <a href="/learnings.html" class="mode-tab-btn" id="btnModeLearnings" role="tab" aria-selected="false" title="Daily Learnings & Streak" style="text-decoration:none;">
-      <span class="mode-tab-icon"><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span class="mode-tab-text">Learnings</span>
-      <span class="mode-tab-badge streak-glow" id="learningModeBadge"><svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> 0d</span>
-    </a>
-  </div>
 
-  <span class="sp"></span>
+    <nav class="nav-center-links" aria-label="Main Navigation">
+      <a href="#features">Features</a>
+      <a href="#benefits">How It Helps</a>
+      <a href="/board.html">Applications Board</a>
+      <a href="/learnings.html">Daily Learnings</a>
+      <a href="/profile.html">Career Hub</a>
+    </nav>
 
-  <div class="search-wrap">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="search" class="search-input" placeholder="Search company, role, notes..." autocomplete="off">
-    <kbd class="search-kbd" title="Press / or Ctrl+K to search">/</kbd>
-    <button type="button" id="searchClear" class="search-clear" aria-label="Clear search">&times;</button>
-  </div>
+    <div class="nav-right">
+      <!-- Dark/Light Theme Toggle -->
+      <button type="button" id="themeToggleBtn" aria-label="Toggle Theme" title="Toggle Theme" style="background:transparent;border:1px solid var(--card-border);border-radius:9px;padding:0.45rem 0.65rem;cursor:pointer;color:inherit;">
+        <svg id="themeIcon" viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
 
-  <!-- Streak Pill: Only fire icon and number, placed completely to the right -->
-  <a href="/learnings.html" class="gamify-hud-pill streak-pill-compact" id="gamifyHudPill" title="Daily Learning Streak (Click to view Learnings)" style="text-decoration:none;cursor:pointer;">
-    <span class="hud-flame-icon"><svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2.2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
-    <span class="hud-streak-count" id="hudStreakText">0d</span>
-  </a>
-
-  <!-- User Profile Button -->
-  <!-- User Profile & Switcher Link -->
-  <a href="/profile.html" class="btn icon-only" id="profileBtn" title="User Profile & Accounts" aria-label="User Profile" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;position:relative;">
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-    <span id="headerUserDot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#6366f1;"></span>
-  </a>
-
-  <button class="btn icon-only" id="tbtn" title="Toggle light/dark theme" aria-label="Toggle theme">
-    <svg class="icon i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    <svg class="icon i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
-    <span id="topbarAuthWrap">
-    <button class="btn icon-only" id="profLogoutBtn" onclick="handleTopbarLogout()" title="Log Out of Session" aria-label="Log Out" style="color: #ef4444;">
-      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </button>
-  </span>
-  <button class="btn icon-only" id="shutdownBtn" title="Shutdown Server" aria-label="Shutdown Server" style="color:var(--tx3);margin-left:2px;">
-    <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-      <line x1="12" y1="2" x2="12" y2="12"></line>
-    </svg>
-  </button>
-</header>
-
-<nav id="secBar">
-  <button class="sec-btn active" data-s="All">
-    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-    All <span class="badge" id="sc-All">0</span>
-  </button>
-  <button class="sec-btn" data-s="Industry">
-    <svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-    Industry <span class="badge" id="sc-Industry">0</span>
-  </button>
-  <button class="sec-btn" data-s="Government">
-    <svg viewBox="0 0 24 24"><path d="M2 20h20M4 20v-7M8 20v-7M12 20v-7M16 20v-7M20 20v-7M12 4L2 9h20l-10-5z"/></svg>
-    Government <span class="badge" id="sc-Government">0</span>
-  </button>
-  <button class="sec-btn" data-s="Research">
-    <svg viewBox="0 0 24 24"><path d="M10 2v7.31L4.65 19.3A2 2 0 0 0 6.4 22h11.2a2 2 0 0 0 1.75-2.7L14 9.31V2M8.5 2h7M7 16h10"/></svg>
-    Research <span class="badge" id="sc-Research">0</span>
-  </button>
-  <button class="sec-btn" data-s="Calendar" id="calSecBtn" title="Calendar View">
-    <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-    Calendar
-  </button>
-  <span class="sec-sp"></span>
-  <div class="country-filter-wrap fwrap" id="fwrap">
-    <button class="sec-btn" id="fbtn" aria-haspopup="true" aria-expanded="false">All countries &#9662;</button>
-    <div class="pop fpop" id="fpop"></div>
-  </div>
-  <button class="btn primary add-app-toolbar-btn" id="addBtn" style="padding:5px 12px;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;border-radius:6px;" title="Add Application">
-    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Add</span>
-  </button>
-</nav>
-
-<!-- Mobile Sub-Bar (Between Topbar and Stage Bar on Smaller Screens): Search Bar + All Countries + Add Button -->
-<div class="mobile-utility-bar" id="mobileUtilityBar">
-  <div class="search-wrap mobile-search-wrap">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="mobileSearch" class="search-input" placeholder="Search company, role, notes..." autocomplete="off">
-    <button type="button" id="mobileSearchClear" class="search-clear" aria-label="Clear search">&times;</button>
-  </div>
-  <div class="country-filter-wrap fwrap mobile-fwrap" id="mobileFwrap">
-    <button type="button" class="sec-btn mobile-fbtn" id="mobileFbtn" aria-haspopup="true" aria-expanded="false" title="Filter by country">
-      <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      <span class="mobile-fbtn-text" id="mobileFbtnText">All</span>
-      <span class="mobile-fbtn-arrow" style="font-size:9px;margin-left:2px;">&#9662;</span>
-    </button>
-    <div class="pop fpop mobile-fpop" id="mobileFpop"></div>
-  </div>
-  <button type="button" class="btn primary add-app-toolbar-btn mobile-add-app-btn" id="mobileAddBtn" title="Add Application">
-    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Add</span>
-  </button>
-</div>
-
-<!-- Mobile Stage Switcher Bar (Pure Stage Tabs with Full Width) -->
-<div class="stage-picker-bar" id="stagePickerBar">
-  <div class="mobile-stage-tabs" id="mobileStageTabs" role="tablist" aria-label="Job Application Stages">
-    <button type="button" class="stage-tab active" data-stage="Applied" role="tab">
-      <span class="tab-dot" style="background:var(--applied-clr, #3b82f6)"></span>
-      <span>Applied</span>
-      <span class="tab-count">0</span>
-    </button>
-    <button type="button" class="stage-tab" data-stage="Interviewing" role="tab">
-      <span class="tab-dot" style="background:var(--interview-clr, #f59e0b)"></span>
-      <span>Interviewing</span>
-      <span class="tab-count">0</span>
-    </button>
-    <button type="button" class="stage-tab" data-stage="Offer" role="tab">
-      <span class="tab-dot" style="background:var(--offer-clr, #10b981)"></span>
-      <span>Offer</span>
-      <span class="tab-count">0</span>
-    </button>
-    <button type="button" class="stage-tab" data-stage="Rejected" role="tab">
-      <span class="tab-dot" style="background:var(--rejected-clr, #ef4444)"></span>
-      <span>Rejected</span>
-      <span class="tab-count">0</span>
-    </button>
-  </div>
-
-  <div class="stage-picker-select-wrap">
-    <span class="stage-picker-dot" id="stagePickerDot" aria-hidden="true"></span>
-    <select id="stageSelect" class="stage-picker-select" aria-label="Select stage column"></select>
-    <span class="stage-count-badge" id="stageCountBadge" aria-live="polite">0</span>
-  </div>
-</div>
-
-<main id="board"></main>
-
-<div id="bd"></div>
-
-<aside id="panel" aria-modal="true">
-  <div class="sheet-pull-handle" id="sheetPullHandle" aria-hidden="true"></div>
-  <div class="ph">
-    <h3 id="pt"></h3>
-    <span id="saved">Saved</span>
-    <button class="btn icon-only" id="pc" aria-label="Close">&times;</button>
-  </div>
-  <div class="pb" id="pbody"></div>
-</aside>
-
-<div id="toast"><span id="tmsg"></span><button id="undo">Undo</button></div>
-
-<!-- Shutdown Modal -->
-<div id="shutdownModal" class="confirm-modal-overlay" style="display:none;" aria-modal="true" role="dialog">
-  <div class="confirm-modal-box">
-    <div class="confirm-modal-header">
-      <div class="confirm-modal-icon warning">
-        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-      </div>
-      <div>
-        <h3 class="confirm-modal-title">Close Application Tracker?</h3>
-        <p class="confirm-modal-text">This will stop the local background server and close the terminal. You will need to rerun <code>start.bat</code> to launch it again.</p>
+      <!-- Auth Wrapper (Auto-synced via auth.js) -->
+      <div id="topbarAuthWrap" style="display:inline-flex;align-items:center;gap:0.5rem;">
+        <a href="/board.html" class="btn-cta-primary" style="padding:0.5rem 1.2rem;font-size:0.92rem;border-radius:9px;">
+          Get Started
+        </a>
       </div>
     </div>
-    <div class="confirm-modal-actions">
-      <button type="button" class="btn" id="cancelShutdownBtn">Cancel</button>
-      <button type="button" class="btn danger" id="confirmShutdownBtn">Yes, Shut Down</button>
-    </div>
-  </div>
-</div>
+  </header>
 
-<script src="/app.js?v=20261023_v6"></script>
+  <main class="main-wrap">
+    <!-- Hero Section -->
+    <section class="hero-box">
+      <div class="hero-pill-badge">
+        <span class="badge-pulse"></span>
+        <span>Personal Career Workflow Hub</span>
+      </div>
+
+      <h1 class="hero-h1">
+        Your Job Search, <br>
+        <span class="gradient-title">Organized Like Never Before.</span>
+      </h1>
+
+      <p class="hero-desc">
+        A private, streamlined dashboard to track applications across visual stages, 
+        save tailored resumes directly to your own Google Drive, and turn daily interview learnings into an unstoppable career streak.
+      </p>
+
+      <div class="hero-actions">
+        <a href="/board.html" class="btn-cta-primary" id="btnLaunchBoard">
+          <span>Get Started</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+        <a href="/profile.html" class="btn-cta-secondary">
+          <span>Career Hub &amp; Heatmap</span>
+        </a>
+      </div>
+
+      <div class="trust-strip">
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>100% User-Owned Google Drive</span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Strict Multi-Tenant Isolation</span>
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>1-Click CSV &amp; SQLite Backup</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section id="features" style="padding-top:1rem;">
+      <div class="section-head">
+        <div class="section-eyebrow">Core Capabilities</div>
+        <h2 class="section-h2">Features Built In This Project</h2>
+        <p class="section-sub">Everything you need to run an organized, structured job search without spreadsheet clutter.</p>
+      </div>
+
+      <div class="features-grid">
+        <!-- Feature 1: Kanban -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(59, 130, 246, 0.12);color:#3b82f6;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
+            </div>
+            <span class="feature-tag-pill">4-STAGE PIPELINE</span>
+          </div>
+          <h3 class="feature-card-h3">Visual Kanban Board</h3>
+          <p class="feature-card-p">
+            Organize applications across 4 visual stages: <strong>Applied</strong>, <strong>Interviewing</strong>, <strong>Offer</strong>, and <strong>Rejected</strong>. Drag and drop cards, filter by track (Industry, Government, Research), and search instantly with <code>/</code>.
+          </p>
+        </div>
+
+        <!-- Feature 2: Google Drive -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(16, 185, 129, 0.12);color:#10b981;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <span class="feature-tag-pill">PRIVATE CLOUD</span>
+          </div>
+          <h3 class="feature-card-h3">Personal Google Drive Storage</h3>
+          <p class="feature-card-p">
+            Uploaded resumes and cover letters stream directly into <strong>your personal Google Drive folder</strong> via official Google Drive API integration. Your files are never stored on shared admin servers.
+          </p>
+        </div>
+
+        <!-- Feature 3: Learnings & Streak -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(245, 158, 11, 0.12);color:#f59e0b;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+            </div>
+            <span class="feature-tag-pill">HABIT TRACKING</span>
+          </div>
+          <h3 class="feature-card-h3">Daily Learnings Diary &amp; Streak</h3>
+          <p class="feature-card-p">
+            Log technical takeaways, interview questions, and prep notes daily. Maintain a glowing activity streak counter to stay disciplined and prepared for every round.
+          </p>
+        </div>
+
+        <!-- Feature 4: Career Hub Heatmap -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(139, 92, 246, 0.12);color:#8b5cf6;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <span class="feature-tag-pill">VISUAL MATRIX</span>
+          </div>
+          <h3 class="feature-card-h3">Career Hub &amp; Heatmap</h3>
+          <p class="feature-card-p">
+            View your monthly activity matrix heatmap showing applications submitted and daily learnings logged, along with tailored resume version tracking.
+          </p>
+        </div>
+
+        <!-- Feature 5: Multi-Tenant OAuth -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(236, 72, 153, 0.12);color:#ec4899;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <span class="feature-tag-pill">STRICT ISOLATION</span>
+          </div>
+          <h3 class="feature-card-h3">Google OAuth &amp; Privacy</h3>
+          <p class="feature-card-p">
+            Sign in securely using Google OAuth or custom email. Multi-tenant database queries strictly isolate data by user ID so you never see another user's records.
+          </p>
+        </div>
+
+        <!-- Feature 6: Backup & Export -->
+        <div class="feature-card">
+          <div class="card-top-row">
+            <div class="feature-icon-box" style="background:rgba(6, 182, 212, 0.12);color:#06b6d4;">
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <span class="feature-tag-pill">OFFLINE FREEDOM</span>
+          </div>
+          <h3 class="feature-card-h3">1-Click CSV &amp; SQLite Backup</h3>
+          <p class="feature-card-p">
+            Export all application records to clean CSV or download the complete SQLite database as a ZIP file anytime for offline archiving and total data ownership.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Helps Section -->
+    <section id="benefits">
+      <div class="section-head">
+        <div class="section-eyebrow">Practical Value</div>
+        <h2 class="section-h2">How It Helps You Land Offers</h2>
+        <p class="section-sub">Why visual Kanban and daily habit tracking outperform traditional spreadsheets.</p>
+      </div>
+
+      <div class="helps-grid">
+        <div class="help-card">
+          <div class="help-num">01</div>
+          <h4 class="help-card-h4">Clear Stage Visibility</h4>
+          <p class="help-card-p">Instantly see where each job stands without maintaining messy, outdated rows in a spreadsheet.</p>
+        </div>
+        <div class="help-card">
+          <div class="help-num">02</div>
+          <h4 class="help-card-h4">Always Send the Right Resume</h4>
+          <p class="help-card-p">Open the exact resume version you submitted directly from your personal Google Drive with a single click.</p>
+        </div>
+        <div class="help-card">
+          <div class="help-num">03</div>
+          <h4 class="help-card-h4">Improve After Every Interview</h4>
+          <p class="help-card-p">Document questions and mistakes in your daily diary right after each round so you prepare smarter for the next.</p>
+        </div>
+        <div class="help-card">
+          <div class="help-num">04</div>
+          <h4 class="help-card-h4">You Own Your Storage</h4>
+          <p class="help-card-p">Files stay in your Google Drive and database records can be exported to CSV or SQLite whenever you want.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Ready Banner -->
+    <section class="ready-banner">
+      <h2>Ready to Organize Your Job Search?</h2>
+      <p>Launch your Kanban board and start managing your applications with visual momentum.</p>
+      <a href="/board.html" class="btn-cta-primary" style="background:#ffffff;color:#1e1b4b;box-shadow:0 10px 25px rgba(0,0,0,0.25);">
+        <span>Launch Applications Board</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </section>
+  </main>
+
+  <!-- ==========================================================================
+       PROPER, CLEAN, MODERN MULTI-COLUMN FOOTER
+       ========================================================================== -->
+  <footer class="proper-footer">
+    <div class="footer-inner">
+      <div class="footer-grid">
+        <!-- Col 1: Brand -->
+        <div class="footer-brand-wrap">
+          <a href="/index.html" class="footer-brand-logo">
+            <img src="/logo.svg" alt="Job Tracker Logo" width="30" height="30" style="border-radius:8px;">
+            <span>Job Tracker</span>
+          </a>
+          <p class="footer-desc">
+            A private, visual career workflow platform built to help professionals organize applications, track interview learnings, and land dream offers with momentum.
+          </p>
+        </div>
+
+        <!-- Col 2: Navigation -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Navigation</h4>
+          <ul class="footer-links-list">
+            <li><a href="/board.html">Applications Board</a></li>
+            <li><a href="/learnings.html">Daily Learnings Diary</a></li>
+            <li><a href="/profile.html">Career Hub &amp; Heatmap</a></li>
+            <li><a href="/profile.html">Google Drive Storage</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 3: Features Built -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Features</h4>
+          <ul class="footer-links-list">
+            <li><a href="#features">4-Stage Kanban Pipeline</a></li>
+            <li><a href="#features">Personal Google Drive Sync</a></li>
+            <li><a href="#features">Daily Learning Streak</a></li>
+            <li><a href="#features">Category Track Filters</a></li>
+          </ul>
+        </div>
+
+        <!-- Col 4: Privacy & Backups -->
+        <div class="footer-col">
+          <h4 class="footer-col-title">Privacy &amp; Data</h4>
+          <ul class="footer-links-list">
+            <li><a href="/profile.html">Personal Google Drive</a></li>
+            <li><a href="/index.html">Strict Multi-Tenant Isolation</a></li>
+            <li><a href="/profile.html">Download as CSV</a></li>
+            <li><a href="/profile.html">Download DB as ZIP</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Bottom Bar -->
+      <div class="footer-bottom-row">
+        <div>
+          &copy; 2026 Job Tracker &bull; 100% User-Owned Google Drive Storage &bull; All data isolated.
+        </div>
+        <div style="display:flex;align-items:center;gap:1.5rem;">
+          <a href="https://github.com/varunchandra10/job_kanban_board" target="_blank" rel="noopener" style="color:var(--footer-text);text-decoration:none;">GitHub</a>
+          <button type="button" class="btn-scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+            <span>Back to top</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><path d="M18 15l-6-6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function() {
+      const themeBtn = document.getElementById('themeToggleBtn');
+      const themeIcon = document.getElementById('themeIcon');
+      const isDark = localStorage.getItem('theme') !== 'light';
+
+      if (!isDark) {
+        document.body.classList.remove('dark-mode');
+        if (themeIcon) {
+          themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+        }
+      }
+
+      if (themeBtn) {
+        themeBtn.addEventListener('click', () => {
+          const dark = document.body.classList.toggle('dark-mode');
+          localStorage.setItem('theme', dark ? 'dark' : 'light');
+          if (themeIcon) {
+            if (dark) {
+              themeIcon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+            } else {
+              themeIcon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
+            }
+          }
+        });
+      }
+    })();
+  </script>
+
 </body>
 </html>

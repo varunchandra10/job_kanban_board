@@ -321,7 +321,51 @@ async function loadGamificationStats() {
 }
 
 // Fetch & Render Daily Learnings
+
+// Skeleton Loader for Learnings Board
+function renderLearningSkeletons() {
+  const container = document.getElementById('learningsView');
+  if (!container) return;
+
+  const cats = [
+    { key: 'DSA', label: 'DSA', dot: 'var(--applied-clr, #3b82f6)', icon: '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' },
+    { key: 'AI/ML/NLP/CV', label: 'AI/ML/NLP/CV', dot: 'var(--offer-clr, #ec4899)', icon: '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
+    { key: 'CS SUBJECTS', label: 'CS SUBJECTS', dot: 'var(--interview-clr, #0ea5e9)', icon: '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/></svg>' },
+    { key: 'GENERAL APTITUDE', label: 'GENERAL APTITUDE', dot: 'var(--rejected-clr, #f59e0b)', icon: '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"/></svg>' }
+  ];
+
+  container.innerHTML = cats.map(cat => `
+    <section class="col" data-cat="${cat.key}">
+      <div class="col-header">
+        <span class="col-stage-dot" style="background:${cat.dot}"></span>
+        <h2>${cat.icon} ${cat.label}</h2>
+        <span class="col-count">...</span>
+      </div>
+      <div class="body">
+        ${[1, 2, 3].map(() => `
+          <div class="skeleton-card">
+            <div class="skeleton-top">
+              <div class="skeleton-avatar skeleton-shimmer"></div>
+              <div class="skeleton-text-group">
+                <div class="skeleton-line w-70 skeleton-shimmer"></div>
+                <div class="skeleton-line w-45 skeleton-shimmer"></div>
+              </div>
+            </div>
+            <div class="skeleton-line w-85 skeleton-shimmer"></div>
+            <div class="skeleton-tags-row">
+              <div class="skeleton-pill skeleton-shimmer"></div>
+              <div class="skeleton-pill skeleton-shimmer"></div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+window.renderLearningSkeletons = renderLearningSkeletons;
+
 async function loadLearnings() {
+  if (!learningsList || learningsList.length === 0) renderLearningSkeletons();
   try {
     const res = await fetch('/api/learnings');
     if (!res.ok) return;
@@ -483,8 +527,14 @@ function updateLearningsBarBadges() {
 
 window.openLearningModalWithCat = function(catKey, stream, topic) {
   openLearningModal();
+  const targetCat = (catKey === 'GENERAL APTITUDE' ? 'GENERAL APTITUDE' : catKey);
   const sel = document.getElementById('l_category');
-  if (sel) sel.value = (catKey === 'GENERAL APTITUDE' ? 'GENERAL APTITUDE' : catKey);
+  if (sel) sel.value = targetCat;
+
+  // Sync category chips in drawer immediately
+  document.querySelectorAll("#learningCatChips .learning-cat-chip").forEach(c => {
+    c.classList.toggle("active", c.dataset.cat === targetCat);
+  });
 
   if (topic && topic !== 'All') {
     const topicInput = document.getElementById('l_topic');

@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="page-scrollable">
 <head>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Varun Chandra - User Profile & Career Hub | Job Tracker</title>
@@ -74,23 +75,21 @@
     .link-field input:focus { outline: none; border-color: var(--accent); }
     .link-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   </style>
-  <script src="/auth.js?v=20261023"></script>
+  <script src="/auth.js?v=20261023_v99"></script>
 </head>
 <body class="page-scrollable">
 
 <!-- Top Header Navigation -->
 <header>
   <!-- Logo -->
-  <a href="/index.html" class="h-logo" title="Back to Kanban Board">
-    <div class="h-logo-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18"/></svg>
-    </div>
+  <a href="/board.html" class="h-logo" title="Back to Kanban Board">
+    <img src="/logo.svg" alt="Job Tracker Logo" width="32" height="32" style="border-radius:9px;box-shadow:0 3px 10px rgba(99,102,241,0.3);">
     <h1>Job Tracker</h1>
   </a>
 
   <!-- Main Navigation: 2 Mode Buttons (Job Applications & Learnings) -->
   <div class="mode-switcher-container" role="tablist" aria-label="View Modes">
-    <button type="button" class="mode-tab-btn" id="btnModeApps" role="tab" onclick="window.location.href='/index.html'" title="Kanban Board & Job Applications">
+    <button type="button" class="mode-tab-btn" id="btnModeApps" role="tab" onclick="window.location.href='/board.html'" title="Kanban Board & Job Applications">
       <span class="mode-tab-icon"><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
       <span class="mode-tab-text">Job Applications</span>
       <span class="mode-tab-badge" id="appModeBadge">0</span>
@@ -106,7 +105,7 @@
 
   <div class="search-wrap">
     <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="search" class="search-input" placeholder="Search company, role, notes..." autocomplete="off" onkeydown="if(event.key==='Enter') window.location.href='index.html?q=' + encodeURIComponent(this.value)">
+    <input type="text" id="search" class="search-input" placeholder="Search company, role, notes..." autocomplete="off" onkeydown="if(event.key==='Enter') window.location.href='board.html?q=' + encodeURIComponent(this.value)">
     <kbd class="search-kbd" title="Press / or Ctrl+K to search">/</kbd>
   </div>
 
@@ -550,6 +549,38 @@
 </div>
 
 <script>
+
+/* Self-contained Auth Modal Controller & Capture Click Listener */
+window.openAuthModal = function(noticeText) {
+  var overlay = document.getElementById('authModalOverlay');
+  if (overlay) {
+    overlay.classList.add('active');
+    overlay.style.setProperty('display', 'flex', 'important');
+    var noticeTxt = document.getElementById('authActionNoticeText');
+    var notice = document.getElementById('authActionNotice');
+    if (notice && noticeTxt && noticeText) {
+      noticeTxt.textContent = noticeText;
+      notice.style.display = 'flex';
+    }
+  }
+};
+window.closeAuthModal = function() {
+  var overlay = document.getElementById('authModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.setProperty('display', 'none', 'important');
+  }
+};
+
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('#btnProfileGateSignIn, .profile-auth-gate-box button');
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.openAuthModal('Please sign in to access your profile & settings.');
+  }
+}, true);
+
 // Global fetch interceptor to inject Authorization header for multi-user support
 (function() {
   if (window.__fetchAuthInjected) return;
@@ -709,6 +740,41 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+window.openAuthModal = window.openAuthModal || function(noticeText) {
+  const overlay = document.getElementById('authModalOverlay');
+  if (!overlay) return;
+  overlay.classList.add('active');
+  overlay.style.setProperty('display', 'flex', 'important');
+  const notice = document.getElementById('authActionNotice');
+  const noticeTxt = document.getElementById('authActionNoticeText');
+  if (notice && noticeTxt) {
+    if (noticeText) {
+      noticeTxt.textContent = noticeText;
+      notice.style.display = 'flex';
+    } else {
+      notice.style.display = 'none';
+    }
+  }
+};
+
+window.closeAuthModal = window.closeAuthModal || function() {
+  const overlay = document.getElementById('authModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.setProperty('display', 'none', 'important');
+  }
+};
+
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('#btnProfileGateSignIn, .profile-auth-gate-box button');
+  if (btn) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.openAuthModal('Please sign in to access your profile & settings.');
+  }
+});
+
 /* Theme Initialization */
 function initTheme() {
   const saved = localStorage.getItem('theme') || localStorage.getItem('tracker_theme');
@@ -737,35 +803,11 @@ if (themeBtn) {
 /* Data Fetching & Sync */
 async function loadAllProfileData() {
   if (isUserLoggedOut()) {
-    resState = { apps: [], profile: null, settings: {} };
-    appsList = [];
-    learningsList = [];
-    gamifyStats = {
-      streak: 0,
-      currentStreak: 0,
-      totalMinutes: 0,
-      totalXP: 0,
-      level: 1,
-      levelTitle: 'Novice',
-      progressPercent: 0,
-      nextLevelXP: 200,
-      isFrozen: false
-    };
-
-    // Update Header Badges to 0
-    const appBadge = document.getElementById('appModeBadge');
-    if (appBadge) appBadge.textContent = '0';
-
-    const hudCount = document.getElementById('hudStreakCount');
-    if (hudCount) hudCount.textContent = '0';
-
-    const learnBadgeText = document.getElementById('learningModeBadgeText');
-    if (learnBadgeText) learnBadgeText.textContent = '0d';
-
-    renderAllViews();
-    updateGdriveDot(false);
+    showProfileAuthGate();
     return;
   }
+
+  renderProfileSkeletons();
 
   try {
     const [resStateRaw, resLearnings, resGamify] = await Promise.all([
@@ -778,12 +820,6 @@ async function loadAllProfileData() {
     appsList = Array.isArray(resState?.apps) ? resState.apps : [];
     learningsList = Array.isArray(resLearnings) ? resLearnings : [];
     gamifyStats = resGamify || {};
-
-    console.log('[Profile] Loaded data:', {
-      appsCount: appsList.length,
-      learningsCount: learningsList.length,
-      gamifyStats
-    });
 
     // Update Header Badges
     const appBadge = document.getElementById('appModeBadge');
@@ -802,6 +838,51 @@ async function loadAllProfileData() {
   } catch (e) {
     console.error('Failed to load profile data:', e);
   }
+}
+
+function showProfileAuthGate() {
+  const container = document.getElementById('profileView');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="profile-auth-gate-box">
+      <div class="profile-auth-gate-icon">
+        <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <h2>Authentication Required</h2>
+      <p>Please sign in to view and manage your profile details, resume versions, and personal Google Drive folder settings.</p>
+      <button type="button" class="btn primary" id="btnProfileGateSignIn" onclick="(function(){ var o = document.getElementById('authModalOverlay'); if(o){ o.classList.add('active'); o.style.setProperty('display','flex','important'); var n = document.getElementById('authActionNotice'); var nt = document.getElementById('authActionNoticeText'); if(n && nt){ nt.textContent = 'Please sign in to access your profile & settings.'; n.style.display = 'flex'; } } if(typeof window.openAuthModal === 'function') window.openAuthModal('Please sign in to access your profile & settings.'); })()" style="padding:10px 24px;font-size:13.5px;font-weight:600;border-radius:8px;margin-top:6px;cursor:pointer;">Sign In to Profile</button>
+    </div>
+  `;
+}
+
+function renderProfileSkeletons() {
+  const container = document.getElementById('profileView');
+  if (!container) return;
+  container.innerHTML = `
+    <section class="profile-hero-card skeleton-card" style="padding:28px;">
+      <div class="skeleton-top" style="gap:20px;align-items:center;">
+        <div class="skeleton-avatar skeleton-shimmer" style="width:72px;height:72px;border-radius:50%;"></div>
+        <div class="skeleton-text-group" style="gap:10px;flex:1;">
+          <div class="skeleton-line skeleton-shimmer" style="width:220px;height:24px;"></div>
+          <div class="skeleton-line skeleton-shimmer" style="width:140px;height:14px;"></div>
+          <div class="skeleton-tags-row">
+            <div class="skeleton-pill skeleton-shimmer" style="width:90px;"></div>
+            <div class="skeleton-pill skeleton-shimmer" style="width:110px;"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-top:16px;">
+      ${[1, 2, 3, 4].map(() => `
+        <div class="skeleton-card" style="padding:20px;">
+          <div class="skeleton-line skeleton-shimmer" style="width:50%;height:14px;margin-bottom:12px;"></div>
+          <div class="skeleton-line skeleton-shimmer" style="width:80%;height:22px;margin-bottom:10px;"></div>
+          <div class="skeleton-line skeleton-shimmer" style="width:65%;height:12px;"></div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
 
 function renderAllViews() {
@@ -1746,27 +1827,7 @@ function handleTopbarAuthClick() {
   }
 }
 
-// Global click interceptor: when user is logged out and clicks any button, ask user to login!
-document.addEventListener('click', function(e) {
-  if (!isUserLoggedOut()) return;
-
-  const clickable = e.target.closest('button, a:not([href^="http"]), input, select, textarea, [role="button"]');
-  if (!clickable) return;
-
-  // Allow clicking inside Auth Modal itself
-  if (clickable.closest('#authModalOverlay') || clickable.closest('#authModalBox')) return;
-  // Allow the login icon button itself to open the modal
-  if (clickable.id === 'topbarLoginIconBtn' || clickable.closest('#topbarLoginIconBtn')) return;
-  // Allow theme toggle and close server buttons
-  if (clickable.id === 'tbtn' || clickable.id === 'closeBtn' || clickable.closest('#shutdownModal')) return;
-
-  // Intercept action and ask user to login
-  e.preventDefault();
-  e.stopPropagation();
-  e.stopImmediatePropagation();
-
-  openAuthModal('Please sign in to continue.');
-}, true); // Capture phase ensures we intercept before any button handler
+// Click interceptor removed // Capture phase ensures we intercept before any button handler
 
 function openAuthModal(noticeText) {
   const overlay = document.getElementById('authModalOverlay');

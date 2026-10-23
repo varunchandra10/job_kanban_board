@@ -66,11 +66,15 @@ app.use('/api/backup', backupRoutes);
 
 app.use(express.static(config.frontendDir, {
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html')) {
+    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
   }
 }));
+
+app.get('/board', (req, res) => res.sendFile(path.join(config.frontendDir, 'board.html')));
+app.get('/profile', (req, res) => res.sendFile(path.join(config.frontendDir, 'profile.html')));
+app.get('/learnings', (req, res) => res.sendFile(path.join(config.frontendDir, 'learnings.html')));
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
