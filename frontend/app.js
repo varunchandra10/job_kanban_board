@@ -715,7 +715,7 @@ function render() {
       if (a.resume_path && a.resume_path.trim() && a.resume_path.trim().toUpperCase() !== 'NA') {
         const cleanP = cleanFilePath(a.resume_path);
         if (isGoogleDriveLink(cleanP)) {
-          tags.push(`<span class="tag resume-tag gdrive" title="Google Drive CV: Click to preview" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'resume');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> <svg class="icon-inline" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:3px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Drive CV</span>`);
+          tags.push(`<span class="tag resume-tag gdrive" title="Google Drive CV: Click to open in Google Drive" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'resume');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> <svg class="icon-inline" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:3px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Drive CV</span>`);
         } else {
           const fn = cleanP.split(/[\\/]/).pop() || cleanP;
           const ext = (fn.split('.').pop() || '').toLowerCase();
@@ -731,7 +731,7 @@ function render() {
       if (a.cover_letter_path && a.cover_letter_path.trim() && a.cover_letter_path.trim().toUpperCase() !== 'NA') {
         const cleanP = cleanFilePath(a.cover_letter_path);
         if (isGoogleDriveLink(cleanP)) {
-          tags.push(`<span class="tag cl-tag gdrive" title="Google Drive Cover Letter: Click to preview" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'cover');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> Drive CL</span>`);
+          tags.push(`<span class="tag cl-tag gdrive" title="Google Drive Cover Letter: Click to open in Google Drive" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'cover');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> Drive CL</span>`);
         } else {
           const fn = cleanP.split(/[\\/]/).pop() || cleanP;
           tags.push(`<span class="tag cl-tag" title="Cover Letter: ${esc(cleanP)} (Click to preview, right-click to copy)" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'cover');" oncontextmenu="event.stopPropagation(); event.preventDefault(); copyDocPathForApp(${a.id}, 'cover', this);">${ICON.fileWord || ICON.document} CL: ${esc(fn)}</span>`);
@@ -2433,8 +2433,12 @@ async function openDocPreview(options = {}) {
     return;
   }
 
-  // Phase 3: Direct Google Drive Cloud Preview Embed
+  // Phase 3: Direct Google Drive Open in Google Drive Tab
   if (isGoogleDriveLink(p)) {
+    window.open(p, '_blank');
+    return;
+  }
+  if (false && isGoogleDriveLink(p)) {
     const fileId = extractGoogleDriveFileId(p);
     currentDocPreview = { path: p, file: null, ext: 'gdoc', name: options.title || 'Google Drive Document', zoom: 1, appId: options.appId, targetKey: options.targetKey, isGoogleDrive: true, fileId };
     modalTitle.textContent = options.title || 'Google Drive Document';
