@@ -82,11 +82,22 @@ class GoogleDriveStorageService extends BaseStorageService {
       body: stream
     };
 
-    const file = await this.driveClient.files.create({
-      resource: fileMetadata,
-      media,
-      fields: 'id, name, size, webViewLink, webContentLink, mimeType'
-    });
+    let file;
+    try {
+      file = await this.driveClient.files.create({
+        resource: fileMetadata,
+        media,
+        fields: 'id, name, size, webViewLink, webContentLink, mimeType'
+      });
+    } catch (createErr) {
+      if (this.localFallback && (createErr.message?.includes('quota') || createErr.message?.includes('Service Accounts do not have storage quota'))) {
+        console.warn('[Google Drive] Service Account quota restricted on personal drive. Gracefully saving file locally.');
+        const localSaved = await this.localFallback.saveFile({ buffer, originalName, type, appId });
+        localSaved.quotaNotice = true;
+        return localSaved;
+      }
+      throw createErr;
+    }
 
     // Make file readable for anyone with the link so preview works seamlessly
     try {
