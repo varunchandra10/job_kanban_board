@@ -169,7 +169,7 @@ window.switchViewMode = function(mode) {
       addBtn.title = 'Add Application';
       addBtn.onclick = () => { if (typeof adding !== 'undefined' && !adding) { adding = true; render(); } };
     } else {
-      addBtn.title = 'Log Daily Learning (+50 XP)';
+      addBtn.title = 'Add';
       addBtn.onclick = () => openLearningModal();
     }
   }
@@ -533,7 +533,7 @@ function renderLearningsBoard() {
     const bodyHtml = catItems.length === 0 ? `
       <div class="empty-col-msg">
         <span>No ${escapeHtml(cat.label)} notes yet${currentAptitudeTopic !== 'All' ? ' for ' + escapeHtml(currentAptitudeTopic) : ''}</span>
-        <button type="button" class="empty-add-btn" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}', '${currentAptitudeStream}', '${currentAptitudeTopic}')">+ Add Note</button>
+        <button type="button" class="empty-add-btn" onclick="openLearningModalWithCat('${escapeHtml(cat.key)}', '${currentAptitudeStream}', '${currentAptitudeTopic}')">+ Add</button>
       </div>
     ` : catItems.map(item => {
       const tags = (item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
@@ -628,7 +628,7 @@ window.openLearningModal = function(editId = null) {
     document.getElementById("l_date").value = todayStr;
     document.getElementById("l_duration").value = 45;
     const btnSpan = document.querySelector("#submitLearningBtn span");
-    if (btnSpan) btnSpan.innerHTML = "<span style=\"display:inline-flex;align-items:center;gap:6px;\">🔥 Log Learning (+50 XP)</span>";
+    if (btnSpan) btnSpan.innerHTML = "<span style=\"display:inline-flex;align-items:center;gap:6px;\">🔥 Log Learning</span>";
   }
 
   // Update category chips state in drawer
@@ -695,7 +695,7 @@ window.saveLearning = async function() {
 
     if (!editId) {
       burstConfetti();
-      if (typeof toast === 'function') toast('Awesome! +50 XP Earned! Streak Maintained!');
+      if (typeof toast === 'function') toast('Learning logged successfully! Streak Maintained!');
     } else {
       if (typeof toast === 'function') toast('Learning updated successfully');
     }
