@@ -31,8 +31,29 @@ function performDbBackup() {
   }
 }
 
-performDbBackup();
-setInterval(performDbBackup, 24 * 60 * 60 * 1000).unref();
+if (!process.env.VERCEL) {
+  performDbBackup();
+  setInterval(performDbBackup, 24 * 60 * 60 * 1000).unref();
+}
+
+
+if (process.env.VERCEL) {
+  const tmpDir = path.dirname(config.dbPath);
+  if (!fs.existsSync(tmpDir)) {
+    try { fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
+  }
+  if (!fs.existsSync(config.dbPath)) {
+    const templateDb = path.join(config.rootDir, 'tracker.db');
+    if (fs.existsSync(templateDb)) {
+      try {
+        fs.copyFileSync(templateDb, config.dbPath);
+        console.log('[Vercel SQLite] Initialized /tmp/tracker.db from bundle template');
+      } catch (e) {
+        console.warn('[Vercel SQLite] Could not copy template db, will initialize fresh:', e.message);
+      }
+    }
+  }
+}
 
 const db = new DatabaseSync(config.dbPath);
 
