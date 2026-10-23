@@ -48,11 +48,13 @@
   </a>
 
   <!-- User Profile Button -->
-  <a href="/profile.html" class="btn icon-only" id="profileBtn" title="User Profile" aria-label="User Profile" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;">
+  <!-- User Profile & Switcher Link -->
+  <a href="/profile.html" class="btn icon-only" id="profileBtn" title="User Profile & Accounts" aria-label="User Profile" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;position:relative;">
     <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
       <circle cx="12" cy="7" r="4"></circle>
     </svg>
+    <span id="headerUserDot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#6366f1;"></span>
   </a>
 
   <button class="btn icon-only" id="tbtn" title="Toggle light/dark theme" aria-label="Toggle theme">

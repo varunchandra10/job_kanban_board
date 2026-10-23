@@ -156,6 +156,11 @@
 
     <!-- Top Action Buttons: Export CSV & Download Database as ZIP -->
     <div class="profile-actions-top">
+      <button type="button" class="btn-action-glow btn-switch-user" id="profSwitchUserBtn" onclick="openUserModal()" title="Switch user or test new account" style="border-color: rgba(99,102,241,0.35); background: rgba(99,102,241,0.12); color: #818cf8;">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+        <span id="profUserStatusLabel">Switch User</span>
+      </button>
+
       <button type="button" class="btn-action-glow btn-gdrive-storage" id="profGdriveStorageBtn" onclick="openDriveSettingsModal()" title="Manage Your Google Drive Storage & Setup">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><path d="M2 19.5l5-8.5h10l5 8.5H2z"/></svg>
         <span>Google Drive Storage</span>
@@ -534,6 +539,33 @@
 </div>
 
 <script>
+// Global fetch interceptor to inject Authorization header for multi-user support
+(function() {
+  if (window.__fetchAuthInjected) return;
+  window.__fetchAuthInjected = true;
+  const _origFetch = window.fetch;
+  window.fetch = function(url, options = {}) {
+    const token = localStorage.getItem('auth_token');
+    if (token && typeof url === 'string' && (url.startsWith('/api') || url.includes('/api/'))) {
+      options.headers = options.headers || {};
+      if (options.headers instanceof Headers) {
+        if (!options.headers.has('Authorization')) {
+          options.headers.set('Authorization', 'Bearer ' + token);
+        }
+      } else if (Array.isArray(options.headers)) {
+        if (!options.headers.some(([k]) => k.toLowerCase() === 'authorization')) {
+          options.headers.push(['Authorization', 'Bearer ' + token]);
+        }
+      } else {
+        if (!options.headers['Authorization'] && !options.headers['authorization']) {
+          options.headers['Authorization'] = 'Bearer ' + token;
+        }
+      }
+    }
+    return _origFetch.call(this, url, options);
+  };
+})();
+
 /* ===============================================================
    User Profile Page Engine & Data Sync
    =============================================================== */
@@ -1473,7 +1505,139 @@ document.getElementById('confirmShutdownBtn').onclick = async () => {
 // Bootstrap
 initTheme();
 loadAllProfileData();
+
+function openUserModal() {
+  const overlay = document.getElementById('userModalOverlay');
+  if (!overlay) return;
+  overlay.classList.add('active');
+  const userStr = localStorage.getItem('auth_user');
+  if (userStr) {
+    try {
+      const u = JSON.parse(userStr);
+      document.getElementById('modalActiveUserName').textContent = u.name || 'User';
+      document.getElementById('modalActiveUserEmail').textContent = u.email || '';
+    } catch (_) {}
+  } else {
+    document.getElementById('modalActiveUserName').textContent = 'Default User (Varun)';
+    document.getElementById('modalActiveUserEmail').textContent = 'local@jobtracker.app';
+  }
+}
+
+function closeUserModal() {
+  const overlay = document.getElementById('userModalOverlay');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function quickFillUser(email, name) {
+  const emailInput = document.getElementById('userSwitchEmail');
+  const nameInput = document.getElementById('userSwitchName');
+  if (emailInput) emailInput.value = email;
+  if (nameInput) nameInput.value = name;
+}
+
+async function submitUserSwitch() {
+  const email = (document.getElementById('userSwitchEmail').value || '').trim();
+  const name = (document.getElementById('userSwitchName').value || '').trim();
+  if (!email || !email.includes('@')) {
+    alert('Please enter a valid email address.');
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name })
+    }).then(r => r.json());
+    if (res.token) {
+      localStorage.setItem('auth_token', res.token);
+      localStorage.setItem('auth_user', JSON.stringify(res.user));
+      window.location.reload();
+    } else {
+      alert(res.error || 'Failed to login');
+    }
+  } catch (err) {
+    alert('Error connecting to server: ' + err.message);
+  }
+}
+
+function switchToDefaultUser() {
+  localStorage.removeItem('auth_token');
+  localStorage.removeItem('auth_user');
+  window.location.reload();
+}
+
+// Apply active user to Profile Hero Card
+(function applyActiveUserUI() {
+  const savedUserStr = localStorage.getItem('auth_user');
+  if (savedUserStr) {
+    try {
+      const u = JSON.parse(savedUserStr);
+      const profName = document.getElementById('profUserName');
+      if (profName && u.name) profName.textContent = u.name;
+      const profAvatar = document.getElementById('profUserAvatar');
+      if (profAvatar) {
+        const initials = (u.name || u.email).split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+        profAvatar.textContent = initials;
+      }
+      const statusLabel = document.getElementById('profUserStatusLabel');
+      if (statusLabel) statusLabel.textContent = u.name ? u.name.split(' ')[0] : 'Account';
+    } catch (_) {}
+  }
+})();
+
 </script>
+
+
+<!-- Multi-User Account Switcher Modal -->
+<div class="gdrive-modal-overlay" id="userModalOverlay" onclick="if(event.target===this)closeUserModal()">
+  <div class="gdrive-modal-box" style="max-width: 500px;">
+    <div class="gdrive-modal-header">
+      <div class="gdrive-modal-badge" style="background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); color: #818cf8;">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span>Multi-User Account Manager</span>
+      </div>
+      <button type="button" class="gdrive-modal-close" onclick="closeUserModal()">&times;</button>
+    </div>
+
+    <h3 class="gdrive-modal-title">Switch or Test New User</h3>
+    <p class="gdrive-modal-subtitle">Each user gets a dedicated, isolated database partition. Applications, daily learnings, and storage settings are completely separate.</p>
+
+    <!-- Current User Card -->
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border, #2a2e39); border-radius: 12px; padding: 14px 16px; margin: 16px 0; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--tx-dim, #71717a); font-weight: 600;">Active Account</div>
+        <div id="modalActiveUserName" style="font-size: 15px; font-weight: 700; color: var(--tx, #fff); margin-top: 2px;">Default User (Varun)</div>
+        <div id="modalActiveUserEmail" style="font-size: 12px; color: var(--tx-dim, #a1a1aa);">local@jobtracker.app</div>
+      </div>
+      <button type="button" class="btn sm" onclick="switchToDefaultUser()" style="font-size: 11.5px; padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid var(--border, #3f3f46); border-radius: 6px; cursor: pointer; color: var(--tx, #fff);">
+        Reset to Default
+      </button>
+    </div>
+
+    <!-- Login / Switch Form -->
+    <div style="margin-top: 18px;">
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx, #fff); margin-bottom: 6px;">Email Address</label>
+      <input type="email" id="userSwitchEmail" placeholder="e.g. alice@example.com or user2@test.com" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border, #3f3f46); border-radius: 8px; color: var(--tx, #fff); font-size: 13.5px; outline: none;">
+      
+      <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx, #fff); margin: 12px 0 6px 0;">Name (Optional)</label>
+      <input type="text" id="userSwitchName" placeholder="e.g. Alice Smith" style="width: 100%; box-sizing: border-box; padding: 10px 14px; background: rgba(0,0,0,0.25); border: 1px solid var(--border, #3f3f46); border-radius: 8px; color: var(--tx, #fff); font-size: 13.5px; outline: none;">
+    </div>
+
+    <!-- Quick switch presets -->
+    <div style="margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+      <span style="font-size: 11px; color: var(--tx-dim, #71717a);">Quick test presets:</span>
+      <button type="button" class="btn sm" onclick="quickFillUser('alice@example.com', 'Alice Smith')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Alice</button>
+      <button type="button" class="btn sm" onclick="quickFillUser('bob@example.com', 'Bob Johnson')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Bob</button>
+      <button type="button" class="btn sm" onclick="quickFillUser('user2@test.com', 'Test User 2')" style="font-size: 11px; padding: 4px 10px; border-radius: 4px; background: rgba(255,255,255,0.05); border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">User 2</button>
+    </div>
+
+    <!-- Actions -->
+    <div style="margin-top: 22px; display: flex; gap: 10px; justify-content: flex-end;">
+      <button type="button" class="btn" onclick="closeUserModal()" style="padding: 8px 16px; border-radius: 8px; background: transparent; border: 1px solid var(--border, #3f3f46); color: var(--tx, #fff); cursor: pointer;">Cancel</button>
+      <button type="button" class="btn primary" onclick="submitUserSwitch()" style="padding: 8px 18px; border-radius: 8px; background: #6366f1; color: #fff; font-weight: 600; border: none; cursor: pointer;">Switch Account</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
