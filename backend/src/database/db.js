@@ -146,26 +146,36 @@ function cleanFilePath(raw) {
   return p;
 }
 
-function patch(table, id, body) {
+function patch(table, id, body, userId = null) {
   if (table === 'applications') {
     if (body.resume_path !== undefined) body.resume_path = cleanFilePath(body.resume_path);
     if (body.cover_letter_path !== undefined) body.cover_letter_path = cleanFilePath(body.cover_letter_path);
   }
   const ks = Object.keys(body).filter(k => COLS[table].includes(k));
   if (!ks.length) return;
-  db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=?`).run(...ks.map(k => body[k]), id);
+
+  if (userId && userId !== 'default_user') {
+    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=? and user_id=?`).run(...ks.map(k => body[k]), id, userId);
+  } else {
+    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=?`).run(...ks.map(k => body[k]), id);
+  }
 }
 
-function move(id, stage, before) {
-  const cur = db.prepare('select stage from applications where id=?').get(id)?.stage;
-  const ids = db.prepare('select id from applications where stage=? and id!=? order by position').all(stage, id).map(r => r.id);
+function move(id, stage, before, userId = null) {
+  const userClause = (userId && userId !== 'default_user') ? ' and user_id=?' : '';
+  const userParam = (userId && userId !== 'default_user') ? [userId] : [];
+
+  const cur = db.prepare(`select stage from applications where id=?${userClause}`).get(id, ...userParam)?.stage;
+  if (!cur) return;
+
+  const ids = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position`).all(stage, id, ...userParam).map(r => r.id);
   let i = before ? ids.indexOf(+before) : -1;
   if (i < 0) i = ids.length;
   ids.splice(i, 0, id);
   const up = db.prepare('update applications set stage=?, position=? where id=?');
   ids.forEach((x, p) => up.run(stage, p, x));
   if (cur && cur !== stage) {
-    db.prepare("insert into activity_log(app_id, type, detail) values(?, 'stage_change', ?)").run(id, `Moved from ${cur} to ${stage}`);
+    db.prepare("insert into activity_log(app_id, type, detail, user_id) values(?, 'stage_change', ?, ?)").run(id, `Moved from ${cur} to ${stage}`, userId || 'default_user');
   }
 }
 

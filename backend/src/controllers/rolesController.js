@@ -2,9 +2,10 @@ const { db } = require('../database/db');
 
 exports.addRole = (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     const { name } = req.body;
     if (name) {
-      db.prepare('insert or ignore into roles values(?)').run(name.trim());
+      db.prepare("insert or ignore into roles(name, user_id) values(?, ?)").run(name.trim(), userId);
     }
     res.json({ ok: 1 });
   } catch (err) {

@@ -1,6 +1,6 @@
 const { db } = require('../database/db');
 
-// Calculate Gamification XP, Streak, and Levels
+// Calculate Gamification XP, Streak, and Levels per User
 //
 // Streak Rules:
 //   - A day COUNTS (increments streak) only when the user did BOTH: added a learning AND added an application
@@ -8,7 +8,7 @@ const { db } = require('../database/db');
 //   - If user adds application but misses learning -> BREAK the streak
 //   - If user misses both application + learning -> BREAK the streak
 //   - Today is in-progress: if today is not completed yet, prior streak through yesterday remains active/frozen
-function calculateGamification() {
+function calculateGamification(userId = 'default_user') {
   const now = new Date();
   const toDateStr = d => {
     const yr = d.getFullYear();
@@ -19,27 +19,20 @@ function calculateGamification() {
 
   const todayStr = toDateStr(now);
 
-  // 1. Gather activity dates from DB
-  const learningDates = db.prepare(`
-    SELECT coalesce(nullif(date_logged, ''), substr(created_at, 1, 10)) as dt 
-    FROM learnings 
-    WHERE (date_logged IS NOT NULL AND date_logged != '') OR created_at IS NOT NULL
-  `).all().map(r => r.dt ? r.dt.slice(0, 10) : null).filter(Boolean);
-
-  const appDates = db.prepare(`
-    SELECT date_applied as dt 
-    FROM applications 
-    WHERE date_applied IS NOT NULL AND date_applied != ''
-  `).all().map(r => r.dt ? r.dt.slice(0, 10) : null).filter(Boolean);
-
+  // 1. Fetch user's distinct activity dates
+  const learningRows = db.prepare(
+    "SELECT distinct date_logged as d FROM learnings WHERE (user_id=? OR (user_id='default_user' AND ?='default_user')) AND date_logged IS NOT NULL AND date_logged != ''"
+  ).all(userId, userId);
+  const learningDates = learningRows.map(r => r.d.slice(0, 10));
   const learningSet = new Set(learningDates);
+
+  const appRows = db.prepare(
+    "SELECT distinct substr(date_applied, 1, 10) as d FROM applications WHERE (user_id=? OR (user_id='default_user' AND ?='default_user')) AND date_applied IS NOT NULL AND date_applied != ''"
+  ).all(userId, userId);
+  const appDates = appRows.map(r => r.d);
   const appSet = new Set(appDates);
 
   // 2. Classify day type according to streak rules:
-  //    'both'     -> both app + learning -> streak increments
-  //    'frozen'   -> only learning, no app -> streak freezes (pauses, no break, no increment)
-  //    'app_only' -> only app, no learning -> break streak
-  //    'neither'  -> neither app nor learning -> break streak
   function getDayType(dateStr) {
     const hasApp = appSet.has(dateStr);
     const hasLearn = learningSet.has(dateStr);
@@ -50,7 +43,6 @@ function calculateGamification() {
   }
 
   // 3. Compute Current Streak
-  // Check Today's status:
   const todayType = getDayType(todayStr);
   let currentStreak = 0;
   let isFrozen = false;
@@ -74,17 +66,14 @@ function calculateGamification() {
       currentStreak++;
       streakHasActiveDay = true;
     } else if (type === 'frozen') {
-      // Frozen pauses: no increment, no break!
       if (i === 1 && todayType !== 'both') {
         isFrozen = true;
       }
     } else {
-      // type is 'app_only' or 'neither' -> streak walk stops here
       break;
     }
   }
 
-  // If user had purely frozen days with 0 'both' days, streak is 0
   if (!streakHasActiveDay && currentStreak === 0) {
     isFrozen = (todayType === 'frozen');
   }
@@ -121,7 +110,7 @@ function calculateGamification() {
         tempStreak++;
         if (tempStreak > longestStreak) longestStreak = tempStreak;
       } else if (type === 'frozen') {
-        // Pauses: does not reset tempStreak, does not increment
+        // Pauses: does not reset tempStreak
       } else {
         tempStreak = 0;
       }
@@ -129,11 +118,18 @@ function calculateGamification() {
     }
   }
 
-  // 5. Calculate Total XP
-  const appCount = db.prepare("SELECT count(1) as c FROM applications").get().c;
-  const learningCount = db.prepare("SELECT count(1) as c FROM learnings").get().c;
-  const totalMinutes = db.prepare("SELECT coalesce(sum(duration_minutes), 0) as m FROM learnings").get().m;
-  const stageMoves = db.prepare("SELECT count(1) as c FROM activity_log WHERE type='stage_change'").get().c;
+  // 5. Calculate Total XP for this user
+  const appCountRow = db.prepare("SELECT count(1) as c FROM applications WHERE (user_id=? OR (user_id='default_user' AND ?='default_user'))").get(userId, userId);
+  const appCount = appCountRow ? appCountRow.c : 0;
+
+  const learningCountRow = db.prepare("SELECT count(1) as c FROM learnings WHERE (user_id=? OR (user_id='default_user' AND ?='default_user'))").get(userId, userId);
+  const learningCount = learningCountRow ? learningCountRow.c : 0;
+
+  const totalMinRow = db.prepare("SELECT coalesce(sum(duration_minutes), 0) as m FROM learnings WHERE (user_id=? OR (user_id='default_user' AND ?='default_user'))").get(userId, userId);
+  const totalMinutes = totalMinRow ? totalMinRow.m : 0;
+
+  const stageMovesRow = db.prepare("SELECT count(1) as c FROM activity_log WHERE type='stage_change' AND (user_id=? OR (user_id='default_user' AND ?='default_user'))").get(userId, userId);
+  const stageMoves = stageMovesRow ? stageMovesRow.c : 0;
 
   let totalXP = (appCount * 100) + (learningCount * 50) + (Math.floor(totalMinutes / 30) * 20) + (stageMoves * 50) + (currentStreak * 25);
 
@@ -201,7 +197,10 @@ function calculateGamification() {
 
 exports.getLearnings = (req, res, next) => {
   try {
-    const rows = db.prepare("SELECT * FROM learnings ORDER BY date_logged DESC, id DESC").all();
+    const userId = req.user?.id || 'default_user';
+    const rows = db.prepare(
+      "SELECT * FROM learnings WHERE user_id=? OR (user_id='default_user' AND ?='default_user') ORDER BY date_logged DESC, id DESC"
+    ).all(userId, userId);
     res.json(rows);
   } catch (err) {
     next(err);
@@ -210,6 +209,7 @@ exports.getLearnings = (req, res, next) => {
 
 exports.createLearning = (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     const { title, topic, category, date_logged, duration_minutes, notes, resource_url, tags } = req.body;
     if (!title || !String(title).trim()) {
       return res.status(400).json({ error: 'Title is required for learning log' });
@@ -217,20 +217,21 @@ exports.createLearning = (req, res, next) => {
 
     const today = new Date().toISOString().slice(0, 10);
     const r = db.prepare(`
-      INSERT INTO learnings (title, topic, category, date_logged, duration_minutes, notes, resource_url, tags)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO learnings (title, topic, category, date_logged, duration_minutes, notes, resource_url, tags, user_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       title.trim(),
-      topic || '',
+      (topic || '').trim(),
       category || 'General',
       date_logged || today,
-      parseInt(duration_minutes || '30', 10),
+      duration_minutes ? parseInt(duration_minutes, 10) : 30,
       notes || '',
       resource_url || '',
-      tags || ''
+      tags || '',
+      userId
     );
 
-    const created = db.prepare("SELECT * FROM learnings WHERE id=?").get(Number(r.lastInsertRowid));
+    const created = db.prepare("SELECT * FROM learnings WHERE id = ?").get(Number(r.lastInsertRowid));
     res.status(201).json(created);
   } catch (err) {
     next(err);
@@ -239,16 +240,41 @@ exports.createLearning = (req, res, next) => {
 
 exports.updateLearning = (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     const id = parseInt(req.params.id, 10);
-    const allowed = ['title', 'topic', 'category', 'date_logged', 'duration_minutes', 'notes', 'resource_url', 'tags'];
-    const keys = Object.keys(req.body).filter(k => allowed.includes(k));
-    if (keys.length > 0) {
-      db.prepare(`UPDATE learnings SET ${keys.map(k => k + '=?').join(',')} WHERE id=?`).run(
-        ...keys.map(k => req.body[k]),
-        id
-      );
+    const { title, topic, category, date_logged, duration_minutes, notes, resource_url, tags } = req.body;
+
+    const existing = db.prepare("SELECT * FROM learnings WHERE id = ? and (user_id = ? or user_id = 'default_user')").get(id, userId);
+    if (!existing) {
+      return res.status(404).json({ error: 'Learning log not found' });
     }
-    res.json({ ok: 1 });
+
+    db.prepare(`
+      UPDATE learnings SET
+        title = coalesce(?, title),
+        topic = coalesce(?, topic),
+        category = coalesce(?, category),
+        date_logged = coalesce(?, date_logged),
+        duration_minutes = coalesce(?, duration_minutes),
+        notes = coalesce(?, notes),
+        resource_url = coalesce(?, resource_url),
+        tags = coalesce(?, tags)
+      WHERE id = ? and (user_id = ? or user_id = 'default_user')
+    `).run(
+      title ? title.trim() : null,
+      topic !== undefined ? topic.trim() : null,
+      category || null,
+      date_logged || null,
+      duration_minutes !== undefined ? parseInt(duration_minutes, 10) : null,
+      notes !== undefined ? notes : null,
+      resource_url !== undefined ? resource_url : null,
+      tags !== undefined ? tags : null,
+      id,
+      userId
+    );
+
+    const updated = db.prepare("SELECT * FROM learnings WHERE id = ?").get(id);
+    res.json(updated);
   } catch (err) {
     next(err);
   }
@@ -256,19 +282,36 @@ exports.updateLearning = (req, res, next) => {
 
 exports.deleteLearning = (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     const id = parseInt(req.params.id, 10);
-    db.prepare("DELETE FROM learnings WHERE id=?").run(id);
+    if (userId !== 'default_user') {
+      db.prepare("DELETE FROM learnings WHERE id = ? and user_id = ?").run(id, userId);
+    } else {
+      db.prepare("DELETE FROM learnings WHERE id = ?").run(id);
+    }
     res.json({ ok: 1 });
   } catch (err) {
     next(err);
   }
 };
 
-exports.getGamificationStats = (req, res, next) => {
+exports.getGamification = (req, res, next) => {
   try {
-    const stats = calculateGamification();
-    res.json(stats);
+    const userId = req.user?.id || 'default_user';
+    const data = calculateGamification(userId);
+    res.json(data);
   } catch (err) {
     next(err);
   }
+};
+exports.getGamificationStats = exports.getGamification;
+
+module.exports = {
+  getGamificationStats: exports.getGamification,
+  getLearnings: exports.getLearnings,
+  createLearning: exports.createLearning,
+  updateLearning: exports.updateLearning,
+  deleteLearning: exports.deleteLearning,
+  getGamification: exports.getGamification,
+  calculateGamification
 };
