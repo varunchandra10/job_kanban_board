@@ -2787,14 +2787,10 @@ body.dark-mode #themeToggleBtn .moon-icon,
     display: block !important;
   }
 
-  /* Accessibility minimum tap targets (>= 44x44px) */
-  .btn, .sec-btn, .stage-tab, .doc-action-btn {
-    min-height: 44px;
+  /* Accessibility tap targets for modal & drawer action buttons */
+  .doc-action-btn, .sheet-actions .btn {
+    min-height: 40px;
     touch-action: manipulation;
-  }
-  .btn.icon-only {
-    min-width: 44px;
-    min-height: 44px;
   }
   .card .x {
     width: 40px;
@@ -6250,20 +6246,21 @@ body.dark-mode .confirm-modal-icon.info-icon,
 
   /* Header Navigation */
   header {
-    height: 52px !important;
+    height: 48px !important;
     padding: 0 10px !important;
-    gap: 6px !important;
+    gap: 5px !important;
     position: sticky !important;
     top: 0 !important;
     z-index: 100 !important;
   }
   .h-logo {
-    gap: 6px !important;
+    gap: 5px !important;
     flex-shrink: 0 !important;
   }
   .h-logo-icon {
     width: 28px !important;
     height: 28px !important;
+    border-radius: 7px !important;
   }
   .h-logo-icon svg {
     width: 15px !important;
@@ -6276,22 +6273,42 @@ body.dark-mode .confirm-modal-icon.info-icon,
     padding: 2px !important;
     gap: 3px !important;
     flex-shrink: 0 !important;
+    border-radius: 9px !important;
   }
   .mode-tab-btn {
-    padding: 5px 8px !important;
-    font-size: 11.5px !important;
+    height: 30px !important;
+    min-height: 30px !important;
+    padding: 2px 7px !important;
+    font-size: 11px !important;
     gap: 4px !important;
+    border-radius: 7px !important;
   }
   .mode-tab-btn .mode-tab-text {
     display: none !important;
   }
   .mode-tab-icon svg {
-    width: 14px !important;
-    height: 14px !important;
+    width: 13.5px !important;
+    height: 13.5px !important;
   }
   .mode-tab-badge {
-    padding: 1px 5px !important;
-    font-size: 10px !important;
+    padding: 1px 4px !important;
+    font-size: 9.5px !important;
+    border-radius: 6px !important;
+  }
+  header .btn.icon-only {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    padding: 0 !important;
+    border-radius: 7px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  header .btn.icon-only svg {
+    width: 14px !important;
+    height: 14px !important;
   }
   .search-wrap {
     flex: 1 1 110px !important;
@@ -6324,18 +6341,18 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: none !important;
   }
 
-  /* Mobile Sub-Bar (Between Topbar and Stage/Category Bar): Search Bar + All Countries + Add Button */
+  /* Mobile Sub-Bar (Between Topbar and Stage/Category Bar): Compact, Perfectly Aligned */
   .mobile-utility-bar {
     display: flex !important;
     align-items: center !important;
-    gap: 8px !important;
-    padding: 6px 12px !important;
+    gap: 6px !important;
+    padding: 5px 10px !important;
     background: var(--surface) !important;
     border-bottom: 1px solid var(--bd) !important;
     position: sticky !important;
-    top: 50px !important;
+    top: 48px !important;
     z-index: 96 !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
     box-sizing: border-box !important;
     width: 100% !important;
   }
@@ -6349,10 +6366,11 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
   .mobile-utility-bar .mobile-search-wrap .search-input {
     width: 100% !important;
-    height: 36px !important;
-    padding: 6px 28px 6px 32px !important;
-    font-size: 13px !important;
-    border-radius: 18px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 4px 24px 4px 28px !important;
+    font-size: 12px !important;
+    border-radius: 16px !important;
     background: var(--bg) !important;
     border: 1px solid var(--bd) !important;
     color: var(--tx) !important;
@@ -6360,16 +6378,16 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
   .mobile-utility-bar .mobile-search-wrap .search-icon {
     position: absolute !important;
-    left: 10px !important;
-    width: 14px !important;
-    height: 14px !important;
+    left: 9px !important;
+    width: 13px !important;
+    height: 13px !important;
     color: var(--tx3) !important;
     pointer-events: none !important;
   }
   .mobile-utility-bar .mobile-search-wrap .search-clear {
     position: absolute !important;
-    right: 8px !important;
-    font-size: 16px !important;
+    right: 7px !important;
+    font-size: 15px !important;
     color: var(--tx3) !important;
     cursor: pointer !important;
     background: none !important;
@@ -6380,7 +6398,7 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: block !important;
   }
 
-  /* Country Filter & Add Button in Mobile Utility Bar */
+  /* Compact Country Filter & Add Button in Mobile Utility Bar */
   .mobile-utility-bar .mobile-fwrap {
     position: relative !important;
     display: inline-flex !important;
@@ -6391,19 +6409,20 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 4px !important;
-    padding: 5px 9px !important;
-    font-size: 11.5px !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    border-radius: 18px !important;
-    max-width: 105px !important;
+    gap: 3px !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    border-radius: 16px !important;
+    max-width: 95px !important;
     white-space: nowrap !important;
     background: var(--bg) !important;
     border: 1px solid var(--bd) !important;
     color: var(--tx) !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
+    font-weight: 600 !important;
     transition: background 0.15s ease, border-color 0.15s ease !important;
   }
   .mobile-utility-bar .mobile-fbtn:hover,
@@ -6413,6 +6432,8 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
   .mobile-utility-bar .mobile-fbtn svg {
     color: var(--tx2) !important;
+    width: 12px !important;
+    height: 12px !important;
     flex-shrink: 0 !important;
   }
   .mobile-utility-bar .mobile-fbtn-text {
@@ -6420,18 +6441,18 @@ body.dark-mode .confirm-modal-icon.info-icon,
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
-    max-width: 52px !important;
+    max-width: 48px !important;
     font-weight: 600 !important;
   }
   .mobile-utility-bar .mobile-fpop {
     position: absolute !important;
     right: 0 !important;
-    top: calc(100% + 8px) !important;
+    top: calc(100% + 6px) !important;
     z-index: 1000 !important;
-    min-width: 200px !important;
-    max-width: 260px !important;
+    min-width: 190px !important;
+    max-width: 250px !important;
     background: var(--surface) !important;
-    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.15) !important;
+    box-shadow: 0 8px 24px -3px rgba(0, 0, 0, 0.28), 0 3px 6px -3px rgba(0, 0, 0, 0.12) !important;
     border: 1px solid var(--bd2) !important;
     border-radius: 12px !important;
   }
@@ -6440,31 +6461,36 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 4px !important;
+    gap: 3px !important;
     flex-shrink: 0 !important;
-    height: 36px !important;
-    min-height: 36px !important;
-    padding: 6px 12px !important;
-    border-radius: 18px !important;
-    font-size: 12px !important;
+    height: 31px !important;
+    min-height: 31px !important;
+    padding: 4px 10px !important;
+    border-radius: 16px !important;
+    font-size: 11.5px !important;
     font-weight: 700 !important;
     cursor: pointer !important;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+    box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2) !important;
     box-sizing: border-box !important;
     white-space: nowrap !important;
   }
+  .mobile-utility-bar .mobile-add-app-btn svg,
+  .mobile-utility-bar .mobile-add-learning-btn svg {
+    width: 12px !important;
+    height: 12px !important;
+  }
 
-  /* Stage / Category Picker Bar (Pinned at top: 98px on mobile, directly under sub-bar) */
+  /* Stage / Category Picker Bar (Sleek, Uncongested at top: 89px) */
   .stage-picker-bar {
     display: flex !important;
     align-items: center !important;
-    padding: 6px 12px !important;
+    padding: 4px 10px !important;
     background: var(--surface) !important;
     border-bottom: 1px solid var(--bd) !important;
     position: sticky !important;
-    top: 98px !important;
+    top: 89px !important;
     z-index: 95 !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03) !important;
     width: 100% !important;
     box-sizing: border-box !important;
   }
@@ -6474,24 +6500,38 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
   .mobile-stage-tabs {
     display: flex !important;
-    gap: 6px !important;
+    gap: 5px !important;
     width: 100% !important;
     flex: 1 !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
-    padding: 2px 0 !important;
+    padding: 1px 0 !important;
   }
   .mobile-stage-tabs::-webkit-scrollbar {
     display: none !important;
   }
   .stage-tab {
     flex-shrink: 0 !important;
-    padding: 6px 13px !important;
-    min-height: 36px !important;
-    font-size: 12px !important;
-    border-radius: 18px !important;
+    height: 29px !important;
+    min-height: 29px !important;
+    padding: 3px 9px !important;
+    font-size: 11.5px !important;
+    border-radius: 15px !important;
+    gap: 4px !important;
+    font-weight: 600 !important;
     white-space: nowrap !important;
+  }
+  .stage-tab .tab-dot {
+    width: 6px !important;
+    height: 6px !important;
+  }
+  .stage-tab .tab-count {
+    font-size: 10px !important;
+    padding: 1px 5px !important;
+    min-width: 14px !important;
+    border-radius: 8px !important;
+    font-weight: 700 !important;
   }
 
   /* Job Applications Board Mobile Layout (Vertical Full-Width Feed with Page Scrolling) */
@@ -6624,9 +6664,11 @@ body.dark-mode .confirm-modal-icon.info-icon,
     width: 100% !important;
   }
   .apt-pill {
-    padding: 6px 14px !important;
-    font-size: 12px !important;
-    min-height: 36px !important;
+    padding: 3px 9px !important;
+    font-size: 11px !important;
+    min-height: 29px !important;
+    height: 29px !important;
+    border-radius: 15px !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
   }
@@ -6636,8 +6678,9 @@ body.dark-mode .confirm-modal-icon.info-icon,
     width: 100% !important;
   }
   .apt-topic-select {
-    height: 38px !important;
-    font-size: 13px !important;
+    height: 31px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
   }
 
   /* Slideout Drawers & Bottom Sheets (#panel) */
