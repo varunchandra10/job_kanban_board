@@ -777,6 +777,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Learning Modal Controls
   document.getElementById('openAddLearningBtn')?.addEventListener('click', () => openLearningModal());
+  document.getElementById('secAddLearningBtn')?.addEventListener('click', () => openLearningModal());
+  document.getElementById('mobileAddLearningBtn')?.addEventListener('click', () => openLearningModal());
   document.getElementById('closeLearningModal')?.addEventListener('click', closeLearningModal);
   document.getElementById('pc')?.addEventListener('click', closeLearningModal);
   document.getElementById('bd')?.addEventListener('click', closeLearningModal);

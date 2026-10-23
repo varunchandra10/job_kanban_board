@@ -671,11 +671,16 @@ function render() {
   const totalEl = $('#total'); if (totalEl) totalEl.textContent = (f.length || searchQuery) ? `${shown} of ${inSec}` : `${inSec}`;
     const appModeBadge = $('#appModeBadge');
     if (appModeBadge) appModeBadge.textContent = S.apps.length;
-  $('#fbtn').innerHTML = (f.length ? (f.length === 1 ? clabel(f[0]) : `${f.length} countries`) : 'All countries') + ' &#9662;';
+  const countryLabelText = (f.length ? (f.length === 1 ? clabel(f[0]) : `${f.length} countries`) : 'All countries');
+  const mobileCountryLabel = (f.length ? (f.length === 1 ? clabel(f[0]) : `${f.length} ctry`) : 'All');
+  if ($('#fbtn')) $('#fbtn').innerHTML = countryLabelText + ' &#9662;';
+  if ($('#mobileFbtnText')) $('#mobileFbtnText').textContent = mobileCountryLabel;
 
   const p = present();
-  $('#fpop').innerHTML = `<label><input type="checkbox" data-c="" ${f.length ? '' : 'checked'}> All countries<b>${inSec}</b></label>` +
+  const fpopContent = `<label><input type="checkbox" data-c="" ${f.length ? '' : 'checked'}> All countries<b>${inSec}</b></label>` +
     Object.keys(p).sort((a,b) => cname(a).localeCompare(cname(b))).map(c => `<label><input type="checkbox" data-c="${c}" ${f.includes(c) ? 'checked' : ''}> ${clabel(c)}<b>${p[c]}</b></label>`).join('');
+  if ($('#fpop')) $('#fpop').innerHTML = fpopContent;
+  if ($('#mobileFpop')) $('#mobileFpop').innerHTML = fpopContent;
 
   if (currentSec === 'Calendar') {
     renderCalendar();
@@ -1302,6 +1307,7 @@ function openAddPanel(defaultStage = null) {
 }
 
 if ($('#addBtn')) $('#addBtn').onclick = () => openAddPanel();
+if ($('#mobileAddBtn')) $('#mobileAddBtn').onclick = () => openAddPanel();
 /* ----- Quick Links & Profiles Hub ----- */
 function openQuickLinksPanel() {
   openId = null;
@@ -1556,6 +1562,36 @@ if (fBtn && fPop) {
       fPop.style.display = 'none';
       if (fWrap) fWrap.classList.remove('open');
       fBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+/* Mobile Country Filter Wiring */
+const mFBtn = $('#mobileFbtn');
+const mFPop = $('#mobileFpop');
+const mFWrap = $('#mobileFwrap');
+if (mFBtn && mFPop) {
+  mFBtn.onclick = e => {
+    e.stopPropagation();
+    const isBlock = mFPop.style.display === 'block';
+    mFPop.style.display = isBlock ? 'none' : 'block';
+    if (mFWrap) mFWrap.classList.toggle('open', !isBlock);
+    mFBtn.setAttribute('aria-expanded', !isBlock);
+  };
+  mFPop.onclick = e => e.stopPropagation();
+  mFPop.onchange = e => {
+    const c = e.target.dataset.c;
+    let f = activeFilter();
+    f = c === '' ? [] : e.target.checked ? [...f, c] : f.filter(x => x !== c);
+    S.filter = f;
+    api('PUT', '/settings/filter', { value: JSON.stringify(f) });
+    render();
+  };
+  document.addEventListener('click', () => {
+    if (mFPop.style.display === 'block') {
+      mFPop.style.display = 'none';
+      if (mFWrap) mFWrap.classList.remove('open');
+      mFBtn.setAttribute('aria-expanded', 'false');
     }
   });
 }

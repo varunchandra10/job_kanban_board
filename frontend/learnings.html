@@ -7,7 +7,7 @@
   <meta name="description" content="Track your daily study streaks, concepts, and interview preparation notes on a Kanban board.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261023_v3">
+  <link rel="stylesheet" href="/style.css?v=20261023_v4">
 </head>
 <body>
 
@@ -125,10 +125,12 @@
       <span class="tab-count" id="lmt-APTITUDE">0</span>
     </button>
   </div>
-  <button type="button" class="btn primary add-app-toolbar-btn mobile-add-learning-btn" onclick="openLearningModal()" title="Add Learning">
-    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-    <span>Add</span>
-  </button>
+  <div class="mobile-stage-actions" id="mobileLearningStageActions">
+    <button type="button" class="btn primary add-app-toolbar-btn mobile-add-learning-btn" id="mobileAddLearningBtn" onclick="openLearningModal()" title="Add Learning">
+      <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Add</span>
+    </button>
+  </div>
 </div>
 
 
@@ -305,6 +307,6 @@
   </div>
 </aside>
 
-<script src="/learnings.js?v=20261023_v3"></script>
+<script src="/learnings.js?v=20261023_v4"></script>
 </body>
 </html>

@@ -7,7 +7,7 @@
   <meta name="description" content="Professional internship and job application tracker with clean Kanban board, activity timeline, and analytics.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261023_v3">
+  <link rel="stylesheet" href="/style.css?v=20261023_v4">
 </head>
 <body>
 
@@ -100,7 +100,7 @@
 </nav>
 
 <div class="stage-picker-bar" id="stagePickerBar">
-  <div class="mobile-stage-tabs" id="mobileStageTabs" role="tablist">
+  <div class="mobile-stage-tabs" id="mobileStageTabs" role="tablist" aria-label="Job Application Stages">
     <button type="button" class="stage-tab active" data-stage="Applied" role="tab">
       <span class="tab-dot" style="background:var(--applied-clr, #3b82f6)"></span>
       <span>Applied</span>
@@ -120,6 +120,21 @@
       <span class="tab-dot" style="background:var(--rejected-clr, #ef4444)"></span>
       <span>Rejected</span>
       <span class="tab-count">0</span>
+    </button>
+  </div>
+
+  <div class="mobile-stage-actions" id="mobileStageActions">
+    <div class="country-filter-wrap fwrap mobile-fwrap" id="mobileFwrap">
+      <button type="button" class="sec-btn mobile-fbtn" id="mobileFbtn" aria-haspopup="true" aria-expanded="false" title="Filter by country">
+        <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="mobile-fbtn-text" id="mobileFbtnText">All</span>
+        <span class="mobile-fbtn-arrow" style="font-size:9px;margin-left:2px;">&#9662;</span>
+      </button>
+      <div class="pop fpop mobile-fpop" id="mobileFpop"></div>
+    </div>
+    <button type="button" class="btn primary add-app-toolbar-btn mobile-add-app-btn" id="mobileAddBtn" title="Add Application">
+      <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      <span>Add</span>
     </button>
   </div>
 
@@ -165,6 +180,6 @@
   </div>
 </div>
 
-<script src="/app.js?v=20261023_v3"></script>
+<script src="/app.js?v=20261023_v4"></script>
 </body>
 </html>

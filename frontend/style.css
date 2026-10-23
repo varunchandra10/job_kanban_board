@@ -541,6 +541,9 @@ body.dark-mode .sec-btn.active .badge, [data-theme="dark"] .sec-btn.active .badg
 .stage-picker-bar {
   display: none !important;
 }
+.mobile-stage-actions {
+  display: none !important;
+}
 
 /* ───── Board Layout ───── */
 #board {
@@ -6346,19 +6349,27 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: none !important;
   }
 
+  /* Hide duplicate country filter and add button in #secBar on mobile since they are now in the sticky stage bar */
+  #secBar #fwrap,
+  #secBar #addBtn {
+    display: none !important;
+  }
+
   /* Stage / Category Picker Bar (Pinned at top: 52px on mobile) */
   .stage-picker-bar {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 8px 12px !important;
+    padding: 6px 10px !important;
     background: var(--surface) !important;
     border-bottom: 1px solid var(--bd) !important;
     position: sticky !important;
     top: 52px !important;
     z-index: 95 !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
   .stage-picker-select-wrap,
   .stage-select-wrap {
@@ -6367,8 +6378,10 @@ body.dark-mode .confirm-modal-icon.info-icon,
   .mobile-stage-tabs {
     display: flex !important;
     gap: 6px !important;
-    flex: 1 !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
+    max-width: none !important;
+    width: auto !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
@@ -6379,19 +6392,88 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
   .stage-tab {
     flex-shrink: 0 !important;
-    padding: 7px 14px !important;
-    min-height: 40px !important;
-    font-size: 12.5px !important;
-    border-radius: 20px !important;
+    padding: 6px 12px !important;
+    min-height: 36px !important;
+    font-size: 12px !important;
+    border-radius: 18px !important;
     white-space: nowrap !important;
   }
-  .mobile-add-learning-btn {
+
+  /* Mobile Stage Actions (Country Filter + Add Application / Add Learning) */
+  .mobile-stage-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
     flex-shrink: 0 !important;
-    min-height: 40px !important;
-    padding: 6px 14px !important;
-    border-radius: 20px !important;
+  }
+  .mobile-fwrap {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  .mobile-fbtn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    padding: 5px 9px !important;
+    font-size: 11.5px !important;
+    min-height: 36px !important;
+    border-radius: 18px !important;
+    max-width: 110px !important;
+    white-space: nowrap !important;
+    background: var(--bg) !important;
+    border: 1px solid var(--bd) !important;
+    color: var(--tx) !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    transition: background 0.15s ease, border-color 0.15s ease !important;
+  }
+  .mobile-fbtn:hover,
+  .mobile-fbtn:active {
+    background: var(--bg2) !important;
+    border-color: var(--bd2) !important;
+  }
+  .mobile-fbtn svg {
+    color: var(--tx2) !important;
+    flex-shrink: 0 !important;
+  }
+  .mobile-fbtn-text {
+    display: inline-block !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 55px !important;
+    font-weight: 600 !important;
+  }
+  .mobile-fpop {
+    position: absolute !important;
+    right: 0 !important;
+    top: calc(100% + 8px) !important;
+    z-index: 1000 !important;
+    min-width: 200px !important;
+    max-width: 260px !important;
+    background: var(--surface) !important;
+    box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid var(--bd2) !important;
+    border-radius: 12px !important;
+  }
+  .mobile-add-app-btn,
+  .mobile-add-learning-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+    min-height: 36px !important;
+    padding: 6px 12px !important;
+    border-radius: 18px !important;
     font-size: 12px !important;
     font-weight: 700 !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
   }
 
   /* Job Applications Board Mobile Layout (Vertical Full-Width Feed with Page Scrolling) */
