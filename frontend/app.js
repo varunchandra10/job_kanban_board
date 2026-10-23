@@ -775,13 +775,22 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
   const key = type === 'resume' ? 'resume_path' : 'cover_letter_path';
 
   if (hasFile) {
-    const fn = p.split(/[\\/]/).pop() || p;
-    const ext = (fn.split('.').pop() || '').toLowerCase();
-    const isDoc = ext === 'doc' || ext === 'docx';
-    const isPdf = ext === 'pdf';
-    const badgeCls = isPdf ? 'pdf' : (isDoc ? 'docx' : 'other');
-    const badgeTxt = isPdf ? 'PDF' : (isDoc ? 'DOCX' : (ext || 'FILE').toUpperCase());
-    const badgeIcon = isPdf ? ICON.filePdf : (isDoc ? ICON.fileWord : ICON.document);
+    const isGdrive = isGoogleDriveLink(p);
+    let fn = p.split(/[\\/]/).pop() || p;
+    let badgeCls, badgeTxt, badgeIcon;
+    if (isGdrive) {
+      fn = `${label} (Google Drive Document)`;
+      badgeCls = 'gdrive';
+      badgeTxt = 'G-DRIVE';
+      badgeIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>';
+    } else {
+      const ext = (fn.split('.').pop() || '').toLowerCase();
+      const isDoc = ext === 'doc' || ext === 'docx';
+      const isPdf = ext === 'pdf';
+      badgeCls = isPdf ? 'pdf' : (isDoc ? 'docx' : 'other');
+      badgeTxt = isPdf ? 'PDF' : (isDoc ? 'DOCX' : (ext || 'FILE').toUpperCase());
+      badgeIcon = isPdf ? ICON.filePdf : (isDoc ? ICON.fileWord : ICON.document);
+    }
 
     return `
       <div class="doc-slot-container" id="${prefix}_slot">
@@ -793,14 +802,15 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
           <div class="doc-card-details">
             <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
               <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx2);letter-spacing:0.4px;">${label}</span>
-              <span class="doc-status-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> Attached</span>
+              <span class="doc-status-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> ${isGdrive ? 'Google Drive Attached' : 'Attached'}</span>
             </div>
             <div class="doc-card-filename" title="${esc(fn)}">${esc(fn)}</div>
             <div class="doc-path-snippet" title="${esc(p)}">${esc(p)}</div>
           </div>
           <div class="doc-card-actions">
             ${appId ? `<button type="button" class="btn sm" id="${prefix}_btn_prev" title="Preview document in viewer">${ICON.eye} Preview</button>` : ''}
-            <button type="button" class="btn sm" id="${prefix}_btn_rep" title="Replace file">${ICON.upload} Replace</button>
+            <button type="button" class="btn sm" id="${prefix}_btn_gdrive_picker" title="Choose from your Google Drive files">☁️ Drive</button>
+            <button type="button" class="btn sm" id="${prefix}_btn_rep" title="Upload local file">${ICON.upload}</button>
             <button type="button" class="btn sm icon-only" id="${prefix}_btn_cp" title="Copy file path">${ICON.copy}</button>
             <button type="button" class="btn sm icon-only danger-soft" id="${prefix}_btn_rem" title="Remove attachment">&times;</button>
           </div>
@@ -819,10 +829,11 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
             </div>
             <div class="doc-modern-text">
               <div class="doc-modern-label">${label}</div>
-              <div class="doc-modern-sub">Drop PDF, Word (.docx) or <span class="doc-link-text">browse files</span></div>
+              <div class="doc-modern-sub">Drop file, or <span class="doc-link-text">browse</span></div>
             </div>
           </div>
           <div class="doc-modern-action">
+            <button type="button" class="btn sm primary" id="${prefix}_btn_gdrive_pick_btn" style="margin-right:8px;box-shadow:none;">☁️ Select from Drive</button>
             <span class="doc-browse-btn">
               <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <span>Upload</span>
@@ -923,6 +934,32 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
   if (btnPrev && appId) {
     btnPrev.onclick = () => openDocPreviewForApp(appId, type);
   }
+
+  const onPickFromDrive = (e) => {
+    if (e) e.stopPropagation();
+    openDriveFilePicker(type, (url, name) => {
+      setPath(url);
+      if (appId) {
+        const app = (S.apps || []).find(x => x.id === Number(appId));
+        if (app) {
+          app[key] = url;
+          queue(`a${appId}${key}`, () => api('PATCH', '/applications/' + appId, { [key]: url }));
+          render();
+        }
+      }
+      const liveSlot = $(`#${prefix}_slot`);
+      if (liveSlot) {
+        liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, url, appId);
+        wireDocSlot(prefix, type, label, iconSvg, appId, () => url, setPath);
+      }
+      toast(`Attached ${name} from Google Drive!`);
+    });
+  };
+
+  const gPickBtn = $(`#${prefix}_btn_gdrive_picker`) || $(`#${prefix}_btn_gdrive_pick_btn`);
+  if (gPickBtn) gPickBtn.onclick = onPickFromDrive;
+  const gPickBtn2 = $(`#${prefix}_btn_gdrive_pick_btn`);
+  if (gPickBtn2 && gPickBtn2 !== gPickBtn) gPickBtn2.onclick = onPickFromDrive;
 
   if (btnCp) {
     btnCp.onclick = e => copyVal(getPath(), e.currentTarget);
@@ -2699,3 +2736,63 @@ document.addEventListener('DOMContentLoaded', () => {
     })
     .catch(() => {});
 });
+
+async function openDriveFilePicker(type, onSelect) {
+  toast('Loading files from Google Drive...');
+  try {
+    const res = await api('GET', '/gdrive-files?type=' + encodeURIComponent(type));
+    if (!res || !res.files || !res.files.length) {
+      toast('No files found in your Google Drive ' + type + ' folder', true);
+      return;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+      <div class="confirm-modal-box" style="max-width:540px;width:95%;">
+        <div class="confirm-modal-header">
+          <div class="confirm-modal-icon" style="background:#eff6ff;color:#2563eb;">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
+          </div>
+          <div>
+            <h3 class="confirm-modal-title">Select ${type === 'cover' || type === 'cover_letter' ? 'Cover Letter' : 'Resume'} from Google Drive</h3>
+            <p class="confirm-modal-text">Files in your job_kanban_board/${type} Drive folder</p>
+          </div>
+          <button type="button" class="btn icon-only" id="closeGdrivePicker">&times;</button>
+        </div>
+        <div style="max-height:360px;overflow-y:auto;margin:16px 0;display:flex;flex-direction:column;gap:8px;">
+          ${res.files.map(f => `
+            <div class="gdrive-file-item" data-url="${f.url}" data-name="${f.name}" style="padding:10px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s ease;">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${esc(f.name)}</span>
+              </div>
+              <button type="button" class="btn sm primary select-gdrive-btn">Select</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="confirm-modal-actions" style="justify-content:space-between;">
+          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">📂 Open Drive Folder</a>
+          <button type="button" class="btn sm" id="cancelGdrivePicker">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => { overlay.remove(); };
+    overlay.querySelector('#closeGdrivePicker').onclick = close;
+    overlay.querySelector('#cancelGdrivePicker').onclick = close;
+    overlay.onclick = e => { if (e.target === overlay) close(); };
+
+    overlay.querySelectorAll('.gdrive-file-item').forEach(item => {
+      item.onclick = () => {
+        const u = item.dataset.url;
+        const n = item.dataset.name;
+        close();
+        if (onSelect) onSelect(u, n);
+      };
+    });
+  } catch (err) {
+    toast('Error connecting to Google Drive: ' + err.message, true);
+  }
+}

@@ -7,6 +7,7 @@ const config = require('../config');
 const { isGoogleDriveLink, extractGoogleDriveFileId } = require('../services/storageService');
 
 router.post('/upload-document', upload.single('file'), documentsController.uploadDocument);
+router.get('/gdrive-files', documentsController.listDriveFiles);
 router.get('/file-content', documentsController.getFileContent);
 router.post('/file-info', documentsController.getFileInfo);
 router.get('/file-info', documentsController.getFileInfo);

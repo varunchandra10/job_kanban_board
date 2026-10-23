@@ -1,6 +1,41 @@
 const { exec } = require('child_process');
 const { db } = require('../database/db');
 const { storageService } = require('../services/storageService');
+const config = require('../config');
+
+exports.listDriveFiles = async (req, res, next) => {
+  try {
+    const type = req.query.type || 'resume';
+    const resumeFolderId = '1JOyn_Fzafuc56FfYsjrgN1Z1TDv6l7QP';
+    const coverFolderId = '1TyQOkbqrsc0yJ65oH4qbjNdRntzFjU62';
+    const targetFolder = (type === 'cover' || type === 'cover_letter') ? coverFolderId : resumeFolderId;
+
+    if (!storageService.driveClient) {
+      return res.json({ ok: 1, files: [] });
+    }
+
+    const driveRes = await storageService.driveClient.files.list({
+      q: `'${targetFolder}' in parents and trashed = false`,
+      fields: 'files(id, name, mimeType, webViewLink, size)',
+      pageSize: 50,
+      orderBy: 'name'
+    });
+
+    res.json({
+      ok: 1,
+      folderId: targetFolder,
+      files: (driveRes.data.files || []).map(f => ({
+        id: f.id,
+        name: f.name,
+        size: f.size,
+        mimeType: f.mimeType,
+        url: `https://drive.google.com/file/d/${f.id}/view`
+      }))
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 exports.uploadDocument = async (req, res, next) => {
   try {
@@ -18,6 +53,43 @@ exports.uploadDocument = async (req, res, next) => {
       fileBuffer = Buffer.from(dataStr, 'base64');
     } else {
       return res.status(400).json({ error: 'No file data received' });
+    }
+
+    // If STORAGE_PROVIDER is google_drive, check if this file exists in user's Drive folder!
+    if (config.storageProvider === 'google_drive' && storageService.driveClient && originalName) {
+      try {
+        const resumeFolderId = '1JOyn_Fzafuc56FfYsjrgN1Z1TDv6l7QP';
+        const coverFolderId = '1TyQOkbqrsc0yJ65oH4qbjNdRntzFjU62';
+        const isCover = type === 'cover_letter' || type === 'cover_letter_path';
+        const subfolderId = isCover ? coverFolderId : resumeFolderId;
+
+        const driveSearch = await storageService.driveClient.files.list({
+          q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and ('${subfolderId}' in parents or '${config.googleDriveFolderId}' in parents)`,
+          fields: 'files(id, name, webViewLink, size)',
+          pageSize: 1
+        });
+
+        if (driveSearch.data.files && driveSearch.data.files.length > 0) {
+          const found = driveSearch.data.files[0];
+          const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
+          if (appId) {
+            const col = isCover ? 'cover_letter_path' : 'resume_path';
+            db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
+          }
+          return res.json({
+            ok: 1,
+            fullPath: gdriveLink,
+            path: gdriveLink,
+            relativePath: gdriveLink,
+            name: found.name,
+            size: found.size,
+            isGoogleDrive: true,
+            fileId: found.id
+          });
+        }
+      } catch (searchErr) {
+        console.warn('[Google Drive] Search error:', searchErr.message);
+      }
     }
 
     const saved = await storageService.saveFile({
@@ -44,7 +116,8 @@ exports.uploadDocument = async (req, res, next) => {
       relativePath: saved.relativePath,
       name: saved.name,
       size: saved.size,
-      ext: saved.ext
+      ext: saved.ext,
+      isGoogleDrive: !!saved.isGoogleDrive
     });
   } catch (err) {
     next(err);
