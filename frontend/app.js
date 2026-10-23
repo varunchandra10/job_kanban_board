@@ -27,6 +27,7 @@ const ICON = {
   minimize:  `<svg class="icon" viewBox="0 0 24 24"><path d="M4 14h6m0 0v6m0-6L3 21M20 10h-6m0 0V4m0 6l7-7"/></svg>`,
   zoomIn:    `<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
   zoomOut:   `<svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`,
+  gdrive:   `<svg class="icon gdrive-icon" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.9 2.5 3.2 3.3l16.3-28.25-8.25-14.3-15.1 26.1c-1.3 2.25-1.3 5 0 7.25z" fill="#0066da"/><path d="m43.65 25-16.3 28.25h32.6l16.3-28.25-8.25-14.3h-24.35z" fill="#00ac47"/><path d="m73.55 76.8c1.3-.8 2.4-1.9 3.2-3.3l3.85-6.65c1.3-2.25 1.3-5 0-7.25l-15.1-26.1-8.25 14.3 16.3 28.25z" fill="#ea4335"/><path d="m43.65 25-16.3 28.25-16.3 23.55c1.3.8 2.7 1.2 4.2 1.2h56.8c1.5 0 2.9-.4 4.2-1.2z" fill="#ffba00"/></svg>`,
   filePdf:   `<svg class="icon" viewBox="0 0 24 24" style="color:#dc2626"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`,
   fileWord:  `<svg class="icon" viewBox="0 0 24 24" style="color:#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 10.5 17 12 14 13.5 17 15 13"/></svg>`,
   refresh:   `<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`
@@ -751,6 +752,8 @@ function render() {
 }
 
 /* ----- Enhanced Document Upload UI System ----- */
+const DOC_CACHE = window._DOC_CACHE || (window._DOC_CACHE = {});
+
 function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
   const p = cleanFilePath(rawPath);
   const hasFile = p && p.toUpperCase() !== 'NA';
@@ -760,42 +763,72 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
   if (hasFile) {
     const isGdrive = isGoogleDriveLink(p);
     let fn = p.split(/[\\/]/).pop() || p;
-    let badgeCls, badgeTxt, badgeIcon;
+    let badgeCls, badgeIcon;
+
     if (isGdrive) {
-      fn = `${label} (Google Drive Document)`;
+      if (DOC_CACHE[p] && DOC_CACHE[p].name) {
+        fn = DOC_CACHE[p].name;
+      } else {
+        fn = `${label} (Google Drive Document)`;
+      }
       badgeCls = 'gdrive';
-      badgeTxt = 'G-DRIVE';
-      badgeIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>';
+      badgeIcon = ICON.gdrive;
     } else {
       const ext = (fn.split('.').pop() || '').toLowerCase();
       const isDoc = ext === 'doc' || ext === 'docx';
       const isPdf = ext === 'pdf';
       badgeCls = isPdf ? 'pdf' : (isDoc ? 'docx' : 'other');
-      badgeTxt = isPdf ? 'PDF' : (isDoc ? 'DOCX' : (ext || 'FILE').toUpperCase());
       badgeIcon = isPdf ? ICON.filePdf : (isDoc ? ICON.fileWord : ICON.document);
     }
 
     return `
       <div class="doc-slot-container" id="${prefix}_slot">
         <div class="doc-card-box">
-          <div class="doc-type-icon-badge ${badgeCls}">
+          <div class="doc-type-icon-badge ${badgeCls}" title="${isGdrive ? 'Google Drive Document' : label}">
             ${badgeIcon}
-            <span>${badgeTxt}</span>
           </div>
           <div class="doc-card-details">
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
-              <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx2);letter-spacing:0.4px;">${label}</span>
-              <span class="doc-status-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor"><polyline points="20 6 9 17 4 12"/></svg> ${isGdrive ? 'Google Drive Attached' : 'Attached'}</span>
+            <div class="doc-card-header-row">
+              <span class="doc-type-pill">${label}</span>
+              <span class="doc-status-pill ${isGdrive ? 'gdrive' : 'local'}">
+                <span class="doc-status-dot"></span>
+                <span>${isGdrive ? 'Google Drive' : 'Attached'}</span>
+              </span>
             </div>
-            <div class="doc-card-filename" title="${esc(fn)}">${esc(fn)}</div>
-            <div class="doc-path-snippet" title="${esc(p)}">${esc(p)}</div>
+            <div class="doc-card-filename" id="${prefix}_filename" title="${esc(fn)}">${esc(fn)}</div>
+            <div class="doc-card-meta">
+              ${isGdrive ? `
+                <span class="doc-meta-hint">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <span>Cloud Synced &bull; Click Open to view</span>
+                </span>
+              ` : `
+                <span class="doc-meta-hint" title="${esc(p)}">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                  <span>${esc(p)}</span>
+                </span>
+              `}
+            </div>
           </div>
           <div class="doc-card-actions">
-            ${appId ? `<button type="button" class="btn sm" id="${prefix}_btn_prev" title="Open document in Google Drive">${ICON.eye} Open</button>` : ''}
-            <button type="button" class="btn sm" id="${prefix}_btn_gdrive_picker" title="Choose from your Google Drive files">☁️ Drive</button>
-            <button type="button" class="btn sm" id="${prefix}_btn_rep" title="Upload local file">${ICON.upload}</button>
-            <button type="button" class="btn sm icon-only" id="${prefix}_btn_cp" title="Copy file path">${ICON.copy}</button>
-            <button type="button" class="btn sm icon-only danger-soft" id="${prefix}_btn_rem" title="Remove attachment">&times;</button>
+            ${appId ? `
+              <button type="button" class="btn sm doc-btn-open" id="${prefix}_btn_prev" title="Open in Google Drive">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                <span>Open</span>
+              </button>
+            ` : ''}
+            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_gdrive_picker" title="Choose from your Google Drive files">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
+            </button>
+            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_rep" title="Upload local replacement file">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+            </button>
+            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_cp" title="Copy document path/link">
+              ${ICON.copy}
+            </button>
+            <button type="button" class="btn sm doc-action-btn doc-action-delete" id="${prefix}_btn_rem" title="Remove attachment">
+              &times;
+            </button>
           </div>
         </div>
         <input type="file" id="${prefix}_file_inp" accept=".pdf,.docx,.doc,.txt" style="display:none">
@@ -811,16 +844,22 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
               ${iconSvg}
             </div>
             <div class="doc-modern-text">
-              <div class="doc-modern-label">${label}</div>
-              <div class="doc-modern-sub">Drop file, or <span class="doc-link-text">browse</span></div>
+              <div class="doc-modern-label-row">
+                <span class="doc-modern-label">${label}</span>
+                <span class="doc-empty-badge">Empty</span>
+              </div>
+              <div class="doc-modern-sub">Drop file, or choose an option:</div>
             </div>
           </div>
-          <div class="doc-modern-action">
-            <button type="button" class="btn sm primary" id="${prefix}_btn_gdrive_pick_btn" style="margin-right:8px;box-shadow:none;">☁️ Select from Drive</button>
-            <span class="doc-browse-btn">
-              <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+          <div class="doc-modern-action" onclick="event.stopPropagation();">
+            <button type="button" class="btn sm doc-btn-drive-pick" id="${prefix}_btn_gdrive_pick_btn" title="Choose from your Google Drive files">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
+              <span>From Drive</span>
+            </button>
+            <button type="button" class="btn sm doc-btn-upload-pick" id="${prefix}_btn_upload_pick_btn" title="Upload document from computer">
+              <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <span>Upload</span>
-            </span>
+            </button>
           </div>
           <input type="file" id="${prefix}_file_inp" accept=".pdf,.docx,.doc,.txt" style="display:none">
           <input type="hidden" ${appId ? `data-k="${key}"` : ''} id="${prefix}_hidden_path" value="">
@@ -839,14 +878,41 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
   const btnRep = $(`#${prefix}_btn_rep`);
   const btnCp = $(`#${prefix}_btn_cp`);
   const btnRem = $(`#${prefix}_btn_rem`);
+  const btnUploadPick = $(`#${prefix}_btn_upload_pick_btn`);
   const key = type === 'resume' ? 'resume_path' : 'cover_letter_path';
+
+  // Async name resolution for Google Drive links
+  const curP = getPath();
+  if (curP && isGoogleDriveLink(curP)) {
+    if (DOC_CACHE[curP] && DOC_CACHE[curP].name) {
+      const fnEl = $(`#${prefix}_filename`);
+      if (fnEl) {
+        fnEl.textContent = DOC_CACHE[curP].name;
+        fnEl.title = DOC_CACHE[curP].name;
+      }
+    } else {
+      fetch('/api/file-info', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ path: curP })
+      }).then(r => r.json()).then(info => {
+        if (info && info.name) {
+          DOC_CACHE[curP] = info;
+          const fnEl = $(`#${prefix}_filename`);
+          if (fnEl) {
+            fnEl.textContent = info.name;
+            fnEl.title = info.name;
+          }
+        }
+      }).catch(() => {});
+    }
+  }
 
   const onFileSelected = async (file) => {
     if (!file) return;
     const currentSlot = $(`#${prefix}_slot`);
     if (currentSlot) {
       currentSlot.innerHTML = `
-        <div class="doc-slot-header"><label>${iconSvg} ${label}</label></div>
         <div class="doc-uploading-box">
           <span class="spinner-sm"></span>
           <span>Uploading <strong>${esc(file.name)}</strong>...</span>
@@ -863,6 +929,7 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
       const res = await resp.json();
       if (res && res.ok) {
         const savedPath = res.fullPath || res.path;
+        DOC_CACHE[savedPath] = { name: file.name, exists: true };
         setPath(savedPath);
         if (appId) {
           const app = (S.apps || []).find(x => x.id === Number(appId));
@@ -909,6 +976,13 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     };
   }
 
+  if (btnUploadPick && fileInp) {
+    btnUploadPick.onclick = (e) => {
+      e.stopPropagation();
+      fileInp.click();
+    };
+  }
+
   if (btnRep && fileInp) {
     btnRep.onclick = () => fileInp.click();
     fileInp.onchange = () => { onFileSelected(fileInp.files?.[0]); fileInp.value = ''; };
@@ -921,6 +995,7 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
   const onPickFromDrive = (e) => {
     if (e) e.stopPropagation();
     openDriveFilePicker(type, (url, name) => {
+      DOC_CACHE[url] = { name: name, exists: true };
       setPath(url);
       if (appId) {
         const app = (S.apps || []).find(x => x.id === Number(appId));
