@@ -44,3 +44,8 @@ backups/
 tracker.db
 documents/
 phd/
+
+client_secret_*.json
+
+# Unnecessary / archived files folder
+ignored_folder/

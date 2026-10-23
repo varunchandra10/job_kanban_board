@@ -8029,3 +8029,386 @@ body.dark-mode .gdrive-status-pill.online,
   align-items: center;
   gap: 8px;
 }
+
+
+/* ==========================================================================
+   G-Drive Compact Button with Blinking Dot
+   ========================================================================== */
+.btn-gdrive-compact {
+  position: relative;
+}
+
+.gdrive-tri-icon {
+  flex-shrink: 0;
+}
+
+.gdrive-dot-status {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #71717a;
+  display: inline-block;
+  flex-shrink: 0;
+  transition: background 0.3s ease;
+}
+
+.gdrive-dot-status.connected {
+  background: #10b981;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  animation: gdrivePulse 2s ease-in-out infinite;
+}
+
+@keyframes gdrivePulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(16, 185, 129, 0.4); opacity: 1; }
+  50% { box-shadow: 0 0 12px rgba(16, 185, 129, 0.8); opacity: 0.7; }
+}
+
+
+
+/* ==========================================================================
+   Render-Style Clean Authentication Modal (Google Auth & Custom Email)
+   ========================================================================== */
+.render-auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: renderAuthFade 0.2s ease-out;
+}
+
+@keyframes renderAuthFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.render-auth-card {
+  background: #ffffff;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 480px;
+  padding: 38px 42px 34px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #111827;
+  animation: renderCardSlide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes renderCardSlide {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+[data-theme="dark"] .render-auth-card,
+body.dark .render-auth-card {
+  background: #18181b;
+  color: #f3f4f6;
+  border: 1px solid #27272a;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.render-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.render-modal-close:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+[data-theme="dark"] .render-modal-close:hover,
+body.dark .render-modal-close:hover {
+  color: #ffffff;
+  background: #27272a;
+}
+
+.render-auth-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  margin: 0 0 24px 0;
+  color: #111827;
+}
+
+[data-theme="dark"] .render-auth-title,
+body.dark .render-auth-title {
+  color: #f9fafb;
+}
+
+/* OAuth Providers Row */
+.render-oauth-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.render-oauth-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.render-oauth-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .render-oauth-btn,
+body.dark .render-oauth-btn {
+  background: #27272a;
+  border-color: #3f3f46;
+  color: #f3f4f6;
+}
+
+[data-theme="dark"] .render-oauth-btn:hover,
+body.dark .render-oauth-btn:hover {
+  background: #323238;
+  border-color: #52525b;
+}
+
+/* "or" divider */
+.render-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 18px 0 22px 0;
+  color: #6b7280;
+  font-size: 13.5px;
+}
+
+.render-divider::before,
+.render-divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+[data-theme="dark"] .render-divider::before,
+[data-theme="dark"] .render-divider::after,
+body.dark .render-divider::before,
+body.dark .render-divider::after {
+  border-bottom-color: #27272a;
+}
+
+.render-divider span {
+  padding: 0 16px;
+}
+
+/* Form Groups */
+.render-form-group {
+  margin-bottom: 20px;
+}
+
+.render-label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 7px;
+}
+
+[data-theme="dark"] .render-label,
+body.dark .render-label {
+  color: #e5e7eb;
+}
+
+.render-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.render-input::placeholder {
+  color: #9ca3af;
+}
+
+.render-input:focus {
+  outline: none;
+  border-color: #111827;
+  box-shadow: 0 0 0 1px #111827;
+}
+
+[data-theme="dark"] .render-input,
+body.dark .render-input {
+  background: #18181b;
+  border-color: #3f3f46;
+  color: #f9fafb;
+}
+
+[data-theme="dark"] .render-input:focus,
+body.dark .render-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px #6366f1;
+}
+
+.render-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.render-password-wrap .render-input {
+  padding-right: 42px;
+}
+
+.render-pwd-eye-btn {
+  position: absolute;
+  right: 12px;
+  background: transparent;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.render-pwd-eye-btn:hover {
+  color: #111827;
+}
+
+[data-theme="dark"] .render-pwd-eye-btn:hover,
+body.dark .render-pwd-eye-btn:hover {
+  color: #ffffff;
+}
+
+/* Sign In Button (Black button matching Render) */
+.render-btn-signin {
+  width: 100%;
+  padding: 11px 18px;
+  background: #000000;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+  margin-top: 4px;
+  margin-bottom: 22px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.render-btn-signin:hover {
+  background: #1f2937;
+}
+
+.render-btn-signin:active {
+  transform: scale(0.99);
+}
+
+[data-theme="dark"] .render-btn-signin,
+body.dark .render-btn-signin {
+  background: #f9fafb;
+  color: #09090b;
+}
+
+[data-theme="dark"] .render-btn-signin:hover,
+body.dark .render-btn-signin:hover {
+  background: #e4e4e7;
+}
+
+/* Footer Links matching screenshot */
+.render-footer-links {
+  font-size: 13.5px;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.render-footer-links a {
+  color: #8b5cf6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.render-footer-links a:hover {
+  text-decoration: underline;
+  color: #7c3aed;
+}
+
+/* Prompt Notice Banner */
+.render-notice-banner {
+  margin-bottom: 18px;
+  padding: 9px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 6px;
+  color: #b45309;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-theme="dark"] .render-notice-banner,
+body.dark .render-notice-banner {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: #fbbf24;
+}
+
+.render-feedback-msg {
+  margin-bottom: 16px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.render-feedback-msg.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #ef4444;
+}
+
+.render-feedback-msg.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #10b981;
+}

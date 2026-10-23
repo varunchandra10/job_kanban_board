@@ -40,19 +40,17 @@ function authMiddleware(req, res, next) {
     return next();
   }
 
-  // If local access mode without PIN, allow as default_user
-  if (!config.appPin) {
-    req.user = {
-      id: 'default_user',
-      email: 'local@jobtracker.app',
-      name: 'Default User'
-    };
+  // Read-only calls when logged out / unauthenticated:
+  // Allow them to proceed with req.user = null so controllers return empty/zero data
+  if (req.method === 'GET' && ['/api/state', '/api/learnings', '/api/gamification', '/api/storage/status'].includes(req.path)) {
+    req.user = null;
     return next();
   }
 
+  // Any modifying API action requires authentication
   return res.status(401).json({
-    error: 'Authorization required',
-    pinRequired: true
+    error: 'Authentication required. Please log in.',
+    loggedOut: true
   });
 }
 

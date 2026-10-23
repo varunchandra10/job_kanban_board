@@ -2,7 +2,17 @@ const { db, patch, move, getState } = require('../database/db');
 
 exports.getState = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.json({
+        apps: [],
+        companies: [],
+        roles: [],
+        profile: null,
+        versions: [],
+        settings: {}
+      });
+    }
     res.json(getState(userId));
   } catch (err) {
     next(err);
@@ -11,12 +21,13 @@ exports.getState = (req, res, next) => {
 
 exports.getActivity = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.json([]);
     const appId = parseInt(req.params.id, 10);
-    const app = db.prepare("select id from applications where id=? and (user_id=? or user_id='default_user')").get(appId, userId);
+    const app = db.prepare("select id from applications where id=? and user_id=?").get(appId, userId);
     if (!app) return res.status(404).json({ error: 'Application not found' });
 
-    const logs = db.prepare('select * from activity_log where app_id=? order by id desc').all(appId);
+    const logs = db.prepare('select * from activity_log where app_id=? and user_id=? order by id desc').all(appId, userId);
     res.json(logs);
   } catch (err) {
     next(err);
@@ -25,7 +36,8 @@ exports.getActivity = (req, res, next) => {
 
 exports.addActivity = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Please log in' });
     const b = req.body;
     db.prepare("insert into activity_log(app_id, type, detail, ts, user_id) values(?,?,?,coalesce(?,datetime('now')),?)").run(
       b.app_id,
@@ -42,9 +54,10 @@ exports.addActivity = (req, res, next) => {
 
 exports.createApplication = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Please log in to add applications' });
     const b = req.body;
-    const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage='Applied' and (user_id=? or user_id='default_user')").get(userId);
+    const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage='Applied' and user_id=?").get(userId);
     const min = minRow ? minRow.p : 0;
     const cat = b.category || 'Industry';
 
@@ -66,7 +79,7 @@ exports.createApplication = (req, res, next) => {
       userId
     );
 
-    const created = db.prepare('select * from applications where id=?').get(id);
+    const created = db.prepare('select * from applications where id=? and user_id=?').get(id, userId);
     res.status(201).json(created);
   } catch (err) {
     next(err);
@@ -75,7 +88,8 @@ exports.createApplication = (req, res, next) => {
 
 exports.updateApplication = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Please log in' });
     const id = parseInt(req.params.id, 10);
     patch('applications', id, req.body, userId);
     res.json({ ok: 1 });
@@ -86,13 +100,10 @@ exports.updateApplication = (req, res, next) => {
 
 exports.deleteApplication = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Please log in' });
     const id = parseInt(req.params.id, 10);
-    if (userId !== 'default_user') {
-      db.prepare('delete from applications where id=? and user_id=?').run(id, userId);
-    } else {
-      db.prepare('delete from applications where id=?').run(id);
-    }
+    db.prepare('delete from applications where id=? and user_id=?').run(id, userId);
     res.json({ ok: 1 });
   } catch (err) {
     next(err);
@@ -101,7 +112,8 @@ exports.deleteApplication = (req, res, next) => {
 
 exports.moveApplication = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Please log in' });
     const id = parseInt(req.params.id, 10);
     const { stage, before } = req.body;
     move(id, stage, before, userId);

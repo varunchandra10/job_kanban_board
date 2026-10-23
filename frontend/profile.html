@@ -74,6 +74,7 @@
     .link-field input:focus { outline: none; border-color: var(--accent); }
     .link-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   </style>
+  <script src="/auth.js?v=20261023"></script>
 </head>
 <body class="page-scrollable">
 
@@ -127,13 +128,15 @@
     <svg class="icon i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
 
-    <button class="btn icon-only" id="profLogoutBtn" onclick="handleLogout()" title="Log out of session" aria-label="Log Out" style="color: #ef4444;">
-    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-      <polyline points="16 17 21 12 16 7"></polyline>
-      <line x1="21" y1="12" x2="9" y2="12"></line>
-    </svg>
-  </button>
+    <span id="topbarAuthWrap">
+    <button class="btn icon-only" id="profLogoutBtn" onclick="handleTopbarAuthClick()" title="Log out of session" aria-label="Log Out" style="color: #ef4444;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+    </button>
+  </span>
   <button class="btn danger-soft icon-only" id="closeBtn" title="Stop server and exit" aria-label="Stop server and exit">
     <svg viewBox="0 0 24 24"><path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/></svg>
   </button>
@@ -149,41 +152,38 @@
     <div class="profile-identity">
       <div class="profile-avatar-lg" id="profUserAvatar">VC</div>
       <div class="profile-name-wrap">
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-          <h2 style="margin:0;font-size:24px;font-weight:800;color:var(--tx);letter-spacing:-0.3px;">
-            <span id="profUserName">Varun Chandra</span>
-          </h2>
-          <span style="color:#f97316;font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);padding:4px 12px;border-radius:99px;border:1px solid rgba(249,115,22,0.25);" id="profUserStreak">
-            <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
-            0-Day Focus Streak
-          </span>
-        </div>
+        <h2 style="margin:0;font-size:24px;font-weight:800;color:var(--tx);letter-spacing:-0.3px;">
+          <span id="profUserName">Varun Chandra</span>
+        </h2>
+        <!-- Streak right below the name -->
+        <span style="color:#f97316;font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);padding:4px 12px;border-radius:99px;border:1px solid rgba(249,115,22,0.25);margin-top:6px;" id="profUserStreak">
+          <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+          <span id="profStreakCountText">0-Day Focus Streak</span>
+        </span>
       </div>
     </div>
 
-    <!-- Top Action Buttons: Export CSV & Download Database as ZIP -->
+    <!-- Action Buttons: G-Drive | Download as CSV | Download DB as ZIP -->
     <div class="profile-actions-top">
-      <button type="button" class="btn-action-glow btn-switch-user" id="profSwitchUserBtn" onclick="openUserModal()" title="Switch user or test new account" style="border-color: rgba(99,102,241,0.35); background: rgba(99,102,241,0.12); color: #818cf8;">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
-        <span id="profUserStatusLabel">Switch User</span>
-      </button>
-
-            <button type="button" class="btn-action-glow btn-logout" id="profActionLogoutBtn" onclick="handleLogout()" title="Log Out & Switch User">
-        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span>Log Out</span>
-      </button>
-      <button type="button" class="btn-action-glow btn-gdrive-storage" id="profGdriveStorageBtn" onclick="openDriveSettingsModal()" title="Manage Your Google Drive Storage & Setup">
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 19.5h20L12 2z"/><path d="M2 19.5l5-8.5h10l5 8.5H2z"/></svg>
-        <span>Google Drive Storage</span>
-        <span class="gdrive-status-pill" id="gdriveStatusPill">Loading...</span>
+      <button type="button" class="btn-action-glow btn-gdrive-compact" id="profGdriveStorageBtn" onclick="openDriveSettingsModal()" title="Manage Your Google Drive Storage & Setup">
+        <svg viewBox="0 0 87.3 78" width="16" height="14.3" class="gdrive-tri-icon">
+          <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/>
+          <path d="M43.65 25.15L29.05 0c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.35.6-.55 1.2-.7 1.85h29z" fill="#00AC47"/>
+          <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L73.55 76.8z" fill="#EA4335"/>
+          <path d="M43.65 25.15L58.25 0H29.05l14.6 25.15z" fill="#00832D"/>
+          <path d="M58.3 52.2H29L13.75 76.8c1.35.8 2.85 1.2 4.45 1.2H69.1c1.6 0 3.1-.45 4.45-1.2z" fill="#2684FC"/>
+          <path d="M73.4 26.5L58.25 0c-1.35.8-2.5 1.9-3.3 3.3L43.65 25.15 58.3 52.2h29c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/>
+        </svg>
+        <span>G-Drive</span>
+        <span class="gdrive-dot-status" id="gdriveDotStatus" title="Google Drive Storage Ready"></span>
       </button>
       <button type="button" class="btn-action-glow btn-export-csv" id="profExportCsvBtn" onclick="exportProfileCSV()" title="Export all Job Applications to CSV">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-        <span>Export as CSV</span>
+        <span>Download as CSV</span>
       </button>
       <button type="button" class="btn-action-glow btn-download-zip" id="profDownloadZipBtn" onclick="window.location.href='/api/backup/export'" title="Download Full SQLite Database (.db) & Attached Resumes as ZIP">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-        <span>Download Database as ZIP</span>
+        <span>Download DB as ZIP</span>
       </button>
     </div>
   </section>
@@ -640,6 +640,7 @@ window.loadDriveStatus = async function() {
   } catch (e) {
     if (statusDot) statusDot.className = 'gdrive-status-indicator offline';
     if (statusText) statusText.textContent = 'Storage status unavailable';
+      updateGdriveDot(false);
   }
 };
 
@@ -735,6 +736,37 @@ if (themeBtn) {
 
 /* Data Fetching & Sync */
 async function loadAllProfileData() {
+  if (isUserLoggedOut()) {
+    resState = { apps: [], profile: null, settings: {} };
+    appsList = [];
+    learningsList = [];
+    gamifyStats = {
+      streak: 0,
+      currentStreak: 0,
+      totalMinutes: 0,
+      totalXP: 0,
+      level: 1,
+      levelTitle: 'Novice',
+      progressPercent: 0,
+      nextLevelXP: 200,
+      isFrozen: false
+    };
+
+    // Update Header Badges to 0
+    const appBadge = document.getElementById('appModeBadge');
+    if (appBadge) appBadge.textContent = '0';
+
+    const hudCount = document.getElementById('hudStreakCount');
+    if (hudCount) hudCount.textContent = '0';
+
+    const learnBadgeText = document.getElementById('learningModeBadgeText');
+    if (learnBadgeText) learnBadgeText.textContent = '0d';
+
+    renderAllViews();
+    updateGdriveDot(false);
+    return;
+  }
+
   try {
     const [resStateRaw, resLearnings, resGamify] = await Promise.all([
       fetch('/api/state').then(r => r.json()).catch(() => ({ apps: [] })),
@@ -766,6 +798,7 @@ async function loadAllProfileData() {
     if (learnBadgeText) learnBadgeText.textContent = streakVal + 'd' + (isFrozen ? ' ❄️' : '');
 
     renderAllViews();
+    await window.loadDriveStatus();
   } catch (e) {
     console.error('Failed to load profile data:', e);
   }
@@ -781,6 +814,18 @@ function renderAllViews() {
 
 /* 1. Hero Card - Only Full Name and Streak on left */
 function renderProfileHero() {
+  if (isUserLoggedOut()) {
+    const elName = document.getElementById('profUserName');
+    if (elName) elName.textContent = 'Logged Out (No Active Session)';
+    const elAvatar = document.getElementById('profUserAvatar');
+    if (elAvatar) elAvatar.textContent = '??';
+    const profStreak = document.getElementById('profUserStreak');
+    if (profStreak) {
+      profStreak.innerHTML = '<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> <span id="profStreakCountText">0-Day Focus Streak</span>';
+    }
+    return;
+  }
+
   const isFrozen = gamifyStats?.isFrozen || gamifyStats?.todayFrozen;
   const streak = gamifyStats?.streak ?? gamifyStats?.currentStreak ?? 0;
 
@@ -1020,7 +1065,68 @@ function hideHeatmapTooltip() {
 
 window.addEventListener('scroll', hideHeatmapTooltip, { passive: true });
 
+
+function renderActivityHeatmapLoggedOut() {
+  const subtitle = document.querySelector('.momentum-subtitle');
+  if (subtitle) {
+    const now = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    subtitle.textContent = '0 activities in ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  }
+
+  const appMonthBadge = document.getElementById('profAppsMonthBadge');
+  if (appMonthBadge) appMonthBadge.textContent = '0 applications';
+  const learnMonthBadge = document.getElementById('profLearningsMonthBadge');
+  if (learnMonthBadge) learnMonthBadge.textContent = '0 learnings';
+  
+  const periodContribs = document.getElementById('profPeriodContribs');
+  if (periodContribs) periodContribs.textContent = '0';
+  const appMonthCount = document.getElementById('appMonthCount');
+  if (appMonthCount) {
+    appMonthCount.textContent = '0 applications';
+    appMonthCount.className = 'count-tag zero-activity';
+  }
+  const learnMonthCount = document.getElementById('learnMonthCount');
+  if (learnMonthCount) {
+    learnMonthCount.textContent = '0 learnings';
+    learnMonthCount.className = 'count-tag zero-activity';
+  }
+
+  const activeDaysEl = document.getElementById('profHeatmapActiveDays');
+  if (activeDaysEl) activeDaysEl.textContent = '0 Days';
+
+  // Render empty grids
+  const appGrid = document.getElementById('appMonthGrid');
+  const learnGrid = document.getElementById('learnMonthGrid');
+  if (appGrid) {
+    let emptyCols = '';
+    for (let c = 0; c < 5; c++) {
+      emptyCols += '<div class="momentum-col-week">';
+      for (let r = 0; r < 7; r++) {
+        emptyCols += '<span class="momentum-day-cell lvl-0"></span>';
+      }
+      emptyCols += '</div>';
+    }
+    appGrid.innerHTML = emptyCols;
+  }
+  if (learnGrid) {
+    let emptyCols = '';
+    for (let c = 0; c < 5; c++) {
+      emptyCols += '<div class="momentum-col-week">';
+      for (let r = 0; r < 7; r++) {
+        emptyCols += '<span class="momentum-day-cell lvl-0"></span>';
+      }
+      emptyCols += '</div>';
+    }
+    learnGrid.innerHTML = emptyCols;
+  }
+}
+
 function renderProfileHeatmap() {
+  if (isUserLoggedOut()) {
+    renderActivityHeatmapLoggedOut();
+    return;
+  }
   syncMomentumControls();
   const appGrid = document.getElementById('appMonthGrid');
   const learnGrid = document.getElementById('learnMonthGrid');
@@ -1206,8 +1312,11 @@ function renderProfileHeatmap() {
 
 /* 3. Quick Links List */
 function getQuickLinks() {
+  if (isUserLoggedOut()) return [];
+  const user = getActiveUser();
+  const storageKey = user ? ('user_quick_links_' + (user.id || user.email)) : 'user_quick_links_default';
   try {
-    const saved = localStorage.getItem('user_quick_links');
+    const saved = localStorage.getItem(storageKey);
     if (saved) return JSON.parse(saved);
   } catch (e) {}
   return DEFAULT_QUICK_LINKS;
@@ -1223,6 +1332,17 @@ function renderQuickLinks() {
   const container = document.getElementById('profQuickLinksList');
   if (!container) return;
   const links = getQuickLinks();
+
+  if (!links || links.length === 0) {
+    container.innerHTML = `
+      <div style="padding:32px 16px;text-align:center;color:var(--tx2,#64748b);font-size:13.5px;border:1px dashed var(--bd,#e2e8f0);border-radius:12px;background:var(--card,#ffffff);">
+        <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.8" fill="none" style="margin-bottom:8px;opacity:0.45;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <div style="font-weight:700;color:var(--tx,#0f172a);">${isUserLoggedOut() ? 'Logged Out' : 'No Links Added Yet'}</div>
+        <div style="font-size:12px;color:var(--tx2,#64748b);margin-top:4px;">${isUserLoggedOut() ? 'Sign in to access your saved profile links.' : 'Click \'+ Add Link\' to add your portfolio, LinkedIn or GitHub.'}</div>
+      </div>
+    `;
+    return;
+  }
 
   container.innerHTML = links.map(link => {
     const isEmail = link.url.includes('@') && !link.url.startsWith('http');
@@ -1517,120 +1637,218 @@ document.getElementById('confirmShutdownBtn').onclick = async () => {
 initTheme();
 loadAllProfileData();
 
-function openUserModal() {
-  const overlay = document.getElementById('userModalOverlay');
-  if (!overlay) return;
-  overlay.classList.add('active');
-  const userStr = localStorage.getItem('auth_user');
-  if (userStr) {
-    try {
-      const u = JSON.parse(userStr);
-      document.getElementById('modalActiveUserName').textContent = u.name || 'User';
-      document.getElementById('modalActiveUserEmail').textContent = u.email || '';
-    } catch (_) {}
-  } else {
-    document.getElementById('modalActiveUserName').textContent = 'Default User (Varun)';
-    document.getElementById('modalActiveUserEmail').textContent = 'local@jobtracker.app';
-  }
+
+/* ===============================================================
+
+/* ===============================================================
+   Render-Style Clean Auth System: Topbar Logout & Interceptor
+   =============================================================== */
+function isUserLoggedOut() {
+  return localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
 }
 
-function closeUserModal() {
-  const overlay = document.getElementById('userModalOverlay');
-  if (overlay) overlay.classList.remove('active');
-}
-
-function quickFillUser(email, name) {
-  const emailInput = document.getElementById('userSwitchEmail');
-  const nameInput = document.getElementById('userSwitchName');
-  if (emailInput) emailInput.value = email;
-  if (nameInput) nameInput.value = name;
-}
-
-async function submitUserSwitch() {
-  const email = (document.getElementById('userSwitchEmail').value || '').trim();
-  const name = (document.getElementById('userSwitchName').value || '').trim();
-  if (!email || !email.includes('@')) {
-    alert('Please enter a valid email address.');
-    return;
-  }
+function getActiveUser() {
   try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name })
-    }).then(r => r.json());
-    if (res.token) {
-      localStorage.setItem('auth_token', res.token);
-      localStorage.setItem('auth_user', JSON.stringify(res.user));
-      window.location.reload();
-    } else {
-      alert(res.error || 'Failed to login');
-    }
-  } catch (err) {
-    alert('Error connecting to server: ' + err.message);
+    const raw = localStorage.getItem('auth_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
   }
 }
 
-function switchToDefaultUser() {
+function updateAuthUI() {
+  const loggedOut = isUserLoggedOut();
+  const user = getActiveUser();
+  const topbarWrap = document.getElementById('topbarAuthWrap');
+  
+  if (topbarWrap) {
+    if (loggedOut) {
+      // Login Icon Button in top-bar
+      topbarWrap.innerHTML = `
+        <button class="btn icon-only" id="topbarLoginIconBtn" onclick="openAuthModal()" title="Log In to Session" aria-label="Log In" style="color:var(--primary,#6366f1);border-color:rgba(99,102,241,0.3);background:rgba(99,102,241,0.08);">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+            <polyline points="10 17 15 12 10 7"></polyline>
+            <line x1="15" y1="12" x2="3" y2="12"></line>
+          </svg>
+        </button>
+      `;
+    } else {
+      // Logout Icon Button in top-bar
+      topbarWrap.innerHTML = `
+        <button class="btn icon-only" id="profLogoutBtn" onclick="handleTopbarLogout()" title="Log out of session" aria-label="Log Out" style="color: #ef4444;">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+        </button>
+      `;
+    }
+  }
+
+  // Update Profile Identity card
+  const profName = document.getElementById('profUserName');
+  const profAvatar = document.getElementById('profUserAvatar');
+  const profStreakText = document.getElementById('profStreakCountText');
+
+  if (loggedOut) {
+    if (profName) profName.textContent = 'Logged Out (No Active Session)';
+    if (profAvatar) profAvatar.textContent = '??';
+    if (profStreakText) profStreakText.textContent = 'Sign in to sync focus streak';
+  } else if (user) {
+    if (profName) profName.textContent = user.name || user.email.split('@')[0];
+    if (profAvatar) {
+      const initials = (user.name || user.email).split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+      profAvatar.textContent = initials;
+    }
+  } else {
+    if (profName) profName.textContent = 'Varun Chandra';
+    if (profAvatar) profAvatar.textContent = 'VC';
+  }
+
+  // Blinking green dot on G-Drive button
+  updateGdriveDot(!loggedOut);
+}
+
+function handleTopbarLogout() {
   localStorage.removeItem('auth_token');
   localStorage.removeItem('auth_user');
-  window.location.reload();
+  localStorage.setItem('logged_out', '1');
+  
+  // Wipe all in-memory data
+  resState = { apps: [] };
+  appsList = [];
+  learningsList = [];
+  gamifyStats = {
+    streak: 0,
+    currentStreak: 0,
+    totalMinutes: 0,
+    totalXP: 0,
+    level: 1,
+    levelTitle: 'Novice',
+    progressPercent: 0,
+    nextLevelXP: 200,
+    isFrozen: false
+  };
+
+  updateAuthUI();
+  loadAllProfileData();
+  
+  openAuthModal('You have been logged out. Please sign in to access your workspace.');
 }
 
-// Apply active user to Profile Hero Card
-(function applyActiveUserUI() {
-  const savedUserStr = localStorage.getItem('auth_user');
-  if (savedUserStr) {
-    try {
-      const u = JSON.parse(savedUserStr);
-      const profName = document.getElementById('profUserName');
-      if (profName && u.name) profName.textContent = u.name;
-      const profAvatar = document.getElementById('profUserAvatar');
-      if (profAvatar) {
-        const initials = (u.name || u.email).split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
-        profAvatar.textContent = initials;
-      }
-      const statusLabel = document.getElementById('profUserStatusLabel');
-      if (statusLabel) statusLabel.textContent = u.name ? u.name.split(' ')[0] : 'Account';
-    } catch (_) {}
-  }
-})();
-
-
-function switchAuthTab(tab) {
-  const tabGoogle = document.getElementById('tabGoogleAuth');
-  const tabCasual = document.getElementById('tabCasualAuth');
-  const contentGoogle = document.getElementById('authContentGoogle');
-  const contentCasual = document.getElementById('authContentCasual');
-
-  if (tab === 'google') {
-    if (tabGoogle) tabGoogle.classList.add('active');
-    if (tabCasual) tabCasual.classList.remove('active');
-    if (contentGoogle) contentGoogle.style.display = 'flex';
-    if (contentCasual) contentCasual.style.display = 'none';
+function handleTopbarAuthClick() {
+  if (isUserLoggedOut()) {
+    openAuthModal();
   } else {
-    if (tabGoogle) tabGoogle.classList.remove('active');
-    if (tabCasual) tabCasual.classList.add('active');
-    if (contentGoogle) contentGoogle.style.display = 'none';
-    if (contentCasual) contentCasual.style.display = 'flex';
+    handleTopbarLogout();
   }
 }
 
-async function triggerGoogleSignIn() {
-  const testEmail = prompt('Enter your Google Account email for OAuth sign-in:', 'varun.google@gmail.com');
-  if (!testEmail || !testEmail.includes('@')) return;
-  const name = testEmail.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  await simulateGoogleAuth(testEmail, name, 'https://lh3.googleusercontent.com/a/default-user');
+// Global click interceptor: when user is logged out and clicks any button, ask user to login!
+document.addEventListener('click', function(e) {
+  if (!isUserLoggedOut()) return;
+
+  const clickable = e.target.closest('button, a:not([href^="http"]), input, select, textarea, [role="button"]');
+  if (!clickable) return;
+
+  // Allow clicking inside Auth Modal itself
+  if (clickable.closest('#authModalOverlay') || clickable.closest('#authModalBox')) return;
+  // Allow the login icon button itself to open the modal
+  if (clickable.id === 'topbarLoginIconBtn' || clickable.closest('#topbarLoginIconBtn')) return;
+  // Allow theme toggle and close server buttons
+  if (clickable.id === 'tbtn' || clickable.id === 'closeBtn' || clickable.closest('#shutdownModal')) return;
+
+  // Intercept action and ask user to login
+  e.preventDefault();
+  e.stopPropagation();
+  e.stopImmediatePropagation();
+
+  openAuthModal('Please sign in to continue.');
+}, true); // Capture phase ensures we intercept before any button handler
+
+function openAuthModal(noticeText) {
+  const overlay = document.getElementById('authModalOverlay');
+  if (!overlay) return;
+  overlay.style.display = 'flex';
+
+  const notice = document.getElementById('authActionNotice');
+  const noticeTxt = document.getElementById('authActionNoticeText');
+  if (notice && noticeTxt) {
+    if (noticeText) {
+      noticeTxt.textContent = noticeText;
+      notice.style.display = 'flex';
+    } else {
+      notice.style.display = 'none';
+    }
+  }
+
+  const feedback = document.getElementById('renderFeedbackMsg');
+  if (feedback) feedback.style.display = 'none';
 }
 
-async function simulateGoogleAuth(email, name, picture) {
-  try {
-    const feedback = document.getElementById('authLiveFeedback');
-    if (feedback) {
-      feedback.style.display = 'flex';
-      feedback.textContent = 'Authenticating with Google OAuth...';
-    }
+function closeAuthModal() {
+  const overlay = document.getElementById('authModalOverlay');
+  if (overlay) overlay.style.display = 'none';
+}
 
+function togglePasswordVisibility() {
+  const pwdInput = document.getElementById('renderPasswordInput');
+  const eyeSvg = document.getElementById('eyeIconSvg');
+  if (!pwdInput) return;
+  if (pwdInput.type === 'password') {
+    pwdInput.type = 'text';
+    if (eyeSvg) {
+      eyeSvg.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    }
+  } else {
+    pwdInput.type = 'password';
+    if (eyeSvg) {
+      eyeSvg.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  }
+}
+
+function quickFocusSignup() {
+  const input = document.getElementById('renderEmailInput');
+  if (input) {
+    input.value = '';
+    input.placeholder = 'Enter new email to sign up...';
+    input.focus();
+  }
+}
+
+function handlePasswordReset() {
+  const input = document.getElementById('renderEmailInput');
+  const email = (input ? input.value : '').trim();
+  alert('Password reset instructions would be sent to: ' + (email || 'your email address') + '. (Local passwordless access is also supported)');
+}
+
+// 1. Google OAuth Sign-In (Render style)
+async function submitGoogleOAuth() {
+  const emailInput = document.getElementById('renderEmailInput');
+  let email = (emailInput ? emailInput.value : '').trim();
+  const feedback = document.getElementById('renderFeedbackMsg');
+
+  if (!email || !email.includes('@')) {
+    email = prompt('Enter your Google Account email for Google OAuth:', 'varun.google@gmail.com') || '';
+    if (!email || !email.includes('@')) return;
+    if (emailInput) emailInput.value = email;
+  }
+
+  const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  if (feedback) {
+    feedback.className = 'render-feedback-msg';
+    feedback.style.color = '#4338ca';
+    feedback.style.background = 'rgba(99,102,241,0.1)';
+    feedback.style.border = '1px solid rgba(99,102,241,0.25)';
+    feedback.textContent = 'Connecting via Google OAuth...';
+    feedback.style.display = 'flex';
+  }
+
+  try {
     const res = await fetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1638,7 +1856,7 @@ async function simulateGoogleAuth(email, name, picture) {
         profile: {
           email,
           name,
-          picture,
+          picture: 'https://lh3.googleusercontent.com/a/default-user',
           sub: 'g_' + Math.abs(hashCode(email))
         }
       })
@@ -1648,15 +1866,95 @@ async function simulateGoogleAuth(email, name, picture) {
       localStorage.setItem('auth_token', res.token);
       localStorage.setItem('auth_user', JSON.stringify(res.user));
       localStorage.removeItem('logged_out');
+
       if (feedback) {
-        feedback.innerHTML = '<strong>Success!</strong> Authenticated via Google OAuth as ' + (res.user.name || res.user.email);
+        feedback.className = 'render-feedback-msg success';
+        feedback.textContent = 'Success! Authenticated via Google as ' + (res.user.name || res.user.email);
+        feedback.style.display = 'flex';
       }
-      setTimeout(() => window.location.reload(), 600);
+
+      setTimeout(() => {
+        closeAuthModal();
+        window.location.reload();
+      }, 500);
     } else {
-      alert(res.error || 'Google authentication failed');
+      if (feedback) {
+        feedback.className = 'render-feedback-msg error';
+        feedback.textContent = res.error || 'Google authentication failed';
+        feedback.style.display = 'flex';
+      }
     }
   } catch (err) {
-    alert('Google authentication error: ' + err.message);
+    if (feedback) {
+      feedback.className = 'render-feedback-msg error';
+      feedback.textContent = 'Connection error: ' + err.message;
+      feedback.style.display = 'flex';
+    }
+  }
+}
+
+// 2. Custom Email Sign-In (Render style)
+async function submitCustomEmailAuth() {
+  const emailInput = document.getElementById('renderEmailInput');
+  const pwdInput = document.getElementById('renderPasswordInput');
+  const email = (emailInput ? emailInput.value : '').trim();
+  const pin = (pwdInput ? pwdInput.value : '').trim();
+  const name = email ? email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '';
+  const feedback = document.getElementById('renderFeedbackMsg');
+
+  if (!email || !email.includes('@')) {
+    if (feedback) {
+      feedback.className = 'render-feedback-msg error';
+      feedback.textContent = 'Please enter a valid email address.';
+      feedback.style.display = 'flex';
+    }
+    return;
+  }
+
+  if (feedback) {
+    feedback.className = 'render-feedback-msg';
+    feedback.style.color = '#111827';
+    feedback.style.background = '#f3f4f6';
+    feedback.style.border = '1px solid #d1d5db';
+    feedback.textContent = 'Signing in to workspace...';
+    feedback.style.display = 'flex';
+  }
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, name, pin })
+    }).then(r => r.json());
+
+    if (res.token) {
+      localStorage.setItem('auth_token', res.token);
+      localStorage.setItem('auth_user', JSON.stringify(res.user));
+      localStorage.removeItem('logged_out');
+
+      if (feedback) {
+        feedback.className = 'render-feedback-msg success';
+        feedback.textContent = 'Success! Signed in as ' + (res.user.name || res.user.email);
+        feedback.style.display = 'flex';
+      }
+
+      setTimeout(() => {
+        closeAuthModal();
+        window.location.reload();
+      }, 500);
+    } else {
+      if (feedback) {
+        feedback.className = 'render-feedback-msg error';
+        feedback.textContent = res.error || 'Sign in failed';
+        feedback.style.display = 'flex';
+      }
+    }
+  } catch (err) {
+    if (feedback) {
+      feedback.className = 'render-feedback-msg error';
+      feedback.textContent = 'Connection error: ' + err.message;
+      feedback.style.display = 'flex';
+    }
   }
 }
 
@@ -1669,168 +1967,75 @@ function hashCode(str) {
   return hash;
 }
 
-function handleLogout() {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('auth_user');
-  localStorage.setItem('logged_out', '1');
-  
-  // Open the Auth modal immediately so user can test Google vs Casual auth
-  openUserModal();
-}
-
-function handleLogoutInsideModal() {
-  localStorage.removeItem('auth_token');
-  localStorage.removeItem('auth_user');
-  localStorage.setItem('logged_out', '1');
-
-  document.getElementById('modalActiveUserName').textContent = 'Logged Out (No Active Session)';
-  document.getElementById('modalActiveUserEmail').textContent = 'Please sign in with Google or Email below';
-  document.getElementById('modalActiveAvatar').textContent = '??';
-  document.getElementById('modalSessionBadge').textContent = 'Logged Out';
-  document.getElementById('modalSessionBadge').style.color = '#ef4444';
-
-  const feedback = document.getElementById('authLiveFeedback');
-  if (feedback) {
-    feedback.style.display = 'flex';
-    feedback.style.color = '#ef4444';
-    feedback.style.background = 'rgba(239, 68, 68, 0.1)';
-    feedback.style.borderColor = 'rgba(239, 68, 68, 0.25)';
-    feedback.textContent = 'Session terminated. Select an authentication method to log back in.';
+// Update G-Drive dot status in hero card
+function updateGdriveDot(connected) {
+  const dot = document.getElementById('gdriveDotStatus');
+  if (dot) {
+    dot.classList.toggle('connected', !!connected);
+    dot.title = connected ? 'Google Drive Connected (Live)' : 'Google Drive Disconnected';
   }
 }
 
+// Initialize Auth State on load
+document.addEventListener('DOMContentLoaded', () => {
+  updateAuthUI();
+});
+setTimeout(updateAuthUI, 50);
+
 </script>
 
+<!-- Render-Style Authentication Modal (Google Auth & Custom Email) -->
+<div id="authModalOverlay" class="render-auth-overlay" style="display:none;" onclick="if(event.target===this) closeAuthModal();">
+  <div class="render-auth-card" id="authModalBox" role="dialog" aria-modal="true">
+    <button type="button" class="render-modal-close" onclick="closeAuthModal()" aria-label="Close modal">&times;</button>
+    
+    <h2 class="render-auth-title">Sign In to Job Tracker</h2>
 
-<!-- Comprehensive Authentication & Multi-User Switcher Modal -->
-<div class="user-modal-overlay" id="userModalOverlay" onclick="if(event.target===this)closeUserModal()">
-  <div class="user-modal-box" role="dialog" aria-modal="true" style="max-width: 530px;">
-    <div class="user-modal-header">
-      <div class="user-title-wrap">
-        <div class="user-icon-badge" id="authBadgeIcon">
-          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div>
-          <h3 class="user-modal-title" id="authModalHeading">Authentication &amp; User Access</h3>
-          <p class="user-modal-subtitle">Sign in via Google OAuth or Casual Email Auth to access your isolated workspace.</p>
-        </div>
-      </div>
-      <button type="button" class="user-close-btn" onclick="closeUserModal()" aria-label="Close modal">&times;</button>
+    <!-- Alert / Notice banner when user clicks a button while logged out -->
+    <div class="render-notice-banner" id="authActionNotice" style="display:none;">
+      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span id="authActionNoticeText">Please sign in to continue.</span>
     </div>
 
-    <div class="user-modal-body">
-      <!-- Active Account Card -->
-      <div class="user-active-card" id="userActiveCardWrap">
-        <div class="user-active-info">
-          <div class="user-avatar-circle" id="modalActiveAvatar">VC</div>
-          <div class="user-active-details">
-            <span class="user-active-badge" id="modalSessionBadge">Active Session</span>
-            <span class="user-active-name" id="modalActiveUserName">Default User (Varun)</span>
-            <span class="user-active-email" id="modalActiveUserEmail">local@jobtracker.app</span>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <button type="button" class="btn-reset-user" onclick="switchToDefaultUser()" title="Reset session back to default local user">
-            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-            <span>Default</span>
-          </button>
-          <button type="button" class="btn-reset-user" onclick="handleLogoutInsideModal()" title="Log out of current user" style="color:#ef4444;border-color:rgba(239,68,68,0.25);">
-            <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            <span>Logout</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Auth Method Selector Tabs -->
-      <div class="auth-tabs-row" role="tablist">
-        <button type="button" class="auth-tab-btn active" id="tabGoogleAuth" onclick="switchAuthTab('google')">
-          <svg class="google-icon-svg" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Google OAuth</span>
-        </button>
-        <button type="button" class="auth-tab-btn" id="tabCasualAuth" onclick="switchAuthTab('casual')">
-          <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          <span>Casual Email Auth</span>
-        </button>
-      </div>
-
-      <!-- Google OAuth Tab Content -->
-      <div id="authContentGoogle" style="display:flex;flex-direction:column;gap:14px;">
-        <button type="button" class="btn-google-auth" onclick="triggerGoogleSignIn()">
-          <svg class="google-icon-svg" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-          </svg>
-          <span>Sign In with Google Account</span>
-        </button>
-
-        <div class="user-presets-row">
-          <span class="user-presets-label">Google 1-Click Test Accounts:</span>
-          <button type="button" class="user-preset-chip" onclick="simulateGoogleAuth('varun.dev@gmail.com', 'Varun Chandra', 'https://lh3.googleusercontent.com/a/default-user')">
-            <span class="chip-dot" style="background:#4285F4;"></span>
-            <span>Varun (Google)</span>
-          </button>
-          <button type="button" class="user-preset-chip" onclick="simulateGoogleAuth('alex.pm@gmail.com', 'Alex Rivera', 'https://lh3.googleusercontent.com/a/default-user')">
-            <span class="chip-dot" style="background:#34A853;"></span>
-            <span>Alex (Google)</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Casual Email Auth Tab Content -->
-      <div id="authContentCasual" style="display:none;flex-direction:column;gap:14px;">
-        <div class="user-form-group">
-          <label class="user-input-label" for="userSwitchEmail">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            <span>Email Address</span>
-          </label>
-          <input type="email" id="userSwitchEmail" class="user-input-field" placeholder="e.g. alice@example.com or user2@test.com" autocomplete="off">
-        </div>
-
-        <div class="user-form-group">
-          <label class="user-input-label" for="userSwitchName">
-            <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span>Display Name (Optional)</span>
-          </label>
-          <input type="text" id="userSwitchName" class="user-input-field" placeholder="e.g. Alice Smith" autocomplete="off">
-        </div>
-
-        <div class="user-presets-row">
-          <span class="user-presets-label">Quick presets:</span>
-          <button type="button" class="user-preset-chip" onclick="quickFillUser('alice@example.com', 'Alice Smith')">
-            <span class="chip-dot"></span>
-            <span>Alice Smith</span>
-          </button>
-          <button type="button" class="user-preset-chip" onclick="quickFillUser('bob@example.com', 'Bob Johnson')">
-            <span class="chip-dot"></span>
-            <span>Bob Johnson</span>
-          </button>
-          <button type="button" class="user-preset-chip" onclick="quickFillUser('user2@test.com', 'Test User 2')">
-            <span class="chip-dot"></span>
-            <span>User 2</span>
-          </button>
-        </div>
-
-        <div style="display:flex;justify-content:flex-end;margin-top:6px;">
-          <button type="button" class="btn-user-submit" onclick="submitUserSwitch()">
-            <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-            <span>Sign In with Email</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Live Feedback Notice -->
-      <div id="authLiveFeedback" style="display:none;" class="auth-feedback-toast"></div>
+    <!-- Provider Row: Google Auth (Clean button matching Render) -->
+    <div class="render-oauth-row">
+      <button type="button" class="render-oauth-btn" id="btnGoogleOAuth" onclick="submitGoogleOAuth()" title="Sign in with your Google account">
+        <svg viewBox="0 0 24 24" width="17" height="17"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+        <span>Google</span>
+      </button>
     </div>
 
-    <div class="user-modal-footer">
-      <button type="button" class="btn-user-cancel" onclick="closeUserModal()">Close</button>
+    <!-- Center Divider: "or" -->
+    <div class="render-divider">
+      <span>or</span>
+    </div>
+
+    <!-- Custom Email Form -->
+    <form onsubmit="event.preventDefault(); submitCustomEmailAuth();">
+      <div class="render-form-group">
+        <label class="render-label" for="renderEmailInput">Email</label>
+        <input type="email" id="renderEmailInput" class="render-input" placeholder="your@email.com" value="varunchandra10@gmail.com" required autocomplete="email">
+      </div>
+
+      <div class="render-form-group">
+        <label class="render-label" for="renderPasswordInput">Password</label>
+        <div class="render-password-wrap">
+          <input type="password" id="renderPasswordInput" class="render-input" placeholder="correct horse battery staple" autocomplete="current-password">
+          <button type="button" class="render-pwd-eye-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password view" title="Show/Hide password">
+            <svg id="eyeIconSvg" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Feedback Banner -->
+      <div id="renderFeedbackMsg" class="render-feedback-msg" style="display:none;"></div>
+
+      <button type="submit" class="render-btn-signin" id="btnCustomSignIn">Sign in</button>
+    </form>
+
+    <div class="render-footer-links">
+      <p style="margin:0 0 6px 0;">Need an account? <a href="javascript:void(0)" onclick="quickFocusSignup()">Sign up with any email</a></p>
+      <p style="margin:0;">Forgot your password? <a href="javascript:void(0)" onclick="handlePasswordReset()">Reset it</a></p>
     </div>
   </div>
 </div>

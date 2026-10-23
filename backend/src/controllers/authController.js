@@ -1,3 +1,26 @@
+
+function claimExistingDataIfVarun(user) {
+  if (!user || !user.email) return;
+  const isVarun = ['varunchandra10@gmail.com', 'kvc.sunny3@gmail.com', 'varun.developer@gmail.com', 'varun.google@gmail.com'].includes(user.email.toLowerCase());
+  if (isVarun) {
+    try {
+      const defaultAppsCount = db.prepare("select count(*) as c from applications where user_id='default_user'").get().c;
+      if (defaultAppsCount > 0) {
+        db.prepare("UPDATE applications SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE learnings SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE activity_log SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE resume_profile SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE resume_versions SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE roles SET user_id=? WHERE user_id='default_user'").run(user.id);
+        db.prepare("UPDATE settings SET user_id=? WHERE user_id='default_user'").run(user.id);
+        console.log(`[Auth] Associated ${defaultAppsCount} existing default applications to Varun (${user.email})`);
+      }
+    } catch (e) {
+      console.warn('[Auth] Error associating data to Varun:', e.message);
+    }
+  }
+}
+
 const crypto = require('crypto');
 const config = require('../config');
 const { db } = require('../database/db');
@@ -74,6 +97,7 @@ exports.login = (req, res) => {
       user = { id, email: cleanEmail, name: cleanName };
     }
 
+    claimExistingDataIfVarun(user);
     const token = signToken({ id: user.id, email: user.email, name: user.name });
     return res.json({
       ok: 1,
