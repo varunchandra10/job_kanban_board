@@ -545,6 +545,155 @@ window.openLearningModalWithCat = function(catKey, stream, topic) {
   }
 };
 
+
+/* ============================================================================
+   Learning & Study Calendar View Engine
+   ============================================================================ */
+let learnCalCurrent = new Date();
+
+function renderLearningCalendar() {
+  const container = document.getElementById('learningsView');
+  if (!container) return;
+  container.className = 'cal-mode';
+  container.removeAttribute('data-active-cat');
+
+  const yr = learnCalCurrent.getFullYear(), mo = learnCalCurrent.getMonth();
+  const firstDay = new Date(yr, mo, 1).getDay();
+  const daysInMo = new Date(yr, mo + 1, 0).getDate();
+  const daysInPrev = new Date(yr, mo, 0).getDate();
+  const moName = ['January','February','March','April','May','June','July','August','September','October','November','December'][mo];
+
+  const now = new Date();
+  const nowStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const toYMD = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+  const calBox = document.createElement('div');
+  calBox.className = 'nordic-cal-box';
+  calBox.innerHTML = `
+    <div class="n-cal-head">
+      <div class="n-cal-title-wrap">
+        <div class="n-cal-title" style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:var(--tx);">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>${moName} ${yr} Learning Calendar</span>
+        </div>
+        <div class="n-cal-sub" style="font-size:12px;color:var(--tx3);margin-top:2px;">Track daily concepts, study duration, and revision history</div>
+      </div>
+      <div class="n-cal-controls" style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div class="n-cal-legend" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span class="n-cal-pill learning" style="cursor:default;background:rgba(59,130,246,0.12);color:#2563eb;border-color:rgba(59,130,246,0.3);"><span style="width:6px;height:6px;border-radius:50%;background:#3b82f6;"></span> DSA</span>
+          <span class="n-cal-pill learning" style="cursor:default;background:rgba(236,72,153,0.12);color:#db2777;border-color:rgba(236,72,153,0.3);"><span style="width:6px;height:6px;border-radius:50%;background:#ec4899;"></span> AI/ML</span>
+          <span class="n-cal-pill learning" style="cursor:default;background:rgba(14,165,233,0.12);color:#0284c7;border-color:rgba(14,165,233,0.3);"><span style="width:6px;height:6px;border-radius:50%;background:#0ea5e9;"></span> CS Core</span>
+          <span class="n-cal-pill learning" style="cursor:default;background:rgba(245,158,11,0.12);color:#d97706;border-color:rgba(245,158,11,0.3);"><span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;"></span> Aptitude</span>
+        </div>
+        <div class="cal-nav" style="display:flex;align-items:center;gap:6px;">
+          <button type="button" class="btn icon-only" id="learnCalPrev" title="Previous Month" style="width:30px;height:30px;border-radius:6px;font-size:16px;">&lsaquo;</button>
+          <button type="button" class="btn" id="learnCalToday" style="font-size:12px;padding:4px 10px;font-weight:600;border-radius:6px;">Today</button>
+          <button type="button" class="btn icon-only" id="learnCalNext" title="Next Month" style="width:30px;height:30px;border-radius:6px;font-size:16px;">&rsaquo;</button>
+        </div>
+      </div>
+    </div>
+    <div class="n-cal-grid" id="learnCalGrid"></div>
+  `;
+  container.innerHTML = '';
+  container.appendChild(calBox);
+
+  const grid = calBox.querySelector('#learnCalGrid');
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(d => {
+    const dh = document.createElement('div');
+    dh.className = 'n-day-head';
+    dh.textContent = d;
+    grid.appendChild(dh);
+  });
+
+  // Previous month trailing days
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const pday = daysInPrev - i;
+    const cell = document.createElement('div');
+    cell.className = 'n-cal-cell other-month';
+    cell.style.opacity = '0.35';
+    cell.innerHTML = `<div class="n-cell-top"><span class="n-cell-num">${pday}</span></div>`;
+    grid.appendChild(cell);
+  }
+
+  // Days in current month
+  for (let d = 1; d <= daysInMo; d++) {
+    const dateStr = toYMD(yr, mo, d);
+    const isToday = (dateStr === nowStr);
+    const cell = document.createElement('div');
+    cell.className = `n-cal-cell ${isToday ? 'is-today' : ''}`;
+
+    const itemsOnDay = (learningsList || []).filter(l => (l.date_logged || '').slice(0, 10) === dateStr);
+    const totalMin = itemsOnDay.reduce((acc, cur) => acc + (Number(cur.duration_minutes) || 0), 0);
+
+    let pillsHtml = '';
+    itemsOnDay.forEach(item => {
+      const catKey = getCategoryForLearning(item);
+      let catColor = '#3b82f6';
+      let catBg = 'rgba(59,130,246,0.12)';
+      if (catKey === 'AI/ML/NLP/CV') { catColor = '#ec4899'; catBg = 'rgba(236,72,153,0.12)'; }
+      else if (catKey === 'CS SUBJECTS') { catColor = '#0ea5e9'; catBg = 'rgba(14,165,233,0.12)'; }
+      else if (catKey === 'GENERAL APTITUDE') { catColor = '#f59e0b'; catBg = 'rgba(245,158,11,0.12)'; }
+
+      pillsHtml += `
+        <div class="n-cal-pill learning" data-id="${item.id}" style="background:${catBg};color:${catColor};border-color:${catColor}40;" title="${escapeHtml(item.title)} (${item.duration_minutes || 45}m)">
+          <span style="width:5px;height:5px;border-radius:50%;background:${catColor};flex-shrink:0;"></span>
+          <span style="font-weight:700;flex-shrink:0;">${item.duration_minutes || 45}m</span>
+          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(item.title)}</span>
+        </div>
+      `;
+    });
+
+    cell.innerHTML = `
+      <div class="n-cell-top">
+        <span class="n-cell-num">${d}</span>
+        ${isToday ? '<span class="n-today-badge">TODAY</span>' : (totalMin > 0 ? `<span style="font-size:10.5px;font-weight:700;color:var(--tx2);">${totalMin}m</span>` : '')}
+      </div>
+      <div class="n-cal-pills-wrap">
+        ${pillsHtml}
+      </div>
+    `;
+
+    // Click on learning pill opens modal
+    cell.querySelectorAll('.n-cal-pill.learning').forEach(pill => {
+      pill.addEventListener('click', e => {
+        e.stopPropagation();
+        openLearningModal(+pill.dataset.id);
+      });
+    });
+
+    // Click on empty space in cell opens add modal for this date
+    cell.addEventListener('click', e => {
+      if (e.target.closest('.n-cal-pill')) return;
+      openLearningModal();
+      const dateInp = document.getElementById('l_date');
+      if (dateInp) dateInp.value = dateStr;
+    });
+
+    grid.appendChild(cell);
+  }
+
+  // Next month trailing days to complete 7-day grid
+  const totalCellsSoFar = firstDay + daysInMo;
+  const remaining = (7 - (totalCellsSoFar % 7)) % 7;
+  for (let n = 1; n <= remaining; n++) {
+    const cell = document.createElement('div');
+    cell.className = 'n-cal-cell other-month';
+    cell.style.opacity = '0.35';
+    cell.innerHTML = `<div class="n-cell-top"><span class="n-cell-num">${n}</span></div>`;
+    grid.appendChild(cell);
+  }
+
+  // Navigation handlers
+  const prevBtn = calBox.querySelector('#learnCalPrev');
+  const nextBtn = calBox.querySelector('#learnCalNext');
+  const todayBtn = calBox.querySelector('#learnCalToday');
+
+  if (prevBtn) prevBtn.onclick = () => { learnCalCurrent.setMonth(learnCalCurrent.getMonth() - 1); renderLearningCalendar(); };
+  if (nextBtn) nextBtn.onclick = () => { learnCalCurrent.setMonth(learnCalCurrent.getMonth() + 1); renderLearningCalendar(); };
+  if (todayBtn) todayBtn.onclick = () => { learnCalCurrent = new Date(); renderLearningCalendar(); };
+}
+window.renderLearningCalendar = renderLearningCalendar;
+
 function renderLearningsBoard() {
   const container = document.getElementById('learningsView');
   if (!container) return;

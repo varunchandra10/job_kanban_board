@@ -8785,3 +8785,43 @@ body.dark-mode .profile-auth-gate-icon,
   background: rgba(129, 140, 248, 0.15) !important;
   color: #a5b4fc !important;
 }
+
+
+/* Enhanced Responsive Calendar Styles */
+.cal-mode {
+  display: block !important;
+  width: 100% !important;
+  padding: 16px 24px !important;
+  overflow: auto !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  .cal-mode {
+    padding: 10px 8px !important;
+  }
+  .nordic-cal-box {
+    padding: 14px 10px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .n-cal-grid {
+    min-width: 560px !important;
+    gap: 6px !important;
+  }
+  .n-cal-cell {
+    min-height: 96px !important;
+    padding: 6px 7px !important;
+  }
+  .n-cal-head {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  .n-cal-controls {
+    width: 100% !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+}
