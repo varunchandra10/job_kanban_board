@@ -714,30 +714,13 @@ function render() {
       if (a.jd) tags.push('<span class="tag">JD</span>');
       if (a.resume_path && a.resume_path.trim() && a.resume_path.trim().toUpperCase() !== 'NA') {
         const cleanP = cleanFilePath(a.resume_path);
-        if (isGoogleDriveLink(cleanP)) {
-          tags.push(`<span class="tag resume-tag gdrive" title="Google Drive CV: Click to open in Google Drive" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'resume');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> <svg class="icon-inline" viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" style="vertical-align:-1px;margin-right:3px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Drive CV</span>`);
-        } else {
-          const fn = cleanP.split(/[\\/]/).pop() || cleanP;
-          const ext = (fn.split('.').pop() || '').toLowerCase();
-          const isDoc = ext === 'doc' || ext === 'docx';
-          const tagClass = isDoc ? 'resume-tag docx' : 'resume-tag pdf';
-          const icon = isDoc ? ICON.fileWord : ICON.filePdf;
-          tags.push(`<span class="tag ${tagClass}" title="Resume (${(ext || 'doc').toUpperCase()}): ${esc(cleanP)} (Click to preview, right-click to copy)" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'resume');" oncontextmenu="event.stopPropagation(); event.preventDefault(); copyDocPathForApp(${a.id}, 'resume', this);">${icon} ${esc(fn)}</span>`);
-        }
-      } else {
-        tags.push(`<span class="tag na-tag" title="No CV/Resume uploaded. Click to upload." onclick="event.stopPropagation(); openPanel(${a.id});">CV: N/A</span>`);
+        tags.push(`<span class="tag resume-tag" title="resume: Click to open in Google Drive" onclick="event.stopPropagation(); openDoc('${esc(cleanP)}');">resume</span>`);
       }
 
       if (a.cover_letter_path && a.cover_letter_path.trim() && a.cover_letter_path.trim().toUpperCase() !== 'NA') {
         const cleanP = cleanFilePath(a.cover_letter_path);
-        if (isGoogleDriveLink(cleanP)) {
-          tags.push(`<span class="tag cl-tag gdrive" title="Google Drive Cover Letter: Click to open in Google Drive" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'cover');"><svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="margin-right:3px"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg> Drive CL</span>`);
-        } else {
-          const fn = cleanP.split(/[\\/]/).pop() || cleanP;
-          tags.push(`<span class="tag cl-tag" title="Cover Letter: ${esc(cleanP)} (Click to preview, right-click to copy)" onclick="event.stopPropagation(); openDocPreviewForApp(${a.id}, 'cover');" oncontextmenu="event.stopPropagation(); event.preventDefault(); copyDocPathForApp(${a.id}, 'cover', this);">${ICON.fileWord || ICON.document} CL: ${esc(fn)}</span>`);
-        }
+        tags.push(`<span class="tag cl-tag" title="cover_letter: Click to open in Google Drive" onclick="event.stopPropagation(); openDoc('${esc(cleanP)}');">cover_letter</span>`);
       }
-
       const d = document.createElement('div');
       d.className = 'card';
       d.draggable = true;
@@ -808,7 +791,7 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
             <div class="doc-path-snippet" title="${esc(p)}">${esc(p)}</div>
           </div>
           <div class="doc-card-actions">
-            ${appId ? `<button type="button" class="btn sm" id="${prefix}_btn_prev" title="Preview document in viewer">${ICON.eye} Preview</button>` : ''}
+            ${appId ? `<button type="button" class="btn sm" id="${prefix}_btn_prev" title="Open document in Google Drive">${ICON.eye} Open</button>` : ''}
             <button type="button" class="btn sm" id="${prefix}_btn_gdrive_picker" title="Choose from your Google Drive files">☁️ Drive</button>
             <button type="button" class="btn sm" id="${prefix}_btn_rep" title="Upload local file">${ICON.upload}</button>
             <button type="button" class="btn sm icon-only" id="${prefix}_btn_cp" title="Copy file path">${ICON.copy}</button>
@@ -2233,24 +2216,20 @@ function cleanFilePath(raw) {
   return p;
 }
 
+window.openDoc = function(url) {
+  if (!url || url.trim().toUpperCase() === 'NA') {
+    toast('No document attached');
+    return;
+  }
+  const cleanP = cleanFilePath(url);
+  window.open(cleanP, '_blank');
+};
+
 window.openDocPreviewForApp = function(appId, type) {
   const app = (S.apps || []).find(x => x.id === Number(appId));
   if (!app) return;
   const rawPath = type === 'resume' ? app.resume_path : app.cover_letter_path;
-  const cleanP = cleanFilePath(rawPath);
-  if (!cleanP || cleanP.toUpperCase() === 'NA') {
-    toast('No ' + (type === 'resume' ? 'resume' : 'cover letter') + ' document attached');
-    return;
-  }
-  const fn = cleanP.split(/[\\/]/).pop() || cleanP;
-  openDocPreview({
-    path: cleanP,
-    title: fn,
-    company: app.company,
-    docType: type === 'resume' ? 'Resume' : 'Cover Letter',
-    appId: app.id,
-    targetKey: type === 'resume' ? 'resume_path' : 'cover_letter_path'
-  });
+  openDoc(rawPath);
 };
 
 window.copyDocPathForApp = function(appId, type, el) {
@@ -2264,259 +2243,6 @@ window.copyDocPathForApp = function(appId, type, el) {
   }
   copyVal(cleanP, el);
 };
-let currentDocPreview = {
-  path: '',
-  file: null,
-  ext: '',
-  name: '',
-  zoom: 1
-};
-
-function fmtFileSize(bytes) {
-  if (!bytes || isNaN(bytes)) return '--';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function updateDocPillsAndIcons(ext) {
-  const extPill = $('#docExtPill');
-  const typeIcon = $('#docTypeIcon');
-  if (!extPill || !typeIcon) return;
-  if (ext === 'pdf') {
-    extPill.textContent = 'PDF';
-    extPill.className = 'doc-ext-pill pdf';
-    typeIcon.className = 'doc-badge-icon pdf';
-    typeIcon.innerHTML = ICON.filePdf || ICON.document;
-  } else if (ext === 'docx') {
-    extPill.textContent = 'DOCX';
-    extPill.className = 'doc-ext-pill docx';
-    typeIcon.className = 'doc-badge-icon docx';
-    typeIcon.innerHTML = ICON.fileWord || ICON.document;
-  } else if (ext === 'doc') {
-    extPill.textContent = 'DOC';
-    extPill.className = 'doc-ext-pill docx';
-    typeIcon.className = 'doc-badge-icon docx';
-    typeIcon.innerHTML = ICON.fileWord || ICON.document;
-  } else {
-    extPill.textContent = (ext || 'FILE').toUpperCase();
-    extPill.className = 'doc-ext-pill other';
-    typeIcon.className = 'doc-badge-icon other';
-    typeIcon.innerHTML = ICON.document;
-  }
-}
-
-function applyDocxZoom(factor) {
-  currentDocPreview.zoom = Math.max(0.4, Math.min(2.5, factor));
-  const viewport = $('#docDocxViewport');
-  const val = $('#docZoomVal');
-  if (viewport) viewport.style.transform = `scale(${currentDocPreview.zoom})`;
-  if (val) val.textContent = Math.round(currentDocPreview.zoom * 100) + '%';
-}
-
-async function renderDocxBuffer(arrayBuffer, container) {
-  container.innerHTML = '';
-  if (!window.docx || !window.docx.renderAsync) {
-    throw new Error('docx-preview library is loading or unavailable.');
-  }
-  await window.docx.renderAsync(arrayBuffer, container, null, {
-    className: 'docx-page',
-    inWrapper: true,
-    ignoreWidth: false,
-    ignoreHeight: false,
-    renderChanges: false,
-    breakPages: true
-  });
-}
-
-function closeDocPreview() {
-  const modal = $('#docPreviewModal');
-  if (modal) modal.style.display = 'none';
-  const pdfFrame = $('#docPdfFrame');
-  if (pdfFrame) pdfFrame.src = 'about:blank';
-  const docxCanvas = $('#docDocxCanvas');
-  if (docxCanvas) docxCanvas.innerHTML = '';
-}
-
-async function openDocPreview(options = {}) {
-  const modal = $('#docPreviewModal');
-  if (!modal) return;
-  modal.style.display = 'flex';
-
-  const modalTitle = $('#docModalTitle');
-  const extPill = $('#docExtPill');
-  const sizePill = $('#docSizePill');
-  const pathText = $('#docPathText');
-  const typeIcon = $('#docTypeIcon');
-  const zoomControls = $('#docZoomControls');
-  const loadingView = $('#docLoadingState');
-  const errorView = $('#docErrorState');
-  const pdfContainer = $('#docPdfContainer');
-  const docxContainer = $('#docDocxContainer');
-  const textContainer = $('#docTextContainer');
-  const pdfFrame = $('#docPdfFrame');
-  const docxCanvas = $('#docDocxCanvas');
-  const textPre = $('#docTextPre');
-  const errorTitle = $('#docErrorTitle');
-  const errorMessage = $('#docErrorMessage');
-
-  // Reset display
-  loadingView.style.display = 'none';
-  errorView.style.display = 'none';
-  pdfContainer.style.display = 'none';
-  docxContainer.style.display = 'none';
-  textContainer.style.display = 'none';
-  zoomControls.style.display = 'none';
-  pdfFrame.src = 'about:blank';
-  docxCanvas.innerHTML = '';
-  textPre.textContent = '';
-  applyDocxZoom(1);
-
-  if (options.showPicker) {
-    modalTitle.textContent = 'Preview Document';
-    extPill.textContent = 'FILE';
-    extPill.className = 'doc-ext-pill other';
-    sizePill.textContent = '--';
-    pathText.textContent = 'Drag and drop or browse a document';
-    typeIcon.className = 'doc-badge-icon other';
-    typeIcon.innerHTML = ICON.document;
-    errorTitle.textContent = 'Select Document to Preview';
-    errorMessage.textContent = 'Drop any PDF (.pdf) or Word (.docx) file below, or click browse.';
-    errorView.style.display = 'flex';
-    return;
-  }
-
-  // Handle local File object (from drag-drop or file input)
-  if (options.file) {
-    const file = options.file;
-    const ext = (file.name.split('.').pop() || '').toLowerCase();
-    currentDocPreview = { path: options.path || file.name, file, ext, name: file.name, zoom: 1, appId: options.appId, targetKey: options.targetKey };
-    modalTitle.textContent = file.name;
-    pathText.textContent = options.path || file.name;
-    sizePill.textContent = fmtFileSize(file.size);
-    updateDocPillsAndIcons(ext);
-
-    loadingView.style.display = 'flex';
-    try {
-      if (ext === 'pdf') {
-        const blobUrl = URL.createObjectURL(file);
-        pdfFrame.src = blobUrl + '#toolbar=1&navpanes=1';
-        loadingView.style.display = 'none';
-        pdfContainer.style.display = 'block';
-      } else if (ext === 'docx') {
-        const arrayBuf = await file.arrayBuffer();
-        await renderDocxBuffer(arrayBuf, docxCanvas);
-        loadingView.style.display = 'none';
-        docxContainer.style.display = 'flex';
-        zoomControls.style.display = 'flex';
-      } else if (['txt', 'md', 'json', 'log', 'csv'].includes(ext)) {
-        const text = await file.text();
-        textPre.textContent = text;
-        loadingView.style.display = 'none';
-        textContainer.style.display = 'block';
-      } else {
-        throw new Error(`Unsupported in-browser format (.${ext}). Use Open in App or Download.`);
-      }
-    } catch (err) {
-      loadingView.style.display = 'none';
-      errorTitle.textContent = 'Preview Error';
-      errorMessage.textContent = String(err.message || err);
-      errorView.style.display = 'flex';
-    }
-    return;
-  }
-
-  // Handle path
-  let p = cleanFilePath(options.path);
-  if (!p) {
-    openDocPreview({ showPicker: true });
-    return;
-  }
-
-  // Phase 3: Direct Google Drive Open in Google Drive Tab
-  if (isGoogleDriveLink(p)) {
-    window.open(p, '_blank');
-    return;
-  }
-  if (false && isGoogleDriveLink(p)) {
-    const fileId = extractGoogleDriveFileId(p);
-    currentDocPreview = { path: p, file: null, ext: 'gdoc', name: options.title || 'Google Drive Document', zoom: 1, appId: options.appId, targetKey: options.targetKey, isGoogleDrive: true, fileId };
-    modalTitle.textContent = options.title || 'Google Drive Document';
-    pathText.textContent = p;
-    extPill.textContent = 'G-DRIVE';
-    extPill.className = 'doc-ext-pill gdrive';
-    sizePill.textContent = 'Cloud';
-    typeIcon.className = 'doc-badge-icon gdrive';
-    typeIcon.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>';
-
-    loadingView.style.display = 'none';
-    pdfFrame.src = `https://drive.google.com/file/d/${fileId}/preview`;
-    pdfContainer.style.display = 'block';
-    return;
-  }
-
-  const rawName = p.split(/[\\/]/).pop() || p;
-  const ext = (rawName.split('.').pop() || '').toLowerCase();
-  currentDocPreview = { path: p, file: null, ext, name: rawName, zoom: 1, appId: options.appId, targetKey: options.targetKey };
-
-  modalTitle.textContent = options.title || rawName;
-  pathText.textContent = p;
-  updateDocPillsAndIcons(ext);
-
-  loadingView.style.display = 'flex';
-
-  try {
-    const info = await api('POST', '/file-info', { path: p });
-    if (!info || !info.exists) {
-      loadingView.style.display = 'none';
-      errorTitle.textContent = 'File Not Found on Disk';
-      errorMessage.textContent = `Could not locate "${p}". Make sure the path is correct, or drop your document here.`;
-      errorView.style.display = 'flex';
-      return;
-    }
-
-    sizePill.textContent = fmtFileSize(info.size);
-    modalTitle.textContent = info.name;
-    const finalExt = (info.ext || ext).replace(/^\./, '').toLowerCase();
-    currentDocPreview.ext = finalExt;
-    updateDocPillsAndIcons(finalExt);
-
-    if (finalExt === 'pdf') {
-      pdfFrame.src = `/api/file-content?path=${encodeURIComponent(p)}#toolbar=1&navpanes=1`;
-      loadingView.style.display = 'none';
-      pdfContainer.style.display = 'block';
-    } else if (finalExt === 'docx') {
-      const res = await fetch(`/api/file-content?path=${encodeURIComponent(p)}`);
-      if (!res.ok) throw new Error(`Failed to fetch file (HTTP ${res.status})`);
-      const arrayBuf = await res.arrayBuffer();
-      await renderDocxBuffer(arrayBuf, docxCanvas);
-      loadingView.style.display = 'none';
-      docxContainer.style.display = 'flex';
-      zoomControls.style.display = 'flex';
-    } else if (finalExt === 'doc') {
-      loadingView.style.display = 'none';
-      errorTitle.textContent = 'Legacy Word Document (.doc)';
-      errorMessage.textContent = 'Word 97-2003 binary (.doc) files are not natively rendered in browsers. Click "Open in App" above to launch Word directly, or convert to .docx for interactive in-app viewing!';
-      errorView.style.display = 'flex';
-    } else if (['txt', 'md', 'json', 'log', 'csv'].includes(finalExt)) {
-      const res = await fetch(`/api/file-content?path=${encodeURIComponent(p)}`);
-      const text = await res.text();
-      textPre.textContent = text;
-      loadingView.style.display = 'none';
-      textContainer.style.display = 'block';
-    } else {
-      loadingView.style.display = 'none';
-      errorTitle.textContent = 'Format Not Supported In-Browser';
-      errorMessage.textContent = `File extension .${finalExt} cannot be previewed in-browser. Click "Open in App" or "Folder" to open.`;
-      errorView.style.display = 'flex';
-    }
-  } catch (err) {
-    loadingView.style.display = 'none';
-    errorTitle.textContent = 'Error Loading Document';
-    errorMessage.textContent = String(err.message || err);
-    errorView.style.display = 'flex';
-  }
-}
 
 async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn) {
   if (!file) return;
@@ -2526,20 +2252,14 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
     triggerBtn.innerHTML = '<span class="spinner-sm"></span> Uploading...';
   }
   toast(`Uploading ${file.name}...`);
-
   try {
     const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', docType);
     if (appId) formData.append('appId', appId);
-
-    const resp = await fetch('/api/upload-document', {
-      method: 'POST',
-      body: formData
-    });
+    const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
     const res = await resp.json();
-
     if (res && res.ok) {
       const savedPath = res.fullPath || res.path;
       if (targetInputEl) {
@@ -2558,176 +2278,20 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
           render();
         }
       }
-
-      if (triggerBtn) {
-        triggerBtn.disabled = false;
-        triggerBtn.classList.remove('primary');
-        triggerBtn.classList.add('btn-success');
-        triggerBtn.innerHTML = '<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none" style="vertical-align:middle;margin-right:3px"><polyline points="20 6 9 17 4 12"/></svg> Upload Completed';
-        setTimeout(() => {
-          if (triggerBtn) {
-            triggerBtn.classList.remove('btn-success');
-            triggerBtn.classList.add('primary');
-            triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
-          }
-        }, 5000);
-      }
-
-      const container = (targetInputEl || panelInput)?.closest('.doc-ref-group, .doc-input-row, div');
-      if (container) {
-        let succMsg = container.querySelector('.doc-upload-success');
-        if (!succMsg) {
-          succMsg = document.createElement('div');
-          succMsg.className = 'doc-upload-success';
-          container.appendChild(succMsg);
-        }
-        succMsg.innerHTML = `<svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="20 6 9 17 4 12"/></svg> Upload completed: <strong>${esc(file.name)}</strong>`;
-      }
-
-      toast(`Upload completed: ${file.name}`);
+      toast(`Attached: ${file.name}`);
     } else {
-      if (triggerBtn) {
-        triggerBtn.disabled = false;
-        triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
-      }
       toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
     }
   } catch (err) {
+    toast('Upload failed: ' + err.message, true);
+  } finally {
     if (triggerBtn) {
       triggerBtn.disabled = false;
-      triggerBtn.innerHTML = originalBtnHtml || `${ICON.upload} Upload`;
+      triggerBtn.innerHTML = originalBtnHtml || 'Upload';
     }
-    toast('Upload failed: ' + err.message, true);
   }
 }
 
-// Global Document Previewer Toolbar Events
-document.addEventListener('DOMContentLoaded', () => {
-  const modal = $('#docPreviewModal');
-  const closeBtn = $('#docCloseBtn');
-  if (closeBtn) closeBtn.onclick = closeDocPreview;
-  if (modal) {
-    modal.onclick = e => { if (e.target === modal) closeDocPreview(); };
-  }
-
-  // Keyboard shortcut Esc
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
-      closeDocPreview();
-    }
-  });
-
-  // Copy Path
-  const cpBtn = $('#docCopyPathBtn');
-  if (cpBtn) {
-    cpBtn.onclick = () => {
-      const p = currentDocPreview.path || currentDocPreview.name;
-      if (p) copyVal(p, cpBtn);
-    };
-  }
-
-  // Open in default OS desktop app
-  const openAppBtn = $('#docOpenSystemBtn');
-  if (openAppBtn) {
-    openAppBtn.onclick = async () => {
-      if (!currentDocPreview.path) {
-        toast('No local file path available');
-        return;
-      }
-      const res = await api('POST', '/open-file', { path: currentDocPreview.path });
-      if (res && res.ok) toast('Opened in system desktop app');
-      else toast('Could not launch system app', true);
-    };
-  }
-
-  // Reveal in Windows Explorer
-  const revealBtn = $('#docRevealFolderBtn');
-  if (revealBtn) {
-    revealBtn.onclick = async () => {
-      if (!currentDocPreview.path) {
-        toast('No local file path available');
-        return;
-      }
-      const res = await api('POST', '/reveal-file', { path: currentDocPreview.path });
-      if (res && res.ok) toast('Highlighted in File Explorer');
-      else toast('Could not open folder', true);
-    };
-  }
-
-  // Download
-  const dlBtn = $('#docDownloadBtn');
-  if (dlBtn) {
-    dlBtn.onclick = () => {
-      if (currentDocPreview.file) {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(currentDocPreview.file);
-        a.download = currentDocPreview.name || 'document';
-        a.click();
-        return;
-      }
-      if (currentDocPreview.path) {
-        const a = document.createElement('a');
-        a.href = `/api/file-content?path=${encodeURIComponent(currentDocPreview.path)}`;
-        a.download = currentDocPreview.name || 'document';
-        a.click();
-      }
-    };
-  }
-
-  // Fullscreen toggle
-  const expandBtn = $('#docExpandBtn');
-  const container = $('#docModalContainer');
-  if (expandBtn && container) {
-    expandBtn.onclick = () => {
-      const isFull = container.classList.toggle('fullscreen');
-      expandBtn.innerHTML = isFull ? ICON.minimize : ICON.maximize;
-    };
-  }
-
-  // Word Zoom Controls
-  const zOut = $('#docZoomOut');
-  const zIn = $('#docZoomIn');
-  const zReset = $('#docZoomReset');
-  if (zOut) zOut.onclick = () => applyDocxZoom(currentDocPreview.zoom - 0.15);
-  if (zIn) zIn.onclick = () => applyDocxZoom(currentDocPreview.zoom + 0.15);
-  if (zReset) zReset.onclick = () => applyDocxZoom(1.0);
-
-  // Modal Dropzone & File Browse
-  const dropzone = $('#docModalDropzone');
-  const fileInput = $('#docModalFileInput');
-  const browseBtn = $('#docModalBrowseBtn');
-
-  if (browseBtn && fileInput) browseBtn.onclick = () => fileInput.click();
-  if (fileInput) {
-    fileInput.onchange = () => {
-      const f = fileInput.files?.[0];
-      if (f) {
-        if (currentDocPreview.appId && currentDocPreview.targetKey) {
-          handleDocumentUpload(f, currentDocPreview.targetKey, currentDocPreview.appId);
-        } else {
-          openDocPreview({ file: f });
-        }
-      }
-      fileInput.value = '';
-    };
-  }
-  if (dropzone) {
-    dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add('dragover'); };
-    dropzone.ondragleave = () => dropzone.classList.remove('dragover');
-    dropzone.ondrop = e => {
-      e.preventDefault();
-      dropzone.classList.remove('dragover');
-      const f = e.dataTransfer?.files?.[0];
-      if (f) {
-        if (currentDocPreview.appId && currentDocPreview.targetKey) {
-          handleDocumentUpload(f, currentDocPreview.targetKey, currentDocPreview.appId);
-        } else {
-          openDocPreview({ file: f });
-        }
-      }
-    };
-  }
-});
 // Sync streak HUD in index.html
 document.addEventListener('DOMContentLoaded', () => {
   fetch('/api/gamification')
