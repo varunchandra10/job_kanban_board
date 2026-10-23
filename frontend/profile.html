@@ -187,22 +187,22 @@
       </div>
     </section>
 
-    <!-- Right Card: 2-Month Activity Matrix with Month & Year Change Controls -->
+    <!-- Right Card: Single Month Activity Matrix (Job Applications & Daily Learnings separated) -->
     <section class="profile-card-panel profile-momentum-card">
       <div class="profile-card-header">
         <div>
           <div class="profile-card-title">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="var(--applied-clr)" stroke-width="2" fill="none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span>Activity &amp; Momentum (2 Months)</span>
+            <span>Activity &amp; Momentum</span>
           </div>
           <div class="momentum-subtitle">
-            <span id="profPeriodContribs">0</span> activities in <strong id="profPeriodLabel">Sep &ndash; Oct 2026</strong>
+            <span id="profPeriodContribs">0</span> activities in <strong id="profPeriodLabel">October 2026</strong>
           </div>
         </div>
 
         <!-- Month & Year Controls -->
         <div class="momentum-controls">
-          <button type="button" class="momentum-btn" onclick="stepTwoMonths(-1)" title="Previous 2 Months">
+          <button type="button" class="momentum-btn" onclick="stepMonth(-1)" title="Previous Month">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           
@@ -228,23 +228,26 @@
             <option value="2027">2027</option>
           </select>
 
-          <button type="button" class="momentum-btn" onclick="stepTwoMonths(1)" title="Next 2 Months">
+          <button type="button" class="momentum-btn" onclick="stepMonth(1)" title="Next Month">
             <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
           
-          <button type="button" class="momentum-btn text-btn" onclick="resetToCurrentTwoMonths()" title="Jump to Current Month">
+          <button type="button" class="momentum-btn text-btn" onclick="resetToCurrentMonth()" title="Jump to Current Month">
             Today
           </button>
         </div>
       </div>
 
-      <!-- Dual Month Matrix Container: Month 1 on Left | Month 2 on Right -->
+      <!-- Separated Activity Containers: Job Applications on Left | Daily Learnings on Right -->
       <div class="momentum-dual-months">
-        <!-- Month 1 Block -->
-        <div class="momentum-month-block">
+        <!-- Job Applications Block -->
+        <div class="momentum-month-block momentum-apps-block">
           <div class="momentum-month-title">
-            <span id="m1Name">September 2026</span>
-            <span class="count-tag zero-activity" id="m1Count">0 activities</span>
+            <span class="block-heading">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <span>Job Applications</span>
+            </span>
+            <span class="count-tag zero-activity" id="appMonthCount">0 applications</span>
           </div>
           <div class="momentum-month-grid-wrap">
             <div class="momentum-days-legend">
@@ -252,17 +255,20 @@
               <span class="d-wed">Wed</span>
               <span class="d-fri">Fri</span>
             </div>
-            <div class="momentum-weeks-row" id="m1Grid"></div>
+            <div class="momentum-weeks-row" id="appMonthGrid"></div>
           </div>
         </div>
 
         <div class="momentum-month-divider"></div>
 
-        <!-- Month 2 Block -->
-        <div class="momentum-month-block">
+        <!-- Daily Learnings Block -->
+        <div class="momentum-month-block momentum-learnings-block">
           <div class="momentum-month-title">
-            <span id="m2Name">October 2026</span>
-            <span class="count-tag zero-activity" id="m2Count">0 activities</span>
+            <span class="block-heading">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              <span>Daily Learnings</span>
+            </span>
+            <span class="count-tag zero-activity" id="learnMonthCount">0 learnings</span>
           </div>
           <div class="momentum-month-grid-wrap">
             <div class="momentum-days-legend">
@@ -270,7 +276,7 @@
               <span class="d-wed">Wed</span>
               <span class="d-fri">Fri</span>
             </div>
-            <div class="momentum-weeks-row" id="m2Grid"></div>
+            <div class="momentum-weeks-row" id="learnMonthGrid"></div>
           </div>
         </div>
       </div>
@@ -283,13 +289,21 @@
         </div>
 
         <div class="momentum-legend">
-          <span>Less</span>
+          <div class="legend-type-item legend-app">
+            <span class="legend-dot" style="background:#2563eb;"></span>
+            <span>Apps</span>
+          </div>
+          <div class="legend-type-item legend-learn">
+            <span class="legend-dot" style="background:#10b981;"></span>
+            <span>Learnings</span>
+          </div>
+          <span class="legend-scale-label">Less</span>
           <span class="momentum-day-cell lvl-0"></span>
           <span class="momentum-day-cell lvl-1"></span>
           <span class="momentum-day-cell lvl-2"></span>
           <span class="momentum-day-cell lvl-3"></span>
           <span class="momentum-day-cell lvl-4"></span>
-          <span>More</span>
+          <span class="legend-scale-label">More</span>
         </div>
       </div>
     </section>
@@ -559,14 +573,14 @@ function renderProfileHero() {
   }
 }
 
-/* 2. 2-Month Activity & Momentum Matrix with Month/Year Switcher */
+/* 2. Single-Month Activity & Momentum Matrix (Separate Job Applications & Daily Learnings) */
 let momentumEndMonth = new Date().getMonth(); // 0-11
 let momentumYear = new Date().getFullYear();
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-window.stepTwoMonths = function(step) {
+window.stepMonth = function(step) {
   momentumEndMonth += step;
   while (momentumEndMonth < 0) {
     momentumEndMonth += 12;
@@ -579,6 +593,7 @@ window.stepTwoMonths = function(step) {
   syncMomentumControls();
   renderProfileHeatmap();
 };
+window.stepTwoMonths = window.stepMonth; // backwards compat
 
 window.onMomentumDateChange = function() {
   const mSel = document.getElementById('momentumMonthSelect');
@@ -588,13 +603,14 @@ window.onMomentumDateChange = function() {
   renderProfileHeatmap();
 };
 
-window.resetToCurrentTwoMonths = function() {
+window.resetToCurrentMonth = function() {
   const now = new Date();
   momentumEndMonth = now.getMonth();
   momentumYear = now.getFullYear();
   syncMomentumControls();
   renderProfileHeatmap();
 };
+window.resetToCurrentTwoMonths = window.resetToCurrentMonth; // backwards compat
 
 function syncMomentumControls() {
   const mSel = document.getElementById('momentumMonthSelect');
@@ -663,7 +679,7 @@ function showHeatmapTooltip(e, data) {
   const tt = ensureHeatmapTooltip();
   if (!tt) return;
 
-  const { dateLong, isToday, count, apps, learnings } = data;
+  const { type, dateLong, isToday, count } = data;
 
   let contentHtml = `
     <div class="heatmap-tt-header">
@@ -672,26 +688,49 @@ function showHeatmapTooltip(e, data) {
     </div>
   `;
 
-  if (count > 0) {
-    const actText = count === 1 ? '1 activity' : `${count} activities`;
-    contentHtml += `
-      <div class="heatmap-tt-body">
-        <span class="heatmap-tt-count">${actText}</span>
-        <div class="heatmap-tt-pills">
-          ${apps > 0 ? `<span class="heatmap-tt-pill app-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>${apps} ${apps === 1 ? 'app' : 'apps'}</span>` : ''}
-          ${learnings > 0 ? `<span class="heatmap-tt-pill learn-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${learnings} ${learnings === 1 ? 'learning' : 'learnings'}</span>` : ''}
-          ${apps > 0 && learnings > 0 ? '<span class="heatmap-tt-pill" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3)">🔥 Streak +1</span>' : ''}
-          ${learnings > 0 && apps === 0 ? '<span class="heatmap-tt-pill" style="background:rgba(14,165,233,0.15);color:#0284c7;border:1px solid rgba(14,165,233,0.3)">❄️ Streak Frozen</span>' : ''}
-          ${apps > 0 && learnings === 0 ? '<span class="heatmap-tt-pill" style="background:rgba(239,68,68,0.15);color:#dc2626;border:1px solid rgba(239,68,68,0.3)">⚠️ App only (Breaks Streak)</span>' : ''}
+  if (type === 'app') {
+    if (count > 0) {
+      const actText = count === 1 ? '1 Job Application' : `${count} Job Applications`;
+      contentHtml += `
+        <div class="heatmap-tt-body">
+          <span class="heatmap-tt-count">${actText}</span>
+          <div class="heatmap-tt-pills">
+            <span class="heatmap-tt-pill app-pill">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              ${count} ${count === 1 ? 'app' : 'apps'} submitted
+            </span>
+          </div>
         </div>
-      </div>
-    `;
-  } else {
-    contentHtml += `
-      <div class="heatmap-tt-body">
-        <span class="heatmap-tt-empty">No activity on this date</span>
-      </div>
-    `;
+      `;
+    } else {
+      contentHtml += `
+        <div class="heatmap-tt-body">
+          <span class="heatmap-tt-empty">No job applications on this date</span>
+        </div>
+      `;
+    }
+  } else if (type === 'learn') {
+    if (count > 0) {
+      const actText = count === 1 ? '1 Daily Learning' : `${count} Daily Learnings`;
+      contentHtml += `
+        <div class="heatmap-tt-body">
+          <span class="heatmap-tt-count">${actText}</span>
+          <div class="heatmap-tt-pills">
+            <span class="heatmap-tt-pill learn-pill">
+              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              ${count} ${count === 1 ? 'topic' : 'topics'} logged
+            </span>
+            <span class="heatmap-tt-pill" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3)">🔥 Streak Active</span>
+          </div>
+        </div>
+      `;
+    } else {
+      contentHtml += `
+        <div class="heatmap-tt-body">
+          <span class="heatmap-tt-empty">No learnings logged on this date</span>
+        </div>
+      `;
+    }
   }
 
   tt.innerHTML = contentHtml;
@@ -739,23 +778,21 @@ window.addEventListener('scroll', hideHeatmapTooltip, { passive: true });
 
 function renderProfileHeatmap() {
   syncMomentumControls();
-  const m1Grid = document.getElementById('m1Grid');
-  const m2Grid = document.getElementById('m2Grid');
-  if (!m1Grid || !m2Grid) return;
-  m1Grid.innerHTML = '';
-  m2Grid.innerHTML = '';
+  const appGrid = document.getElementById('appMonthGrid');
+  const learnGrid = document.getElementById('learnMonthGrid');
+  if (!appGrid || !learnGrid) return;
+  appGrid.innerHTML = '';
+  learnGrid.innerHTML = '';
 
   // Aggregate daily counts across Apps & Learnings
-  const activityCounts = {};
-  const activityBreakdown = {};
+  const appCounts = {};
+  const learnCounts = {};
 
   appsList.forEach(a => {
     const raw = a.date_applied || a.created_at || '';
     const d = raw.slice(0, 10);
     if (d && d.length === 10) {
-      activityCounts[d] = (activityCounts[d] || 0) + 1;
-      if (!activityBreakdown[d]) activityBreakdown[d] = { apps: 0, learnings: 0 };
-      activityBreakdown[d].apps++;
+      appCounts[d] = (appCounts[d] || 0) + 1;
     }
   });
 
@@ -763,32 +800,19 @@ function renderProfileHeatmap() {
     const raw = l.date_logged || l.created_at || '';
     const d = raw.slice(0, 10);
     if (d && d.length === 10) {
-      activityCounts[d] = (activityCounts[d] || 0) + 1;
-      if (!activityBreakdown[d]) activityBreakdown[d] = { apps: 0, learnings: 0 };
-      activityBreakdown[d].learnings++;
+      learnCounts[d] = (learnCounts[d] || 0) + 1;
     }
   });
 
-  // Month 2 is the selected end month
-  const m2 = momentumEndMonth;
-  const y2 = momentumYear;
-  // Month 1 is the preceding month
-  const m1 = m2 === 0 ? 11 : m2 - 1;
-  const y1 = m2 === 0 ? y2 - 1 : y2;
+  // Selected single month & year
+  const selMonth = momentumEndMonth;
+  const selYear = momentumYear;
 
-  // Update Period Header Labels
+  // Update Period Header Label: "October 2026"
   const periodLabel = document.getElementById('profPeriodLabel');
   if (periodLabel) {
-    periodLabel.textContent = (y1 === y2)
-      ? `${MONTH_NAMES[m1]} – ${MONTH_NAMES[m2]} ${y2}`
-      : `${MONTH_NAMES[m1]} ${y1} – ${MONTH_NAMES[m2]} ${y2}`;
+    periodLabel.textContent = `${MONTH_FULL[selMonth]} ${selYear}`;
   }
-
-  const m1Name = document.getElementById('m1Name');
-  if (m1Name) m1Name.textContent = `${MONTH_FULL[m1]} ${y1}`;
-
-  const m2Name = document.getElementById('m2Name');
-  if (m2Name) m2Name.textContent = `${MONTH_FULL[m2]} ${y2}`;
 
   const toYMD = d => {
     const yr = d.getFullYear();
@@ -800,14 +824,14 @@ function renderProfileHeatmap() {
   const todayObj = new Date();
   const todayYmd = toYMD(todayObj);
 
-  let totalPeriodContribs = 0;
+  let totalMonthApps = 0;
+  let totalMonthLearnings = 0;
   let activeDays = 0;
-  let m1Contribs = 0;
-  let m2Contribs = 0;
 
-  // Render Month 1
-  const m1Weeks = buildMonthWeeks(y1, m1);
-  m1Weeks.forEach(week => {
+  const monthWeeks = buildMonthWeeks(selYear, selMonth);
+
+  // Render Job Applications Matrix (Left Column)
+  monthWeeks.forEach(week => {
     const col = document.createElement('div');
     col.className = 'momentum-col-week';
 
@@ -817,14 +841,11 @@ function renderProfileHeatmap() {
         cell.className = 'momentum-day-cell empty-pad';
       } else {
         const ymd = toYMD(cellDate);
-        const count = activityCounts[ymd] || 0;
-        const b = activityBreakdown[ymd] || { apps: 0, learnings: 0 };
+        const count = appCounts[ymd] || 0;
         const isToday = (ymd === todayYmd);
 
         if (count > 0) {
-          totalPeriodContribs += count;
-          m1Contribs += count;
-          activeDays++;
+          totalMonthApps += count;
         }
 
         let lvl = 0;
@@ -843,14 +864,13 @@ function renderProfileHeatmap() {
           year: 'numeric'
         });
 
-        cell.setAttribute('aria-label', `${dateLong}: ${count} activities`);
+        cell.setAttribute('aria-label', `${dateLong}: ${count} applications`);
 
         const tooltipData = {
+          type: 'app',
           dateLong,
           isToday,
-          count,
-          apps: b.apps,
-          learnings: b.learnings
+          count
         };
 
         cell.addEventListener('mouseenter', (e) => showHeatmapTooltip(e, tooltipData));
@@ -859,12 +879,11 @@ function renderProfileHeatmap() {
       }
       col.appendChild(cell);
     });
-    m1Grid.appendChild(col);
+    appGrid.appendChild(col);
   });
 
-  // Render Month 2
-  const m2Weeks = buildMonthWeeks(y2, m2);
-  m2Weeks.forEach(week => {
+  // Render Daily Learnings Matrix (Right Column)
+  monthWeeks.forEach(week => {
     const col = document.createElement('div');
     col.className = 'momentum-col-week';
 
@@ -874,13 +893,15 @@ function renderProfileHeatmap() {
         cell.className = 'momentum-day-cell empty-pad';
       } else {
         const ymd = toYMD(cellDate);
-        const count = activityCounts[ymd] || 0;
-        const b = activityBreakdown[ymd] || { apps: 0, learnings: 0 };
+        const count = learnCounts[ymd] || 0;
         const isToday = (ymd === todayYmd);
 
         if (count > 0) {
-          totalPeriodContribs += count;
-          m2Contribs += count;
+          totalMonthLearnings += count;
+        }
+
+        // Active day if cell has either app or learning on this date
+        if ((appCounts[ymd] || 0) > 0 || count > 0) {
           activeDays++;
         }
 
@@ -900,14 +921,13 @@ function renderProfileHeatmap() {
           year: 'numeric'
         });
 
-        cell.setAttribute('aria-label', `${dateLong}: ${count} activities`);
+        cell.setAttribute('aria-label', `${dateLong}: ${count} learnings`);
 
         const tooltipData = {
+          type: 'learn',
           dateLong,
           isToday,
-          count,
-          apps: b.apps,
-          learnings: b.learnings
+          count
         };
 
         cell.addEventListener('mouseenter', (e) => showHeatmapTooltip(e, tooltipData));
@@ -916,22 +936,23 @@ function renderProfileHeatmap() {
       }
       col.appendChild(cell);
     });
-    m2Grid.appendChild(col);
+    learnGrid.appendChild(col);
   });
 
   // Update Activity Counters
-  const m1Count = document.getElementById('m1Count');
-  if (m1Count) {
-    m1Count.textContent = m1Contribs === 1 ? '1 activity' : `${m1Contribs} activities`;
-    m1Count.className = m1Contribs > 0 ? 'count-tag has-activity' : 'count-tag zero-activity';
+  const appCountEl = document.getElementById('appMonthCount');
+  if (appCountEl) {
+    appCountEl.textContent = totalMonthApps === 1 ? '1 application' : `${totalMonthApps} applications`;
+    appCountEl.className = totalMonthApps > 0 ? 'count-tag has-app-activity' : 'count-tag zero-activity';
   }
 
-  const m2Count = document.getElementById('m2Count');
-  if (m2Count) {
-    m2Count.textContent = m2Contribs === 1 ? '1 activity' : `${m2Contribs} activities`;
-    m2Count.className = m2Contribs > 0 ? 'count-tag has-activity' : 'count-tag zero-activity';
+  const learnCountEl = document.getElementById('learnMonthCount');
+  if (learnCountEl) {
+    learnCountEl.textContent = totalMonthLearnings === 1 ? '1 learning' : `${totalMonthLearnings} learnings`;
+    learnCountEl.className = totalMonthLearnings > 0 ? 'count-tag has-activity' : 'count-tag zero-activity';
   }
 
+  const totalPeriodContribs = totalMonthApps + totalMonthLearnings;
   const periodContribsEl = document.getElementById('profPeriodContribs');
   if (periodContribsEl) periodContribsEl.textContent = totalPeriodContribs;
 

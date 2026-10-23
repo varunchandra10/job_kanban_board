@@ -4771,38 +4771,122 @@ body.dark-mode .momentum-month-title span.count-tag.has-activity,
  flex-shrink: 0;
 }
 
-/* Day Cell Activity Levels (Light Mode) */
-.momentum-day-cell.lvl-0 { background: #ebedf0; border-color: rgba(27, 31, 36, 0.08); }
-.momentum-day-cell.lvl-1 { background: #86efac; border-color: #4ade80; }
-.momentum-day-cell.lvl-2 { background: #34d399; border-color: #10b981; }
-.momentum-day-cell.lvl-3 { background: #059669; border-color: #047857; }
-.momentum-day-cell.lvl-4 { background: #064e3b; border-color: #022c22; }
+/* Heading & Badge for Apps vs Learnings */
+.momentum-month-title .block-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.momentum-apps-block .block-heading svg {
+  color: #2563eb;
+}
+.momentum-learnings-block .block-heading svg {
+  color: #059669;
+}
+body.dark-mode .momentum-apps-block .block-heading svg,
+[data-theme="dark"] .momentum-apps-block .block-heading svg {
+  color: #60a5fa;
+}
+body.dark-mode .momentum-learnings-block .block-heading svg,
+[data-theme="dark"] .momentum-learnings-block .block-heading svg {
+  color: #34d399;
+}
 
-/* Day Cell Activity Levels (Dark Mode) */
+.momentum-month-title span.count-tag.has-app-activity {
+  color: #2563eb;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.24);
+}
+body.dark-mode .momentum-month-title span.count-tag.has-app-activity,
+[data-theme="dark"] .momentum-month-title span.count-tag.has-app-activity {
+  color: #60a5fa;
+  background: rgba(37, 99, 235, 0.2);
+  border-color: rgba(96, 165, 250, 0.35);
+}
+
+/* Job Applications Day Cell Levels (Light Mode: Blue scale) */
+.momentum-apps-block .momentum-day-cell.lvl-0 { background: #ebedf0; border-color: rgba(27, 31, 36, 0.08); }
+.momentum-apps-block .momentum-day-cell.lvl-1 { background: #bfdbfe; border-color: #93c5fd; }
+.momentum-apps-block .momentum-day-cell.lvl-2 { background: #60a5fa; border-color: #3b82f6; }
+.momentum-apps-block .momentum-day-cell.lvl-3 { background: #2563eb; border-color: #1d4ed8; }
+.momentum-apps-block .momentum-day-cell.lvl-4 { background: #1d4ed8; border-color: #1e3a8a; }
+
+/* Job Applications Day Cell Levels (Dark Mode: Blue scale) */
+body.dark-mode .momentum-apps-block .momentum-day-cell.lvl-0,
+[data-theme="dark"] .momentum-apps-block .momentum-day-cell.lvl-0 {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.06);
+}
+body.dark-mode .momentum-apps-block .momentum-day-cell.lvl-1,
+[data-theme="dark"] .momentum-apps-block .momentum-day-cell.lvl-1 {
+  background: #1e3a5f;
+  border-color: #1d4ed8;
+}
+body.dark-mode .momentum-apps-block .momentum-day-cell.lvl-2,
+[data-theme="dark"] .momentum-apps-block .momentum-day-cell.lvl-2 {
+  background: #2563eb;
+  border-color: #3b82f6;
+}
+body.dark-mode .momentum-apps-block .momentum-day-cell.lvl-3,
+[data-theme="dark"] .momentum-apps-block .momentum-day-cell.lvl-3 {
+  background: #3b82f6;
+  border-color: #60a5fa;
+}
+body.dark-mode .momentum-apps-block .momentum-day-cell.lvl-4,
+[data-theme="dark"] .momentum-apps-block .momentum-day-cell.lvl-4 {
+  background: #60a5fa;
+  border-color: #93c5fd;
+}
+
+/* Daily Learnings & Default Day Cell Activity Levels (Light Mode: Emerald scale) */
+.momentum-day-cell.lvl-0,
+.momentum-learnings-block .momentum-day-cell.lvl-0 { background: #ebedf0; border-color: rgba(27, 31, 36, 0.08); }
+.momentum-day-cell.lvl-1,
+.momentum-learnings-block .momentum-day-cell.lvl-1 { background: #86efac; border-color: #4ade80; }
+.momentum-day-cell.lvl-2,
+.momentum-learnings-block .momentum-day-cell.lvl-2 { background: #34d399; border-color: #10b981; }
+.momentum-day-cell.lvl-3,
+.momentum-learnings-block .momentum-day-cell.lvl-3 { background: #059669; border-color: #047857; }
+.momentum-day-cell.lvl-4,
+.momentum-learnings-block .momentum-day-cell.lvl-4 { background: #064e3b; border-color: #022c22; }
+
+/* Daily Learnings & Default Day Cell Activity Levels (Dark Mode: Emerald scale) */
 body.dark-mode .momentum-day-cell.lvl-0,
-[data-theme="dark"] .momentum-day-cell.lvl-0 {
- background: #1e293b;
- border-color: rgba(255, 255, 255, 0.06);
+[data-theme="dark"] .momentum-day-cell.lvl-0,
+body.dark-mode .momentum-learnings-block .momentum-day-cell.lvl-0,
+[data-theme="dark"] .momentum-learnings-block .momentum-day-cell.lvl-0 {
+  background: #1e293b;
+  border-color: rgba(255, 255, 255, 0.06);
 }
 body.dark-mode .momentum-day-cell.lvl-1,
-[data-theme="dark"] .momentum-day-cell.lvl-1 {
- background: #064e3b;
- border-color: #047857;
+[data-theme="dark"] .momentum-day-cell.lvl-1,
+body.dark-mode .momentum-learnings-block .momentum-day-cell.lvl-1,
+[data-theme="dark"] .momentum-learnings-block .momentum-day-cell.lvl-1 {
+  background: #064e3b;
+  border-color: #047857;
 }
 body.dark-mode .momentum-day-cell.lvl-2,
-[data-theme="dark"] .momentum-day-cell.lvl-2 {
- background: #059669;
- border-color: #10b981;
+[data-theme="dark"] .momentum-day-cell.lvl-2,
+body.dark-mode .momentum-learnings-block .momentum-day-cell.lvl-2,
+[data-theme="dark"] .momentum-learnings-block .momentum-day-cell.lvl-2 {
+  background: #059669;
+  border-color: #10b981;
 }
 body.dark-mode .momentum-day-cell.lvl-3,
-[data-theme="dark"] .momentum-day-cell.lvl-3 {
- background: #10b981;
- border-color: #34d399;
+[data-theme="dark"] .momentum-day-cell.lvl-3,
+body.dark-mode .momentum-learnings-block .momentum-day-cell.lvl-3,
+[data-theme="dark"] .momentum-learnings-block .momentum-day-cell.lvl-3 {
+  background: #10b981;
+  border-color: #34d399;
 }
 body.dark-mode .momentum-day-cell.lvl-4,
-[data-theme="dark"] .momentum-day-cell.lvl-4 {
- background: #34d399;
- border-color: #86efac;
+[data-theme="dark"] .momentum-day-cell.lvl-4,
+body.dark-mode .momentum-learnings-block .momentum-day-cell.lvl-4,
+[data-theme="dark"] .momentum-learnings-block .momentum-day-cell.lvl-4 {
+  background: #34d399;
+  border-color: #86efac;
 }
 
 .momentum-footer {
@@ -4827,23 +4911,47 @@ body.dark-mode .momentum-day-cell.lvl-4,
 }
 
 .momentum-legend {
- display: flex;
- align-items: center;
- gap: 5px;
- font-size: 11px;
- color: var(--tx3);
- user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--tx3);
+  user-select: none;
+  flex-wrap: wrap;
+}
+
+.legend-type-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 6px;
+  color: var(--tx2);
+}
+
+.legend-type-item .legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.legend-scale-label {
+  font-size: 10.5px;
+  color: var(--tx3);
+  margin: 0 2px;
 }
 
 .momentum-legend .momentum-day-cell {
- width: 14px;
- height: 14px;
- cursor: default;
+  width: 14px;
+  height: 14px;
+  cursor: default;
 }
 
 .momentum-legend .momentum-day-cell:hover {
- transform: none;
- box-shadow: none;
+  transform: none;
+  box-shadow: none;
 }
 
 /* Floating Heatmap Tooltip */
