@@ -498,23 +498,30 @@ body.dark-mode .sec-btn, [data-theme="dark"] .sec-btn {
   transform: scale(0.97);
 }
 .sec-btn.active {
-  background: var(--surface);
-  border-color: var(--border-focus);
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
-  font-weight: 600;
+  background: var(--text) !important;
+  border-color: var(--text) !important;
+  color: var(--bg) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  font-weight: 700 !important;
 }
 .sec-btn.active svg {
-  stroke: #ffffff;
+  stroke: var(--bg) !important;
 }
 .sec-btn.active .badge {
-  background: rgba(255, 255, 255, 0.22);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: var(--bg) !important;
 }
 body.dark-mode .sec-btn.active, [data-theme="dark"] .sec-btn.active {
-  background: var(--surface2);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  background: var(--text) !important;
+  border-color: var(--text) !important;
+  color: var(--bg) !important;
+}
+body.dark-mode .sec-btn.active svg, [data-theme="dark"] .sec-btn.active svg {
+  stroke: var(--bg) !important;
+}
+body.dark-mode .sec-btn.active .badge, [data-theme="dark"] .sec-btn.active .badge {
+  background: rgba(0, 0, 0, 0.25) !important;
+  color: var(--bg) !important;
 }
 .badge {
   background: var(--bg3);
@@ -1409,21 +1416,23 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
   display: flex !important;
   flex-direction: column !important;
   grid-template-columns: 1fr !important;
-  padding: 24px 32px !important;
+  padding: 20px 32px !important;
   max-width: 1480px;
   margin: 0 auto;
   width: 100%;
+  box-sizing: border-box;
 }
 .nordic-cal-box {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px 28px;
+  border-radius: var(--radius, 12px);
+  padding: 22px 26px;
   box-shadow: var(--shadow-soft);
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
+  box-sizing: border-box;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 .n-cal-head {
@@ -1432,7 +1441,7 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 .n-cal-title-wrap {
   display: flex;
@@ -1440,7 +1449,7 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
   gap: 3px;
 }
 .n-cal-title {
-  font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.4px;
@@ -1461,7 +1470,7 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
 .n-cal-controls {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 .n-cal-legend {
@@ -1476,7 +1485,7 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
 }
 .cal-nav .btn {
   font-size: 12px;
-  padding: 5px 11px;
+  padding: 5px 12px;
   font-weight: 600;
   border-radius: 6px;
   background: var(--surface-subtle);
@@ -1487,6 +1496,7 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
 }
 .cal-nav .btn:hover {
   background: var(--border);
+  color: var(--text);
 }
 .cal-nav .btn.icon-only {
   width: 28px;
@@ -1498,44 +1508,63 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
   font-size: 16px;
   line-height: 1;
 }
+
+/* 7 Strict Equal Columns */
 .n-cal-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+  width: 100% !important;
+  box-sizing: border-box;
 }
 .n-day-head {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   text-transform: uppercase;
   color: var(--text-light);
   text-align: center;
-  padding: 6px 0;
-  letter-spacing: 0.6px;
+  padding: 4px 0 8px;
+  letter-spacing: 0.8px;
+  border-bottom: 1.5px solid var(--border);
 }
 .n-cal-cell {
-  min-height: 108px;
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box;
+  overflow: hidden;
+  min-height: 116px;
   background: var(--surface-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 9px 10px;
+  border-radius: var(--radius-sm, 8px);
+  padding: 8px 9px;
   display: flex;
   flex-direction: column;
   gap: 6px;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
 }
 .n-cal-cell:hover {
   background: var(--surface);
   border-color: var(--bd2);
   box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 .n-cal-cell.is-today {
-  border: 1.5px solid var(--text);
-  background: var(--surface);
+  border: 2px solid var(--text) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 0 0 1px var(--text);
+}
+.n-cal-cell.other-month {
+  opacity: 0.35;
+  background: transparent;
 }
 .n-cell-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 2px;
 }
 .n-cell-num {
   font-size: 12px;
@@ -1545,23 +1574,35 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
 .n-cal-cell.is-today .n-cell-num {
   color: var(--text);
   font-weight: 800;
+  font-size: 13px;
 }
 .n-today-badge {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.4px;
-  color: var(--text);
-  background: var(--surface-subtle);
-  padding: 1px 6px;
-  border-radius: 4px;
-  border: 1px solid var(--border);
+  color: var(--bg);
+  background: var(--text);
+  padding: 1.5px 6.5px;
+  border-radius: 9999px;
+  line-height: 1.2;
 }
 .n-cal-pills-wrap {
   display: flex;
   flex-direction: column;
   gap: 4px;
   overflow-y: auto;
-  max-height: 115px;
+  overflow-x: hidden;
+  max-height: 105px;
+  width: 100%;
+  min-width: 0;
+  scrollbar-width: thin;
+}
+.n-cal-pills-wrap::-webkit-scrollbar {
+  width: 3px;
+}
+.n-cal-pills-wrap::-webkit-scrollbar-thumb {
+  background: var(--bd2);
+  border-radius: 4px;
 }
 .n-cal-pill {
   font-size: 11px;
@@ -1574,9 +1615,24 @@ body.dark-mode .pb h4, [data-theme="dark"] .pb h4 {
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  line-height: 1.35;
   transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
   user-select: none;
+}
+.n-cal-pill .n-cal-icon {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.n-cal-pill .n-cal-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 .n-cal-pill:hover {
   transform: translateY(-1px);

@@ -307,15 +307,15 @@ async function renderCalendar() {
     const appliedApps = S.apps.filter(a => a.date_applied === dateStr);
     const dayLearnings = activeLearnings.filter(l => (l.date_logged || '').slice(0, 10) === dateStr);
 
-    let pillsHtml = '';
+        let pillsHtml = '';
     appliedApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)} (${esc(a.role || '')})">💼 ${esc(a.company)} · ${esc(a.role || 'Applied')}</div>`;
+      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)}${a.role ? ' - ' + esc(a.role) : ''}"><span class="n-cal-icon">💼</span><span class="n-cal-text">${esc(a.company)}${a.role ? ' · ' + esc(a.role) : ''}</span></div>`;
     });
     dueApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}">⏰ ${esc(a.company)} Due</div>`;
+      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}"><span class="n-cal-icon">⏰</span><span class="n-cal-text">${esc(a.company)} Due</span></div>`;
     });
     dayLearnings.forEach(l => {
-      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}">⚡ ${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</div>`;
+      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}"><span class="n-cal-icon">⚡</span><span class="n-cal-text">${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</span></div>`;
     });
 
     cell.innerHTML = `
