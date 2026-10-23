@@ -54,8 +54,8 @@ app.use('/vendor', express.static(path.join(config.frontendDir, 'vendor'), {
   maxAge: '1d'
 }));
 
-app.use('/api/auth', authRoutes);
 app.use(authMiddleware);
+app.use('/api/auth', authRoutes);
 
 app.use('/api', applicationsRoutes);
 app.use('/api', documentsRoutes);

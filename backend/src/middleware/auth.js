@@ -1,22 +1,57 @@
 const config = require('../config');
-const { isValidToken } = require('../controllers/authController');
+const { verifyToken } = require('../services/jwtService');
 
 function authMiddleware(req, res, next) {
-  if (!config.appPin) return next();
+  // Public static assets and unauthenticated endpoints
+  const publicPaths = [
+    '/',
+    '/index.html',
+    '/profile.html',
+    '/learnings.html',
+    '/style.css',
+    '/app.js',
+    '/learnings.js',
+    '/logos.json',
+    '/health',
+    '/api/auth/login',
+    '/api/auth/status',
+    '/api/auth/google'
+  ];
 
-  const publicPaths = ['/', '/index.html', '/style.css', '/logos.json', '/health', '/api/auth/login', '/api/auth/status'];
+  // Try to parse user token if present on any request
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice(7).trim()
+    : (req.headers['x-auth-token'] || req.query.token);
+
+  if (token) {
+    const decoded = verifyToken(token);
+    if (decoded && decoded.id) {
+      req.user = decoded;
+    }
+  }
+
   if (publicPaths.includes(req.path) || req.path.startsWith('/vendor/')) {
     return next();
   }
 
-  const token = req.headers['authorization']?.replace(/^Bearer\s+/i, '')
-    || req.headers['x-app-pin']
-    || req.query.pin;
+  // If user successfully authenticated via JWT
+  if (req.user && req.user.id) {
+    return next();
+  }
 
-  if (isValidToken(token)) return next();
+  // If local access mode without PIN, allow as default_user
+  if (!config.appPin) {
+    req.user = {
+      id: 'default_user',
+      email: 'local@jobtracker.app',
+      name: 'Default User'
+    };
+    return next();
+  }
 
   return res.status(401).json({
-    error: 'PIN authorization required',
+    error: 'Authorization required',
     pinRequired: true
   });
 }
