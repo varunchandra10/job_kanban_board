@@ -126,7 +126,7 @@ exports.uploadDocument = async (req, res, next) => {
 
 exports.getFileInfo = async (req, res, next) => {
   try {
-    const targetPath = req.body.path || req.query.path;
+    const targetPath = (req.body && req.body.path) || (req.query && req.query.path); if (!targetPath) return res.status(400).json({ error: 'No path specified' });
     const info = await storageService.getFileInfo(targetPath);
     res.json(info);
   } catch (err) {
@@ -194,6 +194,39 @@ exports.revealFile = async (req, res, next) => {
     }
 
     res.json({ ok: 1 });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteDocument = async (req, res, next) => {
+  try {
+    const filePath = req.body.path || req.query.path;
+    const appId = req.body.appId ? parseInt(req.body.appId, 10) : null;
+    const type = req.body.type || (req.body.key === 'resume_path' ? 'resume' : 'cover_letter');
+
+    if (!filePath) {
+      return res.status(400).json({ ok: 0, error: 'No file path provided' });
+    }
+
+    let deleted = false;
+    try {
+      deleted = await storageService.deleteFile(filePath);
+    } catch (delErr) {
+      console.warn('[Storage] Error deleting file:', delErr.message);
+    }
+
+    if (appId) {
+      const isCover = type === 'cover' || type === 'cover_letter' || type === 'cover_letter_path';
+      const col = isCover ? 'cover_letter_path' : 'resume_path';
+      try {
+        db.prepare(`update applications set ${col}='' where id=?`).run(appId);
+      } catch (dbErr) {
+        console.warn('DB update warning on delete:', dbErr.message);
+      }
+    }
+
+    res.json({ ok: 1, deleted: !!deleted });
   } catch (err) {
     next(err);
   }

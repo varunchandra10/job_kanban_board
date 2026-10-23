@@ -1,3 +1,29 @@
+
+function showConfirmDialog({ title, text, icon, confirmText = 'Confirm', confirmCls = 'primary', cancelText = 'Cancel', onConfirm }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-modal-overlay';
+  overlay.style.zIndex = '99999';
+  overlay.innerHTML = `
+    <div class="confirm-modal-box">
+      ${icon ? `<div class="confirm-modal-icon ${confirmCls === 'danger' ? '' : 'info-icon'}">${icon}</div>` : ''}
+      <h3>${esc(title)}</h3>
+      <p>${esc(text)}</p>
+      <div class="confirm-modal-actions">
+        <button type="button" class="btn sm" id="dialogCancelBtn">${esc(cancelText)}</button>
+        <button type="button" class="btn sm ${confirmCls}" id="dialogConfirmBtn">${esc(confirmText)}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('#dialogCancelBtn').onclick = close;
+  overlay.onclick = e => { if (e.target === overlay) close(); };
+  overlay.querySelector('#dialogConfirmBtn').onclick = () => {
+    close();
+    if (onConfirm) onConfirm();
+  };
+}
+
 /* ----- Clean Inline SVG Icon Dictionary ----- */
 const ICON = {
   briefcase: `<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
@@ -812,21 +838,16 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
           </div>
           <div class="doc-card-actions">
             ${appId ? `
-              <button type="button" class="btn sm doc-btn-open" id="${prefix}_btn_prev" title="Open in Google Drive">
+              <button type="button" class="btn sm doc-btn-open" id="${prefix}_btn_prev" title="Open document in Google Drive">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                 <span>Open</span>
               </button>
             ` : ''}
-            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_gdrive_picker" title="Choose from your Google Drive files">
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
+            <button type="button" class="btn sm doc-btn-upload" id="${prefix}_btn_rep" title="Upload new ${label.toLowerCase()} to replace existing">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <span>Upload</span>
             </button>
-            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_rep" title="Upload local replacement file">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
-            </button>
-            <button type="button" class="btn sm doc-action-btn" id="${prefix}_btn_cp" title="Copy document path/link">
-              ${ICON.copy}
-            </button>
-            <button type="button" class="btn sm doc-action-btn doc-action-delete" id="${prefix}_btn_rem" title="Remove attachment">
+            <button type="button" class="btn sm doc-action-btn doc-action-delete" id="${prefix}_btn_rem" title="Delete ${label.toLowerCase()}">
               &times;
             </button>
           </div>
@@ -848,15 +869,11 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
                 <span class="doc-modern-label">${label}</span>
                 <span class="doc-empty-badge">Empty</span>
               </div>
-              <div class="doc-modern-sub">Drop file, or choose an option:</div>
+              <div class="doc-modern-sub">Drop file here, or click to upload</div>
             </div>
           </div>
           <div class="doc-modern-action" onclick="event.stopPropagation();">
-            <button type="button" class="btn sm doc-btn-drive-pick" id="${prefix}_btn_gdrive_pick_btn" title="Choose from your Google Drive files">
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
-              <span>From Drive</span>
-            </button>
-            <button type="button" class="btn sm doc-btn-upload-pick" id="${prefix}_btn_upload_pick_btn" title="Upload document from computer">
+            <button type="button" class="btn sm doc-btn-upload-pick" id="${prefix}_btn_upload_pick_btn" title="Upload ${label.toLowerCase()}">
               <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <span>Upload</span>
             </button>
@@ -876,7 +893,6 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
   const dropzone = $(`#${prefix}_dropzone`);
   const btnPrev = $(`#${prefix}_btn_prev`);
   const btnRep = $(`#${prefix}_btn_rep`);
-  const btnCp = $(`#${prefix}_btn_cp`);
   const btnRem = $(`#${prefix}_btn_rem`);
   const btnUploadPick = $(`#${prefix}_btn_upload_pick_btn`);
   const key = type === 'resume' ? 'resume_path' : 'cover_letter_path';
@@ -908,7 +924,7 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     }
   }
 
-  const onFileSelected = async (file) => {
+  const uploadFile = async (file) => {
     if (!file) return;
     const currentSlot = $(`#${prefix}_slot`);
     if (currentSlot) {
@@ -963,19 +979,21 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     }
   };
 
+  // Drag and drop or click on empty dropzone
   if (dropzone && fileInp) {
     dropzone.onclick = () => fileInp.click();
-    fileInp.onchange = () => { onFileSelected(fileInp.files?.[0]); fileInp.value = ''; };
+    fileInp.onchange = () => { uploadFile(fileInp.files?.[0]); fileInp.value = ''; };
     dropzone.ondragover = e => { e.preventDefault(); dropzone.classList.add('dragover'); };
     dropzone.ondragleave = () => dropzone.classList.remove('dragover');
     dropzone.ondrop = e => {
       e.preventDefault();
       dropzone.classList.remove('dragover');
       const f = e.dataTransfer?.files?.[0];
-      if (f) onFileSelected(f);
+      if (f) uploadFile(f);
     };
   }
 
+  // Upload button on empty slot
   if (btnUploadPick && fileInp) {
     btnUploadPick.onclick = (e) => {
       e.stopPropagation();
@@ -983,63 +1001,68 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     };
   }
 
+  // Upload button on already attached slot: ASK confirmation to replace
   if (btnRep && fileInp) {
-    btnRep.onclick = () => fileInp.click();
-    fileInp.onchange = () => { onFileSelected(fileInp.files?.[0]); fileInp.value = ''; };
+    btnRep.onclick = () => {
+      showConfirmDialog({
+        title: `Replace existing ${label}?`,
+        text: `A ${label.toLowerCase()} is already attached to this application. Do you want to replace it with a new file?`,
+        icon: `<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>`,
+        confirmText: 'Replace',
+        confirmCls: 'primary',
+        cancelText: 'Cancel',
+        onConfirm: () => {
+          fileInp.click();
+        }
+      });
+    };
+    fileInp.onchange = () => { uploadFile(fileInp.files?.[0]); fileInp.value = ''; };
   }
 
+  // Open button
   if (btnPrev && appId) {
     btnPrev.onclick = () => openDocPreviewForApp(appId, type);
   }
 
-  const onPickFromDrive = (e) => {
-    if (e) e.stopPropagation();
-    openDriveFilePicker(type, (url, name) => {
-      DOC_CACHE[url] = { name: name, exists: true };
-      setPath(url);
-      if (appId) {
-        const app = (S.apps || []).find(x => x.id === Number(appId));
-        if (app) {
-          app[key] = url;
-          queue(`a${appId}${key}`, () => api('PATCH', '/applications/' + appId, { [key]: url }));
-          render();
-        }
-      }
-      const liveSlot = $(`#${prefix}_slot`);
-      if (liveSlot) {
-        liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, url, appId);
-        wireDocSlot(prefix, type, label, iconSvg, appId, () => url, setPath);
-      }
-      toast(`Attached ${name} from Google Drive!`);
-    });
-  };
-
-  const gPickBtn = $(`#${prefix}_btn_gdrive_picker`) || $(`#${prefix}_btn_gdrive_pick_btn`);
-  if (gPickBtn) gPickBtn.onclick = onPickFromDrive;
-  const gPickBtn2 = $(`#${prefix}_btn_gdrive_pick_btn`);
-  if (gPickBtn2 && gPickBtn2 !== gPickBtn) gPickBtn2.onclick = onPickFromDrive;
-
-  if (btnCp) {
-    btnCp.onclick = e => copyVal(getPath(), e.currentTarget);
-  }
-
+  // Delete button: ASK confirmation to delete, then delete from Google Drive
   if (btnRem) {
     btnRem.onclick = () => {
-      setPath('');
-      if (appId) {
-        const app = (S.apps || []).find(x => x.id === Number(appId));
-        if (app) {
-          app[key] = '';
-          queue(`a${appId}${key}`, () => api('PATCH', '/applications/' + appId, { [key]: '' }));
-          render();
+      const pathToDelete = getPath();
+      showConfirmDialog({
+        title: `Delete ${label}?`,
+        text: `Are you sure you want to delete this ${label.toLowerCase()}? It will be permanently removed from Google Drive.`,
+        icon: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+        confirmText: 'Yes, Delete',
+        confirmCls: 'danger',
+        cancelText: 'No, Cancel',
+        onConfirm: async () => {
+          toast(`Deleting ${label.toLowerCase()} from Drive...`);
+          try {
+            await api('POST', '/delete-document', {
+              path: pathToDelete,
+              appId: appId || null,
+              type: type
+            });
+          } catch (delErr) {
+            console.warn('Delete document error:', delErr);
+          }
+          setPath('');
+          delete DOC_CACHE[pathToDelete];
+          if (appId) {
+            const app = (S.apps || []).find(x => x.id === Number(appId));
+            if (app) {
+              app[key] = '';
+              render();
+            }
+          }
+          toast(`Deleted ${label} from Google Drive`);
+          const liveSlot = $(`#${prefix}_slot`);
+          if (liveSlot) {
+            liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, '', appId);
+            wireDocSlot(prefix, type, label, iconSvg, appId, () => '', setPath);
+          }
         }
-      }
-      toast(`Removed ${label}`);
-      const liveSlot = $(`#${prefix}_slot`);
-      if (liveSlot) {
-        liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, '', appId);
-        wireDocSlot(prefix, type, label, iconSvg, appId, () => '', setPath);
-      }
+      });
     };
   }
 }

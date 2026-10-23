@@ -6,6 +6,8 @@ const upload = require('../middleware/upload');
 const config = require('../config');
 const { isGoogleDriveLink, extractGoogleDriveFileId } = require('../services/storageService');
 
+router.post('/delete-document', documentsController.deleteDocument);
+router.delete('/delete-document', documentsController.deleteDocument);
 router.post('/upload-document', upload.single('file'), documentsController.uploadDocument);
 router.get('/gdrive-files', documentsController.listDriveFiles);
 router.get('/file-content', documentsController.getFileContent);
