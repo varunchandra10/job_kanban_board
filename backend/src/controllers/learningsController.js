@@ -1,68 +1,135 @@
 const { db } = require('../database/db');
 
 // Calculate Gamification XP, Streak, and Levels
+//
+// Streak Rules:
+//   - A day COUNTS (increments streak) only when the user did BOTH: added a learning AND added an application
+//   - If user misses application but adds learning -> streak is FROZEN (held/paused, no increment, no break)
+//   - If user adds application but misses learning -> BREAK the streak
+//   - If user misses both application + learning -> BREAK the streak
+//   - Today is in-progress: if today is not completed yet, prior streak through yesterday remains active/frozen
 function calculateGamification() {
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const now = new Date();
+  const toDateStr = d => {
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  };
 
-  // 1. Gather all activity dates
-  const learningDates = db.prepare("SELECT date_logged as dt FROM learnings WHERE date_logged IS NOT NULL AND date_logged != ''").all().map(r => r.dt.slice(0, 10));
-  const appDates = db.prepare("SELECT date_applied as dt FROM applications WHERE date_applied IS NOT NULL AND date_applied != ''").all().map(r => r.dt.slice(0, 10));
-  const logDates = db.prepare("SELECT date(ts) as dt FROM activity_log WHERE ts IS NOT NULL").all().map(r => r.dt);
+  const todayStr = toDateStr(now);
 
-  const allDatesSet = new Set([...learningDates, ...appDates, ...logDates]);
-  const sortedDates = Array.from(allDatesSet).sort().reverse();
+  // 1. Gather activity dates from DB
+  const learningDates = db.prepare(`
+    SELECT coalesce(nullif(date_logged, ''), substr(created_at, 1, 10)) as dt 
+    FROM learnings 
+    WHERE (date_logged IS NOT NULL AND date_logged != '') OR created_at IS NOT NULL
+  `).all().map(r => r.dt ? r.dt.slice(0, 10) : null).filter(Boolean);
 
-  // 2. Compute current streak
-  let currentStreak = 0;
-  let checkDate = new Date();
-  const todayStr = checkDate.toISOString().slice(0, 10);
-  const todayLogged = allDatesSet.has(todayStr);
+  const appDates = db.prepare(`
+    SELECT date_applied as dt 
+    FROM applications 
+    WHERE date_applied IS NOT NULL AND date_applied != ''
+  `).all().map(r => r.dt ? r.dt.slice(0, 10) : null).filter(Boolean);
 
-  if (todayLogged) {
-    currentStreak++;
-    checkDate.setDate(checkDate.getDate() - 1);
-  } else if (allDatesSet.has(yesterday)) {
-    checkDate.setDate(checkDate.getDate() - 1);
-  } else {
-    currentStreak = 0;
+  const learningSet = new Set(learningDates);
+  const appSet = new Set(appDates);
+
+  // 2. Classify day type according to streak rules:
+  //    'both'     -> both app + learning -> streak increments
+  //    'frozen'   -> only learning, no app -> streak freezes (pauses, no break, no increment)
+  //    'app_only' -> only app, no learning -> break streak
+  //    'neither'  -> neither app nor learning -> break streak
+  function getDayType(dateStr) {
+    const hasApp = appSet.has(dateStr);
+    const hasLearn = learningSet.has(dateStr);
+    if (hasApp && hasLearn) return 'both';
+    if (hasLearn && !hasApp) return 'frozen';
+    if (hasApp && !hasLearn) return 'app_only';
+    return 'neither';
   }
 
-  if (currentStreak > 0 || allDatesSet.has(yesterday)) {
-    while (true) {
-      const dStr = checkDate.toISOString().slice(0, 10);
-      if (allDatesSet.has(dStr)) {
-        if (!todayLogged && currentStreak === 0) {
-          currentStreak = 1;
-        } else if (dStr !== todayStr) {
-          currentStreak++;
-        }
-        checkDate.setDate(checkDate.getDate() - 1);
-      } else {
-        break;
+  // 3. Compute Current Streak
+  // Check Today's status:
+  const todayType = getDayType(todayStr);
+  let currentStreak = 0;
+  let isFrozen = false;
+  let streakHasActiveDay = false;
+
+  if (todayType === 'both') {
+    currentStreak = 1;
+    streakHasActiveDay = true;
+  } else if (todayType === 'frozen') {
+    isFrozen = true;
+  }
+
+  // Walk backwards from yesterday
+  const walkDate = new Date(now.getTime());
+  for (let i = 1; i <= 365; i++) {
+    walkDate.setDate(walkDate.getDate() - 1);
+    const dStr = toDateStr(walkDate);
+    const type = getDayType(dStr);
+
+    if (type === 'both') {
+      currentStreak++;
+      streakHasActiveDay = true;
+    } else if (type === 'frozen') {
+      // Frozen pauses: no increment, no break!
+      if (i === 1 && todayType !== 'both') {
+        isFrozen = true;
       }
+    } else {
+      // type is 'app_only' or 'neither' -> streak walk stops here
+      break;
     }
   }
 
-  // 3. Compute Longest Streak
-  let longestStreak = currentStreak;
+  // If user had purely frozen days with 0 'both' days, streak is 0
+  if (!streakHasActiveDay && currentStreak === 0) {
+    isFrozen = (todayType === 'frozen');
+  }
+
+  // Also compute learning streak (consecutive days adding learnings)
+  let learningStreak = learningSet.has(todayStr) ? 1 : 0;
+  const lWalkDate = new Date(now.getTime());
+  for (let i = 1; i <= 365; i++) {
+    lWalkDate.setDate(lWalkDate.getDate() - 1);
+    const dStr = toDateStr(lWalkDate);
+    if (learningSet.has(dStr)) {
+      learningStreak++;
+    } else {
+      break;
+    }
+  }
+
+  // 4. Compute Longest Streak (historical best)
+  const allDatesSet = new Set([...learningDates, ...appDates]);
   const ascDates = Array.from(allDatesSet).sort();
+
+  let longestStreak = currentStreak;
   if (ascDates.length > 0) {
-    let tempStreak = 1;
-    for (let i = 1; i < ascDates.length; i++) {
-      const prev = new Date(ascDates[i - 1]);
-      const curr = new Date(ascDates[i]);
-      const diffDays = Math.round((curr - prev) / (1000 * 60 * 60 * 24));
-      if (diffDays === 1) {
+    const start = new Date(ascDates[0] + 'T00:00:00');
+    const end = new Date(todayStr + 'T00:00:00');
+    let tempStreak = 0;
+    const cur = new Date(start.getTime());
+
+    while (cur <= end) {
+      const dStr = toDateStr(cur);
+      const type = getDayType(dStr);
+
+      if (type === 'both') {
         tempStreak++;
         if (tempStreak > longestStreak) longestStreak = tempStreak;
-      } else if (diffDays > 1) {
-        tempStreak = 1;
+      } else if (type === 'frozen') {
+        // Pauses: does not reset tempStreak, does not increment
+      } else {
+        tempStreak = 0;
       }
+      cur.setDate(cur.getDate() + 1);
     }
   }
 
-  // 4. Calculate Total XP
+  // 5. Calculate Total XP
   const appCount = db.prepare("SELECT count(1) as c FROM applications").get().c;
   const learningCount = db.prepare("SELECT count(1) as c FROM learnings").get().c;
   const totalMinutes = db.prepare("SELECT coalesce(sum(duration_minutes), 0) as m FROM learnings").get().m;
@@ -70,7 +137,7 @@ function calculateGamification() {
 
   let totalXP = (appCount * 100) + (learningCount * 50) + (Math.floor(totalMinutes / 30) * 20) + (stageMoves * 50) + (currentStreak * 25);
 
-  // 5. Level Tiers
+  // 6. Level Tiers
   const levels = [
     { level: 1, title: 'Novice Seeker', minXP: 0, nextXP: 300 },
     { level: 2, title: 'Skill Apprentice', minXP: 300, nextXP: 750 },
@@ -91,31 +158,40 @@ function calculateGamification() {
   const nextLevelXP = userLevel.nextXP;
   const progressPercent = Math.min(100, Math.max(0, Math.round(((totalXP - currentLevelMin) / (nextLevelXP - currentLevelMin)) * 100)));
 
-  // 6. Last 7 Days Punchcard
+  // 7. Last 7 Days Punchcard
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weekPunchcard = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date();
+    const d = new Date(now.getTime());
     d.setDate(d.getDate() - i);
-    const dStr = d.toISOString().slice(0, 10);
+    const dStr = toDateStr(d);
+    const dayType = getDayType(dStr);
     weekPunchcard.push({
       date: dStr,
       day: dayNames[d.getDay()],
-      active: allDatesSet.has(dStr),
+      type: dayType,
+      active: dayType === 'both',
+      frozen: dayType === 'frozen',
+      appOnly: dayType === 'app_only',
       isToday: dStr === todayStr
     });
   }
 
   return {
     streak: currentStreak,
+    applicationStreak: currentStreak,
+    learningStreak,
     longestStreak,
+    isFrozen,
     totalXP,
     level: userLevel.level,
     title: userLevel.title,
     progressPercent,
     currentLevelMin,
     nextLevelXP,
-    todayCompleted: todayLogged,
+    todayCompleted: todayType === 'both',
+    todayFrozen: todayType === 'frozen',
+    todayAppOnly: todayType === 'app_only',
     learningCount,
     appCount,
     totalMinutes,

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261023_momentum">
   <style>
     /* Profile Page Specific Refinements */
     html,
@@ -140,24 +140,13 @@
   <!-- Profile Hero Card -->
   <section class="profile-hero-card">
     <div class="profile-identity">
-      <div class="profile-avatar-lg">VC</div>
+      <div class="profile-avatar-lg" id="profUserAvatar">VC</div>
       <div class="profile-name-wrap">
-        <h2>
-          <span id="profUserName">Varun Chandra</span>
-          <span class="profile-pill-badge pill-active-applying">
-            <svg class="icon-inline" viewBox="0 0 24 24" width="14" height="14" stroke="#10b981" stroke-width="2" fill="none"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></svg>
-            Actively Applying
-          </span>
-        </h2>
-        <div class="profile-title-sub">
-          <span id="profUserTitle">Software Engineer • Full Stack &amp; Distributed Systems</span>
-          <span>•</span>
-          <span class="profile-pill-badge pill-rank" id="profUserRank">
-            <svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="#f59e0b" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            Level 1 Novice Seeker
-          </span>
-          <span>•</span>
-          <span style="color:#f97316;font-weight:700" id="profUserStreak">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+          <h2 style="margin:0;font-size:24px;font-weight:800;color:var(--tx);letter-spacing:-0.3px;">
+            <span id="profUserName">Varun Chandra</span>
+          </h2>
+          <span style="color:#f97316;font-weight:700;font-size:12.5px;display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,0.1);padding:4px 12px;border-radius:99px;border:1px solid rgba(249,115,22,0.25);" id="profUserStreak">
             <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
             0-Day Focus Streak
           </span>
@@ -207,7 +196,7 @@
             <span>Activity &amp; Momentum (2 Months)</span>
           </div>
           <div class="momentum-subtitle">
-            <span id="profPeriodContribs">0</span> activities in <strong id="profPeriodLabel">Sep – Oct 2026</strong>
+            <span id="profPeriodContribs">0</span> activities in <strong id="profPeriodLabel">Sep &ndash; Oct 2026</strong>
           </div>
         </div>
 
@@ -255,13 +244,13 @@
         <div class="momentum-month-block">
           <div class="momentum-month-title">
             <span id="m1Name">September 2026</span>
-            <span class="count-tag" id="m1Count">0</span>
+            <span class="count-tag zero-activity" id="m1Count">0 activities</span>
           </div>
           <div class="momentum-month-grid-wrap">
             <div class="momentum-days-legend">
-              <span>Mon</span>
-              <span>Wed</span>
-              <span>Fri</span>
+              <span class="d-mon">Mon</span>
+              <span class="d-wed">Wed</span>
+              <span class="d-fri">Fri</span>
             </div>
             <div class="momentum-weeks-row" id="m1Grid"></div>
           </div>
@@ -273,13 +262,13 @@
         <div class="momentum-month-block">
           <div class="momentum-month-title">
             <span id="m2Name">October 2026</span>
-            <span class="count-tag" id="m2Count">0</span>
+            <span class="count-tag zero-activity" id="m2Count">0 activities</span>
           </div>
           <div class="momentum-month-grid-wrap">
             <div class="momentum-days-legend">
-              <span>Mon</span>
-              <span>Wed</span>
-              <span>Fri</span>
+              <span class="d-mon">Mon</span>
+              <span class="d-wed">Wed</span>
+              <span class="d-fri">Fri</span>
             </div>
             <div class="momentum-weeks-row" id="m2Grid"></div>
           </div>
@@ -289,7 +278,7 @@
       <!-- Footer Legend & Stats -->
       <div class="momentum-footer">
         <div class="momentum-footer-stat">
-          <span>Active Days:</span>
+          <span>🔥 Active Days:</span>
           <strong id="profHeatmapActiveDays">0 Days</strong>
         </div>
 
@@ -306,6 +295,9 @@
     </section>
   </div>
 
+  <!-- Floating Heatmap Tooltip -->
+  <div id="heatmapFloatingTooltip" class="heatmap-floating-tooltip" style="display:none;" role="tooltip"></div>
+
   <!-- Stats 2-Column: Job Applications Stats (Left) & Learnings Stats (Right) -->
   <div class="profile-stats-grid">
     <!-- Stats for Job Applications -->
@@ -315,7 +307,10 @@
           <span><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
           <span>Job Applications Stats &amp; Pipeline</span>
         </div>
-        <span class="stats-badge-tag" id="profTotalAppsBadge">0 TOTAL</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="stats-badge-tag" id="profAppStreakBadge" style="color:#f97316;background:rgba(249,115,22,0.12)">0D APP STREAK</span>
+          <span class="stats-badge-tag" id="profTotalAppsBadge">0 TOTAL</span>
+        </div>
       </div>
 
       <div class="stats-metrics-row">
@@ -437,6 +432,7 @@
 /* ===============================================================
    User Profile Page Engine & Data Sync
    =============================================================== */
+let resState = null;
 let appsList = [];
 let learningsList = [];
 let gamifyStats = null;
@@ -482,12 +478,13 @@ if (themeBtn) {
 /* Data Fetching & Sync */
 async function loadAllProfileData() {
   try {
-    const [resState, resLearnings, resGamify] = await Promise.all([
+    const [resStateRaw, resLearnings, resGamify] = await Promise.all([
       fetch('/api/state').then(r => r.json()).catch(() => ({ apps: [] })),
       fetch('/api/learnings').then(r => r.json()).catch(() => []),
       fetch('/api/gamification').then(r => r.json()).catch(() => ({}))
     ]);
 
+    resState = resStateRaw;
     appsList = Array.isArray(resState?.apps) ? resState.apps : [];
     learningsList = Array.isArray(resLearnings) ? resLearnings : [];
     gamifyStats = resGamify || {};
@@ -503,11 +500,12 @@ async function loadAllProfileData() {
     if (appBadge) appBadge.textContent = appsList.length;
 
     const streakVal = gamifyStats.streak ?? gamifyStats.currentStreak ?? 0;
+    const isFrozen = gamifyStats.isFrozen || gamifyStats.todayFrozen;
     const hudCount = document.getElementById('hudStreakCount');
-    if (hudCount) hudCount.textContent = streakVal;
+    if (hudCount) hudCount.textContent = streakVal + (isFrozen ? ' ❄️' : '');
 
     const learnBadgeText = document.getElementById('learningModeBadgeText');
-    if (learnBadgeText) learnBadgeText.textContent = streakVal + 'd';
+    if (learnBadgeText) learnBadgeText.textContent = streakVal + 'd' + (isFrozen ? ' ❄️' : '');
 
     renderAllViews();
   } catch (e) {
@@ -523,25 +521,41 @@ function renderAllViews() {
   renderLearningStats();
 }
 
-/* 1. Hero Card */
+/* 1. Hero Card - Only Full Name and Streak on left */
 function renderProfileHero() {
+  const isFrozen = gamifyStats?.isFrozen || gamifyStats?.todayFrozen;
   const streak = gamifyStats?.streak ?? gamifyStats?.currentStreak ?? 0;
-  const level = gamifyStats?.level ?? 1;
-  const levelTitle = gamifyStats?.title ?? gamifyStats?.levelTitle ?? 'Novice Seeker';
 
-  const profUserRank = document.getElementById('profUserRank');
-  if (profUserRank) {
-    profUserRank.innerHTML = `<svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="#f59e0b" stroke-width="2" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Level ${level} ${levelTitle}`;
+  // Sync Full Name from database profile if available
+  if (resState?.profile?.full_name) {
+    const elName = document.getElementById('profUserName');
+    if (elName) elName.textContent = resState.profile.full_name;
+    const elAvatar = document.getElementById('profUserAvatar');
+    if (elAvatar) {
+      const parts = resState.profile.full_name.trim().split(/\s+/);
+      const initials = (parts[0]?.[0] || 'V') + (parts[1]?.[0] || 'C');
+      elAvatar.textContent = initials.toUpperCase();
+    }
   }
 
   const profUserStreak = document.getElementById('profUserStreak');
   if (profUserStreak) {
-    profUserStreak.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}-Day Focus Streak`;
+    if (isFrozen) {
+      profUserStreak.style.color = '#0284c7';
+      profUserStreak.style.background = 'rgba(14,165,233,0.1)';
+      profUserStreak.style.borderColor = 'rgba(14,165,233,0.25)';
+      profUserStreak.innerHTML = `<span style="display:inline-flex;align-items:center;gap:5px;">❄️ ${streak}-Day Streak (Frozen)</span>`;
+    } else {
+      profUserStreak.style.color = '#f97316';
+      profUserStreak.style.background = 'rgba(249,115,22,0.1)';
+      profUserStreak.style.borderColor = 'rgba(249,115,22,0.25)';
+      profUserStreak.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}-Day Focus Streak`;
+    }
   }
 
   const profHeatmapStreak = document.getElementById('profHeatmapStreak');
   if (profHeatmapStreak) {
-    profHeatmapStreak.innerHTML = `${streak} Days <svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>`;
+    profHeatmapStreak.innerHTML = `${streak} Days ${isFrozen ? '❄️' : '<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>'}`;
   }
 }
 
@@ -629,6 +643,100 @@ function buildMonthWeeks(year, month) {
   return weeks;
 }
 
+// Floating Heatmap Tooltip Logic
+let heatmapTooltipEl = null;
+
+function ensureHeatmapTooltip() {
+  if (!heatmapTooltipEl) {
+    heatmapTooltipEl = document.getElementById('heatmapFloatingTooltip');
+    if (!heatmapTooltipEl) {
+      heatmapTooltipEl = document.createElement('div');
+      heatmapTooltipEl.id = 'heatmapFloatingTooltip';
+      heatmapTooltipEl.className = 'heatmap-floating-tooltip';
+      document.body.appendChild(heatmapTooltipEl);
+    }
+  }
+  return heatmapTooltipEl;
+}
+
+function showHeatmapTooltip(e, data) {
+  const tt = ensureHeatmapTooltip();
+  if (!tt) return;
+
+  const { dateLong, isToday, count, apps, learnings } = data;
+
+  let contentHtml = `
+    <div class="heatmap-tt-header">
+      <span class="heatmap-tt-date">${dateLong}</span>
+      ${isToday ? '<span class="heatmap-tt-today-badge">Today</span>' : ''}
+    </div>
+  `;
+
+  if (count > 0) {
+    const actText = count === 1 ? '1 activity' : `${count} activities`;
+    contentHtml += `
+      <div class="heatmap-tt-body">
+        <span class="heatmap-tt-count">${actText}</span>
+        <div class="heatmap-tt-pills">
+          ${apps > 0 ? `<span class="heatmap-tt-pill app-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>${apps} ${apps === 1 ? 'app' : 'apps'}</span>` : ''}
+          ${learnings > 0 ? `<span class="heatmap-tt-pill learn-pill"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>${learnings} ${learnings === 1 ? 'learning' : 'learnings'}</span>` : ''}
+          ${apps > 0 && learnings > 0 ? '<span class="heatmap-tt-pill" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.3)">🔥 Streak +1</span>' : ''}
+          ${learnings > 0 && apps === 0 ? '<span class="heatmap-tt-pill" style="background:rgba(14,165,233,0.15);color:#0284c7;border:1px solid rgba(14,165,233,0.3)">❄️ Streak Frozen</span>' : ''}
+          ${apps > 0 && learnings === 0 ? '<span class="heatmap-tt-pill" style="background:rgba(239,68,68,0.15);color:#dc2626;border:1px solid rgba(239,68,68,0.3)">⚠️ App only (Breaks Streak)</span>' : ''}
+        </div>
+      </div>
+    `;
+  } else {
+    contentHtml += `
+      <div class="heatmap-tt-body">
+        <span class="heatmap-tt-empty">No activity on this date</span>
+      </div>
+    `;
+  }
+
+  tt.innerHTML = contentHtml;
+  tt.style.display = 'block';
+  positionHeatmapTooltip(e);
+}
+
+function positionHeatmapTooltip(e) {
+  const tt = ensureHeatmapTooltip();
+  if (!tt || tt.style.display === 'none') return;
+
+  const target = e.currentTarget || e.target;
+  const rect = target.getBoundingClientRect();
+  const ttRect = tt.getBoundingClientRect();
+
+  // Center horizontally over the cell
+  let left = rect.left + (rect.width / 2) - (ttRect.width / 2);
+  // Position 8px above the cell
+  let top = rect.top - ttRect.height - 8;
+
+  // Viewport bounds protection
+  if (left < 10) left = 10;
+  if (left + ttRect.width > window.innerWidth - 10) {
+    left = window.innerWidth - ttRect.width - 10;
+  }
+  if (top < 10) {
+    // Flip below the cell if overflowing the viewport top
+    top = rect.bottom + 8;
+  }
+
+  tt.style.left = `${Math.round(left)}px`;
+  tt.style.top = `${Math.round(top)}px`;
+  tt.classList.add('visible');
+}
+
+function hideHeatmapTooltip() {
+  const tt = ensureHeatmapTooltip();
+  if (tt) {
+    tt.classList.remove('visible');
+    tt.style.display = 'none';
+  }
+}
+
+window.addEventListener('scroll', hideHeatmapTooltip, { passive: true });
+
 function renderProfileHeatmap() {
   syncMomentumControls();
   const m1Grid = document.getElementById('m1Grid');
@@ -639,12 +747,15 @@ function renderProfileHeatmap() {
 
   // Aggregate daily counts across Apps & Learnings
   const activityCounts = {};
+  const activityBreakdown = {};
 
   appsList.forEach(a => {
     const raw = a.date_applied || a.created_at || '';
     const d = raw.slice(0, 10);
     if (d && d.length === 10) {
       activityCounts[d] = (activityCounts[d] || 0) + 1;
+      if (!activityBreakdown[d]) activityBreakdown[d] = { apps: 0, learnings: 0 };
+      activityBreakdown[d].apps++;
     }
   });
 
@@ -653,6 +764,8 @@ function renderProfileHeatmap() {
     const d = raw.slice(0, 10);
     if (d && d.length === 10) {
       activityCounts[d] = (activityCounts[d] || 0) + 1;
+      if (!activityBreakdown[d]) activityBreakdown[d] = { apps: 0, learnings: 0 };
+      activityBreakdown[d].learnings++;
     }
   });
 
@@ -684,6 +797,9 @@ function renderProfileHeatmap() {
     return `${yr}-${mo}-${da}`;
   };
 
+  const todayObj = new Date();
+  const todayYmd = toYMD(todayObj);
+
   let totalPeriodContribs = 0;
   let activeDays = 0;
   let m1Contribs = 0;
@@ -702,6 +818,9 @@ function renderProfileHeatmap() {
       } else {
         const ymd = toYMD(cellDate);
         const count = activityCounts[ymd] || 0;
+        const b = activityBreakdown[ymd] || { apps: 0, learnings: 0 };
+        const isToday = (ymd === todayYmd);
+
         if (count > 0) {
           totalPeriodContribs += count;
           m1Contribs += count;
@@ -714,9 +833,29 @@ function renderProfileHeatmap() {
         else if (count === 3) lvl = 3;
         else if (count >= 4) lvl = 4;
 
-        cell.className = `momentum-day-cell lvl-${lvl}`;
-        const dateFmt = cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        cell.title = count ? `${count} activities on ${dateFmt}` : `No activity on ${dateFmt}`;
+        cell.className = `momentum-day-cell lvl-${lvl}${isToday ? ' is-today' : ''}`;
+        cell.setAttribute('data-date', ymd);
+
+        const dateLong = cellDate.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        cell.setAttribute('aria-label', `${dateLong}: ${count} activities`);
+
+        const tooltipData = {
+          dateLong,
+          isToday,
+          count,
+          apps: b.apps,
+          learnings: b.learnings
+        };
+
+        cell.addEventListener('mouseenter', (e) => showHeatmapTooltip(e, tooltipData));
+        cell.addEventListener('mousemove', (e) => positionHeatmapTooltip(e));
+        cell.addEventListener('mouseleave', hideHeatmapTooltip);
       }
       col.appendChild(cell);
     });
@@ -736,6 +875,9 @@ function renderProfileHeatmap() {
       } else {
         const ymd = toYMD(cellDate);
         const count = activityCounts[ymd] || 0;
+        const b = activityBreakdown[ymd] || { apps: 0, learnings: 0 };
+        const isToday = (ymd === todayYmd);
+
         if (count > 0) {
           totalPeriodContribs += count;
           m2Contribs += count;
@@ -748,9 +890,29 @@ function renderProfileHeatmap() {
         else if (count === 3) lvl = 3;
         else if (count >= 4) lvl = 4;
 
-        cell.className = `momentum-day-cell lvl-${lvl}`;
-        const dateFmt = cellDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        cell.title = count ? `${count} activities on ${dateFmt}` : `No activity on ${dateFmt}`;
+        cell.className = `momentum-day-cell lvl-${lvl}${isToday ? ' is-today' : ''}`;
+        cell.setAttribute('data-date', ymd);
+
+        const dateLong = cellDate.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        cell.setAttribute('aria-label', `${dateLong}: ${count} activities`);
+
+        const tooltipData = {
+          dateLong,
+          isToday,
+          count,
+          apps: b.apps,
+          learnings: b.learnings
+        };
+
+        cell.addEventListener('mouseenter', (e) => showHeatmapTooltip(e, tooltipData));
+        cell.addEventListener('mousemove', (e) => positionHeatmapTooltip(e));
+        cell.addEventListener('mouseleave', hideHeatmapTooltip);
       }
       col.appendChild(cell);
     });
@@ -759,10 +921,16 @@ function renderProfileHeatmap() {
 
   // Update Activity Counters
   const m1Count = document.getElementById('m1Count');
-  if (m1Count) m1Count.textContent = `${m1Contribs} acts`;
+  if (m1Count) {
+    m1Count.textContent = m1Contribs === 1 ? '1 activity' : `${m1Contribs} activities`;
+    m1Count.className = m1Contribs > 0 ? 'count-tag has-activity' : 'count-tag zero-activity';
+  }
 
   const m2Count = document.getElementById('m2Count');
-  if (m2Count) m2Count.textContent = `${m2Contribs} acts`;
+  if (m2Count) {
+    m2Count.textContent = m2Contribs === 1 ? '1 activity' : `${m2Contribs} activities`;
+    m2Count.className = m2Contribs > 0 ? 'count-tag has-activity' : 'count-tag zero-activity';
+  }
 
   const periodContribsEl = document.getElementById('profPeriodContribs');
   if (periodContribsEl) periodContribsEl.textContent = totalPeriodContribs;
@@ -901,6 +1069,21 @@ function renderJobStats() {
   const elBadge = document.getElementById('profTotalAppsBadge');
   if (elBadge) elBadge.textContent = `${total} TOTAL`;
 
+  const elAppStreak = document.getElementById('profAppStreakBadge');
+  if (elAppStreak) {
+    const isFrozen = gamifyStats?.isFrozen || gamifyStats?.todayFrozen;
+    const streak = gamifyStats?.streak ?? 0;
+    if (isFrozen) {
+      elAppStreak.style.color = '#0284c7';
+      elAppStreak.style.background = 'rgba(14,165,233,0.12)';
+      elAppStreak.innerHTML = `❄️ ${streak}D (FROZEN)`;
+    } else {
+      elAppStreak.style.color = '#f97316';
+      elAppStreak.style.background = 'rgba(249,115,22,0.12)';
+      elAppStreak.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="14" height="14" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}D APP STREAK`;
+    }
+  }
+
   const elInt = document.getElementById('profStatInterviewing');
   if (elInt) elInt.textContent = interviewing;
   const elOff = document.getElementById('profStatOffers');
@@ -970,9 +1153,18 @@ function renderLearningStats() {
   const elStreak = document.getElementById('profStatStreak');
   if (elStreak) elStreak.textContent = streak;
 
+  const isFrozen = gamifyStats?.isFrozen || gamifyStats?.todayFrozen;
   const elBadge = document.getElementById('profStreakBadge');
   if (elBadge) {
-    elBadge.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}D STREAK`;
+    if (isFrozen) {
+      elBadge.style.color = '#0284c7';
+      elBadge.style.background = 'rgba(14,165,233,0.12)';
+      elBadge.innerHTML = `❄️ ${streak}D (FROZEN)`;
+    } else {
+      elBadge.style.color = '#f97316';
+      elBadge.style.background = 'rgba(249,115,22,0.12)';
+      elBadge.innerHTML = `<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ${streak}D STREAK`;
+    }
   }
 
   const elHours = document.getElementById('profStatStudyHours');

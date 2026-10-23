@@ -194,10 +194,11 @@ async function loadGamificationStats() {
     const hudXp = document.getElementById('hudXpPoints');
     const modeBadge = document.getElementById('learningModeBadge');
 
-    if (hudStreak) hudStreak.textContent = stats.streak;
+    const isFrozen = stats.isFrozen || stats.todayFrozen;
+    if (hudStreak) hudStreak.textContent = (stats.streak || 0) + (isFrozen ? ' ❄️' : '');
     if (hudLvlNum) hudLvlNum.textContent = 'Lvl ' + stats.level;
     if (hudXp) hudXp.textContent = Number(stats.totalXP).toLocaleString() + ' XP';
-    if (modeBadge) modeBadge.textContent = stats.streak + 'd';
+    if (modeBadge) modeBadge.textContent = (stats.streak || 0) + 'd' + (isFrozen ? ' ❄️' : '');
 
     // Hero Streak Card
     const daysEl = document.getElementById('gamifyStreakDays');
@@ -215,7 +216,13 @@ async function loadGamificationStats() {
     if (statusEl) {
       if (stats.todayCompleted) {
         statusEl.className = 'streak-status-badge';
-        statusEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Today Logged';
+        statusEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg> Today Completed (+1 Streak)';
+      } else if (stats.todayFrozen) {
+        statusEl.className = 'streak-status-badge frozen';
+        statusEl.innerHTML = '&#10052; Streak Frozen Today (Add App to +1)';
+      } else if (stats.todayAppOnly) {
+        statusEl.className = 'streak-status-badge pending';
+        statusEl.innerHTML = '&#9888; App Added (Add Learning to Keep Streak)';
       } else {
         statusEl.className = 'streak-status-badge pending';
         statusEl.innerHTML = 'Log Today to Keep Streak';
@@ -223,10 +230,17 @@ async function loadGamificationStats() {
     }
 
     if (subtextEl) {
-      if (stats.streak >= 7) subtextEl.textContent = 'Master consistency! Over a full week unbroken streak!';
-      else if (stats.streak >= 3) subtextEl.textContent = 'Awesome momentum! You are building deep technical mastery.';
-      else if (stats.streak > 0) subtextEl.textContent = 'Great start! Log daily to build your habit and XP.';
-      else subtextEl.textContent = 'Start your streak today! Log your key learnings and concepts.';
+      if (stats.isFrozen || stats.todayFrozen) {
+        subtextEl.textContent = 'Streak is frozen! You logged learning. Add a job application to increment your streak.';
+      } else if (stats.streak >= 7) {
+        subtextEl.textContent = 'Master consistency! Over a full week unbroken streak!';
+      } else if (stats.streak >= 3) {
+        subtextEl.textContent = 'Awesome momentum! You are building deep technical mastery.';
+      } else if (stats.streak > 0) {
+        subtextEl.textContent = 'Great start! Log daily learnings + job applications to build your streak.';
+      } else {
+        subtextEl.textContent = 'Start your streak today! Log learnings and apply to jobs daily.';
+      }
     }
 
     // Hero XP & Level Card
@@ -249,14 +263,30 @@ async function loadGamificationStats() {
     // Punchcard
     const punchRow = document.getElementById('gamifyPunchcardRow');
     if (punchRow && Array.isArray(stats.weekPunchcard)) {
-      punchRow.innerHTML = stats.weekPunchcard.map(day => 
-        '<div class="punch-day-col">' +
-          '<div class="punch-circle ' + (day.active ? 'active' : '') + ' ' + (day.isToday ? 'today-ring' : '') + '" title="' + day.date + ': ' + (day.active ? 'Activity Logged' : 'No activity') + '">' +
-            (day.active ? '&#10003;' : '&middot;') +
+      punchRow.innerHTML = stats.weekPunchcard.map(day => {
+        let cls = '';
+        let icon = '&middot;';
+        let desc = 'No activity (Streak breaks)';
+        if (day.active) {
+          cls = 'active';
+          icon = '&#10003;';
+          desc = 'Active (+1 Streak): Both App & Learning logged';
+        } else if (day.frozen) {
+          cls = 'frozen';
+          icon = '&#10052;';
+          desc = 'Frozen: Learning logged, no application';
+        } else if (day.appOnly) {
+          cls = 'app-only';
+          icon = '&times;';
+          desc = 'Break: Application logged without learning';
+        }
+        return '<div class="punch-day-col">' +
+          '<div class="punch-circle ' + cls + ' ' + (day.isToday ? 'today-ring' : '') + '" title="' + day.date + ': ' + desc + '">' +
+            icon +
           '</div>' +
           '<span class="punch-day-label">' + day.day + '</span>' +
-        '</div>'
-      ).join('');
+        '</div>';
+      }).join('');
     }
   } catch (err) {
     console.error('Failed to load gamification stats:', err);
@@ -695,7 +725,9 @@ window.saveLearning = async function() {
 
     if (!editId) {
       burstConfetti();
-      if (typeof toast === 'function') toast('Learning logged successfully! Streak Maintained!');
+      if (typeof toast === 'function') {
+        toast('Learning logged successfully! Streak Protected ❄️');
+      }
     } else {
       if (typeof toast === 'function') toast('Learning updated successfully');
     }
