@@ -445,6 +445,13 @@ function updateLearningsBarBadges() {
   setT('lc-AI', counts['AI/ML/NLP/CV']);
   setT('lc-CS', counts['CS SUBJECTS']);
   setT('lc-APTITUDE', counts['GENERAL APTITUDE']);
+
+  // Also update mobile category tab badges
+  setT('lmt-All', total);
+  setT('lmt-DSA', counts['DSA']);
+  setT('lmt-AI', counts['AI/ML/NLP/CV']);
+  setT('lmt-CS', counts['CS SUBJECTS']);
+  setT('lmt-APTITUDE', counts['GENERAL APTITUDE']);
 }
 
 window.openLearningModalWithCat = function(catKey, stream, topic) {
@@ -467,6 +474,12 @@ function renderLearningsBoard() {
 
   const isSingle = (activeLearningCategory && activeLearningCategory !== 'All');
   container.classList.toggle('single-col', isSingle);
+  container.setAttribute('data-active-cat', activeLearningCategory || 'All');
+
+  // Sync mobile category tabs active state
+  document.querySelectorAll('#learningMobileTabs .stage-tab').forEach(t => {
+    t.classList.toggle('active', (t.dataset.cat || 'All') === (activeLearningCategory || 'All'));
+  });
 
   let colsToRender = LEARNING_CATEGORIES;
   if (isSingle) {
@@ -827,6 +840,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Learnings Second Bar Category Filter Buttons
+  // Mobile Stage/Category Picker Tabs for Learnings
+  document.querySelectorAll('#learningMobileTabs .stage-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      activeLearningCategory = tab.dataset.cat || 'All';
+      document.querySelectorAll('#learningMobileTabs .stage-tab').forEach(t => {
+        t.classList.toggle('active', t === tab);
+      });
+      document.querySelectorAll('#learningsSecBar .sec-btn').forEach(b => {
+        b.classList.toggle('active', (b.dataset.cat || 'All') === activeLearningCategory);
+      });
+      renderLearningsBoard();
+    });
+  });
+
   document.querySelectorAll('#learningsSecBar .sec-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       activeLearningCategory = btn.dataset.cat || 'All';

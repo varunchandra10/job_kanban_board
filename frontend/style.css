@@ -6212,6 +6212,25 @@ body.dark-mode .confirm-modal-icon.info-icon,
 
 /* ─── 3. Small Tablets & Phones Foundation (<= 768px) ─── */
 @media (max-width: 768px) {
+  /* 1. Unlock natural vertical document scrolling on mobile (fixes non-scrollable bug) */
+  html,
+  body {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100vh !important;
+    height: auto !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    position: relative !important;
+  }
+
   /* Prevent iOS Safari Viewport Auto-Zoom on form focus */
   input[type="text"],
   input[type="date"],
@@ -6226,12 +6245,13 @@ body.dark-mode .confirm-modal-icon.info-icon,
   }
 
   /* Header Navigation */
-  .mode-tab-btn .mode-tab-text { display: none !important; }
-  .stage-picker-select-wrap { display: none !important; }
   header {
     height: 52px !important;
     padding: 0 10px !important;
     gap: 6px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 100 !important;
   }
   .h-logo {
     gap: 6px !important;
@@ -6257,6 +6277,9 @@ body.dark-mode .confirm-modal-icon.info-icon,
     padding: 5px 8px !important;
     font-size: 11.5px !important;
     gap: 4px !important;
+  }
+  .mode-tab-btn .mode-tab-text {
+    display: none !important;
   }
   .mode-tab-icon svg {
     width: 14px !important;
@@ -6286,9 +6309,8 @@ body.dark-mode .confirm-modal-icon.info-icon,
     flex-shrink: 0 !important;
   }
 
-  /* Secondary Bars (#secBar & #learningsSecBar): Seamless Horizontal Swipe */
-  #secBar,
-  #learningsSecBar {
+  /* Secondary Toolbar on Job Applications (#secBar) */
+  #secBar {
     display: flex !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
@@ -6298,9 +6320,10 @@ body.dark-mode .confirm-modal-icon.info-icon,
     padding: 8px 12px !important;
     gap: 6px !important;
     align-items: center !important;
+    position: relative !important;
+    z-index: 80 !important;
   }
-  #secBar::-webkit-scrollbar,
-  #learningsSecBar::-webkit-scrollbar {
+  #secBar::-webkit-scrollbar {
     display: none !important;
   }
   .sec-btn,
@@ -6318,23 +6341,34 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: none !important;
   }
 
-  /* Mobile Stage Tabs (#mobileStageTabs) */
+  /* Hide Desktop Learnings SecBar on mobile in favor of Stage Picker Bar */
+  #learningsSecBar {
+    display: none !important;
+  }
+
+  /* Stage / Category Picker Bar (Pinned at top: 52px on mobile) */
   .stage-picker-bar {
     display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
     padding: 8px 12px !important;
     background: var(--surface) !important;
     border-bottom: 1px solid var(--bd) !important;
     position: sticky !important;
     top: 52px !important;
-    z-index: 20 !important;
+    z-index: 95 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+    gap: 8px !important;
   }
+  .stage-picker-select-wrap,
   .stage-select-wrap {
     display: none !important;
   }
   .mobile-stage-tabs {
     display: flex !important;
     gap: 6px !important;
-    width: 100% !important;
+    flex: 1 !important;
+    min-width: 0 !important;
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch !important;
     scrollbar-width: none !important;
@@ -6344,23 +6378,34 @@ body.dark-mode .confirm-modal-icon.info-icon,
     display: none !important;
   }
   .stage-tab {
-    flex: 1 0 auto !important;
-    padding: 7px 12px !important;
-    min-height: 42px !important;
+    flex-shrink: 0 !important;
+    padding: 7px 14px !important;
+    min-height: 40px !important;
     font-size: 12.5px !important;
-    border-radius: 21px !important;
+    border-radius: 20px !important;
+    white-space: nowrap !important;
+  }
+  .mobile-add-learning-btn {
+    flex-shrink: 0 !important;
+    min-height: 40px !important;
+    padding: 6px 14px !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
   }
 
-  /* Applications Board Mobile Layout */
+  /* Job Applications Board Mobile Layout (Vertical Full-Width Feed with Page Scrolling) */
   #board:not(.cal-mode) {
     display: flex !important;
     flex-direction: column !important;
-    padding: 12px !important;
+    padding: 12px 14px 80px !important;
     gap: 12px !important;
     grid-template-columns: none !important;
     grid-auto-flow: row !important;
     overflow: visible !important;
     height: auto !important;
+    min-height: calc(100vh - 120px) !important;
+    box-sizing: border-box !important;
   }
   #board[data-active-stage="Applied"] .col:not([data-stage="Applied"]),
   #board[data-active-stage="Interviewing"] .col:not([data-stage="Interviewing"]),
@@ -6386,30 +6431,113 @@ body.dark-mode .confirm-modal-icon.info-icon,
     overflow: visible !important;
     gap: 10px !important;
     padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: auto !important;
   }
 
-  /* Learnings Board (#learningsView) Swipeable Columns */
+  /* Learnings Board Mobile Layout (Matches Job Applications mobile stage switcher) */
   .learnings-board {
     display: flex !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    scroll-snap-type: x mandatory !important;
-    -webkit-overflow-scrolling: touch !important;
-    padding: 14px 12px !important;
-    gap: 14px !important;
+    flex-direction: column !important;
+    padding: 12px 14px 80px !important;
+    gap: 12px !important;
     grid-template-columns: none !important;
+    grid-auto-flow: row !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: calc(100vh - 120px) !important;
+    box-sizing: border-box !important;
   }
+
+  /* When single category is chosen on mobile: hide other categories */
+  #learningsView[data-active-cat="DSA"] .col:not([data-cat="DSA"]),
+  #learningsView[data-active-cat="AI/ML/NLP/CV"] .col:not([data-cat="AI/ML/NLP/CV"]),
+  #learningsView[data-active-cat="CS SUBJECTS"] .col:not([data-cat="CS SUBJECTS"]),
+  #learningsView[data-active-cat="GENERAL APTITUDE"] .col:not([data-cat="GENERAL APTITUDE"]) {
+    display: none !important;
+  }
+
+  /* When in single category mode: hide redundant header */
+  #learningsView.single-col .col-header {
+    display: none !important;
+  }
+
+  /* When in 'All' mode: show clean category divider headers */
+  #learningsView:not(.single-col) .col-header {
+    display: flex !important;
+    align-items: center !important;
+    padding: 10px 4px 6px !important;
+    margin: 8px 0 4px !important;
+    border-bottom: 1.5px solid var(--bd) !important;
+  }
+  #learningsView:not(.single-col) .col-header h2 {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+  }
+
+  /* Column cards layout in Learnings */
   .learnings-board .col {
-    flex: 0 0 85vw !important;
-    max-width: 85vw !important;
-    min-width: 275px !important;
-    scroll-snap-align: start !important;
-    height: 100% !important;
-  }
-  #learningsView.learnings-board.single-col .col {
-    flex: 1 1 100% !important;
+    width: 100% !important;
+    min-width: 100% !important;
     max-width: 100% !important;
-    min-width: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+  .learnings-board .body {
+    overflow: visible !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    padding: 0 !important;
+    height: auto !important;
+  }
+  .learning-kanban-card {
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+  }
+
+  /* Aptitude Toolbar on Mobile */
+  .aptitude-filter-toolbar {
+    background: var(--surface) !important;
+    border: 1px solid var(--bd) !important;
+    border-radius: var(--r) !important;
+    padding: 10px 12px !important;
+    margin-bottom: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .apt-stream-pills {
+    display: flex !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    width: 100% !important;
+  }
+  .apt-pill {
+    padding: 6px 14px !important;
+    font-size: 12px !important;
+    min-height: 36px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+  .apt-topic-dropdown-wrap,
+  .apt-select-box,
+  .apt-topic-select {
+    width: 100% !important;
+  }
+  .apt-topic-select {
+    height: 38px !important;
+    font-size: 13px !important;
   }
 
   /* Slideout Drawers & Bottom Sheets (#panel) */
@@ -6451,6 +6579,8 @@ body.dark-mode .confirm-modal-icon.info-icon,
   /* Calendar View in Mobile */
   .cal-mode {
     padding: 10px !important;
+    overflow-x: auto !important;
+    height: auto !important;
   }
   .nordic-cal-box {
     padding: 14px 12px !important;
@@ -6639,7 +6769,7 @@ body.dark-mode .confirm-modal-icon.info-icon,
 
 /* ─── 5. Compact Mobile Phones (<= 480px) ─── */
 @media (max-width: 480px) {
-  /* Hide separate HUD streak pill on ultra-compact phones (streak already in mode tab badge) */
+  /* Hide separate HUD streak pill on ultra-compact phones */
   .gamify-hud-pill.streak-pill-compact {
     display: none !important;
   }

@@ -7,7 +7,7 @@
   <meta name="description" content="Track your daily study streaks, concepts, and interview preparation notes on a Kanban board.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/style.css?v=20261023_responsive">
+  <link rel="stylesheet" href="/style.css?v=20261023_v3">
 </head>
 <body>
 
@@ -95,6 +95,42 @@
     <span>Add</span>
   </button>
 </nav>
+
+<!-- Mobile Stage/Category Picker Bar (Matches Job Applications mobile stage switcher) -->
+<div class="stage-picker-bar learning-stage-picker-bar" id="learningsStagePickerBar">
+  <div class="mobile-stage-tabs" id="learningMobileTabs" role="tablist" aria-label="Learning Categories">
+    <button type="button" class="stage-tab active" data-cat="All" role="tab">
+      <span class="tab-dot" style="background:var(--applied-clr, #3b82f6)"></span>
+      <span>All</span>
+      <span class="tab-count" id="lmt-All">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-cat="DSA" role="tab">
+      <span class="tab-dot" style="background:#3b82f6"></span>
+      <span>DSA</span>
+      <span class="tab-count" id="lmt-DSA">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-cat="AI/ML/NLP/CV" role="tab">
+      <span class="tab-dot" style="background:#8b5cf6"></span>
+      <span>AI/ML</span>
+      <span class="tab-count" id="lmt-AI">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-cat="CS SUBJECTS" role="tab">
+      <span class="tab-dot" style="background:#10b981"></span>
+      <span>CS</span>
+      <span class="tab-count" id="lmt-CS">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-cat="GENERAL APTITUDE" role="tab">
+      <span class="tab-dot" style="background:#f59e0b"></span>
+      <span>Aptitude</span>
+      <span class="tab-count" id="lmt-APTITUDE">0</span>
+    </button>
+  </div>
+  <button type="button" class="btn primary add-app-toolbar-btn mobile-add-learning-btn" onclick="openLearningModal()" title="Add Learning">
+    <svg viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    <span>Add</span>
+  </button>
+</div>
+
 
 <!-- Learnings Kanban Board -->
 <main id="learningsView" class="learnings-board" style="display:grid;"></main>
@@ -269,6 +305,6 @@
   </div>
 </aside>
 
-<script src="/learnings.js?v=1792739632885"></script>
+<script src="/learnings.js?v=20261023_v3"></script>
 </body>
 </html>
