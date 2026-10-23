@@ -51,20 +51,20 @@ exports.uploadDocument = async (req, res, next) => {
   }
 };
 
-exports.getFileInfo = (req, res, next) => {
+exports.getFileInfo = async (req, res, next) => {
   try {
     const targetPath = req.body.path || req.query.path;
-    const info = storageService.getFileInfo(targetPath);
+    const info = await storageService.getFileInfo(targetPath);
     res.json(info);
   } catch (err) {
     next(err);
   }
 };
 
-exports.getFileContent = (req, res, next) => {
+exports.getFileContent = async (req, res, next) => {
   try {
     const targetPath = req.query.path;
-    const fileResult = storageService.getFileStream(targetPath);
+    const fileResult = await storageService.getFileStream(targetPath);
 
     if (!fileResult.exists) {
       return res.status(404).json({ error: fileResult.error || 'File not found', path: targetPath });
@@ -84,10 +84,10 @@ exports.getFileContent = (req, res, next) => {
   }
 };
 
-exports.openFile = (req, res, next) => {
+exports.openFile = async (req, res, next) => {
   try {
-    const p = storageService.resolveSafePath(req.body.path);
-    const info = storageService.getFileInfo(p);
+    const p = await storageService.resolveSafePath(req.body.path);
+    const info = await storageService.getFileInfo(p);
     if (!info.exists) {
       return res.status(404).json({ ok: 0, error: 'File not found' });
     }
@@ -106,10 +106,10 @@ exports.openFile = (req, res, next) => {
   }
 };
 
-exports.revealFile = (req, res, next) => {
+exports.revealFile = async (req, res, next) => {
   try {
-    const p = storageService.resolveSafePath(req.body.path);
-    const info = storageService.getFileInfo(p);
+    const p = await storageService.resolveSafePath(req.body.path);
+    const info = await storageService.getFileInfo(p);
     if (!info.exists) {
       return res.status(404).json({ ok: 0, error: 'File not found' });
     }

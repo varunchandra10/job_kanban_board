@@ -10,6 +10,7 @@ class GoogleDriveStorageService extends BaseStorageService {
     super();
     this.folderId = options.folderId || config.googleDriveFolderId;
     this.keyFilePath = options.keyFilePath || config.googleServiceAccountKeyPath;
+    this.localFallback = options.localFallback || null;
     this.driveClient = null;
     this.authClient = null;
     this._initAuth();
@@ -38,8 +39,14 @@ class GoogleDriveStorageService extends BaseStorageService {
 
   resolveSafePath(inputPath) {
     if (!inputPath) return null;
-    // For Google Drive, URLs or IDs are treated as valid cloud resource locators
-    return inputPath.trim();
+    const str = String(inputPath).trim();
+    if (/drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str) || /^[a-zA-Z0-9_-]{25,}$/.test(str)) {
+      return str;
+    }
+    if (this.localFallback) {
+      return this.localFallback.resolveSafePath(inputPath);
+    }
+    return str;
   }
 
   async testConnection() {
@@ -107,8 +114,16 @@ class GoogleDriveStorageService extends BaseStorageService {
   }
 
   async getFileStream(fileIdOrUrl) {
+    if (!fileIdOrUrl) return { exists: false, error: 'No path specified' };
+    const str = String(fileIdOrUrl).trim();
+    const isDrive = /drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str) || /^[a-zA-Z0-9_-]{25,}$/.test(str);
+    if (!isDrive && this.localFallback) {
+      return this.localFallback.getFileStream(fileIdOrUrl);
+    }
+
     const fileId = GoogleDriveStorageService.extractFileId(fileIdOrUrl);
-    if (!this.driveClient || !fileId) {
+    if (!fileId) {
+      if (this.localFallback) return this.localFallback.getFileStream(fileIdOrUrl);
       return { exists: false, error: 'Google Drive client not configured or invalid file ID' };
     }
 
@@ -132,13 +147,25 @@ class GoogleDriveStorageService extends BaseStorageService {
         resolvedPath: fileIdOrUrl
       };
     } catch (err) {
+      if (this.localFallback) {
+        const loc = this.localFallback.getFileStream(fileIdOrUrl);
+        if (loc.exists) return loc;
+      }
       return { exists: false, error: err.message };
     }
   }
 
   async getFileInfo(fileIdOrUrl) {
+    if (!fileIdOrUrl) return { exists: false, error: 'No path specified' };
+    const str = String(fileIdOrUrl).trim();
+    const isDrive = /drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str) || /^[a-zA-Z0-9_-]{25,}$/.test(str);
+    if (!isDrive && this.localFallback) {
+      return this.localFallback.getFileInfo(fileIdOrUrl);
+    }
+
     const fileId = GoogleDriveStorageService.extractFileId(fileIdOrUrl);
     if (!fileId) {
+      if (this.localFallback) return this.localFallback.getFileInfo(fileIdOrUrl);
       return { exists: false, error: 'Not a valid Google Drive file' };
     }
 
@@ -159,6 +186,10 @@ class GoogleDriveStorageService extends BaseStorageService {
           fileId
         };
       } catch (err) {
+        if (this.localFallback) {
+          const loc = this.localFallback.getFileInfo(fileIdOrUrl);
+          if (loc.exists) return loc;
+        }
         return { exists: false, error: err.message, isGoogleDrive: true, fileId };
       }
     }

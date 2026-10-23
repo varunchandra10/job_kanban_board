@@ -38,6 +38,14 @@ class LocalStorageService extends BaseStorageService {
     }
 
     if (!fs.existsSync(p)) {
+      const bn = path.basename(p);
+      const inResume = path.resolve(this.baseDir, 'resume', bn);
+      if (fs.existsSync(inResume)) return inResume;
+      const inCover = path.resolve(this.baseDir, 'cover_letter', bn);
+      if (fs.existsSync(inCover)) return inCover;
+      const inUpload = path.resolve(this.baseDir, bn);
+      if (fs.existsSync(inUpload)) return inUpload;
+
       const rel = path.relative(this.rootDir, p);
       if (rel.startsWith('..') && !path.isAbsolute(rel)) {
         console.warn(`[Security Alert] Blocked potential path traversal: ${inputPath}`);
@@ -150,7 +158,7 @@ let storageService = localService;
 if (config.storageProvider === 'google_drive') {
   try {
     const GoogleDriveStorageService = require('./googleDriveStorageService');
-    const driveService = new GoogleDriveStorageService();
+    const driveService = new GoogleDriveStorageService({ localFallback: localService });
     if (driveService.isConfigured()) {
       storageService = driveService;
       console.log('[Storage Service] Initialized Active Provider: Google Drive');
