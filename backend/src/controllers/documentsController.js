@@ -5,10 +5,24 @@ const config = require('../config');
 
 exports.listDriveFiles = async (req, res, next) => {
   try {
-    const type = req.query.type || 'resume';
-    const resumeFolderId = '1JOyn_Fzafuc56FfYsjrgN1Z1TDv6l7QP';
-    const coverFolderId = '1TyQOkbqrsc0yJ65oH4qbjNdRntzFjU62';
-    const targetFolder = (type === 'cover' || type === 'cover_letter') ? coverFolderId : resumeFolderId;
+    const userId = req.user?.id || 'default_user';
+    let targetFolder = null;
+
+    try {
+      const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
+      if (userRow && userRow.gdrive_folder_id) {
+        targetFolder = userRow.gdrive_folder_id.trim();
+      }
+    } catch (_) {}
+
+    if (!targetFolder) {
+      return res.json({
+        ok: 1,
+        files: [],
+        notConfigured: true,
+        message: 'No personal Google Drive folder connected. Please connect your folder in Career Profile.'
+      });
+    }
 
     if (!storageService.driveClient) {
       return res.json({ ok: 1, files: [] });
@@ -39,6 +53,7 @@ exports.listDriveFiles = async (req, res, next) => {
 
 exports.uploadDocument = async (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     let fileBuffer;
     let originalName;
     const type = req.body.type || req.body.targetKey;
@@ -55,40 +70,53 @@ exports.uploadDocument = async (req, res, next) => {
       return res.status(400).json({ error: 'No file data received' });
     }
 
-    // If STORAGE_PROVIDER is google_drive, check if this file exists in user's Drive folder!
-    if (config.storageProvider === 'google_drive' && storageService.driveClient && originalName) {
-      try {
-        const resumeFolderId = '1JOyn_Fzafuc56FfYsjrgN1Z1TDv6l7QP';
-        const coverFolderId = '1TyQOkbqrsc0yJ65oH4qbjNdRntzFjU62';
-        const isCover = type === 'cover_letter' || type === 'cover_letter_path';
-        const subfolderId = isCover ? coverFolderId : resumeFolderId;
+    // Get user's personal Google Drive folder
+    let userFolderId = null;
+    try {
+      const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
+      if (userRow && userRow.gdrive_folder_id) {
+        userFolderId = userRow.gdrive_folder_id.trim();
+      }
+    } catch (_) {}
 
-        const driveSearch = await storageService.driveClient.files.list({
-          q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and ('${subfolderId}' in parents or '${config.googleDriveFolderId}' in parents)`,
-          fields: 'files(id, name, webViewLink, size)',
-          pageSize: 1
+    // If STORAGE_PROVIDER is google_drive, user MUST have their own folder configured
+    if (config.storageProvider === 'google_drive') {
+      if (!userFolderId) {
+        return res.status(400).json({
+          error: 'Google Drive folder not configured. Please link your personal Google Drive folder in your Career Profile before uploading documents.'
         });
+      }
 
-        if (driveSearch.data.files && driveSearch.data.files.length > 0) {
-          const found = driveSearch.data.files[0];
-          const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
-          if (appId) {
-            const col = isCover ? 'cover_letter_path' : 'resume_path';
-            db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
-          }
-          return res.json({
-            ok: 1,
-            fullPath: gdriveLink,
-            path: gdriveLink,
-            relativePath: gdriveLink,
-            name: found.name,
-            size: found.size,
-            isGoogleDrive: true,
-            fileId: found.id
+      if (storageService.driveClient && originalName) {
+        try {
+          const driveSearch = await storageService.driveClient.files.list({
+            q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and '${userFolderId}' in parents`,
+            fields: 'files(id, name, webViewLink, size)',
+            pageSize: 1
           });
+
+          if (driveSearch.data.files && driveSearch.data.files.length > 0) {
+            const found = driveSearch.data.files[0];
+            const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
+            if (appId) {
+              const isCover = type === 'cover_letter' || type === 'cover_letter_path';
+              const col = isCover ? 'cover_letter_path' : 'resume_path';
+              db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
+            }
+            return res.json({
+              ok: 1,
+              fullPath: gdriveLink,
+              path: gdriveLink,
+              relativePath: gdriveLink,
+              name: found.name,
+              size: found.size,
+              isGoogleDrive: true,
+              fileId: found.id
+            });
+          }
+        } catch (searchErr) {
+          console.warn('[Google Drive] Search error:', searchErr.message);
         }
-      } catch (searchErr) {
-        console.warn('[Google Drive] Search error:', searchErr.message);
       }
     }
 
@@ -96,7 +124,8 @@ exports.uploadDocument = async (req, res, next) => {
       buffer: fileBuffer,
       originalName,
       type,
-      appId
+      appId,
+      folderId: userFolderId
     });
 
     if (appId) {
@@ -126,9 +155,10 @@ exports.uploadDocument = async (req, res, next) => {
 
 exports.getFileInfo = async (req, res, next) => {
   try {
-    const targetPath = (req.body && req.body.path) || (req.query && req.query.path); if (!targetPath) return res.status(400).json({ error: 'No path specified' });
+    const targetPath = (req.body && req.body.path) || (req.query && req.query.path);
+    if (!targetPath) return res.status(400).json({ error: 'No path specified' });
     const info = await storageService.getFileInfo(targetPath);
-    res.json(info);
+    res.json({ ok: 1, ...info });
   } catch (err) {
     next(err);
   }
@@ -159,21 +189,34 @@ exports.getFileContent = async (req, res, next) => {
 
 exports.openFile = async (req, res, next) => {
   try {
-    const p = await storageService.resolveSafePath(req.body.path);
-    const info = await storageService.getFileInfo(p);
-    if (!info.exists) {
-      return res.status(404).json({ ok: 0, error: 'File not found' });
+    const targetPath = (req.body && req.body.path) || (req.query && req.query.path);
+    if (!targetPath) return res.status(400).json({ error: 'No path specified' });
+
+    if (/^https?:\/\//i.test(targetPath)) {
+      return res.json({ ok: 1, opened: true, url: targetPath });
     }
 
-    if (process.platform === 'win32') {
-      exec(`start "" "${p}"`);
-    } else if (process.platform === 'darwin') {
-      exec(`open "${p}"`);
+    const resolved = storageService.resolveSafePath(targetPath);
+    if (!resolved) return res.status(404).json({ error: 'File path could not be resolved' });
+
+    if (/^https?:\/\//i.test(resolved)) {
+      return res.json({ ok: 1, opened: true, url: resolved });
+    }
+
+    const platform = process.platform;
+    let cmd;
+    if (platform === 'win32') {
+      cmd = `start "" "${resolved}"`;
+    } else if (platform === 'darwin') {
+      cmd = `open "${resolved}"`;
     } else {
-      exec(`xdg-open "${p}"`);
+      cmd = `xdg-open "${resolved}"`;
     }
 
-    res.json({ ok: 1 });
+    exec(cmd, (err) => {
+      if (err) return next(err);
+      res.json({ ok: 1, opened: true, path: resolved });
+    });
   } catch (err) {
     next(err);
   }

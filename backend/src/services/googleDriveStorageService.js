@@ -8,7 +8,7 @@ const { BaseStorageService, getMimeType } = require('./baseStorageService');
 class GoogleDriveStorageService extends BaseStorageService {
   constructor(options = {}) {
     super();
-    this.folderId = options.folderId || config.googleDriveFolderId;
+    this.folderId = options.folderId || null;
     this.keyFilePath = options.keyFilePath || config.googleServiceAccountKeyPath;
     this.localFallback = options.localFallback || null;
     this.driveClient = null;
@@ -60,7 +60,11 @@ class GoogleDriveStorageService extends BaseStorageService {
     return { ok: 1, folderName: res.data.name, folderId: res.data.id };
   }
 
-  async saveFile({ buffer, originalName, type, appId }) {
+  async saveFile({ buffer, originalName, type, appId, folderId }) {
+    const targetFolder = folderId || this.folderId;
+    if (!targetFolder) {
+      throw new Error('Google Drive folder not configured. Please connect your personal Google Drive folder in Career Profile.');
+    }
     if (!this.driveClient) {
       throw new Error('Google Drive service is not configured with credentials');
     }
@@ -74,7 +78,7 @@ class GoogleDriveStorageService extends BaseStorageService {
 
     const fileMetadata = {
       name: safeName,
-      parents: this.folderId ? [this.folderId] : undefined
+      parents: targetFolder ? [targetFolder] : undefined
     };
 
     const media = {
