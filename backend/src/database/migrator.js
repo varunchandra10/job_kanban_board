@@ -41,6 +41,39 @@ function runMigrations(db) {
             }
           }
 
+          if (file.includes('005')) {
+            const ensureCol = (tbl, col, def) => {
+              try {
+                const cols = db.prepare(`pragma table_info(${tbl})`).all().map(c => c.name);
+                if (!cols.includes(col)) {
+                  db.prepare(`alter table ${tbl} add column ${col} ${def}`).run();
+                }
+              } catch (e) {
+                console.warn(`[Migrator] Column note for ${tbl}.${col}:`, e.message);
+              }
+            };
+
+            const userTables = ['applications', 'learnings', 'roles', 'resume_versions', 'resume_profile', 'settings', 'activity_log'];
+            for (const tbl of userTables) {
+              ensureCol(tbl, 'user_id', "TEXT DEFAULT 'default_user'");
+              try {
+                db.prepare(`UPDATE ${tbl} SET user_id = 'default_user' WHERE user_id IS NULL OR user_id = ''`).run();
+              } catch (_) {}
+            }
+
+            const indices = [
+              'CREATE INDEX IF NOT EXISTS idx_apps_user ON applications(user_id);',
+              'CREATE INDEX IF NOT EXISTS idx_learn_user ON learnings(user_id);',
+              'CREATE INDEX IF NOT EXISTS idx_roles_user ON roles(user_id);',
+              'CREATE INDEX IF NOT EXISTS idx_resume_versions_user ON resume_versions(user_id);',
+              'CREATE INDEX IF NOT EXISTS idx_settings_user ON settings(user_id);',
+              'CREATE INDEX IF NOT EXISTS idx_activity_log_user ON activity_log(user_id);'
+            ];
+            for (const idxSql of indices) {
+              try { db.exec(idxSql); } catch (_) {}
+            }
+          }
+
           db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file);
           db.exec('COMMIT;');
           console.log(`[Migrator] Successfully applied ${file}`);

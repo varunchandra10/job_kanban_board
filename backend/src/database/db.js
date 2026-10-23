@@ -132,9 +132,9 @@ if (!db.prepare("select 1 from settings where key='seeded'").get()) {
 }
 
 const COLS = {
-  applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
-  resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience'.split(' '),
-  resume_versions: 'label region text pdf_name pdf_data'.split(' '),
+  applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path user_id'.split(' '),
+  resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience user_id'.split(' '),
+  resume_versions: 'label region text pdf_name pdf_data user_id'.split(' '),
 };
 
 function cleanFilePath(raw) {
@@ -169,13 +169,13 @@ function move(id, stage, before) {
   }
 }
 
-const getState = () => ({
-  apps: db.prepare('select * from applications order by position, id').all(),
+const getState = (userId = 'default_user') => ({
+  apps: db.prepare('select * from applications where user_id=? order by position, id').all(userId),
   companies: db.prepare('select * from companies order by name').all(),
-  roles: db.prepare('select name from roles order by name').all().map(r => r.name),
-  profile: db.prepare('select * from resume_profile where id=1').get(),
-  versions: db.prepare("select id,label,region,text,pdf_name,(pdf_data!='') as has_pdf from resume_versions order by id").all(),
-  settings: Object.fromEntries(db.prepare('select * from settings').all().map(r => [r.key, r.value])),
+  roles: db.prepare("select name from roles where user_id=? or user_id='default_user' order by name").all(userId).map(r => r.name),
+  profile: db.prepare('select * from resume_profile where user_id=? limit 1').get(userId) || db.prepare('select * from resume_profile where id=1').get(),
+  versions: db.prepare("select id,label,region,text,pdf_name,(pdf_data!='') as has_pdf from resume_versions where user_id=? order by id").all(userId),
+  settings: Object.fromEntries(db.prepare('select * from settings where user_id=?').all(userId).map(r => [r.key, r.value])),
 });
 
 module.exports = {
