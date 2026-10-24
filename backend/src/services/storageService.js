@@ -64,6 +64,9 @@ class LocalStorageService extends BaseStorageService {
     const isCover = type === 'cover_letter' || type === 'cover_letter_path';
     const subfolder = isCover ? 'cover_letter' : 'resume';
     const targetDir = path.join(this.baseDir, subfolder);
+    if (!fs.existsSync(targetDir)) {
+      try { fs.mkdirSync(targetDir, { recursive: true }); } catch (_) {}
+    }
 
     const safeName = path.basename(originalName || (isCover ? 'cover_letter.docx' : 'resume.pdf'))
       .replace(/[^a-zA-Z0-9._ -]/g, '_');
@@ -163,7 +166,7 @@ if (config.storageProvider === 'google_drive') {
   try {
     const GoogleDriveStorageService = require('./googleDriveStorageService');
     const driveService = new GoogleDriveStorageService({ localFallback: localService });
-    if (driveService.isConfigured()) {
+    if (driveService.driveClient || driveService.isConfigured()) {
       storageService = driveService;
       console.log('[Storage Service] Initialized Active Provider: Google Drive');
     } else {
@@ -177,6 +180,7 @@ if (config.storageProvider === 'google_drive') {
 module.exports = {
   BaseStorageService,
   LocalStorageService,
+  localService,
   storageService,
   getMimeType,
   isGoogleDriveLink,

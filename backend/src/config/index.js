@@ -21,9 +21,13 @@ function getDesktopDataDir() {
 function resolveStoragePaths() {
   if (isVercel) {
     const dataDir = '/tmp';
-    const dbPath = process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.join(dataDir, 'tracker.db');
-    const uploadDir = process.env.UPLOAD_DIR ? path.resolve(process.env.UPLOAD_DIR) : path.join(dataDir, 'documents');
-    const backupDir = process.env.BACKUP_DIR ? path.resolve(process.env.BACKUP_DIR) : path.join(dataDir, 'backups');
+    const dbPath = path.join(dataDir, 'tracker.db');
+    const uploadDir = path.join(dataDir, 'documents');
+    const backupDir = path.join(dataDir, 'backups');
+    try {
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
+    } catch (_) {}
     return { dataDir, dbPath, uploadDir, backupDir };
   }
 

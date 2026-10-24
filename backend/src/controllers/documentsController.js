@@ -1,6 +1,6 @@
 const { exec } = require('child_process');
 const { db } = require('../database/db');
-const { storageService } = require('../services/storageService');
+const { storageService, localService } = require('../services/storageService');
 const config = require('../config');
 
 exports.listDriveFiles = async (req, res, next) => {
@@ -125,22 +125,7 @@ exports.uploadDocument = async (req, res, next) => {
 
     let saved;
     try {
-      if (config.storageProvider === 'google_drive' && !userFolderId) {
-        if (storageService.localFallback) {
-          console.log('[Storage] Google Drive folder not yet connected. Saving locally.');
-          saved = await storageService.localFallback.saveFile({
-            buffer: fileBuffer,
-            originalName,
-            type,
-            appId
-          });
-          saved.notice = 'Saved locally. Connect your Google Drive folder in Career Profile to backup to cloud.';
-        } else {
-          return res.status(400).json({
-            error: 'Google Drive folder not configured. Please link your personal Google Drive folder in Career Profile before uploading documents.'
-          });
-        }
-      } else {
+      if (userFolderId && storageService && typeof storageService.saveFile === 'function' && storageService !== localService) {
         saved = await storageService.saveFile({
           buffer: fileBuffer,
           originalName,
@@ -148,20 +133,28 @@ exports.uploadDocument = async (req, res, next) => {
           appId,
           folderId: userFolderId
         });
-      }
-    } catch (saveErr) {
-      if (storageService.localFallback) {
-        console.warn('[Storage] Google Drive save failed, using local fallback:', saveErr.message);
-        saved = await storageService.localFallback.saveFile({
+      } else {
+        const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
+        saved = await fallbackTarget.saveFile({
           buffer: fileBuffer,
           originalName,
           type,
           appId
         });
-        saved.notice = 'Saved locally due to Drive error: ' + saveErr.message;
-      } else {
-        throw saveErr;
+        if (!userFolderId) {
+          saved.notice = 'Saved locally. Link your Google Drive folder in Career Profile to backup to cloud.';
+        }
       }
+    } catch (saveErr) {
+      console.warn('[Storage] Primary save failed, saving with local fallback:', saveErr.message);
+      const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
+      saved = await fallbackTarget.saveFile({
+        buffer: fileBuffer,
+        originalName,
+        type,
+        appId
+      });
+      saved.notice = 'Saved locally due to error: ' + saveErr.message;
     }
 
     if (appId) {
