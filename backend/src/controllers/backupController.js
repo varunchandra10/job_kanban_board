@@ -1,19 +1,19 @@
 const fs = require('fs');
 const path = require('path');
-const archiverModule = require('archiver');
+let archiverModule = null; // will be loaded dynamically
 const config = require('../config');
 
-function createZipArchive(options) {
-  if (typeof archiverModule === 'function') {
-    return archiverModule('zip', options);
+async function createZipArchive(options) {
+  if (!archiverModule) {
+    // Dynamically import the ES module version of archiver
+    const mod = await import('archiver');
+    archiverModule = mod.default || mod;
   }
-  if (archiverModule.ZipArchive) {
-    return new archiverModule.ZipArchive(options);
-  }
-  throw new Error('Unsupported archiver module structure');
+  // archiverModule is a function that creates a zip archive
+  return archiverModule('zip', options);
 }
 
-exports.exportZip = (req, res, next) => {
+exports.exportZip = async (req, res, next) => {
   try {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `job-tracker-backup-${timestamp}.zip`;
@@ -21,7 +21,7 @@ exports.exportZip = (req, res, next) => {
     res.attachment(filename);
     res.setHeader('Content-Type', 'application/zip');
 
-    const archive = createZipArchive({
+    const archive = await createZipArchive({
       zlib: { level: 9 }
     });
 
@@ -50,7 +50,7 @@ exports.exportZip = (req, res, next) => {
       archive.directory(config.uploadDir, 'documents');
     }
 
-    archive.finalize();
+    await archive.finalize();
   } catch (err) {
     next(err);
   }
