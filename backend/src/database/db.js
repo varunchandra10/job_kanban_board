@@ -54,6 +54,12 @@ if (process.env.VERCEL) {
     if (fs.existsSync(templateDb)) {
       try {
         fs.copyFileSync(templateDb, config.dbPath);
+        if (fs.existsSync(templateDb + '-wal')) {
+          try { fs.copyFileSync(templateDb + '-wal', config.dbPath + '-wal'); } catch (_) {}
+        }
+        if (fs.existsSync(templateDb + '-shm')) {
+          try { fs.copyFileSync(templateDb + '-shm', config.dbPath + '-shm'); } catch (_) {}
+        }
         console.log('[Vercel SQLite] Initialized /tmp/tracker.db from bundle template');
       } catch (e) {
         console.warn('[Vercel SQLite] Could not copy template db, will initialize fresh:', e.message);
@@ -64,7 +70,7 @@ if (process.env.VERCEL) {
 
 let db;
 if (!DatabaseSync) {
-  const errMsg = `SQLite engine (node:sqlite) is not available on Node.js ${process.version}. Job Tracker requires Node.js >= 22.5.0 on Vercel. Please set Node.js Version to 22.x in Vercel Settings -> General.`;
+  const errMsg = `SQLite engine (node:sqlite) is not available on Node.js ${process.version}. Job Tracker requires Node.js >= 22.5.0 on Vercel. Please verify Node version in Vercel Settings.`;
   console.error('[Database Error]', errMsg);
   const fail = () => { throw new Error(errMsg); };
   db = {
@@ -72,15 +78,34 @@ if (!DatabaseSync) {
     exec: fail
   };
 } else {
-  db = new DatabaseSync(config.dbPath);
+  try {
+    db = new DatabaseSync(config.dbPath);
+  } catch (openErr) {
+    console.warn('[Vercel SQLite] Error opening database file, retrying fresh in /tmp:', openErr.message);
+    try {
+      if (fs.existsSync(config.dbPath)) fs.unlinkSync(config.dbPath);
+      if (fs.existsSync(config.dbPath + '-wal')) fs.unlinkSync(config.dbPath + '-wal');
+      if (fs.existsSync(config.dbPath + '-shm')) fs.unlinkSync(config.dbPath + '-shm');
+      db = new DatabaseSync(config.dbPath);
+    } catch (memErr) {
+      console.error('[Vercel SQLite] Falling back to in-memory database:', memErr.message);
+      db = new DatabaseSync(':memory:');
+    }
+  }
+
   try {
     if (process.env.VERCEL) {
-      db.exec("PRAGMA journal_mode = DELETE;");
+      try { db.exec("PRAGMA journal_mode = DELETE;"); } catch (_) {}
     } else {
-      db.exec("PRAGMA journal_mode = WAL;");
+      try { db.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
     }
   } catch (_) {}
-  runMigrations(db);
+
+  try {
+    runMigrations(db);
+  } catch (migErr) {
+    console.warn('[Database Migration Warning]:', migErr.message);
+  }
 }
 
 const COMPANIES = `Google|Mountain View|US
@@ -149,27 +174,33 @@ Sony|Tokyo|JP
 Rakuten|Tokyo|JP
 Atlassian|Sydney|AU`.split('\n').map(l => l.split('|'));
 
-if (!db.prepare('select 1 from companies limit 1').get()) {
-  const ins = db.prepare('insert into companies values(?,?,?)');
-  COMPANIES.forEach(c => ins.run(...c));
-}
-if (!db.prepare("select 1 from settings where key='seeded'").get()) {
-  db.prepare('insert or ignore into resume_profile(id) values(1)').run();
-  const rv = db.prepare('insert into resume_versions(label,region) values(?,?)');
-  const v1 = rv.run('SWE - US', 'United States').lastInsertRowid, v2 = rv.run('Quant - UK CV', 'United Kingdom').lastInsertRowid;
-  const seed = [
-    ['Google', 'Software Engineer Intern', 'US', 'Mountain View', '2026-09-18', 'Applied', v1],
-    ['Stripe', 'Backend Engineer Intern', 'US', 'San Francisco', '2026-09-02', 'Applied', v1],
-    ['Razorpay', 'Product Engineering Intern', 'IN', 'Bengaluru', '2026-09-05', 'Applied', null],
-    ['Jane Street', 'Quantitative Trading Intern', 'GB', 'London', '2026-09-10', 'Interviewing', v2],
-    ['Grab', 'Data Science Intern', 'SG', 'Singapore', '2026-08-29', 'Interviewing', null],
-    ['SAP', 'Software Engineering Intern', 'DE', 'Walldorf', '2026-08-20', 'Offer', v1],
-    ['Citadel', 'Quant Research Intern', 'US', 'Chicago', '2026-07-30', 'Rejected', v2],
-  ];
-  const pos = {}, ia = db.prepare('insert into applications(company,role,country,city,date_applied,stage,position,resume_version_id) values(?,?,?,?,?,?,?,?)');
-  const ir = db.prepare('insert or ignore into roles values(?)');
-  seed.forEach(s => { pos[s[5]] = (pos[s[5]] ?? -1) + 1; ia.run(s[0], s[1], s[2], s[3], s[4], s[5], pos[s[5]], s[6]); ir.run(s[1]); });
-  db.prepare("insert into settings values('seeded','1')").run();
+if (DatabaseSync && db) {
+  try {
+    if (!db.prepare('select 1 from companies limit 1').get()) {
+      const ins = db.prepare('insert into companies values(?,?,?)');
+      COMPANIES.forEach(c => ins.run(...c));
+    }
+    if (!db.prepare("select 1 from settings where key='seeded'").get()) {
+      db.prepare('insert or ignore into resume_profile(id) values(1)').run();
+      const rv = db.prepare('insert into resume_versions(label,region) values(?,?)');
+      const v1 = rv.run('SWE - US', 'United States').lastInsertRowid, v2 = rv.run('Quant - UK CV', 'United Kingdom').lastInsertRowid;
+      const seed = [
+        ['Google', 'Software Engineer Intern', 'US', 'Mountain View', '2026-09-18', 'Applied', v1],
+        ['Stripe', 'Backend Engineer Intern', 'US', 'San Francisco', '2026-09-02', 'Applied', v1],
+        ['Razorpay', 'Product Engineering Intern', 'IN', 'Bengaluru', '2026-09-05', 'Applied', null],
+        ['Jane Street', 'Quantitative Trading Intern', 'GB', 'London', '2026-09-10', 'Interviewing', v2],
+        ['Grab', 'Data Science Intern', 'SG', 'Singapore', '2026-08-29', 'Interviewing', null],
+        ['SAP', 'Software Engineering Intern', 'DE', 'Walldorf', '2026-08-20', 'Offer', v1],
+        ['Citadel', 'Quant Research Intern', 'US', 'Chicago', '2026-07-30', 'Rejected', v2],
+      ];
+      const pos = {}, ia = db.prepare('insert into applications(company,role,country,city,date_applied,stage,position,resume_version_id) values(?,?,?,?,?,?,?,?)');
+      const ir = db.prepare('insert or ignore into roles values(?)');
+      seed.forEach(s => { pos[s[5]] = (pos[s[5]] ?? -1) + 1; ia.run(s[0], s[1], s[2], s[3], s[4], s[5], pos[s[5]], s[6]); ir.run(s[1]); });
+      db.prepare("insert into settings values('seeded','1')").run();
+    }
+  } catch (seedErr) {
+    console.warn('[Database Seed Warning]:', seedErr.message);
+  }
 }
 
 const COLS = {

@@ -65,9 +65,10 @@ pub async fn get_app_data_path(app: AppHandle) -> Result<String, String> {
 
 /// Opens the Job Tracker application data folder in Windows File Explorer.
 #[tauri::command]
-pub async fn open_data_folder(_app: AppHandle) -> Result<String, String> {
+pub async fn open_data_folder(app: AppHandle) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
+        let _ = &app;
         let appdata = std::env::var("APPDATA").unwrap_or_else(|_| "".to_string());
         let target_dir = std::path::Path::new(&appdata).join("JobTracker");
         if !target_dir.exists() {
