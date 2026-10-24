@@ -1,27 +1,3 @@
-var openAuthModal = function(noticeText) {
-  if (typeof ensureAuthModal === 'function') ensureAuthModal();
-  var overlay = document.getElementById('authModalOverlay');
-  if (overlay) {
-    overlay.classList.add('active');
-    overlay.style.setProperty('display', 'flex', 'important');
-    var noticeTxt = document.getElementById('authActionNoticeText');
-    var notice = document.getElementById('authActionNotice');
-    if (notice && noticeTxt && noticeText) {
-      noticeTxt.textContent = noticeText;
-      notice.style.display = 'flex';
-    }
-  }
-};
-window.openAuthModal = openAuthModal;
-
-var closeAuthModal = function() {
-  var overlay = document.getElementById('authModalOverlay');
-  if (overlay) {
-    overlay.classList.remove('active');
-    overlay.style.setProperty('display', 'none', 'important');
-  }
-};
-window.closeAuthModal = closeAuthModal;
 
 let _origFetch = window.fetch;
 /* ============================================================================
@@ -41,6 +17,31 @@ function getActiveUser() {
   }
 }
 
+function getApiBaseUrl() {
+  var isTauri = Boolean(
+    window.__TAURI__ || 
+    window.__TAURI_INTERNALS__ || 
+    (window.location && (
+      window.location.protocol === 'tauri:' || 
+      window.location.protocol === 'asset:' || 
+      window.location.hostname === 'tauri.localhost' ||
+      window.location.protocol === 'file:'
+    ))
+  );
+  return isTauri ? 'http://127.0.0.1:3000' : '';
+}
+window.getApiBaseUrl = getApiBaseUrl;
+
+function resolveApiUrl(url) {
+  var urlStr = typeof url === 'string' ? url : (url && url.url ? url.url : '');
+  var base = getApiBaseUrl();
+  if (base && urlStr && (urlStr.startsWith('/api') || urlStr.startsWith('/health') || urlStr.startsWith('/shutdown') || urlStr.startsWith('/vendor'))) {
+    return base + urlStr;
+  }
+  return url;
+}
+window.resolveApiUrl = resolveApiUrl;
+
 /* 1. Global Fetch Guard:
    - When Logged Out: PREVENTS active network fetching of personal data and returns clean empty structures.
    - When Logged In: Automatically injects Authorization: Bearer <token>.
@@ -51,7 +52,8 @@ function getActiveUser() {
 
   _origFetch = window.fetch;
   window.fetch = function(url, options = {}) {
-    const urlStr = typeof url === 'string' ? url : (url?.url || '');
+    const resolvedUrl = resolveApiUrl(url);
+    const urlStr = typeof resolvedUrl === 'string' ? resolvedUrl : (resolvedUrl?.url || '');
 
     // ZERO ACTIVE FETCHING when logged out for user data endpoints
     if (isUserLoggedOut()) {
@@ -110,7 +112,7 @@ function getActiveUser() {
       }
     }
 
-    return _origFetch.call(this, url, options);
+    return _origFetch.call(this, resolvedUrl, options);
   };
 })();
 
@@ -399,6 +401,79 @@ loadGoogleIdentityServices();
 async function submitGoogleOAuth() {
   const feedback = document.getElementById('renderFeedbackMsg');
 
+  // In Desktop WebView2, execute standard Native App Loopback flow
+  if (typeof getApiBaseUrl === 'function' && getApiBaseUrl()) {
+    if (feedback) {
+      feedback.className = 'render-feedback-msg';
+      feedback.style.color = '#4338ca';
+      feedback.style.background = 'rgba(99,102,241,0.1)';
+      feedback.style.border = '1px solid rgba(99,102,241,0.25)';
+      feedback.textContent = 'Opening Google Sign-In in your browser...';
+      feedback.style.display = 'flex';
+    }
+
+    try {
+      const sessionId = 'd_' + Math.random().toString(36).substring(2) + Date.now().toString(36);
+      const res = await _nativeFetch('/api/auth/google/desktop/start?sessionId=' + sessionId).then(r => r.json());
+
+      if (!res.ok || !res.url) {
+        throw new Error(res.error || 'Could not initiate Google Desktop login');
+      }
+
+      if (feedback) {
+        feedback.textContent = 'Please select your Google account in the opened browser tab...';
+      }
+
+      try {
+        window.open(res.url, '_blank');
+      } catch (_) {}
+
+      let attempts = 0;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        if (attempts > 120) {
+          clearInterval(pollInterval);
+          if (feedback) {
+            feedback.className = 'render-feedback-msg error';
+            feedback.textContent = 'Google sign-in timed out. Please try again.';
+          }
+          return;
+        }
+
+        try {
+          const pollRes = await _nativeFetch('/api/auth/google/desktop/poll?sessionId=' + sessionId).then(r => r.json());
+          if (pollRes && pollRes.ready && pollRes.token) {
+            clearInterval(pollInterval);
+
+            localStorage.setItem('auth_token', pollRes.token);
+            localStorage.setItem('auth_user', JSON.stringify(pollRes.user));
+            localStorage.removeItem('logged_out');
+
+            if (feedback) {
+              feedback.className = 'render-feedback-msg success';
+              feedback.textContent = 'Success! Authenticated as ' + (pollRes.user.name || pollRes.user.email);
+              feedback.style.display = 'flex';
+            }
+
+            setTimeout(() => {
+              closeAuthModal();
+              window.location.reload();
+            }, 600);
+          }
+        } catch (_) {}
+      }, 1200);
+
+      return;
+    } catch (err) {
+      if (feedback) {
+        feedback.className = 'render-feedback-msg error';
+        feedback.textContent = 'Desktop Google login error: ' + err.message;
+        feedback.style.display = 'flex';
+      }
+      return;
+    }
+  }
+
   if (feedback) {
     feedback.className = 'render-feedback-msg';
     feedback.style.color = '#4338ca';
@@ -544,7 +619,11 @@ async function fallbackGoogleSignIn(feedback) {
   } catch (err) {
     if (feedback) {
       feedback.className = 'render-feedback-msg error';
-      feedback.textContent = 'Connection error: ' + err.message;
+      if (err && err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        feedback.textContent = 'Database engine is offline. Please run "npm start" in terminal.';
+      } else {
+        feedback.textContent = 'Connection error: ' + (err ? err.message : 'Unknown error');
+      }
       feedback.style.display = 'flex';
     }
   }
@@ -609,14 +688,19 @@ async function submitCustomEmailAuth() {
   } catch (err) {
     if (feedback) {
       feedback.className = 'render-feedback-msg error';
-      feedback.textContent = 'Connection error: ' + err.message;
+      if (err && err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        feedback.textContent = 'Database engine is offline. Please run "npm start" in terminal.';
+      } else {
+        feedback.textContent = 'Connection error: ' + (err ? err.message : 'Unknown error');
+      }
       feedback.style.display = 'flex';
     }
   }
 }
 
 function _nativeFetch(url, options) {
-  return _origFetch.call(window, url, options);
+  const resolvedUrl = resolveApiUrl(url);
+  return _origFetch.call(window, resolvedUrl, options);
 }
 
 function hashCode(str) {
@@ -628,9 +712,91 @@ function hashCode(str) {
   return hash;
 }
 
+// Explicit window bindings for ES module and bundler compatibility
+window.isUserLoggedOut = isUserLoggedOut;
+window.getActiveUser = getActiveUser;
+window.handleTopbarLogout = handleTopbarLogout;
+window.togglePasswordVisibility = togglePasswordVisibility;
+window.quickFocusSignup = quickFocusSignup;
+window.handlePasswordReset = handlePasswordReset;
+window.submitGoogleOAuth = submitGoogleOAuth;
+window.submitCustomEmailAuth = submitCustomEmailAuth;
+window.syncTopbarAuthUI = syncTopbarAuthUI;
+
+function isDesktopApp() {
+  return Boolean(
+    window.__TAURI__ ||
+    window.__TAURI_INTERNALS__ ||
+    (window.location && (
+      window.location.protocol === 'tauri:' ||
+      window.location.protocol === 'asset:' ||
+      window.location.hostname === 'tauri.localhost' ||
+      window.location.protocol === 'file:'
+    ))
+  );
+}
+window.isDesktopApp = isDesktopApp;
+
+async function desktopInvoke(cmd, args = {}) {
+  try {
+    if (window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.core.invoke === 'function') {
+      return await window.__TAURI__.core.invoke(cmd, args);
+    }
+    if (window.__TAURI__ && typeof window.__TAURI__.invoke === 'function') {
+      return await window.__TAURI__.invoke(cmd, args);
+    }
+    if (window.__TAURI_INTERNALS__ && typeof window.__TAURI_INTERNALS__.invoke === 'function') {
+      return await window.__TAURI_INTERNALS__.invoke(cmd, args);
+    }
+  } catch (err) {
+    console.error(`[Desktop IPC] Error executing command '${cmd}':`, err);
+    throw err;
+  }
+  return null;
+}
+window.desktopInvoke = desktopInvoke;
+
+async function openAppLogs() {
+  if (isDesktopApp()) {
+    try {
+      await desktopInvoke('open_log_folder');
+    } catch (e) {
+      alert('Could not open log folder: ' + (e.message || e));
+    }
+  } else {
+    alert('Log folder is only available in the desktop application.');
+  }
+}
+window.openAppLogs = openAppLogs;
+
+async function toggleDevTools() {
+  if (isDesktopApp()) {
+    try {
+      await desktopInvoke('toggle_devtools');
+    } catch (e) {
+      console.warn('Could not toggle DevTools:', e);
+    }
+  }
+}
+window.toggleDevTools = toggleDevTools;
+
+// Global keyboard shortcut: Ctrl+Shift+I or F12 toggles Developer Console in Desktop app
+window.addEventListener('keydown', (e) => {
+  if (
+    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) ||
+    e.key === 'F12'
+  ) {
+    if (isDesktopApp()) {
+      e.preventDefault();
+      toggleDevTools();
+    }
+  }
+});
+
 // Auto-run UI sync on load
 document.addEventListener('DOMContentLoaded', () => {
   ensureAuthModal();
   syncTopbarAuthUI();
 });
 setTimeout(syncTopbarAuthUI, 50);
+

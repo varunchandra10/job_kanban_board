@@ -1,0 +1,62 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Job Tracker",
+  "version": "0.2.0",
+  "identifier": "com.jobtracker.desktop",
+  "build": {
+    "frontendDist": "dist",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run desktop:server",
+    "beforeBuildCommand": "npm run build:web"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Job Tracker",
+        "width": 1360,
+        "height": 860,
+        "minWidth": 960,
+        "minHeight": 640,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' http://127.0.0.1:3000 http://localhost:3000 https://accounts.google.com; frame-src 'self' https://accounts.google.com;",
+      "freezePrototype": true
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "shortDescription": "Job Application Tracker and Career Management Hub",
+    "longDescription": "A high-performance, privacy-focused Job Application Tracker and Career Management Hub engineered with an interactive Kanban pipeline, daily learning logs, focus streak gamification, activity heatmaps, and Google Drive cloud document storage.",
+    "copyright": "Copyright © 2026 Job Tracker",
+    "category": "Productivity",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEFDODg0NDVGMTcxMkEwMjMKUldRam9CSVhYMFNJckVGZHNVRjJsS3hhZFpQeG1veTFXSDZmU25ic1g0WU9GTHl0MGhoM0orSUwK",
+      "endpoints": [
+        "https://github.com/varunchandra10/job_kanban_board/releases/latest/download/latest.json"
+      ]
+    }
+  }
+}

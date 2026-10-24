@@ -28,7 +28,7 @@ A high-performance, privacy-focused **Job Application Tracker and Career Managem
 - [Google Drive Storage Configuration](#google-drive-storage-configuration)
 - [Deployment](#deployment)
   - [Vercel Deployment](#vercel-deployment)
-  - [Desktop App (Tauri Roadmap)](#desktop-app-tauri-roadmap)
+  - [Desktop Application (Tauri)](#desktop-application-tauri)
 - [License](#license)
 
 ---
@@ -228,10 +228,51 @@ http://localhost:3000
    vercel --prod
    ```
 
-### Desktop App (Tauri Roadmap)
-The application’s lightweight vanilla frontend and SQLite backend make it ideal for packaging into an ultra-fast desktop binary with [Tauri](https://tauri.app/):
-* Binary size: ~15MB (compared to ~150MB+ for Electron).
-* Runs locally with the embedded SQLite database in OS-level user data directories (`%APPDATA%` on Windows, `~/Library/Application Support` on macOS).
+### Desktop Application (Tauri)
+
+Job Tracker features a native desktop application powered by **Tauri v2**, **Rust**, and the local **Node.js + SQLite** engine, delivering a lightning-fast career hub without the multi-hundred-megabyte overhead of Electron.
+
+#### Desktop Features
+- **Ultra-Lightweight Binary**: ~3.4 MB NSIS installer compared to 150MB+ typical Electron distributions.
+- **Privacy-First Local Storage**: All SQLite data (`tracker.db`), documents, and automated snapshots reside locally in `%APPDATA%\JobTracker`.
+- **System Tray Integration**: Background persistent tray icon with left-click show/hide toggle and right-click quick actions.
+- **Native Menus & Close-to-Tray**: Native application menu with keyboard accelerators, and minimize-to-tray on window close.
+- **Diagnostics & Rotating Logs**: Automated 5-generation rotating file logs saved to `%LOCALAPPDATA%\com.jobtracker.desktop\logs\jobtracker.log`.
+- **Developer Console**: Instant DevTools inspection toggled anytime via `Ctrl + Shift + I` or `F12`.
+- **Auto-Updater**: Cryptographically signed releases using Minisign keys with 1-click update checks against GitHub Releases.
+
+#### Prerequisites for Desktop Development
+1. **Node.js**: v20.0.0 or higher ([nodejs.org](https://nodejs.org/))
+2. **Rust & Cargo**: v1.78.0+ or v1.90+ via `rustup` ([rustup.rs](https://rustup.rs/))
+3. **C++ Build Tools (Windows)**:
+   - Microsoft Visual Studio 2022 C++ Build Tools or Community Edition with the **"Desktop development with C++"** workload.
+   - *Automatic Environment Detection*: Job Tracker includes `scripts/desktop-env.js`, which automatically queries `vswhere.exe` and configures the MSVC `link.exe` toolchain in `PATH` even when building from a standard PowerShell or Command Prompt.
+
+#### Development Mode
+To launch the desktop application in live development mode:
+```bash
+# Starts backend server, builds frontend, and spawns native Tauri window
+npm run desktop:dev
+```
+
+#### Production Installer Build
+To compile the standalone desktop installers and cryptographically sign update artifacts:
+```bash
+# Compiles Vite MPA frontend bundle, Rust release binary, and MSI/NSIS bundles
+npm run build:tauri
+```
+*(Alternatively, navigate to `src-tauri` and run `cargo tauri build`)*
+
+Generated installer bundles will be located in:
+- **NSIS Setup Installer**: `src-tauri/target/release/bundle/nsis/Job Tracker_0.2.0_x64-setup.exe`
+- **MSI Installer**: `src-tauri/target/release/bundle/msi/Job Tracker_0.2.0_x64_en-US.msi`
+- **Updater Signatures**: `.sig` files paired with each installer for the built-in update engine.
+
+#### Data & Diagnostic Locations
+- **Database & Uploads**: `%APPDATA%\JobTracker\` (`tracker.db`, `uploads\`, `backups\`)
+  - *Quick access*: In the desktop app, go to Profile &rarr; click **"Data Folder"**, or select `File → Open Data Folder`.
+- **Application Logs**: `%LOCALAPPDATA%\com.jobtracker.desktop\logs\jobtracker.log`
+  - *Quick access*: In the desktop app, go to Profile &rarr; click **"App Logs"**, or select `File → Open Log Folder`.
 
 ---
 

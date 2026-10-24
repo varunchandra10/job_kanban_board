@@ -7,7 +7,7 @@ const { runMigrations } = require('./migrator');
 function performDbBackup() {
   if (!fs.existsSync(config.dbPath)) return;
   try {
-    const backupDir = path.join(config.rootDir, 'backups');
+    const backupDir = config.backupDir;
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 10);

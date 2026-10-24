@@ -75,7 +75,7 @@
     .link-field input:focus { outline: none; border-color: var(--accent); }
     .link-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
   </style>
-  <script src="/auth.js?v=20261023_v99"></script>
+  <script type="module" src="/auth.js"></script>
 </head>
 <body class="page-scrollable">
 
@@ -183,6 +183,18 @@
       <button type="button" class="btn-action-glow btn-download-zip" id="profDownloadZipBtn" onclick="window.location.href='/api/backup/export'" title="Download Full SQLite Database (.db) & Attached Resumes as ZIP">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
         <span>Download DB as ZIP</span>
+      </button>
+      <button type="button" class="btn-action-glow btn-open-folder" id="profOpenDataFolderBtn" onclick="openAppDataFolder()" title="Open Local Storage & Database Folder" style="display:none;">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        <span>Data Folder</span>
+      </button>
+      <button type="button" class="btn-action-glow btn-check-updates" id="profCheckUpdatesBtn" onclick="checkAppUpdates()" title="Check for Application Updates" style="display:none;">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Updates</span>
+      </button>
+      <button type="button" class="btn-action-glow btn-open-logs" id="profOpenLogsBtn" onclick="openAppLogs()" title="Open Diagnostics & Error Logs Folder" style="display:none;">
+        <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>App Logs</span>
       </button>
     </div>
   </section>
@@ -1684,16 +1696,70 @@ window.exportProfileCSV = function() {
   ].map(escCSV).join(','));
 
   const csvContent = [headers.map(escCSV).join(','), ...rows].join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `job_applications_export_${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const defaultFilename = `job_applications_export_${new Date().toISOString().slice(0, 10)}.csv`;
+
+  if (typeof desktopInvoke === 'function' && typeof isDesktopApp === 'function' && isDesktopApp()) {
+    desktopInvoke('export_csv', { content: csvContent, defaultFilename })
+      .then(savedPath => {
+        if (savedPath) {
+          alert(`Job applications successfully exported to:\n${savedPath}`);
+        }
+      })
+      .catch(err => {
+        console.error('Desktop CSV export error:', err);
+        fallbackDownload();
+      });
+    return;
+  }
+
+  function fallbackDownload() {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = defaultFilename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  fallbackDownload();
 };
+
+window.openAppDataFolder = async function() {
+  if (typeof desktopInvoke === 'function' && typeof isDesktopApp === 'function' && isDesktopApp()) {
+    try {
+      await desktopInvoke('open_data_folder');
+    } catch (err) {
+      alert(`Could not open data folder: ${err}`);
+    }
+  }
+};
+
+// Expose Data Folder and Updates buttons if running inside desktop native window
+window.checkAppUpdates = async function() {
+  if (typeof desktopInvoke === 'function' && typeof isDesktopApp === 'function' && isDesktopApp()) {
+    try {
+      const res = await desktopInvoke('check_for_updates');
+      if (res && res.available) {
+        alert(`New update available!\n\nVersion: ${res.latest_version}\n\n${res.notes}`);
+      } else {
+        alert('You are already running the latest version of Job Tracker (v0.2.0).');
+      }
+    } catch (err) {
+      alert(`Could not connect to update server:\n${err}`);
+    }
+  }
+};
+
+if (typeof isDesktopApp === 'function' && isDesktopApp()) {
+  const btn = document.getElementById('profOpenDataFolderBtn');
+  if (btn) btn.style.display = 'inline-flex';
+  const upBtn = document.getElementById('profCheckUpdatesBtn');
+  if (upBtn) upBtn.style.display = 'inline-flex';
+  const logsBtn = document.getElementById('profOpenLogsBtn');
+  if (logsBtn) logsBtn.style.display = 'inline-flex';
+}
 
 /* 7. Shutdown Server Handler */
 document.getElementById('closeBtn').onclick = () => {

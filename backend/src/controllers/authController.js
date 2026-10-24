@@ -212,3 +212,185 @@ exports.logout = (req, res) => {
 exports.isValidToken = (token) => {
   return !!verifyToken(token);
 };
+
+
+const pendingDesktopAuth = new Map();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of pendingDesktopAuth.entries()) {
+    if (value.expiresAt && value.expiresAt < now) {
+      pendingDesktopAuth.delete(key);
+    }
+  }
+}, 60000).unref();
+
+exports.desktopGoogleStart = (req, res) => {
+  const sessionId = req.query.sessionId || crypto.randomUUID();
+  const redirectUri = `http://127.0.0.1:${config.port}/api/auth/google/callback`;
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
+    client_id: config.googleDesktopClientId,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'openid email profile',
+    state: sessionId,
+    access_type: 'offline',
+    prompt: 'select_account'
+  }).toString();
+
+  try {
+    const { exec } = require('child_process');
+    if (process.platform === 'win32') {
+      exec(`start "" "${authUrl}"`);
+    } else if (process.platform === 'darwin') {
+      exec(`open "${authUrl}"`);
+    } else {
+      exec(`xdg-open "${authUrl}"`);
+    }
+  } catch (err) {
+    console.warn('[Desktop OAuth] Could not auto-launch browser:', err.message);
+  }
+
+  res.json({ ok: 1, sessionId, url: authUrl });
+};
+
+exports.googleCallback = async (req, res) => {
+  const { code, state: sessionId, error } = req.query;
+
+  if (error || !code) {
+    return res.status(400).send(`
+      <!DOCTYPE html><html><body style="font-family:sans-serif;background:#09090b;color:#f87171;text-align:center;padding:50px;">
+        <h2>Google Authentication Canceled</h2>
+        <p>${error || 'No authorization code provided.'}</p>
+        <p>You can close this tab and return to Job Tracker.</p>
+      </body></html>
+    `);
+  }
+
+  try {
+    const redirectUri = `http://127.0.0.1:${config.port}/api/auth/google/callback`;
+
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        code,
+        client_id: config.googleDesktopClientId,
+        client_secret: config.googleDesktopClientSecret,
+        redirect_uri: redirectUri,
+        grant_type: 'authorization_code'
+      }).toString()
+    });
+
+    const tokenData = await tokenResponse.json();
+
+    if (!tokenData.access_token) {
+      console.error('[Google OAuth Callback] Token exchange failed:', tokenData);
+      return res.status(400).send(`
+        <!DOCTYPE html><html><body style="font-family:sans-serif;background:#09090b;color:#f87171;text-align:center;padding:50px;">
+          <h2>Google Token Exchange Failed</h2>
+          <p>${tokenData.error_description || tokenData.error || 'Could not verify authorization code.'}</p>
+        </body></html>
+      `);
+    }
+
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    const profile = await profileRes.json();
+
+    if (!profile.email) {
+      return res.status(400).send('No email associated with Google profile.');
+    }
+
+    const cleanEmail = profile.email.toLowerCase().trim();
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
+
+    if (!user) {
+      const id = 'usr_' + (profile.sub ? String(profile.sub).slice(0, 12) : crypto.randomBytes(8).toString('hex'));
+      db.prepare('INSERT INTO users (id, email, name, avatar_url) VALUES (?, ?, ?, ?)').run(
+        id,
+        cleanEmail,
+        profile.name || cleanEmail.split('@')[0],
+        profile.picture || ''
+      );
+      user = { id, email: cleanEmail, name: profile.name || cleanEmail.split('@')[0], avatar_url: profile.picture || '' };
+    } else if (profile.picture && !user.avatar_url) {
+      db.prepare('UPDATE users SET avatar_url = ?, name = COALESCE(NULLIF(name, ""), ?) WHERE id = ?').run(
+        profile.picture,
+        profile.name || '',
+        user.id
+      );
+    }
+
+    const token = signToken({ id: user.id, email: user.email, name: user.name });
+
+    if (sessionId) {
+      pendingDesktopAuth.set(sessionId, {
+        token,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          avatar_url: user.avatar_url || profile.picture || ''
+        },
+        expiresAt: Date.now() + 180000
+      });
+    }
+
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Job Tracker - Authenticated</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #09090b; color: #f4f4f5; text-align: center; }
+          .card { background: #18181b; padding: 48px 40px; border-radius: 20px; border: 1px solid #27272a; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
+          .icon { width: 68px; height: 68px; background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 34px; border: 2px solid rgba(34,197,94,0.3); }
+          h1 { margin: 0 0 12px; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+          p { color: #a1a1aa; font-size: 15px; line-height: 1.6; margin: 0 0 28px; }
+          .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: #27272a; border-radius: 9999px; font-size: 13px; color: #e4e4e7; font-weight: 500; border: 1px solid #3f3f46; }
+          .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="icon">✓</div>
+          <h1>Signed In Successfully!</h1>
+          <p>Authenticated as <strong>${profile.name || cleanEmail}</strong>.<br>You can now close this browser tab and return to the Job Tracker desktop app.</p>
+          <div class="badge"><span class="dot"></span>Desktop App Connected</div>
+        </div>
+        <script>
+          setTimeout(() => { try { window.close(); } catch(e) {} }, 2500);
+        </script>
+      </body>
+      </html>
+    `);
+  } catch (err) {
+    console.error('[Google OAuth Callback Error]:', err);
+    res.status(500).send(`
+      <!DOCTYPE html><html><body style="font-family:sans-serif;background:#09090b;color:#f87171;text-align:center;padding:50px;">
+        <h2>Authentication Server Error</h2>
+        <p>${err.message}</p>
+      </body></html>
+    `);
+  }
+};
+
+exports.desktopGooglePoll = (req, res) => {
+  const { sessionId } = req.query;
+  if (!sessionId || !pendingDesktopAuth.has(sessionId)) {
+    return res.json({ ok: 1, ready: false });
+  }
+
+  const data = pendingDesktopAuth.get(sessionId);
+  pendingDesktopAuth.delete(sessionId);
+  res.json({
+    ok: 1,
+    ready: true,
+    token: data.token,
+    user: data.user
+  });
+};

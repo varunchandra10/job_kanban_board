@@ -12,10 +12,7 @@ function authMiddleware(req, res, next) {
     '/app.js',
     '/learnings.js',
     '/logos.json',
-    '/health',
-    '/api/auth/login',
-    '/api/auth/status',
-    '/api/auth/google'
+    '/health'
   ];
 
   // Try to parse user token if present on any request
@@ -31,7 +28,11 @@ function authMiddleware(req, res, next) {
     }
   }
 
-  if (publicPaths.includes(req.path) || req.path.startsWith('/vendor/')) {
+  if (
+    publicPaths.includes(req.path) ||
+    req.path.startsWith('/api/auth/') ||
+    req.path.startsWith('/vendor/')
+  ) {
     return next();
   }
 

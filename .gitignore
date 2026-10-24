@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 package-lock.json
 
@@ -10,6 +10,8 @@ package-lock.json
 job-tracker-*.json
 google-*.json
 credentials*.json
+*.key
+*.key.pub
 
 # Operating System files
 Thumbs.db
@@ -32,6 +34,7 @@ yarn-debug.log*
 *.backup.db
 *.safety_pre_git.db
 tracker*.db
+!backend/src/database/tracker.template.db
 *.bak
 *.db-shm
 *.db-wal
@@ -49,3 +52,12 @@ client_secret_*.json
 
 # Unnecessary / archived files folder
 ignored_folder/
+
+# Tauri & Executables
+src-tauri/target/
+src-tauri/dist/
+*.exe
+*.key
+src-tauri/*.key
+dist-desktop/
+*.msi

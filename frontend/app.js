@@ -1735,21 +1735,40 @@ function exportCSV() {
   ].map(escCSV).join(','));
 
   const csvContent = '\uFEFF' + [headers.map(escCSV).join(','), ...rows].join('\r\n');
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
   const secName = currentSec.toLowerCase();
-  link.download = `applications_${secName}_${today()}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  const defaultFilename = `applications_${secName}_${today()}.csv`;
+
+  if (typeof desktopInvoke === 'function' && typeof isDesktopApp === 'function' && isDesktopApp()) {
+    desktopInvoke('export_csv', { content: csvContent, defaultFilename })
+      .then(savedPath => {
+        if (savedPath) {
+          toast(`Exported CSV successfully to: ${savedPath}`);
+        }
+      })
+      .catch(err => {
+        console.error('Desktop CSV export error:', err);
+        fallbackDownload();
+      });
+    return;
+  }
+
+  function fallbackDownload() {
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = defaultFilename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+  fallbackDownload();
 }
 if ($('#expBtn')) $('#expBtn').onclick = exportCSV;
 if ($('#backupZipBtn')) $('#backupZipBtn').onclick = () => {
   toast('Preparing full ZIP archive (Database + Documents)...');
-  window.location.href = '/api/backup/export';
+  window.location.href = (typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '') + '/api/backup/export';
 };
 
 
