@@ -80,10 +80,16 @@ class GoogleDriveStorageService extends BaseStorageService {
   }
 
   async saveFile({ buffer, originalName, type, appId, folderId }) {
-    const targetFolder = folderId || this.folderId;
+    let targetFolder = folderId || this.folderId;
+    if (targetFolder && String(targetFolder).includes('folders/')) {
+      const m = String(targetFolder).match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (m) targetFolder = m[1];
+    }
+    if (targetFolder) targetFolder = String(targetFolder).split('?')[0].trim();
     if (!targetFolder) {
       throw new Error('Google Drive folder not configured. Please connect your personal Google Drive folder in Career Profile.');
     }
+    if (!this.driveClient) this._initAuth();
     if (!this.driveClient) {
       throw new Error('Google Drive service is not configured with credentials');
     }
@@ -108,7 +114,9 @@ class GoogleDriveStorageService extends BaseStorageService {
     let file;
     try {
       file = await this.driveClient.files.create({
+        requestBody: fileMetadata,
         resource: fileMetadata,
+        supportsAllDrives: true,
         media,
         fields: 'id, name, size, webViewLink, webContentLink, mimeType'
       });
@@ -129,7 +137,9 @@ class GoogleDriveStorageService extends BaseStorageService {
         requestBody: {
           role: 'reader',
           type: 'anyone'
-        }
+        },
+        supportsAllDrives: true
+
       });
     } catch (_) {}
 

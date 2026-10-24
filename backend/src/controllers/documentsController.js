@@ -147,20 +147,15 @@ exports.uploadDocument = async (req, res, next) => {
       } else {
         return res.status(400).json({
           ok: 0,
-          error: 'Google Drive folder not configured. Please link your personal Google Drive folder in Career Profile or click "Link Drive" to paste the document link.',
-          isGoogleDriveQuota: true
+          error: 'Google Drive folder not configured. Please link your Google Drive folder in Career Profile before uploading documents.'
         });
       }
     } catch (saveErr) {
       console.warn('[Storage] Primary save failed:', saveErr.message);
       if (config.isVercel) {
-        const isQuota = /quota/i.test(saveErr.message) || /Service Accounts do not have storage quota/i.test(saveErr.message);
         return res.status(400).json({
           ok: 0,
-          error: isQuota
-            ? 'Google Drive restricts service accounts from uploading files into personal Google accounts (0 MB storage quota). Please upload to your Google Drive and click "Link Drive" to attach it directly.'
-            : 'Google Drive upload error: ' + saveErr.message,
-          isGoogleDriveQuota: true
+          error: 'Google Drive upload error: ' + saveErr.message
         });
       }
       const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
