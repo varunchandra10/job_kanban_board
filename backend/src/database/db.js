@@ -1,4 +1,10 @@
-const { DatabaseSync } = require('node:sqlite');
+let DatabaseSync;
+try {
+  DatabaseSync = require('node:sqlite').DatabaseSync;
+} catch (err) {
+  console.error('[Database Engine] Failed to load node:sqlite. Node.js version is:', process.version, err.message);
+}
+
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
@@ -36,7 +42,6 @@ if (!process.env.VERCEL) {
   setInterval(performDbBackup, 24 * 60 * 60 * 1000).unref();
 }
 
-
 if (process.env.VERCEL) {
   const tmpDir = path.dirname(config.dbPath);
   if (!fs.existsSync(tmpDir)) {
@@ -57,13 +62,26 @@ if (process.env.VERCEL) {
   }
 }
 
-const db = new DatabaseSync(config.dbPath);
-
-try {
-  db.exec("PRAGMA journal_mode = WAL;");
-} catch (_) {}
-
-runMigrations(db);
+let db;
+if (!DatabaseSync) {
+  const errMsg = `SQLite engine (node:sqlite) is not available on Node.js ${process.version}. Job Tracker requires Node.js >= 22.5.0 on Vercel. Please set Node.js Version to 22.x in Vercel Settings -> General.`;
+  console.error('[Database Error]', errMsg);
+  const fail = () => { throw new Error(errMsg); };
+  db = {
+    prepare: () => ({ get: fail, all: fail, run: fail }),
+    exec: fail
+  };
+} else {
+  db = new DatabaseSync(config.dbPath);
+  try {
+    if (process.env.VERCEL) {
+      db.exec("PRAGMA journal_mode = DELETE;");
+    } else {
+      db.exec("PRAGMA journal_mode = WAL;");
+    }
+  } catch (_) {}
+  runMigrations(db);
+}
 
 const COMPANIES = `Google|Mountain View|US
 Meta|Menlo Park|US

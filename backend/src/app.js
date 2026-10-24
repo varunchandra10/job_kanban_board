@@ -21,9 +21,25 @@ app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 500 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
-});
+const healthHandler = (req, res) => {
+  let sqliteOk = false;
+  try {
+    const { db } = require('./database/db');
+    sqliteOk = !!db && typeof db.prepare === 'function';
+  } catch (_) {}
+
+  res.json({
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    node: process.version,
+    sqliteOk,
+    environment: process.env.VERCEL ? 'vercel' : (config.isDesktop ? 'desktop' : 'server')
+  });
+};
+
+app.get('/health', healthHandler);
+app.get('/api/health', healthHandler);
 
 const handleShutdown = (req, res) => {
   res.json({ ok: 1, message: 'Server is stopping gracefully...' });

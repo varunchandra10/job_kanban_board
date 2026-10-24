@@ -1976,7 +1976,7 @@ async function submitGoogleOAuth() {
   }
 
   try {
-    const res = await fetch('/api/auth/google', {
+    const rawRes = await fetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1987,7 +1987,22 @@ async function submitGoogleOAuth() {
           sub: 'g_' + Math.abs(hashCode(email))
         }
       })
-    }).then(r => r.json());
+    });
+
+    const resText = await rawRes.text();
+    let res;
+    try {
+      res = JSON.parse(resText);
+    } catch (_) {
+      if (!rawRes.ok) {
+        throw new Error(resText.slice(0, 200) || `Server returned HTTP ${rawRes.status}`);
+      }
+      throw new Error('Invalid JSON response from server');
+    }
+
+    if (!rawRes.ok) {
+      throw new Error(res?.error || `Server error (HTTP ${rawRes.status})`);
+    }
 
     if (res.ok && res.token) {
       localStorage.setItem('auth_token', res.token);

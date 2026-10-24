@@ -525,13 +525,19 @@ async function submitGoogleOAuth() {
               })
             });
 
+            const resText = await rawRes.text();
             let res;
-            const contentType = rawRes.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-              res = await rawRes.json();
-            } else {
-              const text = await rawRes.text();
-              throw new Error(text || `Server returned HTTP ${rawRes.status}`);
+            try {
+              res = JSON.parse(resText);
+            } catch (_) {
+              if (!rawRes.ok) {
+                throw new Error(resText.slice(0, 200) || `Server returned HTTP ${rawRes.status}`);
+              }
+              throw new Error('Invalid JSON response from server');
+            }
+
+            if (!rawRes.ok) {
+              throw new Error(res?.error || `Server error (HTTP ${rawRes.status})`);
             }
 
             if (res.ok && res.token) {
@@ -559,7 +565,7 @@ async function submitGoogleOAuth() {
           } catch (err) {
             if (feedback) {
               feedback.className = 'render-feedback-msg error';
-              feedback.textContent = 'Error processing Google profile: ' + err.message;
+              feedback.textContent = 'Google sign-in error: ' + err.message;
               feedback.style.display = 'flex';
             }
           }
@@ -603,13 +609,19 @@ async function fallbackGoogleSignIn(feedback) {
       })
     });
 
+    const resText = await rawRes.text();
     let res;
-    const contentType = rawRes.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      res = await rawRes.json();
-    } else {
-      const text = await rawRes.text();
-      throw new Error(text || `Server returned HTTP ${rawRes.status}`);
+    try {
+      res = JSON.parse(resText);
+    } catch (_) {
+      if (!rawRes.ok) {
+        throw new Error(resText.slice(0, 200) || `Server returned HTTP ${rawRes.status}`);
+      }
+      throw new Error('Invalid JSON response from server');
+    }
+
+    if (!rawRes.ok) {
+      throw new Error(res?.error || `Server error (HTTP ${rawRes.status})`);
     }
 
     if (res.ok && res.token) {

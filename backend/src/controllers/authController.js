@@ -4,7 +4,7 @@ function claimExistingDataIfVarun(user) {
   const isVarun = ['varunchandra10@gmail.com', 'kvc.sunny3@gmail.com', 'varun.developer@gmail.com', 'varun.google@gmail.com'].includes(user.email.toLowerCase());
   if (isVarun) {
     try {
-      const defaultAppsCount = db.prepare("select count(*) as c from applications where user_id='default_user'").get().c;
+      const defaultAppsCount = db.prepare("select count(*) as c from applications where user_id='default_user'").get()?.c || 0;
       if (defaultAppsCount > 0) {
         db.prepare("UPDATE applications SET user_id=? WHERE user_id='default_user'").run(user.id);
         db.prepare("UPDATE learnings SET user_id=? WHERE user_id='default_user'").run(user.id);
@@ -138,65 +138,93 @@ exports.status = (req, res) => {
  * Google OAuth verification / sign-in endpoint
  */
 exports.googleAuth = async (req, res) => {
-  const { credential, profile } = req.body || {};
+  try {
+    const { credential, profile } = req.body || {};
 
-  let email = profile?.email;
-  let name = profile?.name;
-  let picture = profile?.picture;
-  let googleId = profile?.sub;
+    let email = profile?.email;
+    let name = profile?.name;
+    let picture = profile?.picture;
+    let googleId = profile?.sub;
 
-  if (credential && !email) {
-    try {
-      const parts = credential.split('.');
-      if (parts.length === 3) {
-        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-        email = payload.email;
-        name = payload.name;
-        picture = payload.picture;
-        googleId = payload.sub;
+    if (credential && !email) {
+      try {
+        const parts = credential.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+          email = payload.email;
+          name = payload.name;
+          picture = payload.picture;
+          googleId = payload.sub;
+        }
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid Google credential' });
       }
-    } catch (e) {
-      return res.status(400).json({ error: 'Invalid Google credential' });
     }
-  }
 
-  if (!email) {
-    return res.status(400).json({ error: 'Google email is required' });
-  }
-
-  const cleanEmail = email.toLowerCase().trim();
-  let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
-
-  if (!user) {
-    const id = 'usr_' + (googleId ? String(googleId).slice(0, 12) : crypto.randomBytes(8).toString('hex'));
-    db.prepare('INSERT INTO users (id, email, name, avatar_url) VALUES (?, ?, ?, ?)').run(
-      id,
-      cleanEmail,
-      name || cleanEmail.split('@')[0],
-      picture || ''
-    );
-    user = { id, email: cleanEmail, name: name || cleanEmail.split('@')[0], avatar_url: picture || '' };
-  } else if (picture && !user.avatar_url) {
-    db.prepare('UPDATE users SET avatar_url = ?, name = COALESCE(NULLIF(name, ""), ?) WHERE id = ?').run(
-      picture,
-      name || '',
-      user.id
-    );
-  }
-
-  const token = signToken({ id: user.id, email: user.email, name: user.name });
-
-  res.json({
-    ok: 1,
-    token,
-    user: {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      avatar_url: user.avatar_url || picture || '',
-      has_gdrive: !!user.google_refresh_token
+    if (!email) {
+      return res.status(400).json({ error: 'Google email is required' });
     }
-  });
+
+    const cleanEmail = email.toLowerCase().trim();
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
+
+    if (!user) {
+      const id = 'usr_' + (googleId ? String(googleId).slice(0, 12) : crypto.randomBytes(8).toString('hex'));
+      const initialName = name || cleanEmail.split('@')[0];
+      const initialPic = picture || '';
+      db.prepare('INSERT INTO users (id, email, name, avatar_url) VALUES (?, ?, ?, ?)').run(
+        id,
+        cleanEmail,
+        initialName,
+        initialPic
+      );
+      user = { id, email: cleanEmail, name: initialName, avatar_url: initialPic };
+    } else {
+      let needsUpdate = false;
+      let finalName = user.name || name || cleanEmail.split('@')[0];
+      let finalPic = user.avatar_url || picture || '';
+
+      if (picture && !user.avatar_url) {
+        finalPic = picture;
+        needsUpdate = true;
+      }
+      if (!user.name && name) {
+        finalName = name;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        db.prepare('UPDATE users SET avatar_url = ?, name = ? WHERE id = ?').run(
+          finalPic,
+          finalName,
+          user.id
+        );
+        user.avatar_url = finalPic;
+        user.name = finalName;
+      }
+    }
+
+    claimExistingDataIfVarun(user);
+
+    const token = signToken({ id: user.id, email: user.email, name: user.name });
+
+    return res.json({
+      ok: 1,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url || picture || '',
+        has_gdrive: !!user.google_refresh_token
+      }
+    });
+  } catch (err) {
+    console.error('[Google Auth Error]', err);
+    return res.status(500).json({
+      error: err.message || 'Error authenticating with Google'
+    });
+  }
 };
 
 /**
@@ -309,20 +337,41 @@ exports.googleCallback = async (req, res) => {
 
     if (!user) {
       const id = 'usr_' + (profile.sub ? String(profile.sub).slice(0, 12) : crypto.randomBytes(8).toString('hex'));
+      const initialName = profile.name || cleanEmail.split('@')[0];
+      const initialPic = profile.picture || '';
       db.prepare('INSERT INTO users (id, email, name, avatar_url) VALUES (?, ?, ?, ?)').run(
         id,
         cleanEmail,
-        profile.name || cleanEmail.split('@')[0],
-        profile.picture || ''
+        initialName,
+        initialPic
       );
-      user = { id, email: cleanEmail, name: profile.name || cleanEmail.split('@')[0], avatar_url: profile.picture || '' };
-    } else if (profile.picture && !user.avatar_url) {
-      db.prepare('UPDATE users SET avatar_url = ?, name = COALESCE(NULLIF(name, ""), ?) WHERE id = ?').run(
-        profile.picture,
-        profile.name || '',
-        user.id
-      );
+      user = { id, email: cleanEmail, name: initialName, avatar_url: initialPic };
+    } else {
+      let needsUpdate = false;
+      let finalName = user.name || profile.name || cleanEmail.split('@')[0];
+      let finalPic = user.avatar_url || profile.picture || '';
+
+      if (profile.picture && !user.avatar_url) {
+        finalPic = profile.picture;
+        needsUpdate = true;
+      }
+      if (!user.name && profile.name) {
+        finalName = profile.name;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
+        db.prepare('UPDATE users SET avatar_url = ?, name = ? WHERE id = ?').run(
+          finalPic,
+          finalName,
+          user.id
+        );
+        user.avatar_url = finalPic;
+        user.name = finalName;
+      }
     }
+
+    claimExistingDataIfVarun(user);
 
     const token = signToken({ id: user.id, email: user.email, name: user.name });
 
