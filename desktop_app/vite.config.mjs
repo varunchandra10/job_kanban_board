@@ -7,17 +7,17 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig({
-  root: path.resolve(__dirname, 'frontend'),
+  root: path.resolve(__dirname, '../web_app/frontend'),
   base: './',
   build: {
     outDir: path.resolve(__dirname, 'src-tauri/dist'),
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: path.resolve(__dirname, 'frontend/index.html'),
-        board: path.resolve(__dirname, 'frontend/board.html'),
-        learnings: path.resolve(__dirname, 'frontend/learnings.html'),
-        profile: path.resolve(__dirname, 'frontend/profile.html'),
+        index: path.resolve(__dirname, '../web_app/frontend/index.html'),
+        board: path.resolve(__dirname, '../web_app/frontend/board.html'),
+        learnings: path.resolve(__dirname, '../web_app/frontend/learnings.html'),
+        profile: path.resolve(__dirname, '../web_app/frontend/profile.html'),
       },
     },
   },
@@ -30,14 +30,14 @@ export default defineConfig({
 
         const staticFiles = ['logos.json', 'logo.svg', 'favicon.svg'];
         for (const file of staticFiles) {
-          const src = path.resolve(__dirname, 'frontend', file);
+          const src = path.resolve(__dirname, '../web_app/frontend', file);
           const dest = path.resolve(outDir, file);
           if (fs.existsSync(src)) {
             fs.copyFileSync(src, dest);
           }
         }
 
-        const vendorSrc = path.resolve(__dirname, 'frontend/vendor');
+        const vendorSrc = path.resolve(__dirname, '../web_app/frontend/vendor');
         const vendorDest = path.resolve(outDir, 'vendor');
         if (fs.existsSync(vendorSrc)) {
           fs.cpSync(vendorSrc, vendorDest, { recursive: true });

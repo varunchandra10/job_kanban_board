@@ -3,10 +3,11 @@ const fs = require('fs');
 const os = require('os');
 const dotenv = require('dotenv');
 
-const webAppDir = path.resolve(__dirname, '../../');
+const backendDir = path.resolve(__dirname, '../../');
+const webAppDir = path.resolve(__dirname, '../../../');
 const rootDir = path.resolve(__dirname, '../../../../');
-dotenv.config({ path: path.resolve(rootDir, '.env') });
 dotenv.config({ path: path.resolve(webAppDir, '.env') });
+dotenv.config({ path: path.resolve(rootDir, '.env') });
 
 const isVercel = Boolean(process.env.VERCEL);
 const isDesktop = process.env.APP_MODE === 'desktop' || Boolean(process.env.DESKTOP_MODE) || Boolean(process.env.TAURI_ENV_PLATFORM);
@@ -72,10 +73,13 @@ function resolveStoragePaths() {
   }
 
   // Web Local Development Mode
-  const dataDir = rootDir;
-  const dbPath = path.resolve(rootDir, process.env.DB_PATH || 'tracker.db');
-  const uploadDir = path.resolve(rootDir, process.env.UPLOAD_DIR || 'documents');
-  const backupDir = path.resolve(rootDir, 'backups');
+  const dataDir = backendDir;
+  let dbPath = path.resolve(backendDir, process.env.DB_PATH || 'tracker.db');
+  if (!fs.existsSync(dbPath) && fs.existsSync(path.resolve(rootDir, 'tracker.db'))) {
+    dbPath = path.resolve(rootDir, 'tracker.db');
+  }
+  const uploadDir = path.resolve(backendDir, process.env.UPLOAD_DIR || 'documents');
+  const backupDir = path.resolve(backendDir, 'backups');
 
   if (!fs.existsSync(uploadDir)) {
     try { fs.mkdirSync(uploadDir, { recursive: true }); } catch (_) {}
@@ -103,8 +107,8 @@ const config = {
   googleDesktopClientId: (process.env.GOOGLE_DESKTOP_CLIENT_ID || '').trim(),
   googleDesktopClientSecret: (process.env.GOOGLE_DESKTOP_CLIENT_SECRET || '').trim(),
   googleDriveFolderId: (process.env.GOOGLE_DRIVE_FOLDER_ID || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_').trim(),
-  googleServiceAccountKeyPath: fs.existsSync(path.resolve(webAppDir, 'backend', 'google-service-account.json'))
-    ? path.resolve(webAppDir, 'backend', 'google-service-account.json')
+  googleServiceAccountKeyPath: fs.existsSync(path.resolve(backendDir, 'google-service-account.json'))
+    ? path.resolve(backendDir, 'google-service-account.json')
     : path.resolve(rootDir, process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || 'google-service-account.json'),
   dataDir: storagePaths.dataDir,
   dbPath: storagePaths.dbPath,
@@ -119,7 +123,8 @@ const config = {
   maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '25', 10),
   appPin: (process.env.APP_PIN || '').trim(),
   rootDir,
-  webAppDir
+  webAppDir,
+  backendDir
 };
 
 module.exports = config;

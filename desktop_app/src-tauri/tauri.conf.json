@@ -6,8 +6,8 @@
   "build": {
     "frontendDist": "dist",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "npm run desktop:server",
-    "beforeBuildCommand": "npm run build:web"
+    "beforeDevCommand": "node ../web_app/server.js",
+    "beforeBuildCommand": "npx vite build --config vite.config.mjs"
   },
   "app": {
     "withGlobalTauri": true,
