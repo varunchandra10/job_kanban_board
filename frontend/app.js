@@ -2539,7 +2539,6 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
     } else {
       toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
     }
-    }
   } catch (err) {
     toast('Upload failed: ' + err.message, true);
   } finally {
