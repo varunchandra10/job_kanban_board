@@ -499,16 +499,20 @@
           <div class="gdrive-step-card">
             <div class="gdrive-step-num">2</div>
             <div class="gdrive-step-content">
-              <strong>Copy the Folder URL</strong>
-              <p>Open your new folder in Google Drive and copy the URL from your browser bar (e.g. <code>drive.google.com/drive/folders/1A2B...</code>).</p>
+              <strong>Share with Service Account (Editor)</strong>
+              <p style="margin-bottom:6px;">Right-click folder &gt; <em>Share</em>. Add our app robot email as <strong>Editor</strong> so it can upload resumes:</p>
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                <code style="font-size:11px;background:var(--bg2,#f1f5f9);padding:4px 8px;border-radius:6px;word-break:break-all;color:var(--tx,#0f172a);border:1px solid var(--bd2,#cbd5e1);">job-tracker-storage@job-tracker-512318.iam.gserviceaccount.com</code>
+                <button type="button" class="btn" style="padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;" onclick="navigator.clipboard.writeText('job-tracker-storage@job-tracker-512318.iam.gserviceaccount.com');this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)">Copy</button>
+              </div>
             </div>
           </div>
 
           <div class="gdrive-step-card">
             <div class="gdrive-step-num">3</div>
             <div class="gdrive-step-content">
-              <strong>Paste &amp; Save</strong>
-              <p>Paste the link into the box above and click <strong>Save &amp; Link</strong>. You can now attach resumes and preview them anytime!</p>
+              <strong>Paste URL &amp; Save</strong>
+              <p>Copy your folder URL from the browser bar, paste it into the box above, and click <strong>Save &amp; Link</strong>!</p>
             </div>
           </div>
         </div>
