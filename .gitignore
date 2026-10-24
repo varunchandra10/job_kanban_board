@@ -41,6 +41,7 @@ tracker*.db
 *.sqlite-journal
 *.db-journal
 backups/
+DB/*
 *.zip
 
 # IMPORTANT PRIVACY NOTE:

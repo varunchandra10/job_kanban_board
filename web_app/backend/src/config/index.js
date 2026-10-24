@@ -53,7 +53,9 @@ function resolveStoragePaths() {
     // Seed database if not yet existing
     if (!fs.existsSync(dbPath)) {
       const candidates = [
+        path.resolve(rootDir, 'DB/tracker.db'),
         path.resolve(__dirname, '../database/tracker.template.db'),
+        path.resolve(backendDir, 'tracker.db'),
         path.resolve(rootDir, 'tracker.db')
       ];
       for (const candidate of candidates) {
@@ -73,9 +75,11 @@ function resolveStoragePaths() {
   }
 
   // Web Local Development Mode
-  const dataDir = backendDir;
-  let dbPath = path.resolve(backendDir, process.env.DB_PATH || 'tracker.db');
-  if (!fs.existsSync(dbPath) && fs.existsSync(path.resolve(rootDir, 'tracker.db'))) {
+  const dataDir = path.resolve(rootDir, 'DB');
+  let dbPath = path.resolve(rootDir, 'DB', process.env.DB_PATH || 'tracker.db');
+  if (!fs.existsSync(dbPath) && fs.existsSync(path.resolve(backendDir, 'tracker.db'))) {
+    dbPath = path.resolve(backendDir, 'tracker.db');
+  } else if (!fs.existsSync(dbPath) && fs.existsSync(path.resolve(rootDir, 'tracker.db'))) {
     dbPath = path.resolve(rootDir, 'tracker.db');
   }
   const uploadDir = path.resolve(backendDir, process.env.UPLOAD_DIR || 'documents');

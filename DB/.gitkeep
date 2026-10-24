@@ -1,0 +1,2 @@
+# This directory holds local SQLite databases (tracker.db, backups, etc.)
+# Local databases are ignored by Git for privacy.
