@@ -973,6 +973,8 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
       formData.append('file', file);
       formData.append('type', docType);
       if (appId) formData.append('appId', appId);
+      const savedFolder = localStorage.getItem('user_gdrive_folder_id');
+      if (savedFolder) formData.append('folderId', savedFolder);
       const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
       const res = await resp.json();
       if (res && res.ok) {
@@ -2473,6 +2475,8 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
     formData.append('file', file);
     formData.append('type', docType);
     if (appId) formData.append('appId', appId);
+    const savedFolder2 = localStorage.getItem('user_gdrive_folder_id');
+    if (savedFolder2) formData.append('folderId', savedFolder2);
     const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
     const res = await resp.json();
     if (res && res.ok) {

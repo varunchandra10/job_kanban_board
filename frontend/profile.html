@@ -708,6 +708,7 @@ window.saveDriveFolder = async function() {
     }).then(r => r.json());
 
     if (res.ok) {
+      try { localStorage.setItem('user_gdrive_folder_id', val); } catch (_) {}
       await window.loadDriveStatus();
       alert('Google Drive folder connected successfully! Your resumes and documents will be saved here.');
     } else {

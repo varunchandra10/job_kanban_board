@@ -70,63 +70,99 @@ exports.uploadDocument = async (req, res, next) => {
       return res.status(400).json({ error: 'No file data received' });
     }
 
-    // Get user's personal Google Drive folder
-    let userFolderId = null;
-    try {
-      const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
-      if (userRow && userRow.gdrive_folder_id) {
-        userFolderId = userRow.gdrive_folder_id.trim();
-      }
-    } catch (_) {}
+    // Get user's Google Drive folder from request body, database, or config
+    let userFolderId = req.body.folderId ? String(req.body.folderId).trim() : null;
+    if (userFolderId && userFolderId.includes('folders/')) {
+      const m = userFolderId.match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (m) userFolderId = m[1];
+    }
 
-    // If STORAGE_PROVIDER is google_drive, user MUST have their own folder configured
-    if (config.storageProvider === 'google_drive') {
-      if (!userFolderId) {
-        return res.status(400).json({
-          error: 'Google Drive folder not configured. Please link your personal Google Drive folder in your Career Profile before uploading documents.'
-        });
-      }
-
-      if (storageService.driveClient && originalName) {
-        try {
-          const driveSearch = await storageService.driveClient.files.list({
-            q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and '${userFolderId}' in parents`,
-            fields: 'files(id, name, webViewLink, size)',
-            pageSize: 1
-          });
-
-          if (driveSearch.data.files && driveSearch.data.files.length > 0) {
-            const found = driveSearch.data.files[0];
-            const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
-            if (appId) {
-              const isCover = type === 'cover_letter' || type === 'cover_letter_path';
-              const col = isCover ? 'cover_letter_path' : 'resume_path';
-              db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
-            }
-            return res.json({
-              ok: 1,
-              fullPath: gdriveLink,
-              path: gdriveLink,
-              relativePath: gdriveLink,
-              name: found.name,
-              size: found.size,
-              isGoogleDrive: true,
-              fileId: found.id
-            });
-          }
-        } catch (searchErr) {
-          console.warn('[Google Drive] Search error:', searchErr.message);
+    if (!userFolderId) {
+      try {
+        const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
+        if (userRow && userRow.gdrive_folder_id) {
+          userFolderId = userRow.gdrive_folder_id.trim();
         }
+      } catch (_) {}
+    }
+
+    if (!userFolderId && config.googleDriveFolderId) {
+      userFolderId = config.googleDriveFolderId;
+    }
+
+    // Check if duplicate file already exists in Drive folder to avoid re-uploading
+    if (config.storageProvider === 'google_drive' && userFolderId && storageService.driveClient && originalName) {
+      try {
+        const driveSearch = await storageService.driveClient.files.list({
+          q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and '${userFolderId}' in parents`,
+          fields: 'files(id, name, webViewLink, size)',
+          pageSize: 1
+        });
+
+        if (driveSearch.data.files && driveSearch.data.files.length > 0) {
+          const found = driveSearch.data.files[0];
+          const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
+          if (appId) {
+            const isCover = type === 'cover_letter' || type === 'cover_letter_path';
+            const col = isCover ? 'cover_letter_path' : 'resume_path';
+            db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
+          }
+          return res.json({
+            ok: 1,
+            fullPath: gdriveLink,
+            path: gdriveLink,
+            relativePath: gdriveLink,
+            name: found.name,
+            size: found.size,
+            isGoogleDrive: true,
+            fileId: found.id
+          });
+        }
+      } catch (searchErr) {
+        console.warn('[Google Drive] Search error:', searchErr.message);
       }
     }
 
-    const saved = await storageService.saveFile({
-      buffer: fileBuffer,
-      originalName,
-      type,
-      appId,
-      folderId: userFolderId
-    });
+    let saved;
+    try {
+      if (config.storageProvider === 'google_drive' && !userFolderId) {
+        if (storageService.localFallback) {
+          console.log('[Storage] Google Drive folder not yet connected. Saving locally.');
+          saved = await storageService.localFallback.saveFile({
+            buffer: fileBuffer,
+            originalName,
+            type,
+            appId
+          });
+          saved.notice = 'Saved locally. Connect your Google Drive folder in Career Profile to backup to cloud.';
+        } else {
+          return res.status(400).json({
+            error: 'Google Drive folder not configured. Please link your personal Google Drive folder in Career Profile before uploading documents.'
+          });
+        }
+      } else {
+        saved = await storageService.saveFile({
+          buffer: fileBuffer,
+          originalName,
+          type,
+          appId,
+          folderId: userFolderId
+        });
+      }
+    } catch (saveErr) {
+      if (storageService.localFallback) {
+        console.warn('[Storage] Google Drive save failed, using local fallback:', saveErr.message);
+        saved = await storageService.localFallback.saveFile({
+          buffer: fileBuffer,
+          originalName,
+          type,
+          appId
+        });
+        saved.notice = 'Saved locally due to Drive error: ' + saveErr.message;
+      } else {
+        throw saveErr;
+      }
+    }
 
     if (appId) {
       const isCover = type === 'cover_letter' || type === 'cover_letter_path';
