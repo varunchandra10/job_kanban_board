@@ -1,3 +1,12 @@
+// ==========================================================================
+// Job Tracker Kanban Board - Client Application Bundle
+// Automatically generated from frontend/src/*.js - DO NOT EDIT app.js DIRECTLY!
+// To rebuild: npm run build:app (or node scripts/merge-frontend.js)
+// ==========================================================================
+
+// --------------------------------------------------------------------------
+// MODULE: 01-auth-fetch.js
+// --------------------------------------------------------------------------
 // Global fetch interceptor to inject Authorization header for multi-user support
 (function() {
   if (window.__fetchAuthInjected) return;
@@ -25,7 +34,9 @@
   };
 })();
 
-
+// --------------------------------------------------------------------------
+// MODULE: 02-icons-constants.js
+// --------------------------------------------------------------------------
 function showConfirmDialog({ title, text, icon, confirmText = 'Confirm', confirmCls = 'primary', cancelText = 'Cancel', onConfirm }) {
   const overlay = document.createElement('div');
   overlay.className = 'confirm-modal-overlay';
@@ -107,6 +118,9 @@ const api = (m, u, b) => fetch('/api' + u, { method: m, headers: { 'content-type
 
 let S = { apps: [], roles: [], companies: [], settings: {} }, LOGOS = {}, openId = null, adding = false, dragId = null, currentSec = 'All', searchQuery = '';
 
+// --------------------------------------------------------------------------
+// MODULE: 03-state-tags.js
+// --------------------------------------------------------------------------
 /* ----- Tags Palette (Clean Muted Light Hues) ----- */
 const TAG_PALETTE = [
   { id: 'blue',   color: '#2563eb', bg: '#eff6ff', text: '#1d4ed8', border: '#bfdbfe' },
@@ -261,6 +275,9 @@ const vis = a => {
 };
 const stageApps = s => S.apps.filter(a => a.stage === s).sort((a,b) => a.position - b.position);
 
+// --------------------------------------------------------------------------
+// MODULE: 04-calendar.js
+// --------------------------------------------------------------------------
 /* ----- Calendar View ----- */
 let calCurrent = new Date();
 let calLearningsList = [];
@@ -426,7 +443,9 @@ async function renderCalendar() {
   });
 }
 
-
+// --------------------------------------------------------------------------
+// MODULE: 05-stats.js
+// --------------------------------------------------------------------------
 /* ----- Stats Dashboard ----- */
 function openStatsPanel() {
   const apps = S.apps;
@@ -571,6 +590,9 @@ function openStatsPanel() {
   openPanel('Applications Analytics', html);
 }
 
+// --------------------------------------------------------------------------
+// MODULE: 06-templates.js
+// --------------------------------------------------------------------------
 /* ----- Email Outreach Templates ----- */
 function generateEmailTemplates(a, P) {
   const myName = P?.full_name || 'Candidate';
@@ -654,6 +676,9 @@ ${myEmail}`
 
 let activeMobileStage = 'Applied';
 
+// --------------------------------------------------------------------------
+// MODULE: 07-board.js
+// --------------------------------------------------------------------------
 /* ----- Main Render ----- */
 function render() {
   const stageBar = $('#stagePickerBar');
@@ -798,16 +823,26 @@ function render() {
         <div class="meta">${ICON.calendar}<span>${fmt(a.date_applied) || '-'}${a.deadline ? ` &middot; Due ${fmt(a.deadline)}` : ''}</span></div>
         <div class="tags">${tags.join('')}</div>
       `;
-      d.onclick = e => { if (!e.target.closest('.x')) openPanel(a.id); };
-      d.querySelector('.x').onclick = e => { e.stopPropagation(); delApp(a.id); };
-      d.ondragstart = e => { dragId = a.id; d.classList.add('dragging'); };
-      d.ondragend = () => d.classList.remove('dragging');
       body.appendChild(d);
     });
 
     board.appendChild(col);
   });
 }
+
+// --------------------------------------------------------------------------
+// MODULE: 08-documents.js
+// --------------------------------------------------------------------------
+function isGoogleDriveLink(str) {
+  if (!str || typeof str !== 'string') return false;
+  return /drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str);
+}
+function extractGoogleDriveFileId(str) {
+  if (!str || typeof str !== 'string') return null;
+  const match = str.match(/(?:\/d\/|id=|file\/d\/|gdrive:)([a-zA-Z0-9_-]{20,})/i);
+  return match ? match[1] : null;
+}
+
 
 /* ----- Enhanced Document Upload UI System ----- */
 const DOC_CACHE = window._DOC_CACHE || (window._DOC_CACHE = {});
@@ -1122,6 +1157,183 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
   }
 }
 
+
+/* ---------------------------------------------------------------
+   ?? Word Doc (.docx) & PDF Previewer Controller
+   --------------------------------------------------------------- */
+function cleanFilePath(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  let p = raw.trim();
+  p = p.replace(/^["'\s]+|["'\s]+$/g, '');
+  if (p.startsWith('file:///')) p = decodeURIComponent(p.replace(/^file:\/\/\/?/, ''));
+  p = p.replace(/^["'\s]+|["'\s]+$/g, '');
+  return p;
+}
+
+window.openDoc = function(url) {
+  if (!url || url.trim().toUpperCase() === 'NA') {
+    toast('No document attached');
+    return;
+  }
+  const cleanP = cleanFilePath(url);
+  const driveId = extractGoogleDriveFileId(cleanP);
+  if (driveId) {
+    window.open(`https://drive.google.com/file/d/${driveId}/view`, '_blank');
+    return;
+  }
+  if (/^https?:\/\//i.test(cleanP)) {
+    window.open(cleanP, '_blank');
+    return;
+  }
+  // Local or temporary server path (/tmp/..., documents/...) should route to file-content endpoint
+  window.open(`/api/file-content?path=${encodeURIComponent(cleanP)}`, '_blank');
+};
+
+window.openDocPreviewForApp = function(appId, type) {
+  const app = (S.apps || []).find(x => x.id === Number(appId));
+  if (!app) return;
+  const rawPath = type === 'resume' ? app.resume_path : app.cover_letter_path;
+  openDoc(rawPath);
+};
+
+window.copyDocPathForApp = function(appId, type, el) {
+  const app = (S.apps || []).find(x => x.id === Number(appId));
+  if (!app) return;
+  const rawPath = type === 'resume' ? app.resume_path : app.cover_letter_path;
+  const cleanP = cleanFilePath(rawPath);
+  if (!cleanP || cleanP.toUpperCase() === 'NA') {
+    toast('No path to copy');
+    return;
+  }
+  copyVal(cleanP, el);
+};
+
+async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn) {
+  if (!file) return;
+  const originalBtnHtml = triggerBtn ? triggerBtn.innerHTML : null;
+  if (triggerBtn) {
+    triggerBtn.disabled = true;
+    triggerBtn.innerHTML = '<span class="spinner-sm"></span> Uploading...';
+  }
+  toast(`Uploading ${file.name}...`);
+  try {
+    const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = err => reject(err);
+      reader.readAsDataURL(file);
+    });
+    const savedFolder2 = localStorage.getItem('user_gdrive_folder_id');
+
+    const resp = await fetch('/api/upload-document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: file.name,
+        data: base64Data,
+        type: docType,
+        appId: appId || undefined,
+        folderId: savedFolder2 || undefined
+      })
+    });
+    const res = await resp.json();
+    if (res && res.ok) {
+      const savedPath = res.fullPath || res.path;
+      if (targetInputEl) {
+        targetInputEl.value = savedPath;
+        targetInputEl.dispatchEvent(new Event('input'));
+      }
+      const panelInput = $(`#panel [data-k="${key}"]`);
+      if (panelInput && panelInput !== targetInputEl) {
+        panelInput.value = savedPath;
+        panelInput.dispatchEvent(new Event('input'));
+      }
+      if (appId) {
+        const app = (S.apps || []).find(x => x.id === Number(appId));
+        if (app) {
+          app[key] = savedPath;
+          render();
+        }
+      }
+      toast(`Attached: ${file.name}`);
+    } else {
+      toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+    }
+  } catch (err) {
+    toast('Upload failed: ' + err.message, true);
+  } finally {
+    if (triggerBtn) {
+      triggerBtn.disabled = false;
+      triggerBtn.innerHTML = originalBtnHtml || 'Upload';
+    }
+  }
+}
+
+
+async function openDriveFilePicker(type, onSelect) {
+  toast('Loading files from Google Drive...');
+  try {
+    const res = await api('GET', '/gdrive-files?type=' + encodeURIComponent(type));
+    if (!res || !res.files || !res.files.length) {
+      toast('No files found in your Google Drive ' + type + ' folder', true);
+      return;
+    }
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-modal-overlay';
+    overlay.style.zIndex = '9999';
+    overlay.innerHTML = `
+      <div class="confirm-modal-box" style="max-width:540px;width:95%;">
+        <div class="confirm-modal-header">
+          <div class="confirm-modal-icon" style="background:#eff6ff;color:#2563eb;">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
+          </div>
+          <div>
+            <h3 class="confirm-modal-title">Select ${type === 'cover' || type === 'cover_letter' ? 'Cover Letter' : 'Resume'} from Google Drive</h3>
+            <p class="confirm-modal-text">Files in your job_kanban_board/${type} Drive folder</p>
+          </div>
+          <button type="button" class="btn icon-only" id="closeGdrivePicker">&times;</button>
+        </div>
+        <div style="max-height:360px;overflow-y:auto;margin:16px 0;display:flex;flex-direction:column;gap:8px;">
+          ${res.files.map(f => `
+            <div class="gdrive-file-item" data-url="${f.url}" data-name="${f.name}" style="padding:10px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s ease;">
+              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
+                <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${esc(f.name)}</span>
+              </div>
+              <button type="button" class="btn sm primary select-gdrive-btn">Select</button>
+            </div>
+          `).join('')}
+        </div>
+        <div class="confirm-modal-actions" style="justify-content:space-between;">
+          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">📂 Open Drive Folder</a>
+          <button type="button" class="btn sm" id="cancelGdrivePicker">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const close = () => { overlay.remove(); };
+    overlay.querySelector('#closeGdrivePicker').onclick = close;
+    overlay.querySelector('#cancelGdrivePicker').onclick = close;
+    overlay.onclick = e => { if (e.target === overlay) close(); };
+
+    overlay.querySelectorAll('.gdrive-file-item').forEach(item => {
+      item.onclick = () => {
+        const u = item.dataset.url;
+        const n = item.dataset.name;
+        close();
+        if (onSelect) onSelect(u, n);
+      };
+    });
+  } catch (err) {
+    toast('Error connecting to Google Drive: ' + err.message, true);
+  }
+}
+
+// --------------------------------------------------------------------------
+// MODULE: 09-add-panel.js
+// --------------------------------------------------------------------------
 /* ----- Add Application Panel ----- */
 function openAddPanel(defaultStage = null) {
   openId = null;
@@ -1359,40 +1571,9 @@ function openAddPanel(defaultStage = null) {
 if ($('#addBtn')) $('#addBtn').onclick = () => openAddPanel();
 if ($('#mobileAddBtn')) $('#mobileAddBtn').onclick = () => openAddPanel();
 
-/* Mobile Sub-Bar Search Wiring */
-const mSearchInp = $('#mobileSearch');
-const mSearchWrap = $('.mobile-search-wrap');
-const mSearchClear = $('#mobileSearchClear');
-if (mSearchInp) {
-  mSearchInp.oninput = e => {
-    const val = e.target.value.trim();
-    if (mSearchWrap) mSearchWrap.classList.toggle('has-val', !!e.target.value);
-    const mainSearch = $('#search');
-    if (mainSearch) {
-      mainSearch.value = e.target.value;
-      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
-      if (mainWrap) mainWrap.classList.toggle('has-val', !!e.target.value);
-    }
-    searchQuery = val;
-    render();
-  };
-}
-if (mSearchClear) {
-  mSearchClear.onclick = e => {
-    e.stopPropagation();
-    if (mSearchInp) mSearchInp.value = '';
-    if (mSearchWrap) mSearchWrap.classList.remove('has-val');
-    const mainSearch = $('#search');
-    if (mainSearch) {
-      mainSearch.value = '';
-      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
-      if (mainWrap) mainWrap.classList.remove('has-val');
-    }
-    searchQuery = '';
-    render();
-    if (mSearchInp) mSearchInp.focus();
-  };
-}
+// --------------------------------------------------------------------------
+// MODULE: 10-quick-links.js
+// --------------------------------------------------------------------------
 /* ----- Quick Links & Profiles Hub ----- */
 function openQuickLinksPanel() {
   openId = null;
@@ -1612,6 +1793,44 @@ if (confirmBtn) {
   };
 }
 
+// --------------------------------------------------------------------------
+// MODULE: 11-filters-search.js
+// --------------------------------------------------------------------------
+/* Mobile Sub-Bar Search Wiring */
+const mSearchInp = $('#mobileSearch');
+const mSearchWrap = $('.mobile-search-wrap');
+const mSearchClear = $('#mobileSearchClear');
+if (mSearchInp) {
+  mSearchInp.oninput = e => {
+    const val = e.target.value.trim();
+    if (mSearchWrap) mSearchWrap.classList.toggle('has-val', !!e.target.value);
+    const mainSearch = $('#search');
+    if (mainSearch) {
+      mainSearch.value = e.target.value;
+      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
+      if (mainWrap) mainWrap.classList.toggle('has-val', !!e.target.value);
+    }
+    searchQuery = val;
+    render();
+  };
+}
+if (mSearchClear) {
+  mSearchClear.onclick = e => {
+    e.stopPropagation();
+    if (mSearchInp) mSearchInp.value = '';
+    if (mSearchWrap) mSearchWrap.classList.remove('has-val');
+    const mainSearch = $('#search');
+    if (mainSearch) {
+      mainSearch.value = '';
+      const mainWrap = $('.search-wrap:not(.mobile-search-wrap)');
+      if (mainWrap) mainWrap.classList.remove('has-val');
+    }
+    searchQuery = '';
+    render();
+    if (mSearchInp) mSearchInp.focus();
+  };
+}
+
 /* ----- Section Tabs ----- */
 document.querySelectorAll('#secBar .sec-btn').forEach(btn => {
   btn.onclick = () => {
@@ -1732,6 +1951,9 @@ if (searchWrap && searchInp) {
   };
 }
 
+// --------------------------------------------------------------------------
+// MODULE: 12-export.js
+// --------------------------------------------------------------------------
 function exportCSV() {
   const visible = S.apps.filter(vis);
   if (!visible.length) { alert('No visible applications to export.'); return; }
@@ -1794,7 +2016,9 @@ if ($('#backupZipBtn')) $('#backupZipBtn').onclick = () => {
   window.location.href = (typeof getApiBaseUrl === 'function' ? getApiBaseUrl() : '') + '/api/backup/export';
 };
 
-
+// --------------------------------------------------------------------------
+// MODULE: 13-theme-mobile.js
+// --------------------------------------------------------------------------
 /* ----- Phase 2 UI/UX Engine: Theme, Skeletons & Mobile Bottom Sheet ----- */
 function initTheme() {
   const saved = localStorage.getItem('theme') || localStorage.getItem('tracker_theme');
@@ -1911,17 +2135,9 @@ function initMobileNavigation() {
   }
 }
 
-
-function isGoogleDriveLink(str) {
-  if (!str || typeof str !== 'string') return false;
-  return /drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str);
-}
-function extractGoogleDriveFileId(str) {
-  if (!str || typeof str !== 'string') return null;
-  const match = str.match(/(?:\/d\/|id=|file\/d\/|gdrive:)([a-zA-Z0-9_-]{20,})/i);
-  return match ? match[1] : null;
-}
-
+// --------------------------------------------------------------------------
+// MODULE: 14-drag-drop.js
+// --------------------------------------------------------------------------
 /* ----- Drag & Drop ----- */
 function locate(body, y) {
   for (const c of body.querySelectorAll('.card:not(.drag)')) {
@@ -1987,6 +2203,9 @@ function doMove(id, stage, before) {
   api('POST', `/applications/${id}/move`, { stage, before });
 }
 
+// --------------------------------------------------------------------------
+// MODULE: 15-toast-undo.js
+// --------------------------------------------------------------------------
 /* ----- Delete with Undo ----- */
 let toastT, lastDel;
 function toast(msg, isError = false) {
@@ -2036,6 +2255,9 @@ $('#undo').onclick = async () => {
   render();
 };
 
+// --------------------------------------------------------------------------
+// MODULE: 16-app-details.js
+// --------------------------------------------------------------------------
 /* ----- Detail Slideout Panel ----- */
 function openPanel(title, html) {
   $('#pt').textContent = title;
@@ -2428,127 +2650,9 @@ function openApp(id) {
   });
 }
 
-/* ----- Boot Initialization ----- */
-(async () => {
-  renderSkeletons();
-  initTheme();
-  bindThemeToggle();
-  initMobileNavigation();
-  [S, LOGOS] = await Promise.all([
-    api('GET', '/state'),
-    fetch('/logos.json').then(r => r.json()).catch(() => ({}))
-  ]);
-  try { S.filter = JSON.parse(S.settings.filter || '[]'); } catch { S.filter = []; }
-  currentSec = S.settings.section || 'All';
-  render();
-})();
-/* ---------------------------------------------------------------
-   ?? Word Doc (.docx) & PDF Previewer Controller
-   --------------------------------------------------------------- */
-function cleanFilePath(raw) {
-  if (!raw || typeof raw !== 'string') return '';
-  let p = raw.trim();
-  p = p.replace(/^["'\s]+|["'\s]+$/g, '');
-  if (p.startsWith('file:///')) p = decodeURIComponent(p.replace(/^file:\/\/\/?/, ''));
-  p = p.replace(/^["'\s]+|["'\s]+$/g, '');
-  return p;
-}
-
-window.openDoc = function(url) {
-  if (!url || url.trim().toUpperCase() === 'NA') {
-    toast('No document attached');
-    return;
-  }
-  const cleanP = cleanFilePath(url);
-  if (/^https?:\/\//i.test(cleanP)) {
-    window.open(cleanP, '_blank');
-    return;
-  }
-  // Local or temporary server path (/tmp/..., documents/...) should route to file-content endpoint
-  window.open(`/api/file-content?path=${encodeURIComponent(cleanP)}`, '_blank');
-};
-
-window.openDocPreviewForApp = function(appId, type) {
-  const app = (S.apps || []).find(x => x.id === Number(appId));
-  if (!app) return;
-  const rawPath = type === 'resume' ? app.resume_path : app.cover_letter_path;
-  openDoc(rawPath);
-};
-
-window.copyDocPathForApp = function(appId, type, el) {
-  const app = (S.apps || []).find(x => x.id === Number(appId));
-  if (!app) return;
-  const rawPath = type === 'resume' ? app.resume_path : app.cover_letter_path;
-  const cleanP = cleanFilePath(rawPath);
-  if (!cleanP || cleanP.toUpperCase() === 'NA') {
-    toast('No path to copy');
-    return;
-  }
-  copyVal(cleanP, el);
-};
-
-async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn) {
-  if (!file) return;
-  const originalBtnHtml = triggerBtn ? triggerBtn.innerHTML : null;
-  if (triggerBtn) {
-    triggerBtn.disabled = true;
-    triggerBtn.innerHTML = '<span class="spinner-sm"></span> Uploading...';
-  }
-  toast(`Uploading ${file.name}...`);
-  try {
-    const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
-    const base64Data = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = err => reject(err);
-      reader.readAsDataURL(file);
-    });
-    const savedFolder2 = localStorage.getItem('user_gdrive_folder_id');
-
-    const resp = await fetch('/api/upload-document', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: file.name,
-        data: base64Data,
-        type: docType,
-        appId: appId || undefined,
-        folderId: savedFolder2 || undefined
-      })
-    });
-    const res = await resp.json();
-    if (res && res.ok) {
-      const savedPath = res.fullPath || res.path;
-      if (targetInputEl) {
-        targetInputEl.value = savedPath;
-        targetInputEl.dispatchEvent(new Event('input'));
-      }
-      const panelInput = $(`#panel [data-k="${key}"]`);
-      if (panelInput && panelInput !== targetInputEl) {
-        panelInput.value = savedPath;
-        panelInput.dispatchEvent(new Event('input'));
-      }
-      if (appId) {
-        const app = (S.apps || []).find(x => x.id === Number(appId));
-        if (app) {
-          app[key] = savedPath;
-          render();
-        }
-      }
-      toast(`Attached: ${file.name}`);
-    } else {
-      toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
-    }
-  } catch (err) {
-    toast('Upload failed: ' + err.message, true);
-  } finally {
-    if (triggerBtn) {
-      triggerBtn.disabled = false;
-      triggerBtn.innerHTML = originalBtnHtml || 'Upload';
-    }
-  }
-}
-
+// --------------------------------------------------------------------------
+// MODULE: 17-init.js
+// --------------------------------------------------------------------------
 // Sync streak HUD in index.html
 window.syncGamifyHud = function() {
   fetch('/api/gamification')
@@ -2575,66 +2679,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.syncGamifyHud === 'function') window.syncGamifyHud();
 });
 
-async function openDriveFilePicker(type, onSelect) {
-  toast('Loading files from Google Drive...');
-  try {
-    const res = await api('GET', '/gdrive-files?type=' + encodeURIComponent(type));
-    if (!res || !res.files || !res.files.length) {
-      toast('No files found in your Google Drive ' + type + ' folder', true);
-      return;
-    }
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-modal-overlay';
-    overlay.style.zIndex = '9999';
-    overlay.innerHTML = `
-      <div class="confirm-modal-box" style="max-width:540px;width:95%;">
-        <div class="confirm-modal-header">
-          <div class="confirm-modal-icon" style="background:#eff6ff;color:#2563eb;">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M19 18H6a4 4 0 0 1-4-4 4 4 0 0 1 4-4 5.5 5.5 0 0 1 10.7-1.5A4 4 0 0 1 20 14a4 4 0 0 1-1 4z"/></svg>
-          </div>
-          <div>
-            <h3 class="confirm-modal-title">Select ${type === 'cover' || type === 'cover_letter' ? 'Cover Letter' : 'Resume'} from Google Drive</h3>
-            <p class="confirm-modal-text">Files in your job_kanban_board/${type} Drive folder</p>
-          </div>
-          <button type="button" class="btn icon-only" id="closeGdrivePicker">&times;</button>
-        </div>
-        <div style="max-height:360px;overflow-y:auto;margin:16px 0;display:flex;flex-direction:column;gap:8px;">
-          ${res.files.map(f => `
-            <div class="gdrive-file-item" data-url="${f.url}" data-name="${f.name}" style="padding:10px 14px;border:1px solid var(--bd);border-radius:8px;background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all 0.15s ease;">
-              <div style="display:flex;align-items:center;gap:10px;min-width:0;">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
-                <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;">${esc(f.name)}</span>
-              </div>
-              <button type="button" class="btn sm primary select-gdrive-btn">Select</button>
-            </div>
-          `).join('')}
-        </div>
-        <div class="confirm-modal-actions" style="justify-content:space-between;">
-          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">📂 Open Drive Folder</a>
-          <button type="button" class="btn sm" id="cancelGdrivePicker">Cancel</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    const close = () => { overlay.remove(); };
-    overlay.querySelector('#closeGdrivePicker').onclick = close;
-    overlay.querySelector('#cancelGdrivePicker').onclick = close;
-    overlay.onclick = e => { if (e.target === overlay) close(); };
-
-    overlay.querySelectorAll('.gdrive-file-item').forEach(item => {
-      item.onclick = () => {
-        const u = item.dataset.url;
-        const n = item.dataset.name;
-        close();
-        if (onSelect) onSelect(u, n);
-      };
-    });
-  } catch (err) {
-    toast('Error connecting to Google Drive: ' + err.message, true);
-  }
-}
-
 
 function handleIndexLogout() {
   localStorage.removeItem('auth_token');
@@ -2642,3 +2686,20 @@ function handleIndexLogout() {
   localStorage.setItem('logged_out', '1');
   window.location.href = '/profile.html';
 }
+
+
+/* ----- Boot Initialization ----- */
+(async () => {
+  renderSkeletons();
+  initTheme();
+  bindThemeToggle();
+  initMobileNavigation();
+  [S, LOGOS] = await Promise.all([
+    api('GET', '/state'),
+    fetch('/logos.json').then(r => r.json()).catch(() => ({}))
+  ]);
+  try { S.filter = JSON.parse(S.settings.filter || '[]'); } catch { S.filter = []; }
+  currentSec = S.settings.section || 'All';
+  render();
+})();
+

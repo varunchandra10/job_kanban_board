@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "scripts": {
     "start": "node server.js",
+    "build:app": "node scripts/merge-frontend.js",
     "build:web": "vite build",
     "build:tauri": "node scripts/desktop-build.js",
     "desktop:server": "node server.js",
