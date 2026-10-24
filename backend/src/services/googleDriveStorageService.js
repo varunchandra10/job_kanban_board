@@ -18,10 +18,29 @@ class GoogleDriveStorageService extends BaseStorageService {
 
   _initAuth() {
     try {
-      if (fs.existsSync(this.keyFilePath)) {
+      if (process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
+        try {
+          const creds = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON);
+          this.authClient = new google.auth.GoogleAuth({ credentials: creds, scopes: ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file'] });
+          this.driveClient = google.drive({ version: 'v3', auth: this.authClient });
+          return;
+        } catch (_) {}
+      }
+      const keyPathCandidates = [
+        this.keyFilePath,
+        path.resolve(process.cwd(), 'google-service-account.json'),
+        path.resolve(__dirname, '../../../google-service-account.json'),
+        path.resolve(__dirname, '../../google-service-account.json'),
+        path.resolve(__dirname, '../database/google-service-account.json'),
+        path.resolve('/var/task/google-service-account.json'),
+        path.resolve('/var/task/backend/google-service-account.json')
+      ];
+      const validKeyPath = keyPathCandidates.find(p => p && fs.existsSync(p));
+      if (validKeyPath) {
+        this.keyFilePath = validKeyPath;
         this.authClient = new google.auth.GoogleAuth({
           keyFile: this.keyFilePath,
-          scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive.metadata.readonly']
+          scopes: ['https://www.googleapis.com/auth/drive', 'https://www.googleapis.com/auth/drive.file']
         });
         this.driveClient = google.drive({ version: 'v3', auth: this.authClient });
         console.log('[Google Drive] Authenticated successfully with service account key');

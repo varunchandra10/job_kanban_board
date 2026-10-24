@@ -51,6 +51,82 @@ function showConfirmDialog({ title, text, icon, confirmText = 'Confirm', confirm
   };
 }
 
+function showDriveLinkDialog({ label, currentPath, onSave }) {
+  const overlay = document.createElement('div');
+  overlay.className = 'confirm-modal-overlay';
+  overlay.style.zIndex = '99999';
+  const savedFolderId = localStorage.getItem('user_gdrive_folder_id') || '';
+  const folderLink = savedFolderId ? `https://drive.google.com/drive/folders/${savedFolderId}` : null;
+  const isCurrentGdrive = currentPath && isGoogleDriveLink(currentPath);
+
+  overlay.innerHTML = `
+    <div class="confirm-modal-box" style="max-width: 500px; text-align: left;">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+        <div class="confirm-modal-icon" style="background: rgba(66, 133, 244, 0.15); color: #4285F4; border-radius: 10px; width:44px; height:44px; display:flex; align-items:center; justify-content:center;">
+          ${ICON.gdrive || '<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M7.71 3.5L1.15 15l3.43 6 6.55-11.5zM9.73 15L6.3 21h13.12l3.43-6zm8.85-8.5l-6.55 11.5 3.42 6 6.55-11.5z"/></svg>'}
+        </div>
+        <div>
+          <h3 style="margin:0; font-size:16px; font-weight:600; color:var(--text, #fff);">Link ${esc(label)} from Google Drive</h3>
+          <p style="margin:2px 0 0; font-size:12px; color:var(--text-muted, #94a3b8);">Connect directly with your Google Drive document</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 14px;">
+        <label style="display:block; font-size:12px; font-weight:500; margin-bottom:6px; color:var(--text-secondary, #cbd5e1);">
+          Google Drive Link:
+        </label>
+        <input type="text" id="driveLinkInput" class="form-input" style="width:100%; box-sizing:border-box; font-size:13px; padding:9px 12px; border-radius:8px; border:1px solid var(--border, #334155); background:var(--input-bg, #0f172a); color:var(--text, #fff);" 
+          placeholder="https://drive.google.com/file/d/... or Docs link" 
+          value="${isCurrentGdrive ? esc(currentPath) : ''}">
+      </div>
+
+      ${folderLink ? `
+        <div style="display:flex; align-items:center; justify-content:space-between; background: rgba(66, 133, 244, 0.08); border: 1px dashed rgba(66, 133, 244, 0.3); border-radius: 8px; padding: 8px 12px; margin-bottom: 16px;">
+          <span style="font-size: 12px; color: #93c5fd;">Open your linked Drive folder to copy file link:</span>
+          <a href="${esc(folderLink)}" target="_blank" rel="noopener noreferrer" class="btn sm" style="background:#2563eb; color:#fff; text-decoration:none; display:inline-flex; align-items:center; gap:4px; padding:4px 10px; font-size:11px; border-radius:6px;">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <span>Open Folder</span>
+          </a>
+        </div>
+      ` : `
+        <div style="font-size: 11px; color: var(--text-muted, #94a3b8); margin-bottom: 14px; line-height: 1.5;">
+          Tip: In Google Drive, right click your file &rarr; <strong>Share</strong> &rarr; set <em>"Anyone with the link can view"</em> &rarr; <strong>Copy link</strong>.
+        </div>
+      `}
+
+      <div class="confirm-modal-actions" style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn sm" id="driveLinkCancelBtn">Cancel</button>
+        <button type="button" class="btn sm primary" id="driveLinkSaveBtn">Save Drive Link</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  const inp = overlay.querySelector('#driveLinkInput');
+  inp.focus();
+  if (inp.value) inp.select();
+
+  overlay.querySelector('#driveLinkCancelBtn').onclick = close;
+  overlay.onclick = e => { if (e.target === overlay) close(); };
+
+  const handleSave = () => {
+    const val = (inp.value || '').trim();
+    if (!val) {
+      toast('Please enter a Google Drive link');
+      return;
+    }
+    if (!/drive\.google\.com|docs\.google\.com/i.test(val) && !/^[a-zA-Z0-9_-]{25,}$/.test(val)) {
+      toast('Please enter a valid Google Drive URL (drive.google.com)', true);
+      return;
+    }
+    close();
+    if (onSave) onSave(val);
+  };
+
+  overlay.querySelector('#driveLinkSaveBtn').onclick = handleSave;
+  inp.onkeydown = e => { if (e.key === 'Enter') handleSave(); if (e.key === 'Escape') close(); };
+}
+
 /* ----- Clean Inline SVG Icon Dictionary ----- */
 const ICON = {
   briefcase: `<svg class="icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`,
@@ -858,14 +934,19 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
               ${isGdrive ? `
                 <span class="doc-meta-hint">
                   <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                  <span>Cloud Synced &bull; Click Open to view</span>
+                  <span>Cloud Synced &bull; Click Open to view in Drive</span>
+                </span>
+              ` : (p && (p.startsWith('/tmp') || p.includes('documents/')) ? `
+                <span class="doc-meta-hint" style="color:#f59e0b;" title="${esc(p)}">
+                  <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9v4M12 17h.01"/></svg>
+                  <span>Temporary storage &bull; Click "Link Drive" to connect</span>
                 </span>
               ` : `
                 <span class="doc-meta-hint" title="${esc(p)}">
                   <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg>
                   <span>${esc(p)}</span>
                 </span>
-              `}
+              `)}
             </div>
           </div>
           <div class="doc-card-actions">
@@ -875,6 +956,10 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
                 <span>Open</span>
               </button>
             ` : ''}
+            <button type="button" class="btn sm doc-btn-drive-pick" id="${prefix}_btn_link_drive" title="Link or change Google Drive link">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>Link Drive</span>
+            </button>
             <button type="button" class="btn sm doc-btn-upload" id="${prefix}_btn_rep" title="Upload new ${label.toLowerCase()} to replace existing">
               <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <span>Upload</span>
@@ -901,10 +986,14 @@ function renderDocSlotHtml(type, label, iconSvg, rawPath, appId = null) {
                 <span class="doc-modern-label">${label}</span>
                 <span class="doc-empty-badge">Empty</span>
               </div>
-              <div class="doc-modern-sub">Drop file here, or click to upload</div>
+              <div class="doc-modern-sub">Drop file here, or click to upload / link</div>
             </div>
           </div>
           <div class="doc-modern-action" onclick="event.stopPropagation();">
+            <button type="button" class="btn sm doc-btn-drive-pick" id="${prefix}_btn_link_drive" title="Link Google Drive document">
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              <span>Link Drive</span>
+            </button>
             <button type="button" class="btn sm doc-btn-upload-pick" id="${prefix}_btn_upload_pick_btn" title="Upload ${label.toLowerCase()}">
               <svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" fill="none" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
               <span>Upload</span>
@@ -1012,7 +1101,31 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
           $(`#${prefix}_slot .doc-card-box`)?.classList.add('doc-upload-success-anim');
         }
       } else {
-        toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+        if (res && res.isGoogleDriveQuota) {
+          showDriveLinkDialog({
+            label,
+            currentPath: '',
+            onSave: (newLink) => {
+              setPath(newLink);
+              if (appId) {
+                const app = (S.apps || []).find(x => x.id === Number(appId));
+                if (app) {
+                  app[key] = newLink;
+                  render();
+                }
+                queue('a' + appId + key, () => api('PATCH', '/applications/' + appId, { [key]: newLink }));
+              }
+              toast(`Linked ${label} to Google Drive`);
+              const liveSlot = $(`#${prefix}_slot`);
+              if (liveSlot) {
+                liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, newLink, appId);
+                wireDocSlot(prefix, type, label, iconSvg, appId, () => newLink, setPath);
+              }
+            }
+          });
+        } else {
+          toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+        }
         const liveSlot = $(`#${prefix}_slot`);
         if (liveSlot) {
           liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, getPath(), appId);
@@ -1028,6 +1141,35 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
       }
     }
   };
+
+  // Link Drive button
+  const btnLinkDrive = $(`#${prefix}_btn_link_drive`);
+  if (btnLinkDrive) {
+    btnLinkDrive.onclick = (e) => {
+      e.stopPropagation();
+      showDriveLinkDialog({
+        label,
+        currentPath: getPath(),
+        onSave: (newLink) => {
+          setPath(newLink);
+          if (appId) {
+            const app = (S.apps || []).find(x => x.id === Number(appId));
+            if (app) {
+              app[key] = newLink;
+              render();
+            }
+            queue('a' + appId + key, () => api('PATCH', '/applications/' + appId, { [key]: newLink }));
+          }
+          toast(`Linked ${label} to Google Drive`);
+          const liveSlot = $(`#${prefix}_slot`);
+          if (liveSlot) {
+            liveSlot.outerHTML = renderDocSlotHtml(type, label, iconSvg, newLink, appId);
+            wireDocSlot(prefix, type, label, iconSvg, appId, () => newLink, setPath);
+          }
+        }
+      });
+    };
+  }
 
   // Drag and drop or click on empty dropzone
   if (dropzone && fileInp) {
@@ -2455,7 +2597,12 @@ window.openDoc = function(url) {
     return;
   }
   const cleanP = cleanFilePath(url);
-  window.open(cleanP, '_blank');
+  if (/^https?:\/\//i.test(cleanP)) {
+    window.open(cleanP, '_blank');
+    return;
+  }
+  // Local or temporary server path (/tmp/..., documents/...) should route to file-content endpoint
+  window.open(`/api/file-content?path=${encodeURIComponent(cleanP)}`, '_blank');
 };
 
 window.openDocPreviewForApp = function(appId, type) {
@@ -2527,7 +2674,33 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
       }
       toast(`Attached: ${file.name}`);
     } else {
-      toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+      if (res && res.isGoogleDriveQuota) {
+        showDriveLinkDialog({
+          label: docType === 'resume' ? 'Resume' : 'Cover Letter',
+          currentPath: '',
+          onSave: (newLink) => {
+            if (targetInputEl) {
+              targetInputEl.value = newLink;
+              targetInputEl.dispatchEvent(new Event('input'));
+            }
+            const panelInput = $(`#panel [data-k="${key}"]`);
+            if (panelInput && panelInput !== targetInputEl) {
+              panelInput.value = newLink;
+              panelInput.dispatchEvent(new Event('input'));
+            }
+            if (appId) {
+              const app = (S.apps || []).find(x => x.id === Number(appId));
+              if (app) {
+                app[key] = newLink;
+                render();
+              }
+            }
+            toast(`Linked to Google Drive`);
+          }
+        });
+      } else {
+        toast('Upload failed: ' + ((res && res.error) || 'Server error'), true);
+      }
     }
   } catch (err) {
     toast('Upload failed: ' + err.message, true);

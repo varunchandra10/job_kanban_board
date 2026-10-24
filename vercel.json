@@ -4,7 +4,7 @@
   "outputDirectory": "frontend",
   "functions": {
     "api/index.js": {
-      "includeFiles": "backend/src/database/**",
+      "includeFiles": "{backend/src/database/**,google-service-account.json,backend/google-service-account.json}",
       "maxDuration": 30
     }
   },

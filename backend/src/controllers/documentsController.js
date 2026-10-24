@@ -133,7 +133,7 @@ exports.uploadDocument = async (req, res, next) => {
           appId,
           folderId: userFolderId
         });
-      } else {
+      } else if (!config.isVercel) {
         const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
         saved = await fallbackTarget.saveFile({
           buffer: fileBuffer,
@@ -144,9 +144,25 @@ exports.uploadDocument = async (req, res, next) => {
         if (!userFolderId) {
           saved.notice = 'Saved locally. Link your Google Drive folder in Career Profile to backup to cloud.';
         }
+      } else {
+        return res.status(400).json({
+          ok: 0,
+          error: 'Google Drive folder not configured. Please link your personal Google Drive folder in Career Profile or click "Link Drive" to paste the document link.',
+          isGoogleDriveQuota: true
+        });
       }
     } catch (saveErr) {
-      console.warn('[Storage] Primary save failed, saving with local fallback:', saveErr.message);
+      console.warn('[Storage] Primary save failed:', saveErr.message);
+      if (config.isVercel) {
+        const isQuota = /quota/i.test(saveErr.message) || /Service Accounts do not have storage quota/i.test(saveErr.message);
+        return res.status(400).json({
+          ok: 0,
+          error: isQuota
+            ? 'Google Drive restricts service accounts from uploading files into personal Google accounts (0 MB storage quota). Please upload to your Google Drive and click "Link Drive" to attach it directly.'
+            : 'Google Drive upload error: ' + saveErr.message,
+          isGoogleDriveQuota: true
+        });
+      }
       const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
       saved = await fallbackTarget.saveFile({
         buffer: fileBuffer,
@@ -196,10 +212,41 @@ exports.getFileInfo = async (req, res, next) => {
 exports.getFileContent = async (req, res, next) => {
   try {
     const targetPath = req.query.path;
+    if (!targetPath) return res.status(400).send('No file path provided');
+
+    if (/^https?:\/\//i.test(targetPath)) {
+      return res.redirect(targetPath);
+    }
+
     const fileResult = await storageService.getFileStream(targetPath);
 
     if (!fileResult.exists) {
-      return res.status(404).json({ error: fileResult.error || 'File not found', path: targetPath });
+      const fileName = path.basename(targetPath || 'document');
+      return res.status(404).send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Document Not Found</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0b0f19; color: #f1f5f9; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+            .card { background: #131b2e; border: 1px solid #1e293b; border-radius: 14px; padding: 32px; max-width: 520px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+            h2 { font-size: 20px; margin: 0 0 12px; color: #f8fafc; }
+            p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin: 0 0 20px; }
+            .badge { background: #1e293b; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; }
+            .btn { display: inline-flex; align-items: center; gap: 8px; background: #2563eb; color: #fff; text-decoration: none; font-weight: 500; font-size: 14px; padding: 10px 20px; border-radius: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>Document Stored in Google Drive</h2>
+            <p>The document (<span class="badge">${encodeURIComponent(fileName)}</span>) was saved in temporary server storage or directly on Google Drive.</p>
+            <p>Please open the application card on your <strong>Kanban Board</strong> and click <strong>"Link Drive"</strong> to attach its permanent Google Drive link.</p>
+            <a href="/board" class="btn">Return to Kanban Board</a>
+          </div>
+        </body>
+        </html>
+      `);
     }
 
     res.writeHead(200, {
