@@ -813,13 +813,31 @@ if (themeBtn) {
 }
 
 /* Data Fetching & Sync */
+let originalProfileHtml = '';
+function getOrSaveOriginalProfileHtml() {
+  if (!originalProfileHtml) {
+    const container = document.getElementById('profileView');
+    if (container && document.getElementById('profUserName')) {
+      originalProfileHtml = container.innerHTML;
+    }
+  }
+  return originalProfileHtml;
+}
+getOrSaveOriginalProfileHtml();
+
 async function loadAllProfileData() {
+  getOrSaveOriginalProfileHtml();
+
   if (isUserLoggedOut()) {
     showProfileAuthGate();
     return;
   }
 
-  renderProfileSkeletons();
+  // Ensure original profile DOM is active if it was replaced (e.g. by auth gate)
+  const container = document.getElementById('profileView');
+  if (container && originalProfileHtml && !document.getElementById('profUserName')) {
+    container.innerHTML = originalProfileHtml;
+  }
 
   try {
     const [resStateRaw, resLearnings, resGamify] = await Promise.all([
@@ -846,13 +864,16 @@ async function loadAllProfileData() {
     if (learnBadgeText) learnBadgeText.textContent = streakVal + 'd' + (isFrozen ? ' ❄️' : '');
 
     renderAllViews();
-    await window.loadDriveStatus();
+    if (typeof window.loadDriveStatus === 'function') {
+      await window.loadDriveStatus();
+    }
   } catch (e) {
     console.error('Failed to load profile data:', e);
   }
 }
 
 function showProfileAuthGate() {
+  getOrSaveOriginalProfileHtml();
   const container = document.getElementById('profileView');
   if (!container) return;
   container.innerHTML = `
@@ -868,36 +889,14 @@ function showProfileAuthGate() {
 }
 
 function renderProfileSkeletons() {
-  const container = document.getElementById('profileView');
-  if (!container) return;
-  container.innerHTML = `
-    <section class="profile-hero-card skeleton-card" style="padding:28px;">
-      <div class="skeleton-top" style="gap:20px;align-items:center;">
-        <div class="skeleton-avatar skeleton-shimmer" style="width:72px;height:72px;border-radius:50%;"></div>
-        <div class="skeleton-text-group" style="gap:10px;flex:1;">
-          <div class="skeleton-line skeleton-shimmer" style="width:220px;height:24px;"></div>
-          <div class="skeleton-line skeleton-shimmer" style="width:140px;height:14px;"></div>
-          <div class="skeleton-tags-row">
-            <div class="skeleton-pill skeleton-shimmer" style="width:90px;"></div>
-            <div class="skeleton-pill skeleton-shimmer" style="width:110px;"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:16px;margin-top:16px;">
-      ${[1, 2, 3, 4].map(() => `
-        <div class="skeleton-card" style="padding:20px;">
-          <div class="skeleton-line skeleton-shimmer" style="width:50%;height:14px;margin-bottom:12px;"></div>
-          <div class="skeleton-line skeleton-shimmer" style="width:80%;height:22px;margin-bottom:10px;"></div>
-          <div class="skeleton-line skeleton-shimmer" style="width:65%;height:12px;"></div>
-        </div>
-      `).join('')}
-    </div>
-  `;
+  // Kept for backward compatibility without destructive DOM replacement
 }
 
 function renderAllViews() {
+  const container = document.getElementById('profileView');
+  if (container && originalProfileHtml && !document.getElementById('profUserName')) {
+    container.innerHTML = originalProfileHtml;
+  }
   renderProfileHero();
   renderProfileHeatmap();
   renderQuickLinks();
@@ -922,14 +921,16 @@ function renderProfileHero() {
   const isFrozen = gamifyStats?.isFrozen || gamifyStats?.todayFrozen;
   const streak = gamifyStats?.streak ?? gamifyStats?.currentStreak ?? 0;
 
-  // Sync Full Name from database profile if available
-  if (resState?.profile?.full_name) {
+  // Sync Full Name from database profile or active Google auth user
+  const authUser = typeof getActiveUser === 'function' ? getActiveUser() : null;
+  const displayName = resState?.profile?.full_name || authUser?.name || (authUser?.email ? authUser.email.split('@')[0] : 'Varun Chandra');
+  if (displayName) {
     const elName = document.getElementById('profUserName');
-    if (elName) elName.textContent = resState.profile.full_name;
+    if (elName) elName.textContent = displayName;
     const elAvatar = document.getElementById('profUserAvatar');
     if (elAvatar) {
-      const parts = resState.profile.full_name.trim().split(/\s+/);
-      const initials = (parts[0]?.[0] || 'V') + (parts[1]?.[0] || 'C');
+      const parts = displayName.trim().split(/\s+/);
+      const initials = (parts[0]?.[0] || 'V') + (parts[1]?.[0] || (parts[0]?.[1] || 'C'));
       elAvatar.textContent = initials.toUpperCase();
     }
   }
