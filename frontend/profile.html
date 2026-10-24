@@ -174,7 +174,7 @@
           <path d="M73.4 26.5L58.25 0c-1.35.8-2.5 1.9-3.3 3.3L43.65 25.15 58.3 52.2h29c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/>
         </svg>
         <span>G-Drive</span>
-        <span class="gdrive-dot-status" id="gdriveDotStatus" title="Google Drive Storage Ready"></span>
+        <span class="gdrive-dot-status disconnected" id="gdriveDotStatus" title="Google Drive Disconnected"></span>
       </button>
       <button type="button" class="btn-action-glow btn-export-csv" id="profExportCsvBtn" onclick="exportProfileCSV()" title="Export all Job Applications to CSV">
         <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
@@ -662,28 +662,34 @@ window.loadDriveStatus = async function() {
 
   try {
     const res = await fetch('/api/storage/status').then(r => r.json());
-    if (res.connected && res.folderId) {
+    const clientSavedFolder = localStorage.getItem('user_gdrive_folder_id');
+    const isConnected = !!((res.connected && res.folderId) || clientSavedFolder);
+    const activeFolder = res.folderId || clientSavedFolder || '';
+
+    if (isConnected && activeFolder) {
       if (statusDot) statusDot.className = 'gdrive-status-indicator online';
       if (statusText) statusText.innerHTML = '<strong style="color:#059669">Connected & Ready</strong>';
-      if (folderDisplay) folderDisplay.textContent = res.folderId;
-      if (folderInput && !folderInput.value) folderInput.value = res.folderId;
+      if (folderDisplay) folderDisplay.textContent = activeFolder;
+      if (folderInput && !folderInput.value) folderInput.value = activeFolder;
       if (statusPill) {
         statusPill.textContent = 'Connected';
         statusPill.className = 'gdrive-status-pill online';
       }
+      updateGdriveDot(true);
     } else {
       if (statusDot) statusDot.className = 'gdrive-status-indicator offline';
-      if (statusText) statusText.innerHTML = '<strong style="color:#d97706">Not Linked (Setup Below)</strong>';
+      if (statusText) statusText.innerHTML = '<strong style="color:#ef4444">Not Connected (Setup Below)</strong>';
       if (folderDisplay) folderDisplay.textContent = 'None';
       if (statusPill) {
-        statusPill.textContent = 'Setup';
-        statusPill.className = 'gdrive-status-pill warning';
+        statusPill.textContent = 'Disconnected';
+        statusPill.className = 'gdrive-status-pill offline';
       }
+      updateGdriveDot(false);
     }
   } catch (e) {
     if (statusDot) statusDot.className = 'gdrive-status-indicator offline';
-    if (statusText) statusText.textContent = 'Storage status unavailable';
-      updateGdriveDot(false);
+    if (statusText) statusText.innerHTML = '<strong style="color:#ef4444">Storage status unavailable</strong>';
+    updateGdriveDot(false);
   }
 };
 
@@ -2118,7 +2124,8 @@ function updateGdriveDot(connected) {
   const dot = document.getElementById('gdriveDotStatus');
   if (dot) {
     dot.classList.toggle('connected', !!connected);
-    dot.title = connected ? 'Google Drive Connected (Live)' : 'Google Drive Disconnected';
+    dot.classList.toggle('disconnected', !connected);
+    dot.title = connected ? 'Google Drive Connected (Live)' : 'Google Drive Disconnected (Click to Connect)';
   }
 }
 
