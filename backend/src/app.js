@@ -1,4 +1,6 @@
 const express = require('express');
+const app = express();
+
 const cors = require('cors');
 const path = require('path');
 const config = require('./config');
@@ -14,13 +16,14 @@ const settingsRoutes = require('./routes/settings');
 const backupRoutes = require('./routes/backup');
 const learningsRoutes = require('./routes/learnings');
 
-const app = express();
-
 app.use(cors());
 app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 500 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// ---------------------------------------------------------------------
+// Health & shutdown endpoints
+// ---------------------------------------------------------------------
 const healthHandler = (req, res) => {
   let sqliteOk = false;
   try {
@@ -66,10 +69,16 @@ const handleShutdown = (req, res) => {
 app.post('/shutdown', handleShutdown);
 app.post('/api/shutdown', handleShutdown);
 
+// ---------------------------------------------------------------------
+// Static assets
+// ---------------------------------------------------------------------
 app.use('/vendor', express.static(path.join(config.frontendDir, 'vendor'), {
   maxAge: '1d'
 }));
 
+// ---------------------------------------------------------------------
+// API routes (protected)
+// ---------------------------------------------------------------------
 app.use(authMiddleware);
 app.use('/api/auth', authRoutes);
 
@@ -80,6 +89,9 @@ app.use('/api', settingsRoutes);
 app.use('/api', learningsRoutes);
 app.use('/api/backup', backupRoutes);
 
+// ---------------------------------------------------------------------
+// Front‑end SPA handling
+// ---------------------------------------------------------------------
 app.use(express.static(config.frontendDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
@@ -92,6 +104,7 @@ app.get('/board', (req, res) => res.sendFile(path.join(config.frontendDir, 'boar
 app.get('/profile', (req, res) => res.sendFile(path.join(config.frontendDir, 'profile.html')));
 app.get('/learnings', (req, res) => res.sendFile(path.join(config.frontendDir, 'learnings.html')));
 
+// Catch‑all for API 404 and SPA fallback
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Endpoint not found' });
