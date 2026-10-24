@@ -16,10 +16,14 @@ class LocalStorageService extends BaseStorageService {
   }
 
   _ensureDirectories() {
-    const resumeDir = path.join(this.baseDir, 'resume');
-    const coverDir = path.join(this.baseDir, 'cover_letter');
-    if (!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir, { recursive: true });
-    if (!fs.existsSync(coverDir)) fs.mkdirSync(coverDir, { recursive: true });
+    try {
+      const resumeDir = path.join(this.baseDir, 'resume');
+      const coverDir = path.join(this.baseDir, 'cover_letter');
+      if (!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir, { recursive: true });
+      if (!fs.existsSync(coverDir)) fs.mkdirSync(coverDir, { recursive: true });
+    } catch (e) {
+      console.warn('[Storage Service] Directory creation failed:', e.message);
+    }
   }
 
   resolveSafePath(inputPath) {
