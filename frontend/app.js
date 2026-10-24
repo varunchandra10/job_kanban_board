@@ -956,6 +956,15 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     }
   }
 
+  function readFileAsBase64(f) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = err => reject(err);
+      reader.readAsDataURL(f);
+    });
+  }
+
   const uploadFile = async (file) => {
     if (!file) return;
     const currentSlot = $(`#${prefix}_slot`);
@@ -969,13 +978,20 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
     }
     try {
       const docType = type === 'resume' ? 'resume' : 'cover_letter';
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('type', docType);
-      if (appId) formData.append('appId', appId);
+      const base64Data = await readFileAsBase64(file);
       const savedFolder = localStorage.getItem('user_gdrive_folder_id');
-      if (savedFolder) formData.append('folderId', savedFolder);
-      const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
+
+      const resp = await fetch('/api/upload-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: file.name,
+          data: base64Data,
+          type: docType,
+          appId: appId || undefined,
+          folderId: savedFolder || undefined
+        })
+      });
       const res = await resp.json();
       if (res && res.ok) {
         const savedPath = res.fullPath || res.path;
@@ -2471,13 +2487,25 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
   toast(`Uploading ${file.name}...`);
   try {
     const docType = key === 'cover_letter_path' ? 'cover_letter' : 'resume';
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('type', docType);
-    if (appId) formData.append('appId', appId);
+    const base64Data = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = err => reject(err);
+      reader.readAsDataURL(file);
+    });
     const savedFolder2 = localStorage.getItem('user_gdrive_folder_id');
-    if (savedFolder2) formData.append('folderId', savedFolder2);
-    const resp = await fetch('/api/upload-document', { method: 'POST', body: formData });
+
+    const resp = await fetch('/api/upload-document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: file.name,
+        data: base64Data,
+        type: docType,
+        appId: appId || undefined,
+        folderId: savedFolder2 || undefined
+      })
+    });
     const res = await resp.json();
     if (res && res.ok) {
       const savedPath = res.fullPath || res.path;
