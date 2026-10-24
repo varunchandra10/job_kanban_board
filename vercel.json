@@ -4,7 +4,11 @@
   "outputDirectory": "frontend",
   "functions": {
     "api/index.js": {
-      "includeFiles": "backend/src/database/migrations/**,tracker.db",
+      "includeFiles": "backend/src/database/**",
+      "maxDuration": 30
+    },
+    "app.js": {
+      "includeFiles": "backend/src/database/**",
       "maxDuration": 30
     }
   },

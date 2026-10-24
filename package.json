@@ -10,7 +10,7 @@
     "desktop:build": "node scripts/desktop-build.js"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": "22.x"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

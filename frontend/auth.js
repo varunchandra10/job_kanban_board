@@ -512,7 +512,7 @@ async function submitGoogleOAuth() {
             }).then(r => r.json());
 
             // Complete authentication with our backend
-            const res = await _nativeFetch('/api/auth/google', {
+            const rawRes = await _nativeFetch('/api/auth/google', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -523,7 +523,16 @@ async function submitGoogleOAuth() {
                   sub: profile.sub
                 }
               })
-            }).then(r => r.json());
+            });
+
+            let res;
+            const contentType = rawRes.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              res = await rawRes.json();
+            } else {
+              const text = await rawRes.text();
+              throw new Error(text || `Server returned HTTP ${rawRes.status}`);
+            }
 
             if (res.ok && res.token) {
               localStorage.setItem('auth_token', res.token);
@@ -581,7 +590,7 @@ async function fallbackGoogleSignIn(feedback) {
   const name = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   try {
-    const res = await _nativeFetch('/api/auth/google', {
+    const rawRes = await _nativeFetch('/api/auth/google', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -592,7 +601,16 @@ async function fallbackGoogleSignIn(feedback) {
           sub: 'g_' + Math.abs(hashCode(email))
         }
       })
-    }).then(r => r.json());
+    });
+
+    let res;
+    const contentType = rawRes.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      res = await rawRes.json();
+    } else {
+      const text = await rawRes.text();
+      throw new Error(text || `Server returned HTTP ${rawRes.status}`);
+    }
 
     if (res.ok && res.token) {
       localStorage.setItem('auth_token', res.token);

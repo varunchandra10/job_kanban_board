@@ -43,7 +43,9 @@ if (process.env.VERCEL) {
     try { fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
   }
   if (!fs.existsSync(config.dbPath)) {
-    const templateDb = path.join(config.rootDir, 'tracker.db');
+    const templateDb = fs.existsSync(path.join(__dirname, 'tracker.template.db'))
+      ? path.join(__dirname, 'tracker.template.db')
+      : path.join(config.rootDir, 'tracker.db');
     if (fs.existsSync(templateDb)) {
       try {
         fs.copyFileSync(templateDb, config.dbPath);
