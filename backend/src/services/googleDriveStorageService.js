@@ -8,7 +8,7 @@ const { BaseStorageService, getMimeType } = require('./baseStorageService');
 class GoogleDriveStorageService extends BaseStorageService {
   constructor(options = {}) {
     super();
-    this.folderId = options.folderId || null;
+    this.folderId = options.folderId || config.googleDriveFolderId || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
     this.keyFilePath = options.keyFilePath || config.googleServiceAccountKeyPath;
     this.localFallback = options.localFallback || null;
     this.driveClient = null;

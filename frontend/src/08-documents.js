@@ -186,9 +186,13 @@ function wireDocSlot(prefix, type, label, iconSvg, appId, getPath, setPath) {
       const base64Data = await readFileAsBase64(file);
       const savedFolder = localStorage.getItem('user_gdrive_folder_id');
 
+      const token = localStorage.getItem('auth_token');
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+
       const resp = await fetch('/api/upload-document', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name: file.name,
           data: base64Data,
@@ -391,9 +395,13 @@ async function handleDocumentUpload(file, key, appId, targetInputEl, triggerBtn)
     });
     const savedFolder2 = localStorage.getItem('user_gdrive_folder_id');
 
+    const token2 = localStorage.getItem('auth_token');
+    const headers2 = { 'Content-Type': 'application/json' };
+    if (token2) headers2['Authorization'] = 'Bearer ' + token2;
+
     const resp = await fetch('/api/upload-document', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: headers2,
       body: JSON.stringify({
         name: file.name,
         data: base64Data,

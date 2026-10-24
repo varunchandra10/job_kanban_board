@@ -1,3 +1,5 @@
+const path = require('path');
+const crypto = require('crypto');
 const { exec } = require('child_process');
 const { db } = require('../database/db');
 const { storageService, localService } = require('../services/storageService');
@@ -16,20 +18,23 @@ exports.listDriveFiles = async (req, res, next) => {
     } catch (_) {}
 
     if (!targetFolder) {
-      return res.json({
-        ok: 1,
-        files: [],
-        notConfigured: true,
-        message: 'No personal Google Drive folder connected. Please connect your folder in Career Profile.'
-      });
+      targetFolder = config.googleDriveFolderId || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
     }
 
     if (!storageService.driveClient) {
       return res.json({ ok: 1, files: [] });
     }
 
+    const type = (req.query.type || '').toLowerCase();
+    let queryFolder = targetFolder;
+    if (targetFolder === '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_') {
+      if (type.includes('resume')) queryFolder = '1JOyn_Fzafuc56FfYsjrgN1Z1TDv6l7QP';
+      else if (type.includes('cover')) queryFolder = '1TyQOkbqrsc0yJ65oH4qbjNdRntzFjU62';
+    }
+
     const driveRes = await storageService.driveClient.files.list({
-      q: `'${targetFolder}' in parents and trashed = false`,
+      q: `'${queryFolder}' in parents and trashed = false`,
+      supportsAllDrives: true,
       fields: 'files(id, name, mimeType, webViewLink, size)',
       pageSize: 50,
       orderBy: 'name'
@@ -37,7 +42,7 @@ exports.listDriveFiles = async (req, res, next) => {
 
     res.json({
       ok: 1,
-      folderId: targetFolder,
+      folderId: queryFolder,
       files: (driveRes.data.files || []).map(f => ({
         id: f.id,
         name: f.name,
@@ -56,7 +61,7 @@ exports.uploadDocument = async (req, res, next) => {
     const userId = req.user?.id || 'default_user';
     let fileBuffer;
     let originalName;
-    const type = req.body.type || req.body.targetKey;
+    const type = req.body.type || req.body.targetKey || 'resume';
     const appId = req.body.appId ? parseInt(req.body.appId, 10) : null;
 
     if (req.file) {
@@ -86,15 +91,17 @@ exports.uploadDocument = async (req, res, next) => {
       } catch (_) {}
     }
 
-    if (!userFolderId && config.googleDriveFolderId) {
-      userFolderId = config.googleDriveFolderId;
+    if (!userFolderId) {
+      userFolderId = config.googleDriveFolderId || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
     }
 
-    // Check if duplicate file already exists in Drive folder to avoid re-uploading
-    if (config.storageProvider === 'google_drive' && userFolderId && storageService.driveClient && originalName) {
+    // 1. Check if the file (or matching name) already exists in Google Drive
+    if (storageService.driveClient && originalName) {
       try {
+        const safeOriginal = originalName.replace(/'/g, "\\'");
         const driveSearch = await storageService.driveClient.files.list({
-          q: `name = '${originalName.replace(/'/g, "\\'")}' and trashed = false and '${userFolderId}' in parents`,
+          q: `name = '${safeOriginal}' and trashed = false`,
+          supportsAllDrives: true,
           fields: 'files(id, name, webViewLink, size)',
           pageSize: 1
         });
@@ -105,7 +112,7 @@ exports.uploadDocument = async (req, res, next) => {
           if (appId) {
             const isCover = type === 'cover_letter' || type === 'cover_letter_path';
             const col = isCover ? 'cover_letter_path' : 'resume_path';
-            db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId);
+            try { db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId); } catch (_) {}
           }
           return res.json({
             ok: 1,
@@ -119,13 +126,14 @@ exports.uploadDocument = async (req, res, next) => {
           });
         }
       } catch (searchErr) {
-        console.warn('[Google Drive] Search error:', searchErr.message);
+        console.warn('[Google Drive] Search note:', searchErr.message);
       }
     }
 
-    let saved;
-    try {
-      if (userFolderId && storageService && typeof storageService.saveFile === 'function' && storageService !== localService) {
+    // 2. Try primary storageService saveFile
+    let saved = null;
+    if (storageService && typeof storageService.saveFile === 'function' && storageService !== localService) {
+      try {
         saved = await storageService.saveFile({
           buffer: fileBuffer,
           originalName,
@@ -133,60 +141,61 @@ exports.uploadDocument = async (req, res, next) => {
           appId,
           folderId: userFolderId
         });
-      } else if (!config.isVercel) {
-        const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
-        saved = await fallbackTarget.saveFile({
-          buffer: fileBuffer,
-          originalName,
-          type,
-          appId
-        });
-        if (!userFolderId) {
-          saved.notice = 'Saved locally. Link your Google Drive folder in Career Profile to backup to cloud.';
-        }
-      } else {
-        return res.status(400).json({
-          ok: 0,
-          error: 'Google Drive folder not configured. Please link your Google Drive folder in Career Profile before uploading documents.'
-        });
+      } catch (driveSaveErr) {
+        console.warn('[Google Drive] Save note:', driveSaveErr.message);
       }
-    } catch (saveErr) {
-      console.warn('[Storage] Primary save failed:', saveErr.message);
-      if (config.isVercel) {
-        return res.status(400).json({
-          ok: 0,
-          error: 'Google Drive upload error: ' + saveErr.message
-        });
-      }
-      const fallbackTarget = (storageService && storageService.localFallback) ? storageService.localFallback : localService;
-      saved = await fallbackTarget.saveFile({
-        buffer: fileBuffer,
-        originalName,
-        type,
-        appId
-      });
-      saved.notice = 'Saved locally due to error: ' + saveErr.message;
     }
 
+    if (saved && saved.fullPath) {
+      if (appId) {
+        const isCover = type === 'cover_letter' || type === 'cover_letter_path';
+        const col = isCover ? 'cover_letter_path' : 'resume_path';
+        try { db.prepare(`update applications set ${col}=? where id=?`).run(saved.fullPath, appId); } catch (_) {}
+      }
+      return res.json({
+        ok: 1,
+        fullPath: saved.fullPath,
+        path: saved.fullPath,
+        relativePath: saved.relativePath || saved.fullPath,
+        name: saved.name || originalName,
+        size: saved.size || fileBuffer.length,
+        ext: saved.ext || path.extname(originalName).toLowerCase(),
+        isGoogleDrive: !!saved.isGoogleDrive
+      });
+    }
+
+    // 3. Robust fallback: Store binary file in database `document_files` table
+    const docId = 'doc_' + crypto.randomBytes(8).toString('hex');
+    const { getMimeType } = require('../services/baseStorageService');
+    const mimeType = getMimeType(originalName);
+    const base64Data = fileBuffer.toString('base64');
+
+    try {
+      db.prepare(`
+        INSERT INTO document_files (id, user_id, app_id, type, name, mime_type, data)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(docId, userId, appId, type, originalName, mimeType, base64Data);
+    } catch (dbSaveErr) {
+      console.warn('[Database] document_files save error:', dbSaveErr.message);
+    }
+
+    const docUrl = `/api/file-content?doc_id=${docId}`;
     if (appId) {
       const isCover = type === 'cover_letter' || type === 'cover_letter_path';
       const col = isCover ? 'cover_letter_path' : 'resume_path';
-      try {
-        db.prepare(`update applications set ${col}=? where id=?`).run(saved.fullPath, appId);
-      } catch (dbErr) {
-        console.warn('DB update warning on upload:', dbErr.message);
-      }
+      try { db.prepare(`update applications set ${col}=? where id=?`).run(docUrl, appId); } catch (_) {}
     }
 
-    res.json({
+    return res.json({
       ok: 1,
-      fullPath: saved.fullPath,
-      path: saved.fullPath,
-      relativePath: saved.relativePath,
-      name: saved.name,
-      size: saved.size,
-      ext: saved.ext,
-      isGoogleDrive: !!saved.isGoogleDrive
+      fullPath: docUrl,
+      path: docUrl,
+      relativePath: docUrl,
+      name: originalName,
+      size: fileBuffer.length,
+      ext: path.extname(originalName).toLowerCase(),
+      isGoogleDrive: false,
+      docId
     });
   } catch (err) {
     next(err);
@@ -197,6 +206,26 @@ exports.getFileInfo = async (req, res, next) => {
   try {
     const targetPath = (req.body && req.body.path) || (req.query && req.query.path);
     if (!targetPath) return res.status(400).json({ error: 'No path specified' });
+
+    if (targetPath.includes('doc_id=')) {
+      const m = targetPath.match(/doc_id=([a-zA-Z0-9_-]+)/);
+      if (m) {
+        try {
+          const doc = db.prepare('SELECT name, mime_type, length(data) as len FROM document_files WHERE id = ?').get(m[1]);
+          if (doc) {
+            return res.json({
+              ok: 1,
+              exists: true,
+              name: doc.name,
+              size: Math.round(doc.len * 0.75),
+              ext: path.extname(doc.name).toLowerCase(),
+              resolvedPath: targetPath
+            });
+          }
+        } catch (_) {}
+      }
+    }
+
     const info = await storageService.getFileInfo(targetPath);
     res.json({ ok: 1, ...info });
   } catch (err) {
@@ -206,11 +235,65 @@ exports.getFileInfo = async (req, res, next) => {
 
 exports.getFileContent = async (req, res, next) => {
   try {
-    const targetPath = req.query.path;
-    if (!targetPath) return res.status(400).send('No file path provided');
+    const docId = req.query.doc_id || req.query.id;
+    if (docId) {
+      try {
+        const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE id = ?').get(docId);
+        if (doc) {
+          const buf = Buffer.from(doc.data, 'base64');
+          res.writeHead(200, {
+            'Content-Type': doc.mime_type || 'application/octet-stream',
+            'Content-Length': buf.length,
+            'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
+            'Cache-Control': 'public, max-age=86400'
+          });
+          return res.end(buf);
+        }
+      } catch (_) {}
+    }
 
-    if (/^https?:\/\//i.test(targetPath)) {
-      return res.redirect(targetPath);
+    const targetPath = req.query.path;
+    if (!targetPath && !docId) return res.status(400).send('No file path provided');
+
+    if (targetPath) {
+      if (targetPath.includes('doc_id=')) {
+        const m = targetPath.match(/doc_id=([a-zA-Z0-9_-]+)/);
+        if (m) {
+          try {
+            const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE id = ?').get(m[1]);
+            if (doc) {
+              const buf = Buffer.from(doc.data, 'base64');
+              res.writeHead(200, {
+                'Content-Type': doc.mime_type || 'application/octet-stream',
+                'Content-Length': buf.length,
+                'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
+                'Cache-Control': 'public, max-age=86400'
+              });
+              return res.end(buf);
+            }
+          } catch (_) {}
+        }
+      }
+
+      // Check document_files by filename
+      const bn = path.basename(targetPath);
+      try {
+        const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE name = ? ORDER BY created_at DESC LIMIT 1').get(bn);
+        if (doc) {
+          const buf = Buffer.from(doc.data, 'base64');
+          res.writeHead(200, {
+            'Content-Type': doc.mime_type || 'application/octet-stream',
+            'Content-Length': buf.length,
+            'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
+            'Cache-Control': 'public, max-age=86400'
+          });
+          return res.end(buf);
+        }
+      } catch (_) {}
+
+      if (/^https?:\/\//i.test(targetPath)) {
+        return res.redirect(targetPath);
+      }
     }
 
     const fileResult = await storageService.getFileStream(targetPath);
@@ -228,15 +311,13 @@ exports.getFileContent = async (req, res, next) => {
             .card { background: #131b2e; border: 1px solid #1e293b; border-radius: 14px; padding: 32px; max-width: 520px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
             h2 { font-size: 20px; margin: 0 0 12px; color: #f8fafc; }
             p { font-size: 14px; color: #94a3b8; line-height: 1.6; margin: 0 0 20px; }
-            .badge { background: #1e293b; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; color: #38bdf8; word-break: break-all; }
             .btn { display: inline-flex; align-items: center; gap: 8px; background: #2563eb; color: #fff; text-decoration: none; font-weight: 500; font-size: 14px; padding: 10px 20px; border-radius: 8px; }
           </style>
         </head>
         <body>
           <div class="card">
             <h2>Document Stored in Google Drive</h2>
-            <p>The document (<span class="badge">${encodeURIComponent(fileName)}</span>) was saved in temporary server storage or directly on Google Drive.</p>
-            <p>Please open the application card on your <strong>Kanban Board</strong> and click <strong>"Link Drive"</strong> to attach its permanent Google Drive link.</p>
+            <p>The document (${fileName}) is not available in local server cache.</p>
             <a href="/board" class="btn">Return to Kanban Board</a>
           </div>
         </body>

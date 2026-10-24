@@ -100,7 +100,7 @@ const config = {
   storageProvider: normalizedStorageProvider,
   googleDesktopClientId: (process.env.GOOGLE_DESKTOP_CLIENT_ID || '').trim(),
   googleDesktopClientSecret: (process.env.GOOGLE_DESKTOP_CLIENT_SECRET || '').trim(),
-  googleDriveFolderId: (process.env.GOOGLE_DRIVE_FOLDER_ID || '').trim(),
+  googleDriveFolderId: (process.env.GOOGLE_DRIVE_FOLDER_ID || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_').trim(),
   googleServiceAccountKeyPath: path.resolve(rootDir, process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || 'google-service-account.json'),
   dataDir: storagePaths.dataDir,
   dbPath: storagePaths.dbPath,

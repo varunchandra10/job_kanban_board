@@ -106,6 +106,23 @@ if (!DatabaseSync) {
   } catch (migErr) {
     console.warn('[Database Migration Warning]:', migErr.message);
   }
+
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS document_files (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        app_id INTEGER,
+        type TEXT,
+        name TEXT,
+        mime_type TEXT,
+        data TEXT,
+        created_at TEXT DEFAULT (datetime('now'))
+      );
+    `);
+  } catch (tableErr) {
+    console.warn('[Database document_files table note]:', tableErr.message);
+  }
 }
 
 const COMPANIES = `Google|Mountain View|US
