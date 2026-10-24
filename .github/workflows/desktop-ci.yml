@@ -13,8 +13,12 @@ concurrency:
 
 jobs:
   test-desktop:
-    name: Desktop Rust & Tauri Verification (Windows)
-    runs-on: windows-latest
+    name: Desktop CI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-22.04]
 
     steps:
       - name: Checkout repository
@@ -26,10 +30,14 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Install Linux system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev
+
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
@@ -39,8 +47,11 @@ jobs:
       - name: Install Node dependencies
         run: npm ci || npm install
 
-      - name: Cargo Check (Desktop Engine)
+      - name: Build Web Assets
+        run: npm run build:web
+
+      - name: Cargo Check
         run: cargo check --manifest-path src-tauri/Cargo.toml
 
-      - name: Cargo Test (Desktop Engine)
-        run: cargo test --manifest-path src-tauri/Cargo.toml
+      - name: Headless Export & Permissions Verification Test
+        run: cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture

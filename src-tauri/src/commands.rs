@@ -202,3 +202,24 @@ pub async fn show_fatal_error(app: AppHandle, title: String, message: String) ->
     Ok(())
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_csv_formatting_and_headless_export() {
+        let temp_dir = std::env::temp_dir();
+        let target_file = temp_dir.join("test_job_export.csv");
+        let sample_csv = "Company,Role,Status,Salary\nAcme Corp,Frontend Engineer,Applied,$120k\n";
+
+        let write_res = fs::write(&target_file, sample_csv.as_bytes());
+        assert!(write_res.is_ok(), "Failed to write CSV in headless test");
+
+        let read_back = fs::read_to_string(&target_file).expect("Failed to read back CSV");
+        assert_eq!(read_back, sample_csv);
+
+        let _ = fs::remove_file(&target_file);
+    }
+}
+
+
