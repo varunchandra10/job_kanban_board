@@ -49,12 +49,12 @@ class GoogleDriveStorageService extends BaseStorageService {
     return str;
   }
 
-  async testConnection() {
+  async testConnection(customFolderId) {
     if (!this.driveClient) {
       throw new Error(`Google Service Account credentials file missing at ${this.keyFilePath}`);
     }
     const res = await this.driveClient.files.get({
-      fileId: this.folderId,
+      fileId: (customFolderId || this.folderId),
       fields: 'id, name, mimeType'
     });
     return { ok: 1, folderName: res.data.name, folderId: res.data.id };

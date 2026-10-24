@@ -722,6 +722,8 @@ window.saveDriveFolder = async function() {
 
 window.testDriveConnection = async function() {
   const btn = document.getElementById('testDriveConnBtn');
+  const folderInput = document.getElementById('gdriveFolderInput');
+  const inputVal = folderInput ? folderInput.value.trim() : '';
   const origHtml = btn ? btn.innerHTML : '';
   if (btn) { btn.disabled = true; btn.innerHTML = 'Testing...'; }
 
@@ -729,7 +731,7 @@ window.testDriveConnection = async function() {
     const res = await fetch('/api/storage/test-connection', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({})
+      body: JSON.stringify({ folderUrl: inputVal, folderId: inputVal })
     }).then(r => r.json());
 
     if (res.ok) {

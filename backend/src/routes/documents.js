@@ -73,7 +73,11 @@ router.post('/storage/connect-drive', (req, res) => {
 router.post('/storage/test-connection', async (req, res) => {
   try {
     const userId = req.user?.id || 'default_user';
-    let folderId = req.body.folderId;
+    let folderId = req.body.folderId || req.body.folderUrl;
+    if (folderId && String(folderId).includes('folders/')) {
+      const match = String(folderId).match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (match) folderId = match[1];
+    }
 
     if (!folderId) {
       const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
@@ -85,7 +89,7 @@ router.post('/storage/test-connection', async (req, res) => {
     }
 
     if (storageService && typeof storageService.testConnection === 'function') {
-      const result = await storageService.testConnection();
+      const result = await storageService.testConnection(folderId);
       return res.json({ ok: 1, message: 'Google Drive is connected and verified!', folderName: result.folderName || 'JobTracker_Documents' });
     }
 
