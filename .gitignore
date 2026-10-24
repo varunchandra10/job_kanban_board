@@ -33,6 +33,7 @@ yarn-debug.log*
 *.backup.db
 *.safety_pre_git.db
 tracker*.db
+!web_app/backend/src/database/tracker.template.db
 !backend/src/database/tracker.template.db
 *.bak
 *.db-shm
@@ -55,8 +56,11 @@ ignored_folder/
 # Tauri & Executables
 src-tauri/target/
 src-tauri/dist/
+desktop_app/src-tauri/target/
+desktop_app/src-tauri/dist/
 *.exe
 *.key
 src-tauri/*.key
+desktop_app/src-tauri/*.key
 dist-desktop/
 *.msi

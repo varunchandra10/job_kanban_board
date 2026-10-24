@@ -11,7 +11,8 @@ const { spawn } = require('child_process');
 const http = require('http');
 const path = require('path');
 
-const rootDir = path.resolve(__dirname, '..');
+const rootDir = path.resolve(__dirname, '../..');
+const desktopDir = path.resolve(__dirname, '..');
 process.env.APP_MODE = 'desktop';
 
 console.log('[Desktop Runner] Starting local backend engine in Desktop Mode...');
@@ -54,7 +55,7 @@ async function main() {
     const desktopEnv = getDesktopEnv();
 
     const tauriProcess = spawn('npx', ['tauri', 'dev', '--no-watch'], {
-      cwd: rootDir,
+      cwd: desktopDir,
       stdio: 'inherit',
       shell: true,
       env: desktopEnv

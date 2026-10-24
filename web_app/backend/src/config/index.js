@@ -3,8 +3,10 @@ const fs = require('fs');
 const os = require('os');
 const dotenv = require('dotenv');
 
-const rootDir = path.resolve(__dirname, '../../../');
+const webAppDir = path.resolve(__dirname, '../../');
+const rootDir = path.resolve(__dirname, '../../../../');
 dotenv.config({ path: path.resolve(rootDir, '.env') });
+dotenv.config({ path: path.resolve(webAppDir, '.env') });
 
 const isVercel = Boolean(process.env.VERCEL);
 const isDesktop = process.env.APP_MODE === 'desktop' || Boolean(process.env.DESKTOP_MODE) || Boolean(process.env.TAURI_ENV_PLATFORM);
@@ -101,7 +103,9 @@ const config = {
   googleDesktopClientId: (process.env.GOOGLE_DESKTOP_CLIENT_ID || '').trim(),
   googleDesktopClientSecret: (process.env.GOOGLE_DESKTOP_CLIENT_SECRET || '').trim(),
   googleDriveFolderId: (process.env.GOOGLE_DRIVE_FOLDER_ID || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_').trim(),
-  googleServiceAccountKeyPath: path.resolve(rootDir, process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || 'google-service-account.json'),
+  googleServiceAccountKeyPath: fs.existsSync(path.resolve(webAppDir, 'backend', 'google-service-account.json'))
+    ? path.resolve(webAppDir, 'backend', 'google-service-account.json')
+    : path.resolve(rootDir, process.env.GOOGLE_SERVICE_ACCOUNT_KEY_PATH || 'google-service-account.json'),
   dataDir: storagePaths.dataDir,
   dbPath: storagePaths.dbPath,
   uploadDir: storagePaths.uploadDir,
@@ -109,10 +113,13 @@ const config = {
   tursoDatabaseUrl: (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.STORAGE_URL || '').trim(),
   tursoAuthToken: (process.env.TURSO_AUTH_TOKEN || process.env.TURSO_DATABASE_AUTH_TOKEN || process.env.TURSO_TOKEN || process.env.STORAGE_AUTH_TOKEN || '').trim(),
   jwtSecret: process.env.JWT_SECRET || 'job-tracker-dev-secret-key-change-in-prod',
-  frontendDir: path.resolve(rootDir, 'frontend'),
+  frontendDir: fs.existsSync(path.resolve(webAppDir, 'frontend'))
+    ? path.resolve(webAppDir, 'frontend')
+    : path.resolve(rootDir, 'frontend'),
   maxFileSizeMB: parseInt(process.env.MAX_FILE_SIZE_MB || '25', 10),
   appPin: (process.env.APP_PIN || '').trim(),
-  rootDir
+  rootDir,
+  webAppDir
 };
 
 module.exports = config;

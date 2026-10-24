@@ -29,10 +29,12 @@ class GoogleDriveStorageService extends BaseStorageService {
       const keyPathCandidates = [
         this.keyFilePath,
         path.resolve(process.cwd(), 'google-service-account.json'),
+        path.resolve(__dirname, '../../../../google-service-account.json'),
         path.resolve(__dirname, '../../../google-service-account.json'),
         path.resolve(__dirname, '../../google-service-account.json'),
         path.resolve(__dirname, '../database/google-service-account.json'),
         path.resolve('/var/task/google-service-account.json'),
+        path.resolve('/var/task/web_app/backend/google-service-account.json'),
         path.resolve('/var/task/backend/google-service-account.json')
       ];
       const validKeyPath = keyPathCandidates.find(p => p && fs.existsSync(p));

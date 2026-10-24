@@ -3,10 +3,14 @@ let app;
 let initError = null;
 
 try {
-  app = require('../backend/src/app');
+  app = require('../web_app/backend/src/app');
 } catch (err) {
-  initError = err;
-  console.error('[Vercel Function Init Error]', err);
+  try {
+    app = require('../backend/src/app');
+  } catch (err2) {
+    initError = err;
+    console.error('[Vercel Function Init Error]', err);
+  }
 }
 
 module.exports = (req, res) => {

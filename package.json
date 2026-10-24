@@ -3,12 +3,13 @@
   "version": "0.2.0",
   "scripts": {
     "start": "node server.js",
-    "build:app": "node scripts/merge-frontend.js",
+    "start:web": "node web_app/server.js",
+    "build:app": "node web_app/scripts/merge-frontend.js",
     "build:web": "vite build",
-    "build:tauri": "node scripts/desktop-build.js",
+    "build:tauri": "node desktop_app/scripts/desktop-build.js",
     "desktop:server": "node server.js",
-    "desktop:dev": "node scripts/desktop-runner.js",
-    "desktop:build": "node scripts/desktop-build.js"
+    "desktop:dev": "node desktop_app/scripts/desktop-runner.js",
+    "desktop:build": "node desktop_app/scripts/desktop-build.js"
   },
   "engines": {
     "node": "22.x"

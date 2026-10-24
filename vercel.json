@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
-  "outputDirectory": "frontend",
+  "outputDirectory": "web_app/frontend",
   "functions": {
     "api/index.js": {
-      "includeFiles": "{backend/src/database/**,google-service-account.json,backend/google-service-account.json}",
+      "includeFiles": "{web_app/backend/src/database/**,web_app/backend/google-service-account.json,backend/src/database/**,google-service-account.json}",
       "maxDuration": 30
     }
   },
