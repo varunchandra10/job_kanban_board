@@ -70,28 +70,12 @@ app.post('/shutdown', handleShutdown);
 app.post('/api/shutdown', handleShutdown);
 
 // ---------------------------------------------------------------------
-// Static assets
+// Static assets & Front‑end handling
 // ---------------------------------------------------------------------
 app.use('/vendor', express.static(path.join(config.frontendDir, 'vendor'), {
   maxAge: '1d'
 }));
 
-// ---------------------------------------------------------------------
-// API routes (protected)
-// ---------------------------------------------------------------------
-app.use(authMiddleware);
-app.use('/api/auth', authRoutes);
-
-app.use('/api', applicationsRoutes);
-app.use('/api', documentsRoutes);
-app.use('/api', rolesRoutes);
-app.use('/api', settingsRoutes);
-app.use('/api', learningsRoutes);
-app.use('/api/backup', backupRoutes);
-
-// ---------------------------------------------------------------------
-// Front‑end SPA handling
-// ---------------------------------------------------------------------
 app.use(express.static(config.frontendDir, {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
@@ -103,6 +87,19 @@ app.use(express.static(config.frontendDir, {
 app.get('/board', (req, res) => res.sendFile(path.join(config.frontendDir, 'board.html')));
 app.get('/profile', (req, res) => res.sendFile(path.join(config.frontendDir, 'profile.html')));
 app.get('/learnings', (req, res) => res.sendFile(path.join(config.frontendDir, 'learnings.html')));
+
+// ---------------------------------------------------------------------
+// API routes (protected)
+// ---------------------------------------------------------------------
+app.use('/api', authMiddleware);
+app.use('/api/auth', authRoutes);
+
+app.use('/api', applicationsRoutes);
+app.use('/api', documentsRoutes);
+app.use('/api', rolesRoutes);
+app.use('/api', settingsRoutes);
+app.use('/api', learningsRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Catch‑all for API 404 and SPA fallback
 app.use((req, res, next) => {

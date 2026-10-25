@@ -39,8 +39,13 @@ exports.addActivity = (req, res, next) => {
     const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Please log in' });
     const b = req.body;
+    const appId = parseInt(b.app_id, 10);
+    const app = db.prepare('select id from applications where id=? and user_id=?').get(appId, userId);
+    if (!app) {
+      return res.status(404).json({ error: 'Application not found or unauthorized' });
+    }
     db.prepare("insert into activity_log(app_id, type, detail, ts, user_id) values(?,?,?,coalesce(?,datetime('now')),?)").run(
-      b.app_id,
+      appId,
       b.type || 'stage_change',
       b.detail || '',
       b.ts || null,

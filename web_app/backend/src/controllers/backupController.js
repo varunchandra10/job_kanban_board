@@ -74,8 +74,12 @@ exports.backupDatabase = (req, res, next) => {
 
 exports.exportCsv = (req, res, next) => {
   try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required to export CSV' });
+    }
     const { db } = require('../database/db');
-    const apps = db.prepare('SELECT * FROM applications ORDER BY id ASC').all();
+    const apps = db.prepare('SELECT * FROM applications WHERE user_id=? ORDER BY id ASC').all(userId);
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 10);
     const filename = `job-applications-${timestamp}.csv`;
 
@@ -85,7 +89,8 @@ exports.exportCsv = (req, res, next) => {
     const headers = [
       'id', 'company', 'role', 'stage', 'category', 'date_applied', 'deadline',
       'country', 'city', 'salary', 'currency', 'portal_url', 'portal_user',
-      'custom_tags', 'notes', 'created_at', 'updated_at'
+      'custom_tags', 'recruiter_name', 'recruiter_email', 'recruiter_notes',
+      'portal_notes', 'resume_path', 'cover_letter_path'
     ];
 
     const esc = val => `"${String(val ?? '').replace(/"/g, '""')}"`;
@@ -95,7 +100,7 @@ exports.exportCsv = (req, res, next) => {
       ...apps.map(a => headers.map(h => esc(a[h])).join(','))
     ];
 
-    res.send('﻿' + csvLines.join('\r\n'));
+    res.send('\uFEFF' + csvLines.join('\r\n'));
   } catch (err) {
     next(err);
   }

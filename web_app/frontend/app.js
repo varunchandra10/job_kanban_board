@@ -1,7 +1,6 @@
-// ==========================================================================
+﻿// ==========================================================================
 // Job Tracker Kanban Board - Client Application Bundle
 // Automatically generated from frontend/src/*.js - DO NOT EDIT app.js DIRECTLY!
-// To rebuild: npm run build:app (or node scripts/merge-frontend.js)
 // ==========================================================================
 
 // --------------------------------------------------------------------------
@@ -329,9 +328,9 @@ async function renderCalendar() {
       </div>
       <div class="n-cal-controls">
         <div class="n-cal-legend">
-          <span class="n-cal-pill job" style="cursor:default">💼 Applied</span>
-          <span class="n-cal-pill deadline" style="cursor:default">⏰ Deadline</span>
-          <span class="n-cal-pill learning" style="cursor:default">⚡ Learning</span>
+          <span class="n-cal-pill job" style="cursor:default">ðŸ’¼ Applied</span>
+          <span class="n-cal-pill deadline" style="cursor:default">â° Deadline</span>
+          <span class="n-cal-pill learning" style="cursor:default">âš¡ Learning</span>
         </div>
         <div class="cal-nav">
           <button class="btn icon-only" id="calPrev" title="Previous Month">&lsaquo;</button>
@@ -380,13 +379,13 @@ async function renderCalendar() {
 
         let pillsHtml = '';
     appliedApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)}${a.role ? ' - ' + esc(a.role) : ''}"><span class="n-cal-icon">💼</span><span class="n-cal-text">${esc(a.company)}${a.role ? ' · ' + esc(a.role) : ''}</span></div>`;
+      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)}${a.role ? ' - ' + esc(a.role) : ''}"><span class="n-cal-icon">ðŸ’¼</span><span class="n-cal-text">${esc(a.company)}${a.role ? ' Â· ' + esc(a.role) : ''}</span></div>`;
     });
     dueApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}"><span class="n-cal-icon">⏰</span><span class="n-cal-text">${esc(a.company)} Due</span></div>`;
+      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}"><span class="n-cal-icon">â°</span><span class="n-cal-text">${esc(a.company)} Due</span></div>`;
     });
     dayLearnings.forEach(l => {
-      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}"><span class="n-cal-icon">⚡</span><span class="n-cal-text">${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</span></div>`;
+      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}"><span class="n-cal-icon">âš¡</span><span class="n-cal-text">${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</span></div>`;
     });
 
     cell.innerHTML = `
@@ -1314,7 +1313,7 @@ async function openDriveFilePicker(type, onSelect) {
           `).join('')}
         </div>
         <div class="confirm-modal-actions" style="justify-content:space-between;">
-          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">📂 Open Drive Folder</a>
+          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">ðŸ“‚ Open Drive Folder</a>
           <button type="button" class="btn sm" id="cancelGdrivePicker">Cancel</button>
         </div>
       </div>
@@ -2238,15 +2237,39 @@ board.addEventListener('click', e => {
   if (!c) return;
   const id = +c.dataset.id;
   if (e.target.closest('.x')) {
+    e.stopPropagation();
     const a = S.apps.find(a => a.id === id);
-    lastDel = { ...a };
-    S.apps = S.apps.filter(x => x.id !== id);
-    render();
-    api('DELETE', '/applications/' + id);
-    $('#tmsg').textContent = `Deleted ${a.company}`;
-    $('#toast').style.display = 'flex';
-    clearTimeout(toastT);
-    toastT = setTimeout(() => $('#toast').style.display = 'none', 6000);
+    if (!a) return;
+
+    showConfirmDialog({
+      title: 'Delete Application?',
+      text: `Are you sure you want to remove ${a.company}${a.role ? ' - ' + a.role : ''}?`,
+      icon: `<svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+      confirmText: 'Delete',
+      confirmCls: 'danger',
+      cancelText: 'Cancel',
+      onConfirm: () => {
+        lastDel = { ...a };
+        S.apps = S.apps.filter(x => x.id !== id);
+        render();
+        api('DELETE', '/applications/' + id);
+
+        const t = $('#toast');
+        const m = $('#tmsg');
+        const u = $('#undo');
+        if (m) m.textContent = `Deleted ${a.company}`;
+        if (u) u.style.display = 'inline-block';
+        if (t) {
+          t.classList.remove('error');
+          t.classList.add('success');
+          t.style.display = 'flex';
+        }
+        clearTimeout(toastT);
+        toastT = setTimeout(() => {
+          if (t) t.style.display = 'none';
+        }, 8000);
+      }
+    });
   } else {
     openApp(id);
   }
@@ -2256,11 +2279,16 @@ $('#undo').onclick = async () => {
   if (!lastDel) return;
   const d = lastDel;
   lastDel = null;
-  $('#toast').style.display = 'none';
+  const t = $('#toast');
+  const u = $('#undo');
+  if (u) u.style.display = 'none';
+  if (t) t.style.display = 'none';
   const n = await api('POST', '/applications', d);
-  if (d.stage !== 'Applied') await api('POST', `/applications/${n.id}/move`, { stage: d.stage, before: null });
-  S.apps = (await api('GET', '/state')).apps;
+  if (d.stage && d.stage !== 'Applied') await api('POST', `/applications/${n.id}/move`, { stage: d.stage, before: null });
+  const st = await api('GET', '/state');
+  if (st && st.apps) S.apps = st.apps;
   render();
+  toast(`Restored ${d.company}`);
 };
 
 // --------------------------------------------------------------------------
@@ -2670,13 +2698,13 @@ window.syncGamifyHud = function() {
       const streak = stats.streak || 0;
       const el = document.getElementById('hudStreakText');
       if (el) {
-        el.textContent = streak + 'd' + (isFrozen ? ' ❄️' : '');
+        el.textContent = streak + 'd' + (isFrozen ? ' â„ï¸' : '');
         if (isFrozen) el.title = 'Streak Frozen: ' + streak + ' days';
       }
       const badge = document.getElementById('learningModeBadge');
       if (badge) {
         const iconSvg = isFrozen
-          ? '❄️ '
+          ? 'â„ï¸ '
           : '<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ';
         badge.innerHTML = iconSvg + streak + 'd';
       }
@@ -2708,6 +2736,10 @@ function handleIndexLogout() {
   ]);
   try { S.filter = JSON.parse(S.settings.filter || '[]'); } catch { S.filter = []; }
   currentSec = S.settings.section || 'All';
+  window.render = render;
+  window.S = S;
+  window.openApp = openApp;
+  window.openAddPanel = openAddPanel;
   render();
 })();
 

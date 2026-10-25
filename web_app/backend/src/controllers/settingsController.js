@@ -56,12 +56,8 @@ exports.deleteVersion = (req, res, next) => {
   try {
     const userId = req.user?.id || 'default_user';
     const id = parseInt(req.params.id, 10);
-    db.prepare('update applications set resume_version_id=null where resume_version_id=?').run(id);
-    if (userId !== 'default_user') {
-      db.prepare('delete from resume_versions where id=? and user_id=?').run(id, userId);
-    } else {
-      db.prepare('delete from resume_versions where id=?').run(id);
-    }
+    db.prepare('update applications set resume_version_id=null where resume_version_id=? and user_id=?').run(id, userId);
+    db.prepare('delete from resume_versions where id=? and user_id=?').run(id, userId);
     res.json({ ok: 1 });
   } catch (err) {
     next(err);
@@ -70,10 +66,11 @@ exports.deleteVersion = (req, res, next) => {
 
 exports.getVersionPdf = (req, res, next) => {
   try {
+    const userId = req.user?.id || 'default_user';
     const id = parseInt(req.params.id, 10);
-    const r = db.prepare('select pdf_data from resume_versions where id=?').get(id);
+    const r = db.prepare('select pdf_data from resume_versions where id=? and user_id=?').get(id, userId);
     if (!r || !r.pdf_data || !r.pdf_data.includes(',')) {
-      return res.status(404).json({});
+      return res.status(404).json({ error: 'PDF not found' });
     }
     const pdfBuffer = Buffer.from(r.pdf_data.split(',')[1], 'base64');
     res.writeHead(200, {
@@ -91,7 +88,7 @@ exports.updateSetting = (req, res, next) => {
     const userId = req.user?.id || 'default_user';
     const key = req.params.key;
     const { value } = req.body;
-    db.prepare('insert into settings(key, value, user_id) values(?,?,?) on conflict(key) do update set value=excluded.value, user_id=excluded.user_id').run(
+    db.prepare('insert into settings(key, value, user_id) values(?,?,?) on conflict(key, user_id) do update set value=excluded.value').run(
       key,
       value,
       userId

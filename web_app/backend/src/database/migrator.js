@@ -74,6 +74,17 @@ function runMigrations(db) {
             }
           }
 
+          if (file.includes('006')) {
+            try {
+              const uCols = db.prepare('pragma table_info(users)').all().map(c => c.name);
+              if (!uCols.includes('password_hash')) {
+                db.prepare("alter table users add column password_hash text default ''").run();
+              }
+            } catch (uErr) {
+              console.warn('[Migrator] Note ensuring users.password_hash:', uErr.message);
+            }
+          }
+
           db.prepare('INSERT INTO schema_migrations (name) VALUES (?)').run(file);
           db.exec('COMMIT;');
           console.log(`[Migrator] Successfully applied ${file}`);

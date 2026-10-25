@@ -1,30 +1,9 @@
 
-function claimExistingDataIfVarun(user) {
-  if (!user || !user.email) return;
-  const isVarun = ['varunchandra10@gmail.com', 'kvc.sunny3@gmail.com', 'varun.developer@gmail.com', 'varun.google@gmail.com'].includes(user.email.toLowerCase());
-  if (isVarun) {
-    try {
-      const defaultAppsCount = db.prepare("select count(*) as c from applications where user_id='default_user'").get()?.c || 0;
-      if (defaultAppsCount > 0) {
-        db.prepare("UPDATE applications SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE learnings SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE activity_log SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE resume_profile SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE resume_versions SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE roles SET user_id=? WHERE user_id='default_user'").run(user.id);
-        db.prepare("UPDATE settings SET user_id=? WHERE user_id='default_user'").run(user.id);
-        console.log(`[Auth] Associated ${defaultAppsCount} existing default applications to Varun (${user.email})`);
-      }
-    } catch (e) {
-      console.warn('[Auth] Error associating data to Varun:', e.message);
-    }
-  }
-}
-
 const crypto = require('crypto');
 const config = require('../config');
 const { db } = require('../database/db');
 const { signToken, verifyToken } = require('../services/jwtService');
+const { hashPassword, verifyPassword } = require('../services/passwordService');
 
 /**
  * Get currently authenticated user details
@@ -76,11 +55,12 @@ exports.me = (req, res) => {
  * Login / Register via Email or PIN
  */
 exports.login = (req, res) => {
-  const { email, name, pin } = req.body || {};
+  const { email, name, password, pin } = req.body || {};
+  const rawPassword = (password || pin || '').trim();
 
   // If PIN check is configured
   if (config.appPin) {
-    if (!pin || String(pin).trim() !== config.appPin) {
+    if (!rawPassword || rawPassword !== config.appPin) {
       return res.status(401).json({ error: 'Incorrect PIN', pinRequired: true });
     }
   }
@@ -92,12 +72,29 @@ exports.login = (req, res) => {
 
     let user = db.prepare('SELECT * FROM users WHERE email = ?').get(cleanEmail);
     if (!user) {
+      if (!rawPassword || rawPassword.length < 6) {
+        return res.status(400).json({ error: 'Please enter a password with at least 6 characters.' });
+      }
       const id = 'usr_' + crypto.randomBytes(8).toString('hex');
-      db.prepare('INSERT INTO users (id, email, name) VALUES (?, ?, ?)').run(id, cleanEmail, cleanName);
+      const passHash = hashPassword(rawPassword);
+      db.prepare('INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)').run(id, cleanEmail, cleanName, passHash);
       user = { id, email: cleanEmail, name: cleanName };
+    } else {
+      // Existing user: verify password if hash exists
+      if (user.password_hash) {
+        if (!rawPassword || !verifyPassword(rawPassword, user.password_hash)) {
+          return res.status(401).json({ error: 'Incorrect password. Please verify and try again.' });
+        }
+      } else if (rawPassword) {
+        // Set password for accounts previously without a password
+        if (rawPassword.length < 6) {
+          return res.status(400).json({ error: 'Please enter a password with at least 6 characters.' });
+        }
+        const passHash = hashPassword(rawPassword);
+        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passHash, user.id);
+      }
     }
 
-    claimExistingDataIfVarun(user);
     const token = signToken({ id: user.id, email: user.email, name: user.name });
     return res.json({
       ok: 1,
@@ -203,8 +200,6 @@ exports.googleAuth = async (req, res) => {
         user.name = finalName;
       }
     }
-
-    claimExistingDataIfVarun(user);
 
     const token = signToken({ id: user.id, email: user.email, name: user.name });
 
@@ -370,8 +365,6 @@ exports.googleCallback = async (req, res) => {
         user.name = finalName;
       }
     }
-
-    claimExistingDataIfVarun(user);
 
     const token = signToken({ id: user.id, email: user.email, name: user.name });
 

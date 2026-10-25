@@ -45,5 +45,9 @@ function handleIndexLogout() {
   ]);
   try { S.filter = JSON.parse(S.settings.filter || '[]'); } catch { S.filter = []; }
   currentSec = S.settings.section || 'All';
+  window.render = render;
+  window.S = S;
+  window.openApp = openApp;
+  window.openAddPanel = openAddPanel;
   render();
 })();

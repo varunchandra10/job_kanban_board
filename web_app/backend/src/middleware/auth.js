@@ -6,14 +6,26 @@ function authMiddleware(req, res, next) {
   const publicPaths = [
     '/',
     '/index.html',
+    '/board',
+    '/board.html',
+    '/profile',
     '/profile.html',
+    '/learnings',
     '/learnings.html',
     '/style.css',
     '/app.js',
+    '/auth.js',
     '/learnings.js',
     '/logos.json',
+    '/favicon.svg',
+    '/logo.svg',
     '/health'
   ];
+
+  // If request is for a static asset or page, allow without auth
+  if (!req.path.startsWith('/api/') || publicPaths.includes(req.path)) {
+    return next();
+  }
 
   // Try to parse user token if present on any request
   const authHeader = req.headers['authorization'];
@@ -29,7 +41,6 @@ function authMiddleware(req, res, next) {
   }
 
   if (
-    publicPaths.includes(req.path) ||
     req.path.startsWith('/api/auth/') ||
     req.path.startsWith('/vendor/')
   ) {
