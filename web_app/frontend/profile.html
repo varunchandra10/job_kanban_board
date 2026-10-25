@@ -793,6 +793,7 @@ async function loadAllProfileData() {
     container.innerHTML = originalProfileHtml;
   }
 
+  try {
     const clientTz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     const [resStateRaw, resLearnings, resGamify] = await Promise.all([
       fetch('/api/state').then(r => r.json()).catch(() => ({ apps: [] })),
