@@ -210,7 +210,8 @@ window.switchViewMode = function(mode) {
 // Fetch & Update Gamification Stats
 async function loadGamificationStats() {
   try {
-    const res = await fetch('/api/gamification');
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const res = await fetch(`/api/gamification?tz=${encodeURIComponent(tz)}`);
     if (!res.ok) return;
     const stats = await res.json();
     gamificationData = stats;

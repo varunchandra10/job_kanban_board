@@ -10,69 +10,11 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/style.css?v=20261023_v6">
   <script type="module" src="/auth.js"></script>
+  <script src="/components.js"></script>
 </head>
 <body>
 
-<header>
-  <a href="/index.html" class="h-logo" style="text-decoration:none;color:inherit;">
-    <img src="/logo.svg" alt="Job Tracker Logo" width="32" height="32" style="border-radius:9px;box-shadow:0 3px 10px rgba(99,102,241,0.3);">
-    <h1>Job Tracker</h1>
-  </a>
-  <!-- Main Navigation: 2 Mode Buttons (Job Applications & Learnings) -->
-  <div class="mode-switcher-container" role="tablist" aria-label="View Modes">
-    <a href="/board.html" class="mode-tab-btn active" id="btnModeApps" role="tab" aria-selected="true" title="Kanban Board & Job Applications" style="text-decoration:none;">
-      <span class="mode-tab-icon"><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-      <span class="mode-tab-text">Job Applications</span>
-      <span class="mode-tab-badge" id="appModeBadge">0</span>
-    </a>
-    <a href="/learnings.html" class="mode-tab-btn" id="btnModeLearnings" role="tab" aria-selected="false" title="Daily Learnings & Streak" style="text-decoration:none;">
-      <span class="mode-tab-icon"><svg class="icon-inline" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span class="mode-tab-text">Learnings</span>
-      <span class="mode-tab-badge streak-glow" id="learningModeBadge"><svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> 0d</span>
-    </a>
-  </div>
-
-  <span class="sp"></span>
-
-  <div class="search-wrap">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input type="text" id="search" class="search-input" placeholder="Search company, role, notes..." autocomplete="off">
-    <kbd class="search-kbd" title="Press / or Ctrl+K to search">/</kbd>
-    <button type="button" id="searchClear" class="search-clear" aria-label="Clear search">&times;</button>
-  </div>
-
-  <!-- Streak Pill: Only fire icon and number, placed completely to the right -->
-  <a href="/learnings.html" class="gamify-hud-pill streak-pill-compact" id="gamifyHudPill" title="Daily Learning Streak (Click to view Learnings)" style="text-decoration:none;cursor:pointer;">
-    <span class="hud-flame-icon"><svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2.2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></span>
-    <span class="hud-streak-count" id="hudStreakText">0d</span>
-  </a>
-
-  <!-- User Profile Button -->
-  <!-- User Profile & Switcher Link -->
-  <a href="/profile.html" class="btn icon-only" id="profileBtn" title="User Profile & Accounts" aria-label="User Profile" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center;position:relative;">
-    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-      <circle cx="12" cy="7" r="4"></circle>
-    </svg>
-    <span id="headerUserDot" style="display:none;position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:#6366f1;"></span>
-  </a>
-
-  <button class="btn icon-only" id="tbtn" title="Toggle light/dark theme" aria-label="Toggle theme">
-    <svg class="icon i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    <svg class="icon i-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  </button>
-    <span id="topbarAuthWrap">
-    <button class="btn icon-only" id="profLogoutBtn" onclick="handleTopbarLogout()" title="Log Out of Session" aria-label="Log Out" style="color: #ef4444;">
-      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-    </button>
-  </span>
-  <button class="btn icon-only" id="shutdownBtn" title="Shutdown Server" aria-label="Shutdown Server" style="color:var(--tx3);margin-left:2px;">
-    <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path>
-      <line x1="12" y1="2" x2="12" y2="12"></line>
-    </svg>
-  </button>
-</header>
+<app-header active="board" show-search="true" search-placeholder="Search company, role, notes..."></app-header>
 
 <nav id="secBar">
   <button class="sec-btn active" data-s="All">
@@ -130,7 +72,12 @@
 <!-- Mobile Stage Switcher Bar (Pure Stage Tabs with Full Width) -->
 <div class="stage-picker-bar" id="stagePickerBar">
   <div class="mobile-stage-tabs" id="mobileStageTabs" role="tablist" aria-label="Job Application Stages">
-    <button type="button" class="stage-tab active" data-stage="Applied" role="tab">
+    <button type="button" class="stage-tab active" data-stage="Bookmarked" role="tab">
+      <span class="tab-dot" style="background:var(--bookmarked-clr, #8b5cf6)"></span>
+      <span>Bookmarked</span>
+      <span class="tab-count">0</span>
+    </button>
+    <button type="button" class="stage-tab" data-stage="Applied" role="tab">
       <span class="tab-dot" style="background:var(--applied-clr, #3b82f6)"></span>
       <span>Applied</span>
       <span class="tab-count">0</span>
@@ -164,6 +111,13 @@
 </div>
 
 <main id="board">
+  <section class="col" data-stage="Bookmarked">
+    <div class="col-header"><span class="col-stage-dot" style="background:var(--bookmarked-clr, #8b5cf6)"></span><h2>Bookmarked</h2><span class="col-count">...</span></div>
+    <div class="body">
+      <div class="skeleton-card"><div class="skeleton-top"><div class="skeleton-avatar skeleton-shimmer"></div><div class="skeleton-text-group"><div class="skeleton-line w-70 skeleton-shimmer"></div><div class="skeleton-line w-45 skeleton-shimmer"></div></div></div><div class="skeleton-line w-85 skeleton-shimmer"></div><div class="skeleton-tags-row"><div class="skeleton-pill skeleton-shimmer"></div><div class="skeleton-pill skeleton-shimmer"></div></div></div>
+      <div class="skeleton-card"><div class="skeleton-top"><div class="skeleton-avatar skeleton-shimmer"></div><div class="skeleton-text-group"><div class="skeleton-line w-70 skeleton-shimmer"></div><div class="skeleton-line w-45 skeleton-shimmer"></div></div></div><div class="skeleton-line w-85 skeleton-shimmer"></div><div class="skeleton-tags-row"><div class="skeleton-pill skeleton-shimmer"></div><div class="skeleton-pill skeleton-shimmer"></div></div></div>
+    </div>
+  </section>
   <section class="col" data-stage="Applied">
     <div class="col-header"><span class="col-stage-dot" style="background:var(--applied-clr, #3b82f6)"></span><h2>Applied</h2><span class="col-count">...</span></div>
     <div class="body">
@@ -225,54 +179,6 @@
 </div>
 
 <script type="module" src="/app.js"></script>
-
-<!-- Render-Style Authentication Modal -->
-<div id="authModalOverlay" class="render-auth-overlay" style="display: none !important;">
-  <div class="render-auth-card" id="authModalBox" role="dialog" aria-modal="true">
-    <button type="button" class="render-modal-close" onclick="closeAuthModal()" aria-label="Close modal">&times;</button>
-    
-    <h2 class="render-auth-title">Sign In to Job Tracker</h2>
-
-    <div class="render-notice-banner" id="authActionNotice" style="display:none;">
-      <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span id="authActionNoticeText">Please sign in to continue.</span>
-    </div>
-
-    <div class="render-oauth-row">
-      <button type="button" class="render-oauth-btn" id="btnGoogleOAuth" onclick="submitGoogleOAuth()" title="Sign in with your Google account">
-        <svg viewBox="0 0 24 24" width="17" height="17"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-        <span>Google</span>
-      </button>
-    </div>
-
-    <div class="render-divider">
-      <span>or</span>
-    </div>
-
-    <form onsubmit="event.preventDefault(); submitCustomEmailAuth();">
-      <div class="render-form-group">
-        <label class="render-label" for="renderEmailInput">Email</label>
-        <input type="email" id="renderEmailInput" class="render-input" placeholder="your@email.com" required autocomplete="email">
-      </div>
-
-      <div class="render-form-group">
-        <label class="render-label" for="renderPasswordInput">Password</label>
-        <div class="render-input-wrap">
-          <input type="password" id="renderPasswordInput" class="render-input" placeholder="••••••••••••" required autocomplete="current-password">
-          <button type="button" class="render-eye-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
-            <svg id="eyeIconSvg" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <div class="render-feedback" id="renderFeedbackMsg" style="display:none;"></div>
-
-      <button type="submit" class="render-btn-signin" id="btnSubmitCustomAuth">
-        Sign In
-      </button>
-    </form>
-  </div>
-</div>
 
 </body>
 </html>

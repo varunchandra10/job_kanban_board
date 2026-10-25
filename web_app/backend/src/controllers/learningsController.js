@@ -1,29 +1,74 @@
 const { db } = require('../database/db');
 
-function calculateGamification(userId = null) {
+function getTodayInTimezone(tz) {
+  if (tz) {
+    try {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(new Date()); // YYYY-MM-DD
+    } catch (_) {}
+  }
+  const d = new Date();
+  const yr = d.getFullYear();
+  const mo = String(d.getMonth() + 1).padStart(2, '0');
+  const da = String(d.getDate()).padStart(2, '0');
+  return `${yr}-${mo}-${da}`;
+}
+
+function shiftDays(dateStr, daysOffset) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() + daysOffset);
+  const yr = dt.getUTCFullYear();
+  const mo = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  const da = String(dt.getUTCDate()).padStart(2, '0');
+  return `${yr}-${mo}-${da}`;
+}
+
+function calculateGamification(userId = null, tz = null) {
+  const todayStr = getTodayInTimezone(tz);
+
   if (!userId) {
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekPunchcard = [];
+    for (let i = 6; i >= 0; i--) {
+      const dStr = shiftDays(todayStr, -i);
+      const parts = dStr.split('-');
+      const dayDate = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
+      const dayName = dayNames[dayDate.getUTCDay()];
+      weekPunchcard.push({
+        date: dStr,
+        day: dayName,
+        active: false,
+        frozen: false,
+        appOnly: false,
+        isToday: i === 0
+      });
+    }
     return {
       streak: 0,
       currentStreak: 0,
+      longestStreak: 0,
+      learningCount: 0,
       totalMinutes: 0,
       totalXP: 0,
       level: 1,
+      title: 'Novice',
       levelTitle: 'Novice',
+      currentLevelMin: 0,
       progressPercent: 0,
       nextLevelXP: 200,
-      isFrozen: false
+      isFrozen: false,
+      todayFrozen: false,
+      todayCompleted: false,
+      todayAppOnly: false,
+      weekPunchcard
     };
   }
-
-  const now = new Date();
-  const toDateStr = d => {
-    const yr = d.getFullYear();
-    const mo = String(d.getMonth() + 1).padStart(2, '0');
-    const da = String(d.getDate()).padStart(2, '0');
-    return `${yr}-${mo}-${da}`;
-  };
-
-  const todayStr = toDateStr(now);
 
   // 1. Fetch user's distinct activity dates
   const learningRows = db.prepare(
@@ -38,43 +83,77 @@ function calculateGamification(userId = null) {
   const appDates = appRows.map(r => r.d);
   const appSet = new Set(appDates);
 
-  // 2. Fetch total study minutes
+  // 2. Fetch total study minutes & learning count
   const logs = db.prepare(
     "SELECT date_logged, duration_minutes, topic FROM learnings WHERE user_id=?"
   ).all(userId);
 
+  const learningCount = logs.length;
   const totalMinutes = logs.reduce((acc, l) => acc + (parseInt(l.duration_minutes, 10) || 0), 0);
 
-  // 3. Compute Streak
+  // 3. Compute Current Streak
+  const todayCompleted = learningSet.has(todayStr) && appSet.has(todayStr);
+  const todayFrozen = learningSet.has(todayStr) && !appSet.has(todayStr);
+  const todayAppOnly = !learningSet.has(todayStr) && appSet.has(todayStr);
+
   let streak = 0;
-  let checkDate = new Date(now);
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayStr = toDateStr(yesterday);
-
-  let todayCompleted = learningSet.has(todayStr) && appSet.has(todayStr);
-  let todayFrozen = learningSet.has(todayStr) && !appSet.has(todayStr);
-
-  if (!todayCompleted) {
-    checkDate.setDate(checkDate.getDate() - 1);
-  }
+  let checkDateStr = todayCompleted ? todayStr : shiftDays(todayStr, -1);
 
   while (true) {
-    const ds = toDateStr(checkDate);
-    const hasLearning = learningSet.has(ds);
-    const hasApp = appSet.has(ds);
+    const hasLearning = learningSet.has(checkDateStr);
+    const hasApp = appSet.has(checkDateStr);
 
     if (hasLearning && hasApp) {
       streak += 1;
-      checkDate.setDate(checkDate.getDate() - 1);
+      checkDateStr = shiftDays(checkDateStr, -1);
     } else if (hasLearning && !hasApp) {
-      checkDate.setDate(checkDate.getDate() - 1);
+      checkDateStr = shiftDays(checkDateStr, -1);
     } else {
       break;
     }
   }
 
-  // 4. Calculate XP & Levels
+  // 4. Compute Longest Streak
+  const allDates = Array.from(new Set([...learningDates, ...appDates])).sort();
+  let longestStreak = streak;
+  let tempStreak = 0;
+  for (let i = 0; i < allDates.length; i++) {
+    const dStr = allDates[i];
+    const prevDate = i > 0 ? allDates[i - 1] : null;
+    const isConsecutive = prevDate && shiftDays(prevDate, 1) === dStr;
+
+    if (learningSet.has(dStr) && appSet.has(dStr)) {
+      tempStreak = isConsecutive ? tempStreak + 1 : 1;
+      if (tempStreak > longestStreak) longestStreak = tempStreak;
+    } else if (learningSet.has(dStr) && !appSet.has(dStr)) {
+      // Frozen day maintains streak
+      tempStreak = isConsecutive ? tempStreak : 0;
+    } else {
+      tempStreak = 0;
+    }
+  }
+
+  // 5. Generate Week Punchcard (last 7 days ending today)
+  const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const weekPunchcard = [];
+  for (let i = 6; i >= 0; i--) {
+    const dStr = shiftDays(todayStr, -i);
+    const [y, m, d] = dStr.split('-').map(Number);
+    const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    const hasLearning = learningSet.has(dStr);
+    const hasApp = appSet.has(dStr);
+
+    weekPunchcard.push({
+      date: dStr,
+      day: DAY_NAMES[dayOfWeek],
+      active: hasLearning && hasApp,
+      frozen: hasLearning && !hasApp,
+      appOnly: !hasLearning && hasApp,
+      isToday: dStr === todayStr
+    });
+  }
+
+  // 6. Calculate XP & Levels
   const baseLogXP = logs.length * 20;
   const timeXP = Math.floor(totalMinutes / 5) * 5;
   const streakBonusXP = streak * 50;
@@ -102,15 +181,21 @@ function calculateGamification(userId = null) {
   return {
     streak,
     currentStreak: streak,
+    longestStreak,
+    learningCount,
     totalMinutes,
     totalXP,
     level: currentTier.level,
+    title: currentTier.title,
     levelTitle: currentTier.title,
+    currentLevelMin: currentTier.min,
     progressPercent,
     nextLevelXP: currentTier.max,
     isFrozen: todayFrozen && streak > 0,
     todayFrozen,
-    todayCompleted
+    todayCompleted,
+    todayAppOnly,
+    weekPunchcard
   };
 }
 
@@ -204,20 +289,29 @@ exports.deleteLearning = (req, res, next) => {
 exports.getGamification = (req, res, next) => {
   try {
     const userId = req.user?.id;
+    const tz = req.query.tz || req.query.timezone || null;
     if (!userId) {
       return res.json({
         streak: 0,
         currentStreak: 0,
+        longestStreak: 0,
+        learningCount: 0,
         totalMinutes: 0,
         totalXP: 0,
         level: 1,
+        title: 'Novice',
         levelTitle: 'Novice',
+        currentLevelMin: 0,
         progressPercent: 0,
         nextLevelXP: 200,
-        isFrozen: false
+        isFrozen: false,
+        todayFrozen: false,
+        todayCompleted: false,
+        todayAppOnly: false,
+        weekPunchcard: []
       });
     }
-    const data = calculateGamification(userId);
+    const data = calculateGamification(userId, tz);
     res.json(data);
   } catch (err) {
     next(err);

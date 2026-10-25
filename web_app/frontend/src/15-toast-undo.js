@@ -55,6 +55,11 @@ board.addEventListener('click', e => {
         }, 8000);
       }
     });
+  } else if (e.target.closest('.card-action-menu-btn')) {
+    e.stopPropagation();
+    if (typeof openCardActionsModal === 'function') {
+      openCardActionsModal(id);
+    }
   } else {
     openApp(id);
   }

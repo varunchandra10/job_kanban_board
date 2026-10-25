@@ -1,6 +1,7 @@
 // Sync streak HUD in index.html
 window.syncGamifyHud = function() {
-  fetch('/api/gamification')
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  fetch(`/api/gamification?tz=${encodeURIComponent(tz)}`)
     .then(r => r.json())
     .then(stats => {
       const isFrozen = stats.isFrozen || stats.todayFrozen;

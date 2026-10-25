@@ -130,6 +130,9 @@ function render() {
       d.dataset.id = a.id;
       d.innerHTML = `
         <button class="x" title="Delete" aria-label="Delete">&times;</button>
+        <button type="button" class="card-action-menu-btn" title="Actions" aria-label="Quick Move & Actions" onclick="event.stopPropagation(); if (window.openCardActionsModal) window.openCardActionsModal(${a.id});">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
         ${dotHtml}
         <div class="top">
           ${logo(a.company)}

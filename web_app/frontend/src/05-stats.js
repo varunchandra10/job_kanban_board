@@ -2,11 +2,12 @@
 function openStatsPanel() {
   const apps = S.apps;
   const total = apps.length;
+  const bookmarkedCount = apps.filter(a => a.stage === 'Bookmarked').length;
   const appliedCount = apps.filter(a => a.stage === 'Applied').length;
   const interviewCount = apps.filter(a => a.stage === 'Interviewing').length;
   const offerCount = apps.filter(a => a.stage === 'Offer').length;
   const rejectCount = apps.filter(a => a.stage === 'Rejected').length;
-  const activePipeline = appliedCount + interviewCount;
+  const activePipeline = bookmarkedCount + appliedCount + interviewCount;
 
   const offerRate = total ? ((offerCount / total) * 100).toFixed(1) : '0.0';
   const rejectRate = total ? ((rejectCount / total) * 100).toFixed(1) : '0.0';
@@ -61,6 +62,11 @@ function openStatsPanel() {
 
     <div class="chart-box">
       <h5>Stage Breakdown <span>${total} total</span></h5>
+      <div class="chart-row">
+        <span class="chart-lbl">${ICON.bookmark} Bookmarked</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${total ? (bookmarkedCount/total*100) : 0}%;background:var(--bookmarked-clr, #8b5cf6)"></div></div>
+        <span class="chart-val">${bookmarkedCount}</span>
+      </div>
       <div class="chart-row">
         <span class="chart-lbl">${ICON.applied} Applied</span>
         <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${total ? (appliedCount/total*100) : 0}%;background:var(--applied-clr)"></div></div>

@@ -15,6 +15,7 @@ function authMiddleware(req, res, next) {
     '/style.css',
     '/app.js',
     '/auth.js',
+    '/components.js',
     '/learnings.js',
     '/logos.json',
     '/favicon.svg',

@@ -1,6 +1,7 @@
-﻿// ==========================================================================
+// ==========================================================================
 // Job Tracker Kanban Board - Client Application Bundle
 // Automatically generated from frontend/src/*.js - DO NOT EDIT app.js DIRECTLY!
+// To rebuild: npm run build:app (or node scripts/merge-frontend.js)
 // ==========================================================================
 
 // --------------------------------------------------------------------------
@@ -93,13 +94,14 @@ const ICON = {
   gdrive:   `<svg class="icon gdrive-icon" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.9 2.5 3.2 3.3l16.3-28.25-8.25-14.3-15.1 26.1c-1.3 2.25-1.3 5 0 7.25z" fill="#0066da"/><path d="m43.65 25-16.3 28.25h32.6l16.3-28.25-8.25-14.3h-24.35z" fill="#00ac47"/><path d="m73.55 76.8c1.3-.8 2.4-1.9 3.2-3.3l3.85-6.65c1.3-2.25 1.3-5 0-7.25l-15.1-26.1-8.25 14.3 16.3 28.25z" fill="#ea4335"/><path d="m43.65 25-16.3 28.25-16.3 23.55c1.3.8 2.7 1.2 4.2 1.2h56.8c1.5 0 2.9-.4 4.2-1.2z" fill="#ffba00"/></svg>`,
   filePdf:   `<svg class="icon" viewBox="0 0 24 24" style="color:#dc2626"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`,
   fileWord:  `<svg class="icon" viewBox="0 0 24 24" style="color:#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 10.5 17 12 14 13.5 17 15 13"/></svg>`,
-  refresh:   `<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`
+  refresh:   `<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+  bookmark:  `<svg class="icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`
 };
 
-const STAGES = ['Applied', 'Interviewing', 'Offer', 'Rejected'];
-const DOT = { Applied: '#2563eb', Interviewing: '#d97706', Offer: '#059669', Rejected: '#dc2626' };
-const STAGE_ICON = { Applied: ICON.applied, Interviewing: ICON.interview, Offer: ICON.offer, Rejected: ICON.rejected };
-const STAGE_ACCENT = { Applied: 'var(--applied-clr)', Interviewing: 'var(--interview-clr)', Offer: 'var(--offer-clr)', Rejected: 'var(--rejected-clr)' };
+const STAGES = ['Bookmarked', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
+const DOT = { Bookmarked: '#8b5cf6', Applied: '#2563eb', Interviewing: '#d97706', Offer: '#059669', Rejected: '#dc2626' };
+const STAGE_ICON = { Bookmarked: ICON.bookmark, Applied: ICON.applied, Interviewing: ICON.interview, Offer: ICON.offer, Rejected: ICON.rejected };
+const STAGE_ACCENT = { Bookmarked: 'var(--bookmarked-clr, #8b5cf6)', Applied: 'var(--applied-clr)', Interviewing: 'var(--interview-clr)', Offer: 'var(--offer-clr)', Rejected: 'var(--rejected-clr)' };
 
 const COUNTRIES = `US|United States,GB|United Kingdom,SG|Singapore,DE|Germany,IN|India,CA|Canada,AU|Australia,NL|Netherlands,CH|Switzerland,SE|Sweden,FR|France,IE|Ireland,JP|Japan,KR|South Korea,CN|China,HK|Hong Kong,AE|United Arab Emirates,ES|Spain,IT|Italy,PL|Poland,NO|Norway,DK|Denmark,FI|Finland,BE|Belgium,AT|Austria,PT|Portugal,IL|Israel,BR|Brazil,MX|Mexico,NZ|New Zealand,ZA|South Africa,TW|Taiwan,MY|Malaysia,ID|Indonesia,TH|Thailand,VN|Vietnam,PH|Philippines,SA|Saudi Arabia,TR|Turkey,AR|Argentina,CL|Chile,CZ|Czechia`.split(',').map(x=>x.split('|'));
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -328,9 +330,9 @@ async function renderCalendar() {
       </div>
       <div class="n-cal-controls">
         <div class="n-cal-legend">
-          <span class="n-cal-pill job" style="cursor:default">ðŸ’¼ Applied</span>
-          <span class="n-cal-pill deadline" style="cursor:default">â° Deadline</span>
-          <span class="n-cal-pill learning" style="cursor:default">âš¡ Learning</span>
+          <span class="n-cal-pill job" style="cursor:default">💼 Applied</span>
+          <span class="n-cal-pill deadline" style="cursor:default">⏰ Deadline</span>
+          <span class="n-cal-pill learning" style="cursor:default">⚡ Learning</span>
         </div>
         <div class="cal-nav">
           <button class="btn icon-only" id="calPrev" title="Previous Month">&lsaquo;</button>
@@ -379,13 +381,13 @@ async function renderCalendar() {
 
         let pillsHtml = '';
     appliedApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)}${a.role ? ' - ' + esc(a.role) : ''}"><span class="n-cal-icon">ðŸ’¼</span><span class="n-cal-text">${esc(a.company)}${a.role ? ' Â· ' + esc(a.role) : ''}</span></div>`;
+      pillsHtml += `<div class="n-cal-pill job" data-id="${a.id}" title="Applied: ${esc(a.company)}${a.role ? ' - ' + esc(a.role) : ''}"><span class="n-cal-icon">💼</span><span class="n-cal-text">${esc(a.company)}${a.role ? ' · ' + esc(a.role) : ''}</span></div>`;
     });
     dueApps.forEach(a => {
-      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}"><span class="n-cal-icon">â°</span><span class="n-cal-text">${esc(a.company)} Due</span></div>`;
+      pillsHtml += `<div class="n-cal-pill deadline" data-id="${a.id}" title="Deadline: ${esc(a.company)}"><span class="n-cal-icon">⏰</span><span class="n-cal-text">${esc(a.company)} Due</span></div>`;
     });
     dayLearnings.forEach(l => {
-      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}"><span class="n-cal-icon">âš¡</span><span class="n-cal-text">${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</span></div>`;
+      pillsHtml += `<div class="n-cal-pill learning" data-lid="${l.id}" title="Learning: ${esc(l.title)}"><span class="n-cal-icon">⚡</span><span class="n-cal-text">${esc(l.title)} (${l.duration_minutes || l.duration_mins || 30}m)</span></div>`;
     });
 
     cell.innerHTML = `
@@ -449,11 +451,12 @@ async function renderCalendar() {
 function openStatsPanel() {
   const apps = S.apps;
   const total = apps.length;
+  const bookmarkedCount = apps.filter(a => a.stage === 'Bookmarked').length;
   const appliedCount = apps.filter(a => a.stage === 'Applied').length;
   const interviewCount = apps.filter(a => a.stage === 'Interviewing').length;
   const offerCount = apps.filter(a => a.stage === 'Offer').length;
   const rejectCount = apps.filter(a => a.stage === 'Rejected').length;
-  const activePipeline = appliedCount + interviewCount;
+  const activePipeline = bookmarkedCount + appliedCount + interviewCount;
 
   const offerRate = total ? ((offerCount / total) * 100).toFixed(1) : '0.0';
   const rejectRate = total ? ((rejectCount / total) * 100).toFixed(1) : '0.0';
@@ -508,6 +511,11 @@ function openStatsPanel() {
 
     <div class="chart-box">
       <h5>Stage Breakdown <span>${total} total</span></h5>
+      <div class="chart-row">
+        <span class="chart-lbl">${ICON.bookmark} Bookmarked</span>
+        <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${total ? (bookmarkedCount/total*100) : 0}%;background:var(--bookmarked-clr, #8b5cf6)"></div></div>
+        <span class="chart-val">${bookmarkedCount}</span>
+      </div>
       <div class="chart-row">
         <span class="chart-lbl">${ICON.applied} Applied</span>
         <div class="chart-bar-bg"><div class="chart-bar-fill" style="width:${total ? (appliedCount/total*100) : 0}%;background:var(--applied-clr)"></div></div>
@@ -810,6 +818,9 @@ function render() {
       d.dataset.id = a.id;
       d.innerHTML = `
         <button class="x" title="Delete" aria-label="Delete">&times;</button>
+        <button type="button" class="card-action-menu-btn" title="Actions" aria-label="Quick Move & Actions" onclick="event.stopPropagation(); if (window.openCardActionsModal) window.openCardActionsModal(${a.id});">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+        </button>
         ${dotHtml}
         <div class="top">
           ${logo(a.company)}
@@ -1339,7 +1350,7 @@ async function openDriveFilePicker(type, onSelect) {
           `).join('')}
         </div>
         <div class="confirm-modal-actions" style="justify-content:space-between;">
-          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">ðŸ“‚ Open Drive Folder</a>
+          <a href="https://drive.google.com/drive/folders/${res.folderId}" target="_blank" class="btn sm" style="text-decoration:none;">📂 Open Drive Folder</a>
           <button type="button" class="btn sm" id="cancelGdrivePicker">Cancel</button>
         </div>
       </div>
@@ -2236,6 +2247,136 @@ function doMove(id, stage, before) {
   api('POST', `/applications/${id}/move`, { stage, before });
 }
 
+/* ----- Mobile Card Actions & Touch Support ----- */
+function openCardActionsModal(id) {
+  const a = S.apps.find(x => x.id === id);
+  if (!a) return;
+
+  let overlay = document.getElementById('mobileCardSheetOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'mobileCardSheetOverlay';
+    overlay.className = 'mobile-card-sheet-overlay';
+    document.body.appendChild(overlay);
+  }
+
+  const currentStage = a.stage || 'Applied';
+  const roleHtml = a.role ? `<div class="sheet-role-title">${esc(a.role)}</div>` : '';
+  const stagesHtml = STAGES.map(st => {
+    const isCurrent = st === currentStage;
+    return `
+      <button type="button" class="sheet-stage-btn ${isCurrent ? 'current' : ''}" data-stage="${st}">
+        <span class="sheet-stage-dot" style="background:${DOT[st] || 'var(--applied-clr)'}"></span>
+        <span>${st}</span>
+        ${isCurrent ? '<span style="margin-left:auto;font-size:11px;opacity:0.75;font-weight:400;">(Current)</span>' : ''}
+      </button>
+    `;
+  }).join('');
+
+  overlay.innerHTML = `
+    <div class="mobile-card-sheet">
+      <div class="sheet-drag-handle"></div>
+      <div class="sheet-header">
+        <div class="sheet-app-info">
+          ${logo(a.company)}
+          <div>
+            <div class="sheet-co-title">${esc(a.company)}</div>
+            ${roleHtml}
+          </div>
+        </div>
+        <button type="button" class="x" id="sheetCloseX" style="position:static;font-size:20px;padding:4px 8px;cursor:pointer;">&times;</button>
+      </div>
+      <div class="sheet-section-title" style="margin-top:14px;">Move to Stage</div>
+      <div class="sheet-stages-grid">
+        ${stagesHtml}
+      </div>
+      <div class="sheet-section-title" style="margin-top:16px;">Quick Actions</div>
+      <div class="sheet-actions-list">
+        <button type="button" class="sheet-action-item" id="sheetDetailsBtn">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span>View & Edit Full Details</span>
+        </button>
+        <button type="button" class="sheet-action-item danger" id="sheetDeleteBtn">
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          <span>Delete Application</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  overlay.onclick = (e) => {
+    if (e.target === overlay) closeCardActionsModal();
+  };
+
+  overlay.querySelector('#sheetCloseX')?.addEventListener('click', closeCardActionsModal);
+
+  overlay.querySelectorAll('.sheet-stage-btn').forEach(btn => {
+    btn.onclick = () => {
+      const targetStage = btn.dataset.stage;
+      if (targetStage && targetStage !== currentStage) {
+        closeCardActionsModal();
+        doMove(id, targetStage, null);
+        if (typeof toast === 'function') toast(`Moved ${a.company} to ${targetStage}`);
+      }
+    };
+  });
+
+  overlay.querySelector('#sheetDetailsBtn')?.addEventListener('click', () => {
+    closeCardActionsModal();
+    if (typeof openApp === 'function') openApp(id);
+  });
+
+  overlay.querySelector('#sheetDeleteBtn')?.addEventListener('click', () => {
+    closeCardActionsModal();
+    const deleteBtn = document.querySelector(`.card[data-id="${id}"] .x`);
+    if (deleteBtn) {
+      deleteBtn.click();
+    }
+  });
+
+  requestAnimationFrame(() => {
+    overlay.classList.add('active');
+  });
+}
+
+function closeCardActionsModal() {
+  const overlay = document.getElementById('mobileCardSheetOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+  }
+}
+
+window.openCardActionsModal = openCardActionsModal;
+window.closeCardActionsModal = closeCardActionsModal;
+window.doMove = doMove;
+
+// Mobile Long-Press Support for Cards
+let touchTimer = null;
+let touchMoved = false;
+
+board.addEventListener('touchstart', e => {
+  const c = e.target.closest('.card');
+  if (!c) return;
+  if (e.target.closest('.x') || e.target.closest('.card-action-menu-btn') || e.target.closest('.resume-tag') || e.target.closest('.cl-tag')) return;
+  touchMoved = false;
+  clearTimeout(touchTimer);
+  touchTimer = setTimeout(() => {
+    if (!touchMoved) {
+      if (navigator.vibrate) navigator.vibrate(40);
+      openCardActionsModal(+c.dataset.id);
+    }
+  }, 450);
+}, { passive: true });
+
+board.addEventListener('touchmove', () => {
+  touchMoved = true;
+  clearTimeout(touchTimer);
+}, { passive: true });
+
+board.addEventListener('touchend', () => {
+  clearTimeout(touchTimer);
+}, { passive: true });
+
 // --------------------------------------------------------------------------
 // MODULE: 15-toast-undo.js
 // --------------------------------------------------------------------------
@@ -2296,6 +2437,11 @@ board.addEventListener('click', e => {
         }, 8000);
       }
     });
+  } else if (e.target.closest('.card-action-menu-btn')) {
+    e.stopPropagation();
+    if (typeof openCardActionsModal === 'function') {
+      openCardActionsModal(id);
+    }
   } else {
     openApp(id);
   }
@@ -2717,20 +2863,21 @@ function openApp(id) {
 // --------------------------------------------------------------------------
 // Sync streak HUD in index.html
 window.syncGamifyHud = function() {
-  fetch('/api/gamification')
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  fetch(`/api/gamification?tz=${encodeURIComponent(tz)}`)
     .then(r => r.json())
     .then(stats => {
       const isFrozen = stats.isFrozen || stats.todayFrozen;
       const streak = stats.streak || 0;
       const el = document.getElementById('hudStreakText');
       if (el) {
-        el.textContent = streak + 'd' + (isFrozen ? ' â„ï¸' : '');
+        el.textContent = streak + 'd' + (isFrozen ? ' ❄️' : '');
         if (isFrozen) el.title = 'Streak Frozen: ' + streak + ' days';
       }
       const badge = document.getElementById('learningModeBadge');
       if (badge) {
         const iconSvg = isFrozen
-          ? 'â„ï¸ '
+          ? '❄️ '
           : '<svg class="icon-inline flame-icon-svg" viewBox="0 0 24 24" width="15" height="15" stroke="#f97316" stroke-width="2" fill="none"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> ';
         badge.innerHTML = iconSvg + streak + 'd';
       }

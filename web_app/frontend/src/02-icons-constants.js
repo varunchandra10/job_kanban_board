@@ -56,13 +56,14 @@ const ICON = {
   gdrive:   `<svg class="icon gdrive-icon" viewBox="0 0 87.3 78"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.9 2.5 3.2 3.3l16.3-28.25-8.25-14.3-15.1 26.1c-1.3 2.25-1.3 5 0 7.25z" fill="#0066da"/><path d="m43.65 25-16.3 28.25h32.6l16.3-28.25-8.25-14.3h-24.35z" fill="#00ac47"/><path d="m73.55 76.8c1.3-.8 2.4-1.9 3.2-3.3l3.85-6.65c1.3-2.25 1.3-5 0-7.25l-15.1-26.1-8.25 14.3 16.3 28.25z" fill="#ea4335"/><path d="m43.65 25-16.3 28.25-16.3 23.55c1.3.8 2.7 1.2 4.2 1.2h56.8c1.5 0 2.9-.4 4.2-1.2z" fill="#ffba00"/></svg>`,
   filePdf:   `<svg class="icon" viewBox="0 0 24 24" style="color:#dc2626"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>`,
   fileWord:  `<svg class="icon" viewBox="0 0 24 24" style="color:#2563eb"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 13 10.5 17 12 14 13.5 17 15 13"/></svg>`,
-  refresh:   `<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`
+  refresh:   `<svg class="icon" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>`,
+  bookmark:  `<svg class="icon" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`
 };
 
-const STAGES = ['Applied', 'Interviewing', 'Offer', 'Rejected'];
-const DOT = { Applied: '#2563eb', Interviewing: '#d97706', Offer: '#059669', Rejected: '#dc2626' };
-const STAGE_ICON = { Applied: ICON.applied, Interviewing: ICON.interview, Offer: ICON.offer, Rejected: ICON.rejected };
-const STAGE_ACCENT = { Applied: 'var(--applied-clr)', Interviewing: 'var(--interview-clr)', Offer: 'var(--offer-clr)', Rejected: 'var(--rejected-clr)' };
+const STAGES = ['Bookmarked', 'Applied', 'Interviewing', 'Offer', 'Rejected'];
+const DOT = { Bookmarked: '#8b5cf6', Applied: '#2563eb', Interviewing: '#d97706', Offer: '#059669', Rejected: '#dc2626' };
+const STAGE_ICON = { Bookmarked: ICON.bookmark, Applied: ICON.applied, Interviewing: ICON.interview, Offer: ICON.offer, Rejected: ICON.rejected };
+const STAGE_ACCENT = { Bookmarked: 'var(--bookmarked-clr, #8b5cf6)', Applied: 'var(--applied-clr)', Interviewing: 'var(--interview-clr)', Offer: 'var(--offer-clr)', Rejected: 'var(--rejected-clr)' };
 
 const COUNTRIES = `US|United States,GB|United Kingdom,SG|Singapore,DE|Germany,IN|India,CA|Canada,AU|Australia,NL|Netherlands,CH|Switzerland,SE|Sweden,FR|France,IE|Ireland,JP|Japan,KR|South Korea,CN|China,HK|Hong Kong,AE|United Arab Emirates,ES|Spain,IT|Italy,PL|Poland,NO|Norway,DK|Denmark,FI|Finland,BE|Belgium,AT|Austria,PT|Portugal,IL|Israel,BR|Brazil,MX|Mexico,NZ|New Zealand,ZA|South Africa,TW|Taiwan,MY|Malaysia,ID|Indonesia,TH|Thailand,VN|Vietnam,PH|Philippines,SA|Saudi Arabia,TR|Turkey,AR|Argentina,CL|Chile,CZ|Czechia`.split(',').map(x=>x.split('|'));
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
