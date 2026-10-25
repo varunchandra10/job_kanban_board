@@ -72,13 +72,56 @@ class GoogleDriveStorageService extends BaseStorageService {
 
   async testConnection(customFolderId) {
     if (!this.driveClient) {
-      throw new Error(`Google Service Account credentials file missing at ${this.keyFilePath}`);
+      this._initAuth();
     }
-    const res = await this.driveClient.files.get({
-      fileId: (customFolderId || this.folderId),
-      fields: 'id, name, mimeType'
-    });
-    return { ok: 1, folderName: res.data.name, folderId: res.data.id };
+    if (!this.driveClient) {
+      throw new Error(`Google Service Account credentials file is missing or invalid. Looked for key file at: ${this.keyFilePath}. Please place google-service-account.json in the project root or configure GOOGLE_SERVICE_ACCOUNT_JSON.`);
+    }
+
+    let targetFolder = (customFolderId || this.folderId);
+    if (targetFolder && String(targetFolder).includes('folders/')) {
+      const m = String(targetFolder).match(/folders\/([a-zA-Z0-9_-]+)/);
+      if (m) targetFolder = m[1];
+    }
+    if (targetFolder) targetFolder = String(targetFolder).split('?')[0].trim();
+
+    if (!targetFolder) {
+      throw new Error('No Google Drive folder ID provided to test.');
+    }
+
+    try {
+      const res = await this.driveClient.files.get({
+        fileId: targetFolder,
+        fields: 'id, name, mimeType, trashed, capabilities'
+      });
+      if (res.data.trashed) {
+        throw new Error(`The specified folder "${res.data.name}" (ID: ${targetFolder}) is currently in the Google Drive trash.`);
+      }
+      return {
+        ok: 1,
+        folderName: res.data.name || 'JobTracker_Documents',
+        folderId: res.data.id
+      };
+    } catch (apiErr) {
+      const status = apiErr.status || apiErr.code || (apiErr.response && apiErr.response.status);
+      let serviceEmail = '';
+      try {
+        if (this.authClient && typeof this.authClient.getCredentials === 'function') {
+          const creds = await this.authClient.getCredentials();
+          serviceEmail = creds.client_email || '';
+        }
+      } catch (_) {}
+
+      if (status === 404) {
+        const emailMsg = serviceEmail ? ` with service account "${serviceEmail}"` : ' with your Google Service Account email';
+        throw new Error(`Folder not found or not shared. Please ensure folder ID "${targetFolder}" exists and has been shared${emailMsg} with "Editor" access.`);
+      } else if (status === 403) {
+        throw new Error(`Permission denied for folder "${targetFolder}". Please verify Google Drive API is enabled in your Google Cloud Console and the service account has "Editor" permission.`);
+      } else if (status === 401) {
+        throw new Error('Service account authentication failed (401). Please verify that your service account credentials are valid and not expired or disabled.');
+      }
+      throw new Error(apiErr.message || 'Unknown error communicating with Google Drive');
+    }
   }
 
   async saveFile({ buffer, originalName, type, appId, folderId }) {
@@ -141,7 +184,6 @@ class GoogleDriveStorageService extends BaseStorageService {
           type: 'anyone'
         },
         supportsAllDrives: true
-
       });
     } catch (_) {}
 

@@ -235,57 +235,60 @@ exports.getFileInfo = async (req, res, next) => {
 
 exports.getFileContent = async (req, res, next) => {
   try {
-    const docId = req.query.doc_id || req.query.id;
+    let docId = req.query.doc_id || req.query.id;
+    let targetPath = req.query.path;
+
+    if (!docId && targetPath) {
+      if (targetPath.includes('doc_id=')) {
+        const m = targetPath.match(/doc_id=([a-zA-Z0-9_-]+)/);
+        if (m) docId = m[1];
+      } else if (/^doc_[a-zA-Z0-9_-]+$/.test(targetPath.trim())) {
+        docId = targetPath.trim();
+      }
+    }
+
     if (docId) {
       try {
-        const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE id = ?').get(docId);
+        const doc = db.prepare('SELECT name, mime_type, data, user_id FROM document_files WHERE id = ?').get(docId);
         if (doc) {
+          const callerId = req.user?.id;
+          if (doc.user_id && doc.user_id !== 'default_user' && callerId && callerId !== doc.user_id) {
+            return res.status(403).send('Unauthorized document access');
+          }
+
           const buf = Buffer.from(doc.data, 'base64');
           res.writeHead(200, {
             'Content-Type': doc.mime_type || 'application/octet-stream',
             'Content-Length': buf.length,
             'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'private, max-age=86400'
           });
           return res.end(buf);
         }
-      } catch (_) {}
+      } catch (docErr) {
+        console.warn('[Documents] document_files fetch error:', docErr.message);
+      }
     }
 
-    const targetPath = req.query.path;
-    if (!targetPath && !docId) return res.status(400).send('No file path provided');
+    if (!targetPath && !docId) return res.status(400).send('No file path or document ID provided');
 
     if (targetPath) {
-      if (targetPath.includes('doc_id=')) {
-        const m = targetPath.match(/doc_id=([a-zA-Z0-9_-]+)/);
-        if (m) {
-          try {
-            const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE id = ?').get(m[1]);
-            if (doc) {
-              const buf = Buffer.from(doc.data, 'base64');
-              res.writeHead(200, {
-                'Content-Type': doc.mime_type || 'application/octet-stream',
-                'Content-Length': buf.length,
-                'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
-                'Cache-Control': 'public, max-age=86400'
-              });
-              return res.end(buf);
-            }
-          } catch (_) {}
-        }
-      }
-
       // Check document_files by filename
       const bn = path.basename(targetPath);
       try {
-        const doc = db.prepare('SELECT name, mime_type, data FROM document_files WHERE name = ? ORDER BY created_at DESC LIMIT 1').get(bn);
+        const doc = db.prepare('SELECT name, mime_type, data, user_id FROM document_files WHERE name = ? ORDER BY created_at DESC LIMIT 1').get(bn);
         if (doc) {
+          const callerId = req.user?.id;
+          if (doc.user_id && doc.user_id !== 'default_user' && callerId && callerId !== doc.user_id) {
+            return res.status(403).send('Unauthorized document access');
+          }
+
           const buf = Buffer.from(doc.data, 'base64');
           res.writeHead(200, {
             'Content-Type': doc.mime_type || 'application/octet-stream',
             'Content-Length': buf.length,
             'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'private, max-age=86400'
           });
           return res.end(buf);
         }

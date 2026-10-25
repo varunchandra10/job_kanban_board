@@ -1184,12 +1184,38 @@ window.openDoc = function(url) {
     window.open(`https://drive.google.com/file/d/${driveId}/view`, '_blank');
     return;
   }
-  if (/^https?:\/\//i.test(cleanP)) {
+
+  // External web link that is not our own file endpoint
+  if (/^https?:\/\//i.test(cleanP) && !cleanP.includes('/api/file-content')) {
     window.open(cleanP, '_blank');
     return;
   }
-  // Local or temporary server path (/tmp/..., documents/...) should route to file-content endpoint
-  window.open(`/api/file-content?path=${encodeURIComponent(cleanP)}`, '_blank');
+
+  const token = localStorage.getItem('auth_token') || '';
+  let targetUrl;
+  let docId = null;
+
+  if (cleanP.includes('doc_id=')) {
+    const m = cleanP.match(/doc_id=([a-zA-Z0-9_-]+)/);
+    if (m) docId = m[1];
+  } else if (/^doc_[a-zA-Z0-9_-]+$/.test(cleanP)) {
+    docId = cleanP;
+  }
+
+  if (docId) {
+    targetUrl = `/api/file-content?doc_id=${encodeURIComponent(docId)}`;
+  } else if (cleanP.startsWith('/api/file-content')) {
+    targetUrl = cleanP;
+  } else {
+    targetUrl = `/api/file-content?path=${encodeURIComponent(cleanP)}`;
+  }
+
+  if (token && !targetUrl.includes('token=')) {
+    const sep = targetUrl.includes('?') ? '&' : '?';
+    targetUrl += `${sep}token=${encodeURIComponent(token)}`;
+  }
+
+  window.open(targetUrl, '_blank');
 };
 
 window.openDocPreviewForApp = function(appId, type) {

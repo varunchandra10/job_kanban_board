@@ -70,6 +70,13 @@ router.post('/storage/connect-drive', (req, res) => {
   }
 });
 
+router.get('/file-token', (req, res) => {
+  const userId = req.user?.id || 'default_user';
+  const { signToken } = require('../services/jwtService');
+  const token = signToken({ id: userId, email: req.user?.email || '', scope: 'file_view' }, 3600);
+  res.json({ ok: 1, token });
+});
+
 router.post('/storage/test-connection', async (req, res) => {
   try {
     const userId = req.user?.id || 'default_user';
@@ -78,6 +85,7 @@ router.post('/storage/test-connection', async (req, res) => {
       const match = String(folderId).match(/folders\/([a-zA-Z0-9_-]+)/);
       if (match) folderId = match[1];
     }
+    if (folderId) folderId = String(folderId).split('?')[0].trim();
 
     if (!folderId) {
       const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
@@ -85,17 +93,32 @@ router.post('/storage/test-connection', async (req, res) => {
     }
 
     if (!folderId) {
-      return res.status(400).json({ ok: 0, error: 'No Google Drive folder ID configured' });
+      return res.status(400).json({ ok: 0, error: 'Please provide a valid Google Drive folder link or folder ID.' });
     }
 
-    if (storageService && typeof storageService.testConnection === 'function') {
-      const result = await storageService.testConnection(folderId);
-      return res.json({ ok: 1, message: 'Google Drive is connected and verified!', folderName: result.folderName || 'JobTracker_Documents' });
-    }
+    const GoogleDriveStorageService = require('../services/googleDriveStorageService');
+    const driveService = (storageService instanceof GoogleDriveStorageService)
+      ? storageService
+      : new GoogleDriveStorageService();
 
-    res.json({ ok: 1, message: 'Folder ID configured successfully!', folderId });
+    const result = await driveService.testConnection(folderId);
+
+    try {
+      db.prepare('UPDATE users SET gdrive_folder_id = ? WHERE id = ?').run(folderId, userId);
+    } catch (_) {}
+
+    return res.json({
+      ok: 1,
+      message: `Google Drive is connected and verified! Access confirmed for folder: ${result.folderName}`,
+      folderName: result.folderName,
+      folderId: result.folderId
+    });
   } catch (err) {
-    res.json({ ok: 1, message: 'Folder ID saved and ready for uploads!', folderId: req.body.folderId });
+    console.warn('[Storage Test Connection Error]:', err.message);
+    return res.status(400).json({
+      ok: 0,
+      error: err.message || 'Google Drive connection test failed.'
+    });
   }
 });
 

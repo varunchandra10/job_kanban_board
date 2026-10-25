@@ -54,8 +54,8 @@ function authMiddleware(req, res, next) {
 
   // Read-only calls when logged out / unauthenticated:
   // Allow them to proceed with req.user = null so controllers return empty/zero data
-  if (req.method === 'GET' && ['/api/state', '/api/learnings', '/api/gamification', '/api/storage/status'].includes(req.path)) {
-    req.user = null;
+  if (req.method === 'GET' && ['/api/state', '/api/learnings', '/api/gamification', '/api/storage/status', '/api/file-content'].includes(req.path)) {
+    req.user = req.user || null;
     return next();
   }
 

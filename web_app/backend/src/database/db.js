@@ -1,8 +1,16 @@
-let DatabaseSync;
+const { createClient } = require('@libsql/client');
+let LibsqlDatabase = null;
+try {
+  LibsqlDatabase = require('libsql');
+} catch (libsqlErr) {
+  console.warn('[Database Engine] Native LibSQL driver note:', libsqlErr.message);
+}
+
+let DatabaseSync = null;
 try {
   DatabaseSync = require('node:sqlite').DatabaseSync;
 } catch (err) {
-  console.error('[Database Engine] Failed to load node:sqlite. Node.js version is:', process.version, err.message);
+  console.warn('[Database Engine] node:sqlite not available:', err.message);
 }
 
 const fs = require('fs');
@@ -11,7 +19,7 @@ const config = require('../config');
 const { runMigrations } = require('./migrator');
 
 function performDbBackup() {
-  if (!fs.existsSync(config.dbPath)) return;
+  if (config.tursoDatabaseUrl || !fs.existsSync(config.dbPath)) return;
   try {
     const backupDir = config.backupDir;
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
@@ -37,12 +45,12 @@ function performDbBackup() {
   }
 }
 
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && !config.tursoDatabaseUrl) {
   performDbBackup();
   setInterval(performDbBackup, 24 * 60 * 60 * 1000).unref();
 }
 
-if (process.env.VERCEL) {
+if (process.env.VERCEL && !config.tursoDatabaseUrl) {
   const tmpDir = path.dirname(config.dbPath);
   if (!fs.existsSync(tmpDir)) {
     try { fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
@@ -69,28 +77,81 @@ if (process.env.VERCEL) {
 }
 
 let db;
-if (!DatabaseSync) {
-  const errMsg = `SQLite engine (node:sqlite) is not available on Node.js ${process.version}. Job Tracker requires Node.js >= 22.5.0 on Vercel. Please verify Node version in Vercel Settings.`;
-  console.error('[Database Error]', errMsg);
-  const fail = () => { throw new Error(errMsg); };
-  db = {
-    prepare: () => ({ get: fail, all: fail, run: fail }),
-    exec: fail
-  };
-} else {
-  try {
-    db = new DatabaseSync(config.dbPath);
-  } catch (openErr) {
-    console.warn('[Vercel SQLite] Error opening database file, retrying fresh in /tmp:', openErr.message);
+let tursoClient = null;
+
+if (config.tursoDatabaseUrl) {
+  console.log('[Database Engine] TURSO_DATABASE_URL detected. Configuring Turso / LibSQL client for remote edge SQLite...');
+  tursoClient = createClient({
+    url: config.tursoDatabaseUrl,
+    authToken: config.tursoAuthToken
+  });
+
+  if (LibsqlDatabase) {
     try {
-      if (fs.existsSync(config.dbPath)) fs.unlinkSync(config.dbPath);
-      if (fs.existsSync(config.dbPath + '-wal')) fs.unlinkSync(config.dbPath + '-wal');
-      if (fs.existsSync(config.dbPath + '-shm')) fs.unlinkSync(config.dbPath + '-shm');
-      db = new DatabaseSync(config.dbPath);
-    } catch (memErr) {
-      console.error('[Vercel SQLite] Falling back to in-memory database:', memErr.message);
-      db = new DatabaseSync(':memory:');
+      console.log(`[Database Engine] Connecting to Turso remote edge at ${config.tursoDatabaseUrl}`);
+      db = new LibsqlDatabase(config.tursoDatabaseUrl, {
+        authToken: config.tursoAuthToken
+      });
+      console.log('[Database Engine] Connected successfully to remote Turso edge SQLite');
+    } catch (remoteErr) {
+      console.warn('[Database Engine] Direct remote connection fell back to embedded replica with sync:', remoteErr.message);
+      try {
+        db = new LibsqlDatabase(config.dbPath, {
+          syncUrl: config.tursoDatabaseUrl,
+          authToken: config.tursoAuthToken
+        });
+        if (typeof db.sync === 'function') {
+          db.sync();
+        }
+        console.log('[Database Engine] Initialized Turso embedded replica with syncUrl');
+      } catch (replicaErr) {
+        console.error('[Database Engine] Turso replica initialization failed:', replicaErr.message);
+        throw replicaErr;
+      }
     }
+  } else {
+    console.warn('[Database Engine] Native LibSQL package unavailable. Falling back to local engine while client is active.');
+  }
+
+  if (db) {
+    db.tursoClient = tursoClient;
+    db.client = tursoClient;
+    db.isRemoteTurso = true;
+  }
+}
+
+if (!db) {
+  if (DatabaseSync) {
+    try {
+      db = new DatabaseSync(config.dbPath);
+    } catch (openErr) {
+      console.warn('[Local SQLite] Error opening database file, retrying fresh in /tmp:', openErr.message);
+      try {
+        if (fs.existsSync(config.dbPath)) fs.unlinkSync(config.dbPath);
+        if (fs.existsSync(config.dbPath + '-wal')) fs.unlinkSync(config.dbPath + '-wal');
+        if (fs.existsSync(config.dbPath + '-shm')) fs.unlinkSync(config.dbPath + '-shm');
+        db = new DatabaseSync(config.dbPath);
+      } catch (memErr) {
+        console.error('[Local SQLite] Falling back to in-memory database:', memErr.message);
+        db = new DatabaseSync(':memory:');
+      }
+    }
+  } else if (LibsqlDatabase) {
+    try {
+      console.log('[Local SQLite] Using local LibSQL database:', config.dbPath);
+      db = new LibsqlDatabase(config.dbPath);
+    } catch (libLocalErr) {
+      console.error('[Local SQLite] LibSQL local open error:', libLocalErr.message);
+      db = new LibsqlDatabase(':memory:');
+    }
+  } else {
+    const errMsg = `SQLite engine is not available on Node.js ${process.version}. Please verify Node.js version >= 22.5.0 or install dependencies.`;
+    console.error('[Database Error]', errMsg);
+    const fail = () => { throw new Error(errMsg); };
+    db = {
+      prepare: () => ({ get: fail, all: fail, run: fail }),
+      exec: fail
+    };
   }
 
   try {
@@ -100,29 +161,29 @@ if (!DatabaseSync) {
       try { db.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
     }
   } catch (_) {}
+}
 
-  try {
-    runMigrations(db);
-  } catch (migErr) {
-    console.warn('[Database Migration Warning]:', migErr.message);
-  }
+try {
+  runMigrations(db);
+} catch (migErr) {
+  console.warn('[Database Migration Warning]:', migErr.message);
+}
 
-  try {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS document_files (
-        id TEXT PRIMARY KEY,
-        user_id TEXT,
-        app_id INTEGER,
-        type TEXT,
-        name TEXT,
-        mime_type TEXT,
-        data TEXT,
-        created_at TEXT DEFAULT (datetime('now'))
-      );
-    `);
-  } catch (tableErr) {
-    console.warn('[Database document_files table note]:', tableErr.message);
-  }
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS document_files (
+      id TEXT PRIMARY KEY,
+      user_id TEXT,
+      app_id INTEGER,
+      type TEXT,
+      name TEXT,
+      mime_type TEXT,
+      data TEXT,
+      created_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+} catch (tableErr) {
+  console.warn('[Database document_files table note]:', tableErr.message);
 }
 
 const COMPANIES = `Google|Mountain View|US
@@ -291,6 +352,7 @@ const getState = (userId = null) => {
 
 module.exports = {
   db,
+  tursoClient,
   cleanFilePath,
   patch,
   move,
