@@ -252,7 +252,7 @@ Sony|Tokyo|JP
 Rakuten|Tokyo|JP
 Atlassian|Sydney|AU`.split('\n').map(l => l.split('|'));
 
-if (DatabaseSync && db) {
+if (db && typeof db.prepare === 'function') {
   try {
     if (!db.prepare('select 1 from companies limit 1').get()) {
       const ins = db.prepare('insert into companies values(?,?,?)');

@@ -38,6 +38,7 @@ const healthHandler = (req, res) => {
     timestamp: new Date().toISOString(),
     node: process.version,
     sqliteOk,
+    database: config.tursoDatabaseUrl ? 'turso_cloud' : 'local_sqlite',
     environment: process.env.VERCEL ? 'vercel' : (config.isDesktop ? 'desktop' : 'server')
   });
 };
