@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="jt-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="jt-sparkle" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+    <filter id="jt-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#4F46E5" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect width="64" height="64" rx="16" fill="url(#jt-grad)" filter="url(#jt-shadow)"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="15.5" stroke="rgba(255,255,255,0.25)" stroke-width="1"/>
+
+  <!-- Kanban Column 1: Applied -->
+  <rect x="14" y="32" width="8" height="18" rx="4" fill="#ffffff" fill-opacity="0.6"/>
+  
+  <!-- Kanban Column 2: Interviewing -->
+  <rect x="26" y="24" width="8" height="26" rx="4" fill="#ffffff" fill-opacity="0.85"/>
+  
+  <!-- Kanban Column 3: Offer -->
+  <rect x="38" y="18" width="8" height="32" rx="4" fill="#ffffff"/>
+
+  <!-- Golden Offer Milestone Star -->
+  <path d="M42 10L43.2 13.8L47 14.2L44 16.5L45 20.2L42 18L39 20.2L40 16.5L37 14.2L40.8 13.8L42 10Z" fill="url(#jt-sparkle)"/>
+</svg>

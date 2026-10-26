@@ -13,13 +13,13 @@ const path = require('path');
 
 const rootDir = path.resolve(__dirname, '../..');
 const desktopDir = path.resolve(__dirname, '..');
-const webAppDir = path.resolve(rootDir, 'web_app');
+const backendDir = path.resolve(rootDir, 'board_website/backend');
 process.env.APP_MODE = 'desktop';
 
 console.log('[Desktop Runner] Starting local backend engine in Desktop Mode...');
 
 const serverProcess = spawn('node', ['server.js'], {
-  cwd: webAppDir,
+  cwd: backendDir,
   shell: true,
   env: { ...process.env, APP_MODE: 'desktop' },
   stdio: 'inherit'

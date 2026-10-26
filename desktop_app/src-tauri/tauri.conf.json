@@ -6,7 +6,7 @@
   "build": {
     "frontendDist": "dist",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "node ../web_app/server.js",
+    "beforeDevCommand": "node ../board_website/backend/server.js",
     "beforeBuildCommand": "npx vite build --config vite.config.mjs"
   },
   "app": {
