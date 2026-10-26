@@ -1,0 +1,21 @@
+{
+  "name": "job-tracker-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Job Tracker Full-Stack Application",
+  "scripts": {
+    "build": "npm --prefix board_website run build",
+    "start": "node board_website/backend/server.js"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.18.0",
+    "archiver": "^8.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.8",
+    "express": "^5.3.0",
+    "googleapis": "^187.0.0",
+    "libsql": "^0.5.29",
+    "multer": "^2.4.0",
+    "nodemailer": "^6.10.0"
+  }
+}

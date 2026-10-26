@@ -5,12 +5,15 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ApplicationsPage } from './components/applications/ApplicationsPage';
 import { LearningsPage } from './components/learnings/LearningsPage';
 import { CareerProfile } from './components/profile/CareerProfile';
+import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
 
 export const App: React.FC = () => {
   return (
-    <Routes>
-      {/* Route 1: '/' -> Landing Page (matching & enhancing index.html) */}
-      <Route path="/" element={<LandingPage />} />
+    <>
+      <ServerAwakeningLoader />
+      <Routes>
+        {/* Route 1: '/' -> Landing Page (matching & enhancing index.html) */}
+        <Route path="/" element={<LandingPage />} />
 
       {/* Application routes under standard app layout */}
       <Route element={<AppLayout />}>
@@ -24,5 +27,6 @@ export const App: React.FC = () => {
       {/* Fallback to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   );
 };
