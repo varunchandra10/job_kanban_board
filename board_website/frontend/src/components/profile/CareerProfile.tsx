@@ -38,6 +38,23 @@ export const CareerProfile: React.FC = () => {
     openAuthModal,
   } = useApp();
 
+  // Momentum Activity Matrix Date controls
+  const [momentumDate, setMomentumDate] = useState(() => new Date());
+  const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
+    dateStr: string;
+    dayNum: number;
+    count: number;
+    type: 'applications' | 'learnings';
+    isToday: boolean;
+  } | null>(null);
+
+  // Add / Edit Quick Link Modal state
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [copiedLink, setCopiedLink] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isAuthenticated) {
       openAuthModal();
@@ -69,23 +86,6 @@ export const CareerProfile: React.FC = () => {
       </div>
     );
   }
-
-  // Momentum Activity Matrix Date controls
-  const [momentumDate, setMomentumDate] = useState(() => new Date());
-  const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
-    dateStr: string;
-    dayNum: number;
-    count: number;
-    type: 'applications' | 'learnings';
-    isToday: boolean;
-  } | null>(null);
-
-  // Add / Edit Quick Link Modal state
-  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
-  const [linkTitle, setLinkTitle] = useState('');
-  const [linkUrl, setLinkUrl] = useState('');
-  const [copiedLink, setCopiedLink] = useState<string | null>(null);
 
   const selectedYear = momentumDate.getFullYear();
   const selectedMonth = momentumDate.getMonth();
