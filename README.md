@@ -15,7 +15,7 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 
 ## 📥 Get Job Tracker for Windows
 
-[![Download Installer](https://img.shields.io/badge/⬇️_Download_Windows_App-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](installer/Job-Tracker-Setup.exe?raw=true)
+[![Download Installer](https://img.shields.io/badge/⬇️_Download_Windows_App-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)
 [![GitHub Releases](https://img.shields.io/badge/📦_GitHub_Releases-View_All_Versions-8A2BE2?style=for-the-badge&logo=github&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/releases)
 [![User Guide](https://img.shields.io/badge/📖_Installation_Guide-docs%2FINSTALLATION.md-2EA44F?style=for-the-badge&logo=gitbook&logoColor=white)](docs/INSTALLATION.md)
 
@@ -28,7 +28,7 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 No coding or setup required. Follow these 3 simple steps:
 
 1. **Download the Windows App**:
-   👉 Click **[Download Job-Tracker-Setup.exe](installer/Job-Tracker-Setup.exe?raw=true)** (~3.5 MB).
+   👉 Click **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)** (~3.5 MB).
 
 2. **Run the Installer**:
    Double-click the downloaded `Job-Tracker-Setup.exe` file.

@@ -21,7 +21,7 @@ The desktop edition is a lightweight, privacy-focused native application for Win
 
 ### Step 1: Download the Installer
 Click to download the setup file:
-👉 **[Download Job-Tracker-Setup.exe](../installer/Job-Tracker-Setup.exe?raw=true)** *(or grab the latest release from [GitHub Releases](https://github.com/varunchandra10/job_kanban_board/releases))*.
+👉 **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)** *(or grab the latest release from [GitHub Releases](https://github.com/varunchandra10/job_kanban_board/releases))*.
 
 ### Step 2: Run the Installer
 1. Double-click the downloaded **`Job-Tracker-Setup.exe`** file.
