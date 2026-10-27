@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useApp } from './context/AppContext';
 import { LandingPage } from './components/landing/LandingPage';
 import { AppLayout } from './components/layout/AppLayout';
 import { ApplicationsPage } from './components/applications/ApplicationsPage';
@@ -10,14 +11,19 @@ import { AuthModal } from './components/ui/AuthModal';
 import { Toast } from './components/ui/Toast';
 
 export const App: React.FC = () => {
+  const { isAuthenticated } = useApp();
+
   return (
     <>
       <ServerAwakeningLoader />
       <AuthModal />
       <Toast />
       <Routes>
-        {/* Route 1: '/' -> Landing Page (matching & enhancing index.html) */}
-        <Route path="/" element={<LandingPage />} />
+        {/* Route 1: '/' -> Redirect to /job-applications if logged in, otherwise Landing Page */}
+        <Route
+          path="/"
+          element={isAuthenticated ? <Navigate to="/job-applications" replace /> : <LandingPage />}
+        />
 
       {/* Application routes under standard app layout */}
       <Route element={<AppLayout />}>

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { X, LogIn, Lock, Mail, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
+  const navigate = useNavigate();
   const {
     isAuthModalOpen,
     closeAuthModal,
@@ -98,6 +100,7 @@ export const AuthModal: React.FC = () => {
               picture: profile.picture,
               sub: profile.sub,
             });
+            navigate('/job-applications');
           } catch (err: any) {
             setErrorMessage(err.message || 'Error authenticating with server.');
           } finally {
@@ -121,6 +124,7 @@ export const AuthModal: React.FC = () => {
     setSuccessMessage('');
     try {
       await login(email.trim(), password.trim());
+      navigate('/job-applications');
     } catch (err: any) {
       setErrorMessage(err.message || 'Login failed');
     } finally {
@@ -169,6 +173,7 @@ export const AuthModal: React.FC = () => {
     try {
       await resetPassword(email.trim(), code.trim(), newPassword.trim());
       handleClose();
+      navigate('/job-applications');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to reset password');
     } finally {
