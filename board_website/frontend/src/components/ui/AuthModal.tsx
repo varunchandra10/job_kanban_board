@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { X, LogIn, Lock, Mail, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { X, LogIn, Lock, Mail, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, ShieldCheck, ExternalLink, Loader2 } from 'lucide-react';
 import { GOOGLE_CLIENT_ID } from '../../utils/googleAuth';
+import { isTauri, api } from '../../services/api';
 
 export const AuthModal: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export const AuthModal: React.FC = () => {
     closeAuthModal,
     login,
     googleLogin,
+    setSession,
     forgotPassword,
     resetPassword,
   } = useApp();
@@ -44,6 +46,69 @@ export const AuthModal: React.FC = () => {
     setErrorMessage('');
     setSuccessMessage('');
 
+    // --- 1. DESKTOP TAURI MODE: Open System Browser via Desktop OAuth ---
+    if (isTauri) {
+      setSuccessMessage('Opening Google Sign-In in your browser...');
+      try {
+        const startRes = await api.startDesktopGoogleAuth();
+        const authUrl = startRes.url;
+        const sessionId = startRes.sessionId;
+
+        // Open in system default browser (Chrome/Edge/Firefox)
+        let opened = false;
+        if ((window as any).__TAURI_INTERNALS__?.invoke) {
+          try {
+            await (window as any).__TAURI_INTERNALS__.invoke('plugin:opener|open_url', { url: authUrl });
+            opened = true;
+          } catch {
+            try {
+              await (window as any).__TAURI_INTERNALS__.invoke('open_external_url', { url: authUrl });
+              opened = true;
+            } catch {}
+          }
+        }
+        if (!opened) {
+          window.open(authUrl, '_blank');
+        }
+
+        setSuccessMessage('Browser opened! Please complete Google Sign-In in your browser...');
+
+        // Poll for session completion
+        let attempts = 0;
+        const maxAttempts = 100;
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          if (attempts > maxAttempts) {
+            clearInterval(pollInterval);
+            setIsLoading(false);
+            setErrorMessage('Google Sign-In timed out. Please try again or use Email & Password below.');
+            setSuccessMessage('');
+            return;
+          }
+
+          try {
+            const pollRes = await api.pollDesktopGoogleAuth(sessionId);
+            if (pollRes.ready && pollRes.token && pollRes.user) {
+              clearInterval(pollInterval);
+              setIsLoading(false);
+              setSession(pollRes.token, pollRes.user);
+              navigate('/job-applications');
+            }
+          } catch {
+            // Keep polling
+          }
+        }, 1500);
+      } catch (desktopErr: any) {
+        setIsLoading(false);
+        setSuccessMessage('');
+        setErrorMessage(
+          'Could not start desktop browser login. You can sign in immediately using Email and Password below.'
+        );
+      }
+      return;
+    }
+
+    // --- 2. WEB BROWSER MODE: Google Identity Services (GSI) Popup ---
     const loadGsi = (): Promise<void> => {
       if ((window as any).google?.accounts?.oauth2) return Promise.resolve();
       return new Promise((resolve, reject) => {
@@ -233,6 +298,14 @@ export const AuthModal: React.FC = () => {
               </div>
             )}
 
+            {/* Success / In-Progress Status Message */}
+            {successMessage && (
+              <div className="mb-4 p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-medium flex items-center gap-2.5">
+                <Loader2 size={16} className="animate-spin text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
             {/* Google Sign-In */}
             <div className="mb-5">
               <button
@@ -247,8 +320,13 @@ export const AuthModal: React.FC = () => {
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>{isLoading ? 'Connecting to Google...' : 'Continue with Google'}</span>
+                <span>{isLoading ? 'Connecting to Google...' : (isTauri ? 'Continue with Google (Opens Browser)' : 'Continue with Google')}</span>
               </button>
+              {isTauri && (
+                <p className="text-[10px] text-center text-slate-400 mt-1.5 mb-0">
+                  Opens Chrome / Edge to complete Google authentication safely
+                </p>
+              )}
             </div>
 
             {/* Divider */}

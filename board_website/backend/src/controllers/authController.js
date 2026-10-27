@@ -264,10 +264,17 @@ setInterval(() => {
 
 exports.desktopGoogleStart = (req, res) => {
   const sessionId = req.query.sessionId || crypto.randomUUID();
-  const redirectUri = `http://127.0.0.1:${config.port}/api/auth/google/callback`;
+  const host = (req.get('host') || '').toLowerCase();
+  const isLocal = host.includes('127.0.0.1') || host.includes('localhost') || !host;
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+
+  const clientId = isLocal ? config.googleDesktopClientId : (config.googleClientId || config.googleDesktopClientId);
+  const redirectUri = isLocal
+    ? `http://127.0.0.1:${config.port || 3000}/api/auth/google/callback`
+    : `${protocol}://${host}/api/auth/google/callback`;
 
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` + new URLSearchParams({
-    client_id: config.googleDesktopClientId,
+    client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'openid email profile',
@@ -306,15 +313,23 @@ exports.googleCallback = async (req, res) => {
   }
 
   try {
-    const redirectUri = `http://127.0.0.1:${config.port}/api/auth/google/callback`;
+    const host = (req.get('host') || '').toLowerCase();
+    const isLocal = host.includes('127.0.0.1') || host.includes('localhost') || !host;
+    const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+
+    const clientId = isLocal ? config.googleDesktopClientId : (config.googleClientId || config.googleDesktopClientId);
+    const clientSecret = isLocal ? config.googleDesktopClientSecret : (config.googleClientSecret || config.googleDesktopClientSecret);
+    const redirectUri = isLocal
+      ? `http://127.0.0.1:${config.port || 3000}/api/auth/google/callback`
+      : `${protocol}://${host}/api/auth/google/callback`;
 
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({
         code,
-        client_id: config.googleDesktopClientId,
-        client_secret: config.googleDesktopClientSecret,
+        client_id: clientId,
+        client_secret: clientSecret,
         redirect_uri: redirectUri,
         grant_type: 'authorization_code'
       }).toString()

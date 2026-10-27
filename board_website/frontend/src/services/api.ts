@@ -228,6 +228,24 @@ export const api = {
     return res.json();
   },
 
+  async startDesktopGoogleAuth(): Promise<{ ok: number; sessionId: string; url: string }> {
+    const res = await fetch(`${API_BASE}/auth/google/desktop/start`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
+  async pollDesktopGoogleAuth(sessionId: string): Promise<{ ok: number; ready: boolean; token?: string; user?: any }> {
+    const res = await fetch(`${API_BASE}/auth/google/desktop/poll?sessionId=${encodeURIComponent(sessionId)}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  },
+
   async forgotPassword(email: string): Promise<{ ok: number; message: string }> {
     const res = await fetch(`${API_BASE}/auth/forgot-password`, {
       method: 'POST',
