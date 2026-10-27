@@ -8,8 +8,31 @@ export const isTauri = typeof window !== 'undefined' && (
   window.location.origin.includes('tauri.localhost')
 );
 
-export const SERVER_BASE = isTauri ? 'http://127.0.0.1:3000' : '';
-export const API_BASE = `${SERVER_BASE}/api`;
+const PROD_BASE = 'https://kanban-board-job.vercel.app';
+
+function resolveServerBase(): string {
+  if (!isTauri) return '';
+  const override = localStorage.getItem('job_tracker_api_base');
+  if (override) return override;
+  return PROD_BASE;
+}
+
+export let SERVER_BASE = resolveServerBase();
+export let API_BASE = `${SERVER_BASE}/api`;
+
+if (isTauri && typeof window !== 'undefined') {
+  // If local server is running on port 3000, smoothly connect to it; otherwise default to live cloud API
+  fetch('http://127.0.0.1:3000/health', { signal: AbortSignal.timeout ? AbortSignal.timeout(600) : undefined })
+    .then(r => {
+      if (r.ok && !localStorage.getItem('job_tracker_force_cloud')) {
+        SERVER_BASE = 'http://127.0.0.1:3000';
+        API_BASE = 'http://127.0.0.1:3000/api';
+      }
+    })
+    .catch(() => {
+      // Local not running, smoothly stays on PROD_BASE
+    });
+}
 
 export function getApiEndpoint(path: string): string {
   const cleanPath = path.startsWith('/') ? path : `/${path}`;
