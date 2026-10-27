@@ -2,7 +2,8 @@ const { db, patch } = require('../database/db');
 
 exports.updateProfile = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     // Ensure profile row exists for this user
     let existing = db.prepare("select id from resume_profile where user_id=? limit 1").get(userId);
     let targetId;
@@ -23,7 +24,8 @@ exports.updateProfile = (req, res, next) => {
 
 exports.createVersion = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const { label, region } = req.body;
     const r = db.prepare('insert into resume_versions(label, region, user_id) values(?,?,?)').run(
       label || 'New version',
@@ -39,7 +41,8 @@ exports.createVersion = (req, res, next) => {
 
 exports.updateVersion = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const id = parseInt(req.params.id, 10);
     patch('resume_versions', id, req.body, userId);
     res.json({ ok: 1 });
@@ -50,7 +53,8 @@ exports.updateVersion = (req, res, next) => {
 
 exports.deleteVersion = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const id = parseInt(req.params.id, 10);
     db.prepare('update applications set resume_version_id=null where resume_version_id=? and user_id=?').run(id, userId);
     db.prepare('delete from resume_versions where id=? and user_id=?').run(id, userId);
@@ -62,7 +66,8 @@ exports.deleteVersion = (req, res, next) => {
 
 exports.getVersionPdf = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const id = parseInt(req.params.id, 10);
     const r = db.prepare('select pdf_data from resume_versions where id=? and user_id=?').get(id, userId);
     if (!r || !r.pdf_data) {
@@ -85,7 +90,8 @@ exports.getVersionPdf = (req, res, next) => {
 
 exports.updateSetting = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const key = req.params.key;
     const { value } = req.body;
     db.prepare('insert into settings(key, value, user_id) values(?,?,?) on conflict(key, user_id) do update set value=excluded.value').run(

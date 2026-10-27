@@ -57,16 +57,27 @@ export const LandingPage: React.FC = () => {
           <a href="#benefits" className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline">
             How It Helps
           </a>
-          <Link
-            to="/job-applications"
-            className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline font-semibold"
+          <button
+            type="button"
+            onClick={() => {
+              if (!isAuthenticated) openAuthModal();
+              else navigate('/job-applications');
+            }}
+            className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit font-semibold text-[15px] text-slate-500 dark:text-slate-400"
             title="Go to Job Applications Board"
           >
             Job Board
-          </Link>
-          <Link to="/learnings" className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline">
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!isAuthenticated) openAuthModal();
+              else navigate('/learnings');
+            }}
+            className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit font-semibold text-[15px] text-slate-500 dark:text-slate-400"
+          >
             Daily Learnings
-          </Link>
+          </button>
           <button
             type="button"
             onClick={() => {
@@ -116,14 +127,18 @@ export const LandingPage: React.FC = () => {
           )}
 
           {/* Launch CTA Button */}
-          <Link
-            to="/job-applications"
-            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-[9px] shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] transition-all cursor-pointer no-underline"
-            title="Go to Job Applications Board"
+          <button
+            type="button"
+            onClick={() => {
+              if (!isAuthenticated) openAuthModal();
+              else navigate('/job-applications');
+            }}
+            className="inline-flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm px-4 py-2 rounded-[9px] shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.45)] transition-all cursor-pointer border-0"
+            title={isAuthenticated ? 'Open Job Board' : 'Get Started'}
           >
             <span>{isAuthenticated ? 'Open Job Board' : 'Get Started'}</span>
             <ArrowRight size={15} strokeWidth={2.5} />
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -149,14 +164,18 @@ export const LandingPage: React.FC = () => {
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap mb-9">
-            <Link
-              to="/job-applications"
-              className="inline-flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base px-8 py-3.5 rounded-xl shadow-[0_10px_25px_-4px_rgba(37,99,235,0.4)] hover:shadow-[0_14px_35px_-4px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 transition-all no-underline cursor-pointer"
-              title="Go to Job Applications Board"
+            <button
+              type="button"
+              onClick={() => {
+                if (!isAuthenticated) openAuthModal();
+                else navigate('/job-applications');
+              }}
+              className="inline-flex items-center gap-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base px-8 py-3.5 rounded-xl shadow-[0_10px_25px_-4px_rgba(37,99,235,0.4)] hover:shadow-[0_14px_35px_-4px_rgba(37,99,235,0.5)] hover:-translate-y-0.5 transition-all cursor-pointer border-0"
+              title={isAuthenticated ? 'Open Job Board' : 'Get Started'}
             >
               <span>{isAuthenticated ? 'Open Job Board' : 'Get Started'}</span>
               <ArrowRight size={18} strokeWidth={2.5} />
-            </Link>
+            </button>
             <button
               type="button"
               onClick={() => {
@@ -427,24 +446,52 @@ export const LandingPage: React.FC = () => {
               </h4>
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
                 <li>
-                  <Link to="/job-applications" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) openAuthModal();
+                      else navigate('/job-applications');
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit text-sm text-left"
+                  >
                     Job Board
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link to="/learnings" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) openAuthModal();
+                      else navigate('/learnings');
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit text-sm text-left"
+                  >
                     Daily Learnings Diary
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link to="/profile" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) openAuthModal();
+                      else navigate('/profile');
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit text-sm text-left"
+                  >
                     Career Hub &amp; Heatmap
-                  </Link>
+                  </button>
                 </li>
                 <li>
-                  <Link to="/profile" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) openAuthModal();
+                      else navigate('/profile');
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer font-inherit text-sm text-left"
+                  >
                     Google Drive Storage
-                  </Link>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -505,14 +552,34 @@ export const LandingPage: React.FC = () => {
                   </Link>
                 </li>
                 <li>
-                  <a href="/api/backup/csv" download className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        openAuthModal();
+                      } else {
+                        window.location.href = '/api/backup/csv';
+                      }
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer text-left font-inherit text-sm"
+                  >
                     Download as CSV
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a href="/api/backup/export" download className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        openAuthModal();
+                      } else {
+                        window.location.href = '/api/backup/export';
+                      }
+                    }}
+                    className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer text-left font-inherit text-sm"
+                  >
                     Download DB as ZIP
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>

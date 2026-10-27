@@ -2,7 +2,7 @@ const { db, patch, move, getState } = require('../database/db');
 const config = require('../config');
 
 function getEffectiveUserId(req) {
-  return req.user?.id || (!config.isVercel && !config.appPin ? 'default_user' : null);
+  return req.user?.id || null;
 }
 
 exports.getState = (req, res, next) => {

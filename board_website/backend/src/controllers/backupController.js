@@ -17,6 +17,9 @@ async function createZipArchive(options) {
 
 exports.exportZip = async (req, res, next) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: 'Authentication required to download database backup' });
+    }
     try { db.exec('PRAGMA wal_checkpoint(PASSIVE);'); } catch (_) {}
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `job-tracker-backup-${timestamp}.zip`;
@@ -77,7 +80,7 @@ exports.backupDatabase = (req, res, next) => {
 
 exports.exportCsv = (req, res, next) => {
   try {
-    const userId = req.user?.id || (!config.isVercel && !config.appPin ? 'default_user' : null);
+    const userId = req.user?.id || null;
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required to export CSV' });
     }

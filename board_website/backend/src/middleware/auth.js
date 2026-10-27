@@ -34,23 +34,6 @@ function authMiddleware(req, res, next) {
     return next();
   }
 
-  // Local development / single-user desktop fallback when no PIN is configured
-  if (!config.isVercel && !config.appPin && (!req.user || !req.user.id)) {
-    let defaultUser = null;
-    try {
-      const { db } = require('../database/db');
-      defaultUser = db.prepare("SELECT id, email, name FROM users WHERE id = 'default_user'").get();
-      if (!defaultUser) {
-        db.prepare("INSERT OR IGNORE INTO users (id, email, name) VALUES ('default_user', 'local@jobtracker.app', 'Default User')").run();
-        defaultUser = { id: 'default_user', email: 'local@jobtracker.app', name: 'Default User' };
-      }
-    } catch (_) {
-      defaultUser = { id: 'default_user', email: 'local@jobtracker.app', name: 'Default User' };
-    }
-    req.user = defaultUser;
-    return next();
-  }
-
   // Read-only calls when logged out / unauthenticated:
   // Allow them to proceed with req.user = null so controllers return empty/zero data
   const readOnlyPaths = [
@@ -58,7 +41,7 @@ function authMiddleware(req, res, next) {
     '/state', '/learnings', '/gamification', '/storage/status', '/file-content'
   ];
   if (req.method === 'GET' && (readOnlyPaths.includes(fullPath) || readOnlyPaths.includes(req.path))) {
-    req.user = req.user || null;
+    req.user = null;
     return next();
   }
 

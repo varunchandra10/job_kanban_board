@@ -25,14 +25,16 @@ export const App: React.FC = () => {
           element={isAuthenticated ? <Navigate to="/job-applications" replace /> : <LandingPage />}
         />
 
-      {/* Application routes under standard app layout */}
-      <Route element={<AppLayout />}>
-        <Route path="/job-applications" element={<ApplicationsPage />} />
-        <Route path="/board" element={<Navigate to="/job-applications" replace />} />
-        <Route path="/applications" element={<Navigate to="/job-applications" replace />} />
-        <Route path="/learnings" element={<LearningsPage />} />
-        <Route path="/profile" element={<CareerProfile />} />
-      </Route>
+        {/* Application routes under standard app layout - ONLY accessible when logged in */}
+        {isAuthenticated && (
+          <Route element={<AppLayout />}>
+            <Route path="/job-applications" element={<ApplicationsPage />} />
+            <Route path="/board" element={<Navigate to="/job-applications" replace />} />
+            <Route path="/applications" element={<Navigate to="/job-applications" replace />} />
+            <Route path="/learnings" element={<LearningsPage />} />
+            <Route path="/profile" element={<CareerProfile />} />
+          </Route>
+        )}
 
       {/* Fallback to landing */}
       <Route path="*" element={<Navigate to="/" replace />} />

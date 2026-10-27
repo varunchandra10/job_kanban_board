@@ -174,33 +174,35 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   });
 
-  // Core Data loaded from localStorage or initialized with defaults
+  // Core Data loaded from localStorage or initialized with defaults (ONLY if authenticated)
   const [applications, setApplications] = useState<Application[]>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return [];
     const saved = localStorage.getItem('job_tracker_apps');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Clean out legacy hardcoded dummy records if present
           return parsed.filter(a => !(a.portal_user === 'varunchandra@gmail.com' && a.recruiter_email === 'sjenkins@google.com'));
         }
       } catch (e) { console.error(e); }
     }
-    return INITIAL_APPLICATIONS;
+    return [];
   });
 
   const [learnings, setLearnings] = useState<Learning[]>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return [];
     const saved = localStorage.getItem('job_tracker_learnings');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          // Clean out legacy hardcoded dummy notes if present
           return parsed.filter(l => !(l.title?.includes('Scaled Dot-Product Attention') && l.notes?.includes('Derived attention weights')));
         }
       } catch (e) { console.error(e); }
     }
-    return INITIAL_LEARNINGS;
+    return [];
   });
 
   const [learningTracks, setLearningTracks] = useState<LearningTrack[]>(() => {
@@ -225,6 +227,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   }, [learningTracks]);
 
   const [gamification, setGamification] = useState<GamificationStats>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return INITIAL_GAMIFICATION;
     const saved = localStorage.getItem('job_tracker_gamify');
     if (saved) {
       try {
@@ -239,6 +243,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   const [profile, setProfile] = useState<UserProfile>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return INITIAL_PROFILE;
     const saved = localStorage.getItem('job_tracker_profile');
     if (saved) {
       try {
@@ -252,8 +258,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return INITIAL_PROFILE;
   });
 
-  const [versions, setVersions] = useState<ResumeVersion[]>(INITIAL_RESUME_VERSIONS);
+  const [versions, setVersions] = useState<ResumeVersion[]>([]);
   const [quickLinks, setQuickLinks] = useState<QuickLink[]>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return [];
     const saved = localStorage.getItem('job_tracker_quicklinks');
     if (saved) {
       try {
@@ -263,7 +271,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       } catch (e) { console.error(e); }
     }
-    return INITIAL_QUICK_LINKS;
+    return [];
   });
 
   // Theme synchronization with DOM
@@ -283,30 +291,39 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // Sync to localStorage
+  // Sync to localStorage ONLY when authenticated
   useEffect(() => {
-    localStorage.setItem('job_tracker_apps', JSON.stringify(applications));
-  }, [applications]);
+    if (isAuthenticated) {
+      localStorage.setItem('job_tracker_apps', JSON.stringify(applications));
+    }
+  }, [applications, isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('job_tracker_learnings', JSON.stringify(learnings));
-  }, [learnings]);
+    if (isAuthenticated) {
+      localStorage.setItem('job_tracker_learnings', JSON.stringify(learnings));
+    }
+  }, [learnings, isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('job_tracker_profile', JSON.stringify(profile));
-  }, [profile]);
+    if (isAuthenticated) {
+      localStorage.setItem('job_tracker_profile', JSON.stringify(profile));
+    }
+  }, [profile, isAuthenticated]);
 
   useEffect(() => {
-    localStorage.setItem('job_tracker_quicklinks', JSON.stringify(quickLinks));
-  }, [quickLinks]);
+    if (isAuthenticated) {
+      localStorage.setItem('job_tracker_quicklinks', JSON.stringify(quickLinks));
+    }
+  }, [quickLinks, isAuthenticated]);
 
-  // Attempt backend initial fetch on mount
+  // Attempt backend initial fetch on mount (ONLY if authenticated)
   useEffect(() => {
+    if (!isAuthenticated) return;
     let mounted = true;
     const fetchInitialData = async () => {
       try {
         const stateData = await api.getState();
-        if (mounted && stateData?.apps?.length) {
+        if (mounted && stateData?.apps) {
           setApplications(stateData.apps);
           if (stateData.profile) setProfile(stateData.profile);
           if (stateData.versions) setVersions(stateData.versions);
@@ -317,7 +334,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       try {
         const learnData = await api.getLearnings();
-        if (mounted && learnData?.length) {
+        if (mounted && learnData) {
           setLearnings(learnData);
         }
       } catch (err) {
@@ -353,7 +370,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   // Toast Helper
   const showToast = (message: string, undoAction?: () => void) => {
@@ -795,8 +812,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       localStorage.setItem('logged_out', '1');
       localStorage.removeItem('auth_token');
       localStorage.removeItem('auth_user');
+      localStorage.removeItem('job_tracker_apps');
+      localStorage.removeItem('job_tracker_learnings');
+      localStorage.removeItem('job_tracker_profile');
+      localStorage.removeItem('job_tracker_quicklinks');
+      localStorage.removeItem('job_tracker_gamify');
+      localStorage.removeItem('gdrive_folder_id');
       setCurrentUser(null);
       setIsAuthenticated(false);
+      setApplications([]);
+      setLearnings([]);
+      setGamification(INITIAL_GAMIFICATION);
+      setProfile(INITIAL_PROFILE);
+      setQuickLinks([]);
+      setVersions([]);
       showToast('Logged out');
     }
   };

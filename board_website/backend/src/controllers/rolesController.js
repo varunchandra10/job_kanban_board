@@ -2,7 +2,8 @@ const { db } = require('../database/db');
 
 exports.addRole = (req, res, next) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) return res.status(401).json({ error: 'Authentication required' });
     const { name } = req.body;
     if (name) {
       db.prepare("insert or ignore into roles(name, user_id) values(?, ?)").run(name.trim(), userId);

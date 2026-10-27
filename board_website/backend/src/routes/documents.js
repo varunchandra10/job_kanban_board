@@ -19,7 +19,17 @@ router.post('/reveal-file', documentsController.revealFile);
 
 // Storage Status & Multi-User Google Drive Settings
 router.get('/storage/status', (req, res) => {
-  const userId = req.user?.id || 'default_user';
+  const userId = req.user?.id || null;
+  if (!userId) {
+    return res.json({
+      ok: 1,
+      provider: config.storageProvider,
+      connected: false,
+      folderId: null,
+      serviceAccountReady: false,
+      userEmail: null
+    });
+  }
   let userFolderId = null;
   let userEmail = req.user?.email || null;
 
@@ -45,7 +55,10 @@ router.get('/storage/status', (req, res) => {
 });
 
 router.post('/storage/connect-drive', (req, res) => {
-  const userId = req.user?.id || 'default_user';
+  const userId = req.user?.id || null;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
   const { folderUrl, folderId } = req.body || {};
 
   let targetId = folderId ? String(folderId).trim() : null;
@@ -71,7 +84,10 @@ router.post('/storage/connect-drive', (req, res) => {
 });
 
 router.get('/file-token', (req, res) => {
-  const userId = req.user?.id || 'default_user';
+  const userId = req.user?.id || null;
+  if (!userId) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
   const { signToken } = require('../services/jwtService');
   const token = signToken({ id: userId, email: req.user?.email || '', scope: 'file_view' }, 3600);
   res.json({ ok: 1, token });
@@ -79,7 +95,10 @@ router.get('/file-token', (req, res) => {
 
 router.post('/storage/test-connection', async (req, res) => {
   try {
-    const userId = req.user?.id || 'default_user';
+    const userId = req.user?.id || null;
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
     let folderId = req.body.folderId || req.body.folderUrl;
     if (folderId && String(folderId).includes('folders/')) {
       const match = String(folderId).match(/folders\/([a-zA-Z0-9_-]+)/);
