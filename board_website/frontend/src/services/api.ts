@@ -248,12 +248,18 @@ export const api = {
     size?: number;
     isGoogleDrive?: boolean;
     fileId?: string;
+    rootFolderId?: string;
+    folderId?: string;
   }> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
     if (appId) {
       formData.append('appId', String(appId));
+    }
+    const savedFolder = localStorage.getItem('gdrive_folder_id');
+    if (savedFolder) {
+      formData.append('folderId', savedFolder);
     }
 
     const headers = getAuthHeaders();
@@ -275,6 +281,9 @@ export const api = {
         localStorage.removeItem('google_drive_access_token');
       }
       throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+    }
+    if (data.rootFolderId) {
+      localStorage.setItem('gdrive_folder_id', data.rootFolderId);
     }
     return data;
   },

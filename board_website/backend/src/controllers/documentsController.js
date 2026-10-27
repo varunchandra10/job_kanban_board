@@ -127,6 +127,15 @@ exports.uploadDocument = async (req, res, next) => {
       }
     }
 
+    // Persist user's root Google Drive folder so all subsequent uploads use the same root
+    if (userId && saved.rootFolderId && userId !== 'default_user') {
+      try {
+        db.prepare('UPDATE users SET gdrive_folder_id = ? WHERE id = ?').run(saved.rootFolderId, userId);
+      } catch (dbErr) {
+        console.warn(`[Database] Note saving user gdrive_folder_id:`, dbErr.message);
+      }
+    }
+
     return res.json({
       ok: 1,
       fullPath: saved.fullPath,
@@ -136,7 +145,9 @@ exports.uploadDocument = async (req, res, next) => {
       size: saved.size || fileBuffer.length,
       ext: saved.ext,
       isGoogleDrive: true,
-      fileId: saved.fileId
+      fileId: saved.fileId,
+      rootFolderId: saved.rootFolderId,
+      folderId: saved.folderId
     });
   } catch (err) {
     console.error('[Upload Document Error]:', err.message);

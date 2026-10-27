@@ -136,11 +136,86 @@ class GoogleDriveStorageService extends BaseStorageService {
 
   async ensureAppRootFolder(drive) {
     try {
-      const q = `'root' in parents and mimeType = 'application/vnd.google-apps.folder' and (name = 'job_kanban_board' or name = 'JobKanbanBoard') and trashed = false`;
-      const res = await drive.files.list({ q, fields: 'files(id, name)', pageSize: 1 });
-      if (res.data.files && res.data.files.length > 0) {
-        return res.data.files[0].id;
+      // 1. Search for existing job_kanban_board folders accessible with this client
+      const q = `mimeType = 'application/vnd.google-apps.folder' and (name = 'job_kanban_board' or name = 'JobKanbanBoard') and trashed = false`;
+      const res = await drive.files.list({
+        q,
+        fields: 'files(id, name, createdTime, parents)',
+        orderBy: 'createdTime asc',
+        pageSize: 10
+      });
+
+      const folders = res.data.files || [];
+      if (folders.length > 0) {
+        const primaryRoot = folders[0];
+        const primaryId = primaryRoot.id;
+
+        // If duplicate job_kanban_board folders exist, merge them into the primary one!
+        if (folders.length > 1) {
+          for (let i = 1; i < folders.length; i++) {
+            const dup = folders[i];
+            try {
+              // Find all children inside this duplicate folder (e.g. cover_letters or resumes)
+              const childRes = await drive.files.list({
+                q: `'${dup.id}' in parents and trashed = false`,
+                fields: 'files(id, name, mimeType)',
+                pageSize: 50
+              });
+              const children = childRes.data.files || [];
+              for (const child of children) {
+                // Check if a subfolder with this name already exists in primary root
+                const existingChildRes = await drive.files.list({
+                  q: `'${primaryId}' in parents and name = '${child.name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false`,
+                  fields: 'files(id, name)',
+                  pageSize: 1
+                });
+                if (existingChildRes.data.files && existingChildRes.data.files.length > 0) {
+                  // Merge contents of duplicate subfolder into existing primary subfolder
+                  const primarySubfolderId = existingChildRes.data.files[0].id;
+                  const grandChildrenRes = await drive.files.list({
+                    q: `'${child.id}' in parents and trashed = false`,
+                    fields: 'files(id, name)',
+                    pageSize: 50
+                  });
+                  for (const grandChild of (grandChildrenRes.data.files || [])) {
+                    await drive.files.update({
+                      fileId: grandChild.id,
+                      addParents: primarySubfolderId,
+                      removeParents: child.id,
+                      fields: 'id, parents'
+                    });
+                  }
+                  await drive.files.update({
+                    fileId: child.id,
+                    requestBody: { trashed: true }
+                  });
+                } else {
+                  // Move subfolder into primary root
+                  await drive.files.update({
+                    fileId: child.id,
+                    addParents: primaryId,
+                    removeParents: dup.id,
+                    fields: 'id, parents'
+                  });
+                }
+                console.log(`[Google Drive] Consolidated "${child.name}" from duplicate root ${dup.id} into primary ${primaryId}`);
+              }
+              // Trash the duplicate root folder so only one clean root remains
+              await drive.files.update({
+                fileId: dup.id,
+                requestBody: { trashed: true }
+              });
+              console.log(`[Google Drive] Cleaned up duplicate root folder "${dup.name}" (${dup.id})`);
+            } catch (mergeErr) {
+              console.warn(`[Google Drive] Note consolidating duplicate folder ${dup.id}:`, mergeErr.message);
+            }
+          }
+        }
+
+        return primaryId;
       }
+
+      // 2. Not found, create single root folder
       const created = await drive.files.create({
         requestBody: {
           name: 'job_kanban_board',
@@ -227,10 +302,11 @@ class GoogleDriveStorageService extends BaseStorageService {
 
     if (userAccessToken) {
       let isAccessible = false;
-      if (targetFolder) {
+      const isServiceAccountFolder = targetFolder === config.googleDriveFolderId || targetFolder === '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
+      if (targetFolder && !isServiceAccountFolder) {
         try {
-          await drive.files.get({ fileId: targetFolder, fields: 'id' });
-          isAccessible = true;
+          const checkRes = await drive.files.get({ fileId: targetFolder, fields: 'id, trashed' });
+          if (!checkRes.data.trashed) isAccessible = true;
         } catch (_) {
           isAccessible = false;
         }
@@ -298,6 +374,7 @@ class GoogleDriveStorageService extends BaseStorageService {
       webViewLink,
       webContentLink: file.data.webContentLink,
       isGoogleDrive: true,
+      rootFolderId: targetFolder,
       folderId: uploadFolderId
     };
   }
