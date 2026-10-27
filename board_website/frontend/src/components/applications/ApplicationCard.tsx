@@ -382,13 +382,13 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           <button
             type="button"
             className="inline-flex items-center gap-1 rounded-md border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-2 py-0.5 text-[10px] font-bold text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-500/20 transition-colors cursor-pointer"
-            title={`Resume attached: ${app.resume_path}`}
+            title={`View Resume in Google Drive: ${app.resume_path}`}
             onClick={(e) => {
               e.stopPropagation();
               const url = api.getDocumentUrl(app.resume_path!);
               if (url) {
                 window.open(url, '_blank', 'noopener,noreferrer');
-                showToast(`Opening resume: ${app.resume_path}`);
+                showToast(`Opening resume in Google Drive`);
               }
             }}
           >
@@ -402,13 +402,13 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           <button
             type="button"
             className="inline-flex items-center gap-1 rounded-md border border-purple-200 dark:border-purple-500/20 bg-purple-50 dark:bg-purple-500/10 px-2 py-0.5 text-[10px] font-bold text-purple-700 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/20 transition-colors cursor-pointer"
-            title={`Cover letter attached: ${app.cover_letter_path}`}
+            title={`View Cover Letter in Google Drive: ${app.cover_letter_path}`}
             onClick={(e) => {
               e.stopPropagation();
               const url = api.getDocumentUrl(app.cover_letter_path!);
               if (url) {
                 window.open(url, '_blank', 'noopener,noreferrer');
-                showToast(`Opening cover letter: ${app.cover_letter_path}`);
+                showToast(`Opening cover letter in Google Drive`);
               }
             }}
           >

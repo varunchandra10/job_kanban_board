@@ -95,110 +95,59 @@ exports.uploadDocument = async (req, res, next) => {
       userFolderId = config.googleDriveFolderId || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
     }
 
-    // 1. Check if the file (or matching name) already exists in Google Drive
-    if (storageService.driveClient && originalName) {
-      try {
-        const safeOriginal = originalName.replace(/'/g, "\\'");
-        const driveSearch = await storageService.driveClient.files.list({
-          q: `name = '${safeOriginal}' and trashed = false`,
-          supportsAllDrives: true,
-          fields: 'files(id, name, webViewLink, size)',
-          pageSize: 1
-        });
+    // Upload directly to Google Drive in its respective subfolder (resumes / cover_letters)
+    const GoogleDriveStorageService = require('../services/googleDriveStorageService');
+    const driveService = (storageService instanceof GoogleDriveStorageService)
+      ? storageService
+      : new GoogleDriveStorageService({ folderId: userFolderId });
 
-        if (driveSearch.data.files && driveSearch.data.files.length > 0) {
-          const found = driveSearch.data.files[0];
-          const gdriveLink = `https://drive.google.com/file/d/${found.id}/view`;
-          if (appId) {
-            const isCover = type === 'cover_letter' || type === 'cover_letter_path';
-            const col = isCover ? 'cover_letter_path' : 'resume_path';
-            try { db.prepare(`update applications set ${col}=? where id=?`).run(gdriveLink, appId); } catch (_) {}
-          }
-          return res.json({
-            ok: 1,
-            fullPath: gdriveLink,
-            path: gdriveLink,
-            relativePath: gdriveLink,
-            name: found.name,
-            size: found.size,
-            isGoogleDrive: true,
-            fileId: found.id
-          });
-        }
-      } catch (searchErr) {
-        console.warn('[Google Drive] Search note:', searchErr.message);
-      }
+    const userAccessToken = req.headers['x-google-access-token'] || req.body.googleAccessToken || (req.headers['authorization']?.startsWith('Bearer ya29.') ? req.headers['authorization'].slice(7) : null);
+
+    const saved = await driveService.saveFile({
+      buffer: fileBuffer,
+      originalName,
+      type,
+      appId,
+      folderId: userFolderId,
+      userAccessToken
+    });
+
+    if (!saved || !saved.fullPath) {
+      throw new Error('Google Drive upload did not return a valid file link');
     }
 
-    // 2. Try primary storageService saveFile
-    let saved = null;
-    if (storageService && typeof storageService.saveFile === 'function' && storageService !== localService) {
-      try {
-        saved = await storageService.saveFile({
-          buffer: fileBuffer,
-          originalName,
-          type,
-          appId,
-          folderId: userFolderId
-        });
-      } catch (driveSaveErr) {
-        console.warn('[Google Drive] Save note:', driveSaveErr.message);
-      }
-    }
-
-    if (saved && saved.fullPath) {
-      if (appId) {
-        const isCover = type === 'cover_letter' || type === 'cover_letter_path';
-        const col = isCover ? 'cover_letter_path' : 'resume_path';
-        try { db.prepare(`update applications set ${col}=? where id=?`).run(saved.fullPath, appId); } catch (_) {}
-      }
-      return res.json({
-        ok: 1,
-        fullPath: saved.fullPath,
-        path: saved.fullPath,
-        relativePath: saved.relativePath || saved.fullPath,
-        name: saved.name || originalName,
-        size: saved.size || fileBuffer.length,
-        ext: saved.ext || path.extname(originalName).toLowerCase(),
-        isGoogleDrive: !!saved.isGoogleDrive
-      });
-    }
-
-    // 3. Robust fallback: Store binary file in database `document_files` table
-    const docId = 'doc_' + crypto.randomBytes(8).toString('hex');
-    const { getMimeType } = require('../services/baseStorageService');
-    const mimeType = getMimeType(originalName);
-    const base64Data = fileBuffer.toString('base64');
-
-    try {
-      db.prepare(`
-        INSERT INTO document_files (id, user_id, app_id, type, name, mime_type, data)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(docId, userId, appId, type, originalName, mimeType, base64Data);
-    } catch (dbSaveErr) {
-      console.warn('[Database] document_files save error:', dbSaveErr.message);
-    }
-
-    const docUrl = `/api/file-content?doc_id=${docId}`;
+    // Save ONLY the Google Drive view link (string) into Turso SQLite
     if (appId) {
-      const isCover = type === 'cover_letter' || type === 'cover_letter_path';
+      const isCover = type === 'cover_letter' || type === 'cover_letters' || type === 'cover_letter_path';
       const col = isCover ? 'cover_letter_path' : 'resume_path';
-      try { db.prepare(`update applications set ${col}=? where id=?`).run(docUrl, appId); } catch (_) {}
+      try {
+        db.prepare(`UPDATE applications SET ${col} = ? WHERE id = ?`).run(saved.fullPath, appId);
+      } catch (dbErr) {
+        console.warn(`[Database] Note updating ${col} for app ${appId}:`, dbErr.message);
+      }
     }
 
     return res.json({
       ok: 1,
-      fullPath: docUrl,
-      path: docUrl,
-      relativePath: docUrl,
-      name: originalName,
-      size: fileBuffer.length,
-      ext: path.extname(originalName).toLowerCase(),
-      isGoogleDrive: false,
-      docId
+      fullPath: saved.fullPath,
+      path: saved.fullPath,
+      relativePath: saved.relativePath || saved.fullPath,
+      name: saved.name || originalName,
+      size: saved.size || fileBuffer.length,
+      ext: saved.ext,
+      isGoogleDrive: true,
+      fileId: saved.fileId
     });
   } catch (err) {
-    next(err);
+    console.error('[Upload Document Error]:', err.message);
+    let msg = err.message || 'Unknown upload error';
+    if (msg.includes('quota') || msg.includes('Service Accounts do not have storage quota')) {
+      msg = 'Personal Google Drive requires user authorization. Please open Google Drive Settings (cloud/drive icon in header) and click "Authorize" to enable direct uploads with your Google Account.';
+    }
+    return res.status(500).json({
+      ok: 0,
+      error: `Google Drive upload failed: ${msg}`
+    });
   }
 };
 

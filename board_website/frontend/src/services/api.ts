@@ -259,6 +259,11 @@ export const api = {
     const headers = getAuthHeaders();
     delete headers['Content-Type'];
 
+    const gDriveToken = localStorage.getItem('google_drive_access_token');
+    if (gDriveToken) {
+      headers['x-google-access-token'] = gDriveToken;
+    }
+
     const res = await fetch(`${API_BASE}/upload-document`, {
       method: 'POST',
       headers,

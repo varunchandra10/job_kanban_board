@@ -124,7 +124,73 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
   }
 
-  async saveFile({ buffer, originalName, type, appId, folderId }) {
+  getClient(userAccessToken) {
+    if (userAccessToken) {
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({ access_token: userAccessToken });
+      return google.drive({ version: 'v3', auth: oauth2Client });
+    }
+    if (!this.driveClient) this._initAuth();
+    return this.driveClient;
+  }
+
+  async getOrCreateSubfolder(parentFolderId, folderType, client = null) {
+    const drive = client || this.driveClient;
+    if (!drive) {
+      if (!this.driveClient) this._initAuth();
+    }
+    const activeDrive = client || this.driveClient;
+    if (!activeDrive) {
+      throw new Error('Google Drive service is not authenticated');
+    }
+
+    const isCover = folderType === 'cover_letter' || folderType === 'cover_letters' || folderType === 'cover' || folderType === 'cover_letter_path';
+    const primaryName = isCover ? 'cover_letters' : 'resume';
+    const candidateNames = isCover
+      ? ['cover_letters', 'cover_letter', 'Cover Letters', 'Cover Letter']
+      : ['resume', 'resumes', 'Resume', 'Resumes'];
+
+    // 1. Search for existing folder with any matching candidate names
+    for (const name of candidateNames) {
+      try {
+        const q = `'${parentFolderId}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = '${name}' and trashed = false`;
+        const searchRes = await activeDrive.files.list({
+          q,
+          fields: 'files(id, name)',
+          supportsAllDrives: true,
+          includeItemsFromAllDrives: true,
+          pageSize: 1
+        });
+
+        if (searchRes.data.files && searchRes.data.files.length > 0) {
+          return searchRes.data.files[0].id;
+        }
+      } catch (err) {
+        console.warn(`[Google Drive] Note searching for subfolder ${name}:`, err.message);
+      }
+    }
+
+    // 2. Not found, create the primary subfolder
+    try {
+      const folderMetadata = {
+        name: primaryName,
+        mimeType: 'application/vnd.google-apps.folder',
+        parents: [parentFolderId]
+      };
+      const createRes = await activeDrive.files.create({
+        requestBody: folderMetadata,
+        supportsAllDrives: true,
+        fields: 'id, name'
+      });
+      console.log(`[Google Drive] Created subfolder "${primaryName}" (${createRes.data.id}) in parent ${parentFolderId}`);
+      return createRes.data.id;
+    } catch (createErr) {
+      console.warn(`[Google Drive] Could not create subfolder ${primaryName}:`, createErr.message);
+      return parentFolderId;
+    }
+  }
+
+  async saveFile({ buffer, originalName, type, appId, folderId, userAccessToken }) {
     let targetFolder = folderId || this.folderId;
     if (targetFolder && String(targetFolder).includes('folders/')) {
       const m = String(targetFolder).match(/folders\/([a-zA-Z0-9_-]+)/);
@@ -132,14 +198,18 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
     if (targetFolder) targetFolder = String(targetFolder).split('?')[0].trim();
     if (!targetFolder) {
-      throw new Error('Google Drive folder not configured. Please connect your personal Google Drive folder in Career Profile.');
+      throw new Error('Google Drive folder not configured. Please connect your Google Drive folder.');
     }
-    if (!this.driveClient) this._initAuth();
-    if (!this.driveClient) {
+    const drive = this.getClient(userAccessToken);
+    if (!drive) {
       throw new Error('Google Drive service is not configured with credentials');
     }
 
-    const safeName = path.basename(originalName || 'document.pdf').replace(/[^a-zA-Z0-9._ -]/g, '_');
+    // Resolve or auto-create subfolder (resumes in resume folder, cover_letters in cover_letters folder)
+    const uploadFolderId = await this.getOrCreateSubfolder(targetFolder, type, drive);
+
+    const isCover = type === 'cover_letter' || type === 'cover_letters' || type === 'cover' || type === 'cover_letter_path';
+    const safeName = path.basename(originalName || (isCover ? 'cover_letter.pdf' : 'resume.pdf')).replace(/[^a-zA-Z0-9._ -]/g, '_');
     const mime = getMimeType(safeName);
 
     const stream = new Readable();
@@ -148,7 +218,7 @@ class GoogleDriveStorageService extends BaseStorageService {
 
     const fileMetadata = {
       name: safeName,
-      parents: targetFolder ? [targetFolder] : undefined
+      parents: [uploadFolderId]
     };
 
     const media = {
@@ -156,28 +226,17 @@ class GoogleDriveStorageService extends BaseStorageService {
       body: stream
     };
 
-    let file;
-    try {
-      file = await this.driveClient.files.create({
-        requestBody: fileMetadata,
-        resource: fileMetadata,
-        supportsAllDrives: true,
-        media,
-        fields: 'id, name, size, webViewLink, webContentLink, mimeType'
-      });
-    } catch (createErr) {
-      if (this.localFallback && (createErr.message?.includes('quota') || createErr.message?.includes('Service Accounts do not have storage quota'))) {
-        console.warn('[Google Drive] Service Account quota restricted on personal drive. Gracefully saving file locally.');
-        const localSaved = await this.localFallback.saveFile({ buffer, originalName, type, appId });
-        localSaved.quotaNotice = true;
-        return localSaved;
-      }
-      throw createErr;
-    }
+    const file = await drive.files.create({
+      requestBody: fileMetadata,
+      resource: fileMetadata,
+      supportsAllDrives: true,
+      media,
+      fields: 'id, name, size, webViewLink, webContentLink, mimeType'
+    });
 
     // Make file readable for anyone with the link so preview works seamlessly
     try {
-      await this.driveClient.permissions.create({
+      await drive.permissions.create({
         fileId: file.data.id,
         requestBody: {
           role: 'reader',
@@ -192,12 +251,15 @@ class GoogleDriveStorageService extends BaseStorageService {
     return {
       fullPath: webViewLink,
       relativePath: webViewLink,
+      path: webViewLink,
       name: file.data.name,
       size: parseInt(file.data.size || String(buffer.length), 10),
       ext: path.extname(safeName).toLowerCase(),
       fileId: file.data.id,
       webViewLink,
-      webContentLink: file.data.webContentLink
+      webContentLink: file.data.webContentLink,
+      isGoogleDrive: true,
+      folderId: uploadFolderId
     };
   }
 

@@ -634,37 +634,61 @@ export const ApplicationModal: React.FC = () => {
                     )}
 
                     {resumePath ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-50/60 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 text-xs">
-                        <FileText size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
-                        <span className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs flex-1" title={resumePath}>
-                          {resumePath.split('/').pop() || resumePath}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const url = api.getDocumentUrl(resumePath);
-                            if (url) window.open(url, '_blank', 'noopener,noreferrer');
-                          }}
-                          className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors"
-                          title="Preview / Open in new tab"
-                        >
-                          <ExternalLink size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setResumePath('');
-                            setResumeVersionId(null);
-                          }}
-                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                          title="Remove attached resume"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                      <div className="space-y-1.5 p-2.5 rounded-lg bg-blue-50/60 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 text-xs">
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                          <span className="truncate font-semibold text-slate-800 dark:text-slate-200 text-xs flex-1">
+                            {resumePath.includes('drive.google.com') ? 'Google Drive Resume' : (resumePath.split('/').pop() || resumePath)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = api.getDocumentUrl(resumePath);
+                              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                            }}
+                            className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors cursor-pointer"
+                            title="Preview / Open in new tab"
+                          >
+                            <ExternalLink size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setResumePath('');
+                              setResumeVersionId(null);
+                            }}
+                            className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                            title="Remove attached resume"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        {resumePath.startsWith('http') && (
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20">
+                            <a
+                              href={resumePath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-blue-600 dark:text-indigo-400 hover:underline truncate flex-1 font-mono"
+                              title={resumePath}
+                            >
+                              {resumePath}
+                            </a>
+                            <a
+                              href={resumePath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 shrink-0"
+                            >
+                              <span>View Link</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                        No resume attached. Upload PDF or Word document.
+                        No resume attached. Upload PDF or Word document to save to Google Drive.
                       </p>
                     )}
                   </div>
@@ -706,34 +730,58 @@ export const ApplicationModal: React.FC = () => {
                     </div>
 
                     {coverLetterPath ? (
-                      <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50/60 dark:bg-purple-500/10 border border-purple-200/60 dark:border-purple-500/20 text-xs">
-                        <FileText size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
-                        <span className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs flex-1" title={coverLetterPath}>
-                          {coverLetterPath.split('/').pop() || coverLetterPath}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const url = api.getDocumentUrl(coverLetterPath);
-                            if (url) window.open(url, '_blank', 'noopener,noreferrer');
-                          }}
-                          className="p-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 transition-colors"
-                          title="Preview / Open in new tab"
-                        >
-                          <ExternalLink size={13} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCoverLetterPath('')}
-                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                          title="Remove attached cover letter"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                      <div className="space-y-1.5 p-2.5 rounded-lg bg-purple-50/60 dark:bg-purple-500/10 border border-purple-200/60 dark:border-purple-500/20 text-xs">
+                        <div className="flex items-center gap-2">
+                          <FileText size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                          <span className="truncate font-semibold text-slate-800 dark:text-slate-200 text-xs flex-1">
+                            {coverLetterPath.includes('drive.google.com') ? 'Google Drive Cover Letter' : (coverLetterPath.split('/').pop() || coverLetterPath)}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const url = api.getDocumentUrl(coverLetterPath);
+                              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                            }}
+                            className="p-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 transition-colors cursor-pointer"
+                            title="Preview / Open in new tab"
+                          >
+                            <ExternalLink size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCoverLetterPath('')}
+                            className="p-1 text-slate-400 hover:text-red-500 transition-colors cursor-pointer"
+                            title="Remove attached cover letter"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        {coverLetterPath.startsWith('http') && (
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20">
+                            <a
+                              href={coverLetterPath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline truncate flex-1 font-mono"
+                              title={coverLetterPath}
+                            >
+                              {coverLetterPath}
+                            </a>
+                            <a
+                              href={coverLetterPath}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 shrink-0"
+                            >
+                              <span>View Link</span>
+                              <ExternalLink size={10} />
+                            </a>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                        No cover letter attached. Upload PDF, Word, or text file.
+                        No cover letter attached. Upload PDF, Word, or text file to save to Google Drive.
                       </p>
                     )}
                   </div>

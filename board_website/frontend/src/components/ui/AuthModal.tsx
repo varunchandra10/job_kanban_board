@@ -80,7 +80,7 @@ export const AuthModal: React.FC = () => {
 
       const client = google.accounts.oauth2.initTokenClient({
         client_id: '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com',
-        scope: 'email profile openid',
+        scope: 'email profile openid https://www.googleapis.com/auth/drive.file',
         callback: async (tokenResponse: any) => {
           if (tokenResponse.error) {
             setIsLoading(false);
@@ -88,6 +88,9 @@ export const AuthModal: React.FC = () => {
             return;
           }
           try {
+            if (tokenResponse.access_token) {
+              localStorage.setItem('google_drive_access_token', tokenResponse.access_token);
+            }
             const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
               headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
             });

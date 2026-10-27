@@ -28,6 +28,7 @@ export const DriveModal: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [hasOAuth, setHasOAuth] = useState(false);
 
   const serviceAccountEmail =
     'job-tracker-storage@job-tracker-512318.iam.gserviceaccount.com';
@@ -37,6 +38,7 @@ export const DriveModal: React.FC = () => {
       setFolderId(gdriveStatus.folderId || '');
       setErrorMsg('');
       setCopiedEmail(false);
+      setHasOAuth(!!localStorage.getItem('google_drive_access_token'));
     }
   }, [isDriveModalOpen, gdriveStatus.folderId]);
 
@@ -67,6 +69,37 @@ export const DriveModal: React.FC = () => {
       window.setTimeout(() => setCopiedEmail(false), 2000);
     } catch {
       setErrorMsg('Unable to copy automatically. Please select and copy the email.');
+    }
+  };
+
+  const handleAuthorizeOAuth = () => {
+    try {
+      const google = (window as any).google;
+      if (!google?.accounts?.oauth2) {
+        setErrorMsg('Google Services library is loading. Please try again in a few seconds.');
+        return;
+      }
+      setLoading(true);
+      const client = google.accounts.oauth2.initTokenClient({
+        client_id: '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com',
+        scope: 'https://www.googleapis.com/auth/drive.file',
+        callback: (tokenResponse: any) => {
+          setLoading(false);
+          if (tokenResponse.error) {
+            setErrorMsg(`Google Authorization error: ${tokenResponse.error}`);
+            return;
+          }
+          if (tokenResponse.access_token) {
+            localStorage.setItem('google_drive_access_token', tokenResponse.access_token);
+            setHasOAuth(true);
+            showToast('Personal Google Drive account authorized!');
+          }
+        }
+      });
+      client.requestAccessToken();
+    } catch (err: any) {
+      setLoading(false);
+      setErrorMsg(err.message || 'Failed to start Google Drive authorization');
     }
   };
 
@@ -167,6 +200,34 @@ export const DriveModal: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleConnect}>
           <div className="space-y-5 px-6 py-5">
+            {/* Quick 1-Click Personal Account Authorization */}
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5 p-3.5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>1-Click Personal Account Access</span>
+                    {hasOAuth && (
+                      <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[9px] font-bold">
+                        Active
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Authorize your Google account to upload resumes directly into your 15 GB quota.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAuthorizeOAuth}
+                  disabled={loading}
+                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-600/30 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                >
+                  <ShieldCheck size={13} />
+                  <span>{hasOAuth ? 'Re-authorize' : 'Authorize'}</span>
+                </button>
+              </div>
+            </div>
+
             {/* Step 1 */}
             <section>
               <div className="mb-2.5 flex items-start gap-3">
