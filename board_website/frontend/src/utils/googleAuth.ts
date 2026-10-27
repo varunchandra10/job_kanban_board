@@ -1,5 +1,5 @@
-const GOOGLE_CLIENT_ID = '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
+export const GOOGLE_CLIENT_ID = '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com';
+export const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.file';
 
 export function getStoredGoogleDriveToken(): string | null {
   return localStorage.getItem('google_drive_access_token');

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { X, LogIn, Lock, Mail, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { GOOGLE_CLIENT_ID } from '../../utils/googleAuth';
 
 export const AuthModal: React.FC = () => {
   const navigate = useNavigate();
@@ -79,12 +80,17 @@ export const AuthModal: React.FC = () => {
       }
 
       const client = google.accounts.oauth2.initTokenClient({
-        client_id: '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com',
+        client_id: GOOGLE_CLIENT_ID,
         scope: 'email profile openid https://www.googleapis.com/auth/drive.file',
         callback: async (tokenResponse: any) => {
           if (tokenResponse.error) {
             setIsLoading(false);
-            setErrorMessage('Google Sign-In was canceled or failed.');
+            const errDetail = String(tokenResponse.error_description || tokenResponse.error || '');
+            if (/access_denied|unapproved|verification/i.test(errDetail)) {
+              setErrorMessage('Access blocked: App is in Testing mode in Google Cloud Console. Add your email to "Test Users" or Publish the app in OAuth Consent Screen.');
+            } else {
+              setErrorMessage('Google Sign-In was canceled or failed.');
+            }
             return;
           }
           try {

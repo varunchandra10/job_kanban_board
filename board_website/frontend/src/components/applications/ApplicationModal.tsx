@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
-import { ensureGoogleDriveToken } from '../../utils/googleAuth';
+import { ensureGoogleDriveToken, getStoredGoogleDriveToken } from '../../utils/googleAuth';
 import {
   Briefcase,
   Landmark,
@@ -130,16 +130,22 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingResume(true);
     try {
-      await ensureGoogleDriveToken();
+      if (!getStoredGoogleDriveToken()) {
+        try {
+          await ensureGoogleDriveToken();
+        } catch (tokenErr) {
+          console.warn('[Google Drive Auth]:', tokenErr);
+        }
+      }
       const res = await api.uploadDocument(file, 'resume', editingApp?.id);
       setResumePath(res.fullPath || res.path || file.name);
       showToast(
         res.isGoogleDrive
-          ? 'Resume uploaded to your Google Drive!'
+          ? 'Resume uploaded to Google Drive!'
           : 'Resume attached successfully!'
       );
     } catch (err: any) {
-      showToast(err.message || 'Failed to upload resume to Google Drive');
+      showToast(err.message || 'Failed to upload resume');
     } finally {
       setIsUploadingResume(false);
       if (e.target) e.target.value = '';
@@ -151,16 +157,22 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingCover(true);
     try {
-      await ensureGoogleDriveToken();
+      if (!getStoredGoogleDriveToken()) {
+        try {
+          await ensureGoogleDriveToken();
+        } catch (tokenErr) {
+          console.warn('[Google Drive Auth]:', tokenErr);
+        }
+      }
       const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id);
       setCoverLetterPath(res.fullPath || res.path || file.name);
       showToast(
         res.isGoogleDrive
-          ? 'Cover letter uploaded to your Google Drive!'
+          ? 'Cover letter uploaded to Google Drive!'
           : 'Cover letter attached successfully!'
       );
     } catch (err: any) {
-      showToast(err.message || 'Failed to upload cover letter to Google Drive');
+      showToast(err.message || 'Failed to upload cover letter');
     } finally {
       setIsUploadingCover(false);
       if (e.target) e.target.value = '';
