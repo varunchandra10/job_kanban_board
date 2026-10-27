@@ -6,8 +6,7 @@
   "build": {
     "frontendDist": "dist",
     "devUrl": "http://localhost:3000",
-    "beforeDevCommand": "node ../board_website/backend/server.js",
-    "beforeBuildCommand": "npm --prefix ../board_website/frontend run build"
+    "beforeDevCommand": "node ../../board_website/backend/server.js"
   },
   "app": {
     "withGlobalTauri": true,

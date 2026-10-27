@@ -19,20 +19,19 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 
 The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
 
-### Step 1: Download the App
-Click to download the executable:
-👉 **[Download JobTracker.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe)** *(Located in the [`install_apps/`](../install_apps/) folder)*.
+### Step 1: Download the Setup Package
+Download your preferred format:
+* **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe)** *(Recommended: 1-Click Setup, creates Desktop & Start Menu shortcuts)*.
+* **[Download Job-Tracker-Setup.msi](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.msi)** *(Standard Windows MSI installer package)*.
 
-### Step 2: Run the Application
-1. Double-click **`JobTracker.exe`**.
+### Step 2: Run the Setup
+1. Double-click **`Job-Tracker-Setup.exe`** (or `.msi`).
 2. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
    - Click **More info**.
    - Click **Run anyway** *(standard for independent software without a corporate code-signing certificate)*.
 
 ### Step 3: Launch & Use
-The application opens instantly! No installation wizard or temporary extraction is needed.
-
-> 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
+The application installs to your computer, creates your Desktop shortcut, and opens automatically!
 
 > 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
 
