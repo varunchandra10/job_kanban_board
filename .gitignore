@@ -69,8 +69,9 @@ src-tauri/dist/
 desktop_app/src-tauri/target/
 *.exe
 !installer/*.exe
+*.msi
+!installer/*.msi
 *.key
 src-tauri/*.key
 desktop_app/src-tauri/*.key
 dist-desktop/
-*.msi

@@ -19,19 +19,23 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 
 The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
 
-### Step 1: Download the Installer
-Click to download the setup file:
-👉 **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)** *(or grab the latest release from [GitHub Releases](https://github.com/varunchandra10/job_kanban_board/releases))*.
+### Step 1: Download Your Preferred Package
+Choose one of the following packages:
+* **Option A — Recommended MSI Installer (.msi)**:
+  👉 **[Download Job-Tracker-Setup.msi](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.msi)** *(Native Windows installer — avoids temporary extraction errors)*.
+* **Option B — Portable Edition (.exe)**:
+  👉 **[Download Job-Tracker-Portable.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Portable.exe)** *(No setup wizard required — double-click to launch directly)*.
+* **Option C — Standard Setup (.exe)**:
+  👉 **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)**.
 
-### Step 2: Run the Installer
-1. Double-click the downloaded **`Job-Tracker-Setup.exe`** file.
+### Step 2: Run the Application
+1. Double-click the downloaded file (`.msi` or `.exe`).
 2. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
    - Click **More info**.
    - Click **Run anyway** *(standard for independent software without a corporate code-signing certificate)*.
-3. Follow the wizard steps:
-   - Choose your installation directory.
-   - Keep the boxes checked to create a **Desktop icon** and **Start Menu entry**.
-   - Click **Finish**.
+3. **If you encounter "NSIS Error: Error writing temporary file"**:
+   - Run the **[.msi installer](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.msi)** instead.
+   - Or move the file to your local `Downloads` folder (outside OneDrive) and right-click &rarr; **Run as administrator**.
 
 ### Step 3: Launch & Use
 Launch **Job Tracker** anytime from your Windows Start Menu or Desktop icon!
