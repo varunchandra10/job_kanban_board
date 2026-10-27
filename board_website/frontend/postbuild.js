@@ -13,7 +13,7 @@ if (fs.existsSync(indexHtml)) {
   fs.copyFileSync(indexHtml, path.join(dist, '404.html'));
 
   // 2. Pre-generate physical directories and HTML files for all known client routes
-  const routes = ['job-applications', 'board', 'applications', 'learnings', 'profile'];
+  const routes = ['job-applications', 'board', 'applications', 'learnings', 'profile', 'privacy', 'terms'];
   routes.forEach(route => {
     const routeDir = path.join(dist, route);
     if (!fs.existsSync(routeDir)) {

@@ -581,6 +581,16 @@ export const LandingPage: React.FC = () => {
                     Download DB as ZIP
                   </button>
                 </li>
+                <li>
+                  <Link to="/privacy" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                    Terms of Service
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -591,6 +601,12 @@ export const LandingPage: React.FC = () => {
               &copy; 2026 Job Tracker &bull; 100% User-Owned Google Drive Storage &bull; All data isolated.
             </div>
             <div className="flex items-center gap-6">
+              <Link to="/privacy" className="text-slate-400 hover:text-white transition-colors no-underline">
+                Privacy
+              </Link>
+              <Link to="/terms" className="text-slate-400 hover:text-white transition-colors no-underline">
+                Terms
+              </Link>
               <a
                 href="https://github.com/varunchandra10/job_kanban_board"
                 target="_blank"

@@ -6,6 +6,8 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ApplicationsPage } from './components/applications/ApplicationsPage';
 import { LearningsPage } from './components/learnings/LearningsPage';
 import { CareerProfile } from './components/profile/CareerProfile';
+import { PrivacyPage } from './components/legal/PrivacyPage';
+import { TermsPage } from './components/legal/TermsPage';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
 import { AuthModal } from './components/ui/AuthModal';
 import { Toast } from './components/ui/Toast';
@@ -36,8 +38,12 @@ export const App: React.FC = () => {
           </Route>
         )}
 
-      {/* Fallback to landing */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+        {/* Public Legal / OAuth Verification Pages */}
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
+
+        {/* Fallback to landing */}
+        <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
   );
