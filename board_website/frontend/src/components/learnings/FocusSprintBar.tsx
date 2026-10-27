@@ -167,7 +167,7 @@ export const FocusSprintBar: React.FC = () => {
   return (
     <div className="shrink-0 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#121316]/95 shadow-sm hover:shadow-md backdrop-blur-xl transition-all overflow-hidden">
       {/* 1. Main Ultra-Slim Focus Sprint Bar */}
-      <div className="relative px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+      <div className="relative px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-3 flex-nowrap">
         {/* Subtle Bottom Progress Track for Active Timer */}
         {isRunning && (
           <div className="absolute inset-x-0 bottom-0 h-[2.5px] bg-slate-100 dark:bg-white/5 overflow-hidden pointer-events-none">
@@ -179,11 +179,11 @@ export const FocusSprintBar: React.FC = () => {
         )}
 
         {/* LEFT: Compact Streak & Level Pill Badge */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsStatsOpen(prev => !prev)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all cursor-pointer shadow-xs group"
+            className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all cursor-pointer shadow-xs group"
             title="Click to toggle study stats & weekly punchcard"
             aria-expanded={isStatsOpen}
           >
@@ -192,15 +192,15 @@ export const FocusSprintBar: React.FC = () => {
             </div>
             <span className="tabular-nums font-black text-slate-900 dark:text-white">
               {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
-              <span className="text-slate-600 dark:text-slate-300 font-bold ml-1">Streak</span>
+              <span className="text-slate-600 dark:text-slate-300 font-bold ml-1 hidden sm:inline">Streak</span>
             </span>
-            <span className="w-1 h-1 rounded-full bg-orange-400/50" />
+            <span className="w-1 h-1 rounded-full bg-orange-400/50 hidden sm:inline" />
             <span className="text-[11px] font-extrabold px-1.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-300 border border-orange-500/20 hidden md:inline">
               Lvl {gamification.level}
             </span>
             <ChevronDown
               size={13}
-              className={`transition-transform duration-300 text-slate-400 group-hover:text-orange-500 ${
+              className={`transition-transform duration-300 text-slate-400 group-hover:text-orange-500 shrink-0 ${
                 isStatsOpen ? 'rotate-180 text-orange-600' : ''
               }`}
             />
@@ -221,11 +221,12 @@ export const FocusSprintBar: React.FC = () => {
         </div>
 
         {/* CENTER: User Numeric Input & Live Countdown in Segmented Pod */}
-        <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
-          <div className="flex items-center bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/10 rounded-xl p-1 shadow-inner">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
+          <div className="flex items-center bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/10 rounded-xl p-0.5 sm:p-1 shadow-inner">
             {/* Target Duration input */}
-            <div className="flex items-center gap-1.5 px-2 py-0.5">
-              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+            <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5">
+              <Clock size={12} className="text-slate-400 dark:text-slate-500 sm:hidden shrink-0" />
+              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider hidden sm:inline">
                 Timer
               </span>
               <div className="flex items-center">
@@ -238,9 +239,9 @@ export const FocusSprintBar: React.FC = () => {
                   onChange={handleInputChange}
                   title="Enter timer duration in minutes (numbers only, e.g. 45 or 50)"
                   placeholder="45"
-                  className="w-11 h-6 text-center font-black text-xs bg-white dark:bg-[#1a1b1f] border border-slate-200 dark:border-white/10 rounded-md text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60 shadow-2xs"
+                  className="w-8 sm:w-11 h-6 text-center font-black text-xs bg-white dark:bg-[#1a1b1f] border border-slate-200 dark:border-white/10 rounded-md text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60 shadow-2xs"
                 />
-                <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 ml-1">min</span>
+                <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-400 dark:text-slate-500 ml-0.5 sm:ml-1">min</span>
               </div>
             </div>
 
@@ -249,7 +250,7 @@ export const FocusSprintBar: React.FC = () => {
 
             {/* Live Countdown Display */}
             <div
-              className={`flex items-center gap-2 px-3 py-1 rounded-lg font-mono text-sm sm:text-base font-black tabular-nums tracking-wider transition-all ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg font-mono text-xs sm:text-base font-black tabular-nums tracking-wider transition-all ${
                 isFinished
                   ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse'
                   : isRunning
@@ -259,34 +260,36 @@ export const FocusSprintBar: React.FC = () => {
             >
               <span>{timeFormatted}</span>
               {isRunning && (
-                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.8)] shrink-0" />
+                <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.8)] shrink-0" />
               )}
             </div>
           </div>
         </div>
 
         {/* RIGHT: Actions (Start, Stop, Reset, Bell) */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* Start and Stop Buttons */}
           {isRunning ? (
             <button
               type="button"
               onClick={handleStopTimer}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-500/25 active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-500/25 active:scale-95"
               title="Stop timer countdown"
             >
-              <Square size={11} className="fill-current" />
-              <span>Stop</span>
+              <Square size={11} className="fill-current shrink-0" />
+              <span className="hidden sm:inline">Stop</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleStartTimer}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 text-white shadow-orange-500/25 active:scale-95"
+              className="flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 text-white shadow-orange-500/25 active:scale-95"
               title="Start timer countdown"
             >
-              <Play size={11} className="fill-current" />
-              <span>{isFinished ? 'Restart' : timeLeft < (parseInt(inputMinutes, 10) || 45) * 60 && timeLeft > 0 ? 'Resume' : 'Start'}</span>
+              <Play size={11} className="fill-current shrink-0" />
+              <span className="hidden sm:inline">
+                {isFinished ? 'Restart' : timeLeft < (parseInt(inputMinutes, 10) || 45) * 60 && timeLeft > 0 ? 'Resume' : 'Start'}
+              </span>
             </button>
           )}
 
@@ -321,14 +324,14 @@ export const FocusSprintBar: React.FC = () => {
       {/* 2. Seamless Expandable Study Stats & Gamification Drawer */}
       {isStatsOpen && (
         <div className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-3.5 sm:p-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             {/* Level & XP Bar */}
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 text-orange-500 font-black text-sm shadow-inner">
                 L{gamification.level}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 justify-center md:justify-start">
                   <h4 className="font-extrabold text-xs text-slate-900 dark:text-white m-0 truncate">
                     {gamification.levelTitle || 'Code Virtuoso'}
                   </h4>
@@ -337,7 +340,7 @@ export const FocusSprintBar: React.FC = () => {
                   </span>
                 </div>
                 {/* XP Bar */}
-                <div className="mt-1.5 flex items-center gap-2 w-full max-w-xs">
+                <div className="mt-1.5 flex items-center gap-2 w-48 sm:w-60">
                   <div className="h-1.5 flex-1 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                     <div
                       className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-400 transition-all duration-500 shadow-[0_0_6px_rgba(249,115,22,0.4)]"
@@ -351,8 +354,8 @@ export const FocusSprintBar: React.FC = () => {
               </div>
             </div>
 
-            {/* Metric Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Metric Badges (Best, Hours, Notes) - CENTER ALIGNED */}
+            <div className="flex items-center justify-center gap-2 flex-wrap w-full md:w-auto">
               <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
                 <Trophy size={13} className="text-amber-500 shrink-0" />
                 <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Best:</span>
@@ -378,8 +381,8 @@ export const FocusSprintBar: React.FC = () => {
               </div>
             </div>
 
-            {/* 7-Day Mini Punchcard */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            {/* 7-Day Mini Punchcard Day Boxes - CENTER ALIGNED */}
+            <div className="flex items-center justify-center gap-1.5 shrink-0 w-full md:w-auto">
               {gamification.weekPunchcard?.map((day, idx) => (
                 <div
                   key={idx}

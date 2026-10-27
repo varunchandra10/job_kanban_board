@@ -124,7 +124,18 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
   }
 
-  getClient(userAccessToken) {
+  getClient(userAccessToken, userRefreshToken = null) {
+    if (userRefreshToken) {
+      const oauth2Client = new google.auth.OAuth2(
+        config.googleClientId,
+        config.googleClientSecret
+      );
+      oauth2Client.setCredentials({
+        access_token: userAccessToken || undefined,
+        refresh_token: userRefreshToken
+      });
+      return google.drive({ version: 'v3', auth: oauth2Client });
+    }
     if (userAccessToken) {
       const oauth2Client = new google.auth.OAuth2();
       oauth2Client.setCredentials({ access_token: userAccessToken });
@@ -287,7 +298,7 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
   }
 
-  async saveFile({ buffer, originalName, type, appId, folderId, userAccessToken }) {
+  async saveFile({ buffer, originalName, type, appId, folderId, userAccessToken, userRefreshToken }) {
     let targetFolder = folderId || this.folderId;
     if (targetFolder && String(targetFolder).includes('folders/')) {
       const m = String(targetFolder).match(/folders\/([a-zA-Z0-9_-]+)/);
@@ -295,12 +306,12 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
     if (targetFolder) targetFolder = String(targetFolder).split('?')[0].trim();
 
-    const drive = this.getClient(userAccessToken);
+    const drive = this.getClient(userAccessToken, userRefreshToken);
     if (!drive) {
       throw new Error('Google Drive service is not configured with credentials');
     }
 
-    if (userAccessToken) {
+    if (userAccessToken || userRefreshToken) {
       let isAccessible = false;
       const isServiceAccountFolder = targetFolder === config.googleDriveFolderId || targetFolder === '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
       if (targetFolder && !isServiceAccountFolder) {

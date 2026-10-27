@@ -82,11 +82,17 @@ exports.uploadDocument = async (req, res, next) => {
       if (m) userFolderId = m[1];
     }
 
-    if (!userFolderId) {
+    let userRefreshToken = null;
+    if (userId) {
       try {
-        const userRow = db.prepare('SELECT gdrive_folder_id FROM users WHERE id = ?').get(userId);
-        if (userRow && userRow.gdrive_folder_id) {
-          userFolderId = userRow.gdrive_folder_id.trim();
+        const userRow = db.prepare('SELECT gdrive_folder_id, google_refresh_token FROM users WHERE id = ?').get(userId);
+        if (userRow) {
+          if (!userFolderId && userRow.gdrive_folder_id) {
+            userFolderId = userRow.gdrive_folder_id.trim();
+          }
+          if (userRow.google_refresh_token) {
+            userRefreshToken = userRow.google_refresh_token.trim();
+          }
         }
       } catch (_) {}
     }
@@ -109,7 +115,8 @@ exports.uploadDocument = async (req, res, next) => {
       type,
       appId,
       folderId: userFolderId,
-      userAccessToken
+      userAccessToken,
+      userRefreshToken
     });
 
     if (!saved || !saved.fullPath) {
