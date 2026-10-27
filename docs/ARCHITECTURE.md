@@ -7,51 +7,57 @@ This document outlines the high-level system architecture, component relationshi
 ## 1. System Topology & Architecture Diagram
 
 ```mermaid
-graph TD
-    subgraph Client_Layer ["Client Interfaces"]
-        WEB["🌐 Modern Web Browser\n(Desktop & Mobile / iOS Safari / Chrome)"]
-        DESK["💻 Native Desktop Shell (Tauri v2 + Rust)\n- System Tray & Custom Menus\n- Local Data Launcher\n- Auto-Updater (Minisign)"]
+flowchart TD
+    subgraph Client ["Client Interfaces"]
+        WEB["🌐 Web Browser (Mobile & Desktop)"]
+        DESK["💻 Native Desktop Shell (Tauri v2 + Rust)"]
     end
 
-    subgraph Frontend_App ["Frontend Application (React 19 + TypeScript + Vite)"]
-        UI_KANBAN["📋 Kanban Pipeline\n- 5 Status Stages\n- Drag & Drop Cards\n- Responsive Modal"]
-        UI_LEARN["📚 Daily Learnings\n- Rich Journal Notes\n- Tag & Date Filters\n- Search Bar"]
-        UI_STATS["🔥 Gamification & Heatmap\n- Focus Pomodoro Timer\n- XP & Tier Progression\n- Activity Heatmaps"]
-        UI_LOADER["✨ UX Polish\n- Shimmer Skeletons\n- Mobile Responsive Grids\n- Cross-Device Auto-Sync"]
-        STATE["⚡ AppContext\n- Central State Management\n- Zero-Fetch Auth Guards\n- Optimistic UI Updates"]
+    subgraph Frontend ["Frontend App (React 19 + TypeScript + Vite)"]
+        STATE["⚡ AppContext (State & Auth Guard)"]
+        UI_KANBAN["📋 Kanban Board (Drag-and-Drop)"]
+        UI_LEARN["📚 Daily Learnings & Journal"]
+        UI_STATS["🔥 Gamification & Heatmap"]
+        UI_LOADER["✨ Shimmer Loaders & Modals"]
     end
 
-    subgraph Backend_Engine ["Backend Engine (Node.js & Express.js)"]
-        AUTH_ROUTER["🔒 Auth Service\n- Google OAuth 2.0 (GIS)\n- Custom PIN Workspaces\n- JWT Token Signer"]
-        APP_ROUTER["💼 Applications API\n- CRUD Operations\n- Stage Transitions\n- Metrics & Analytics"]
-        LEARN_ROUTER["📝 Learnings API\n- Daily Logs & XP\n- Streak Tracking\n- Focus Sessions"]
-        STORAGE_ROUTER["📁 Document Manager\n- Multer Streaming Uploads\n- MIME & Size Validation"]
+    subgraph Backend ["Backend API (Node.js & Express.js)"]
+        AUTH_ROUTER["🔒 Auth Service (Google OAuth & PIN)"]
+        API_ROUTER["💼 Application & Learning APIs"]
+        STORAGE_ROUTER["📁 Document Streaming (Multer)"]
     end
 
-    subgraph Storage_Layer ["Dual Storage & Persistence Layer"]
-        subgraph Desktop_Mode ["Desktop / Local Offline Mode"]
-            SQLITE_LOCAL["💾 Local SQLite (WAL Mode)\nPath: %APPDATA%/JobTracker/tracker.db\nZero-Cloud Privacy"]
-            DOCS_LOCAL["📂 Local File Storage\nPath: %APPDATA%/JobTracker/documents\nLocal PDF/Word resumes"]
-            BACKUP_LOCAL["🛡️ Auto-Snapshots\nPath: %APPDATA%/JobTracker/backups"]
-        end
-
-        subgraph Cloud_Mode ["Web / Cloud Deployment (Vercel)"]
-            SQLITE_CLOUD["☁️ Ephemeral Serverless DB\nPath: /tmp/tracker.db"]
-            GDRIVE["☁️ Google Drive v3 API\nService Account Storage\nResumes & Documents"]
-        end
+    subgraph Local_Storage ["Local Desktop Storage (%APPDATA%/JobTracker)"]
+        SQLITE_LOCAL[("💾 Local SQLite DB (WAL Mode)")]
+        DOCS_LOCAL["📂 Local Document Storage"]
+        BACKUP_LOCAL["🛡️ Auto-Backups"]
     end
 
-    WEB -->|"HTTPS / REST API"| Frontend_App
-    DESK -->|"Embedded Webview / IPC"| Frontend_App
+    subgraph Cloud_Storage ["Cloud Web Storage (Vercel)"]
+        SQLITE_CLOUD[("☁️ Ephemeral Serverless DB (/tmp)")]
+        GDRIVE["☁️ Google Drive v3 API Storage"]
+    end
 
-    Frontend_App -->|"JWT Authenticated Requests"| Backend_Engine
+    WEB -->|"HTTPS / REST"| STATE
+    DESK -->|"Embedded Webview / IPC"| STATE
+
     STATE --> UI_KANBAN
     STATE --> UI_LEARN
     STATE --> UI_STATS
     STATE --> UI_LOADER
 
-    Backend_Engine -->|"APP_MODE = desktop"| Desktop_Mode
-    Backend_Engine -->|"VERCEL = 1"| Cloud_Mode
+    STATE -->|"JWT Authenticated Requests"| AUTH_ROUTER
+    STATE -->|"REST API Calls"| API_ROUTER
+    STATE -->|"File Uploads"| STORAGE_ROUTER
+
+    AUTH_ROUTER --> SQLITE_LOCAL
+    API_ROUTER --> SQLITE_LOCAL
+    STORAGE_ROUTER --> DOCS_LOCAL
+    SQLITE_LOCAL --> BACKUP_LOCAL
+
+    AUTH_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
+    API_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
+    STORAGE_ROUTER -.->|"Cloud Mode"| GDRIVE
 ```
 
 ---

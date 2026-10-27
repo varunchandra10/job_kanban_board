@@ -33,50 +33,57 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 ## 🏗️ System Architecture
 
 ```mermaid
-graph TD
-    subgraph Client_Layer ["Client Interfaces"]
-        WEB["🌐 Web Browser\n(Desktop & Mobile / iOS Safari / Chrome)"]
-        DESK["💻 Native Windows Desktop (Tauri v2 + Rust)\n- System Tray & Custom Menus\n- Local Offline Mode\n- Minisign Auto-Updater"]
+flowchart TD
+    subgraph Client ["Client Interfaces"]
+        WEB["🌐 Web Browser (Mobile & Desktop)"]
+        DESK["💻 Native Desktop Shell (Tauri v2 + Rust)"]
     end
 
-    subgraph Frontend_App ["Frontend Application (React 19 + TypeScript + Vite)"]
-        UI_KANBAN["📋 Kanban Pipeline\nDrag-and-Drop Stages"]
-        UI_LEARN["📚 Daily Learnings\nJournal, Tags & Filters"]
-        UI_TIMER["⏱️ Focus Pomodoro\nTimer, Streak & XP Gamification"]
-        UI_LOADER["✨ UX & Skeletons\nShimmer Loaders & Mobile Grids"]
-        STATE["⚡ AppContext\nZero-Fetch Guards & Cross-Device Sync"]
+    subgraph Frontend ["Frontend App (React 19 + TypeScript + Vite)"]
+        STATE["⚡ AppContext (State & Auth Guard)"]
+        UI_KANBAN["📋 Kanban Board (Drag-and-Drop)"]
+        UI_LEARN["📚 Daily Learnings & Journal"]
+        UI_TIMER["⏱️ Focus Pomodoro & Streak"]
+        UI_SKELETON["✨ Shimmer Loaders & Modals"]
     end
 
-    subgraph Backend_Engine ["Backend Engine (Node.js & Express.js)"]
-        AUTH_SVC["🔒 Auth Service\nGoogle OAuth 2.0 (GIS) & Workspace PIN"]
-        API_SVC["💼 REST Controllers\nApplications, Learnings & Analytics"]
-        STORAGE_SVC["📁 Document Streaming\nMulter & MIME Verification"]
+    subgraph Backend ["Backend API (Node.js & Express.js)"]
+        AUTH_ROUTER["🔒 Auth Service (Google OAuth & PIN)"]
+        API_ROUTER["💼 Application & Learning APIs"]
+        DOC_ROUTER["📁 Document Streaming (Multer)"]
     end
 
-    subgraph Persistence_Layer ["Dual Storage & Persistence"]
-        subgraph Desktop_Mode ["Desktop / Local Offline Storage"]
-            SQLITE_LOCAL["💾 Local SQLite (WAL Mode)\n%APPDATA%/JobTracker/tracker.db"]
-            DOCS_LOCAL["📂 Local File Storage\n%APPDATA%/JobTracker/documents"]
-            BACKUP_LOCAL["🛡️ Auto-Backups\n%APPDATA%/JobTracker/backups"]
-        end
-
-        subgraph Cloud_Mode ["Web / Cloud Deployment (Vercel)"]
-            SQLITE_CLOUD["☁️ Ephemeral Serverless DB\n/tmp/tracker.db"]
-            GDRIVE["☁️ Google Drive v3 API\nService Account Document Storage"]
-        end
+    subgraph Local_Storage ["Local Desktop Storage (%APPDATA%/JobTracker)"]
+        SQLITE_LOCAL[("💾 Local SQLite DB (WAL Mode)")]
+        FILES_LOCAL["📂 Local Document Storage"]
+        BACKUP_LOCAL["🛡️ Auto-Backups"]
     end
 
-    WEB -->|"HTTPS / REST API"| Frontend_App
-    DESK -->|"Embedded Webview & IPC"| Frontend_App
+    subgraph Cloud_Storage ["Cloud Web Storage (Vercel)"]
+        SQLITE_CLOUD[("☁️ Ephemeral Serverless DB (/tmp)")]
+        GDRIVE["☁️ Google Drive v3 API Storage"]
+    end
 
-    Frontend_App -->|"JWT Authenticated Requests"| Backend_Engine
+    WEB -->|"HTTPS / REST"| STATE
+    DESK -->|"Embedded Webview / IPC"| STATE
+
     STATE --> UI_KANBAN
     STATE --> UI_LEARN
     STATE --> UI_TIMER
-    STATE --> UI_LOADER
+    STATE --> UI_SKELETON
 
-    Backend_Engine -->|"APP_MODE = desktop"| Desktop_Mode
-    Backend_Engine -->|"VERCEL = 1"| Cloud_Mode
+    STATE -->|"JWT Authenticated Requests"| AUTH_ROUTER
+    STATE -->|"REST API Calls"| API_ROUTER
+    STATE -->|"File Uploads"| DOC_ROUTER
+
+    AUTH_ROUTER --> SQLITE_LOCAL
+    API_ROUTER --> SQLITE_LOCAL
+    DOC_ROUTER --> FILES_LOCAL
+    SQLITE_LOCAL --> BACKUP_LOCAL
+
+    AUTH_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
+    API_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
+    DOC_ROUTER -.->|"Cloud Mode"| GDRIVE
 ```
 
 > 📖 For detailed component interactions and data sequence diagrams, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
