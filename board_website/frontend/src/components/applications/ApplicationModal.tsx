@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
+import { ensureGoogleDriveToken } from '../../utils/googleAuth';
 import {
   Briefcase,
   Landmark,
@@ -129,6 +130,7 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingResume(true);
     try {
+      await ensureGoogleDriveToken();
       const res = await api.uploadDocument(file, 'resume', editingApp?.id);
       setResumePath(res.fullPath || res.path || file.name);
       showToast(
@@ -137,7 +139,7 @@ export const ApplicationModal: React.FC = () => {
           : 'Resume attached successfully!'
       );
     } catch (err: any) {
-      showToast(err.message || 'Failed to upload resume');
+      showToast(err.message || 'Failed to upload resume to Google Drive');
     } finally {
       setIsUploadingResume(false);
       if (e.target) e.target.value = '';
@@ -149,6 +151,7 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingCover(true);
     try {
+      await ensureGoogleDriveToken();
       const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id);
       setCoverLetterPath(res.fullPath || res.path || file.name);
       showToast(
@@ -157,7 +160,7 @@ export const ApplicationModal: React.FC = () => {
           : 'Cover letter attached successfully!'
       );
     } catch (err: any) {
-      showToast(err.message || 'Failed to upload cover letter');
+      showToast(err.message || 'Failed to upload cover letter to Google Drive');
     } finally {
       setIsUploadingCover(false);
       if (e.target) e.target.value = '';

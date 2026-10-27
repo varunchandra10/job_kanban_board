@@ -271,6 +271,9 @@ export const api = {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
+      if (res.status === 401 || (data.error && /invalid_token|invalid_grant|unauthorized/i.test(data.error))) {
+        localStorage.removeItem('google_drive_access_token');
+      }
       throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
     }
     return data;

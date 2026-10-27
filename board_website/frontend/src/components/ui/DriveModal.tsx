@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { api } from '../../services/api';
+import { requestGoogleDriveAccess } from '../../utils/googleAuth';
 import {
   HardDrive,
   X,
@@ -72,34 +73,18 @@ export const DriveModal: React.FC = () => {
     }
   };
 
-  const handleAuthorizeOAuth = () => {
+  const handleAuthorizeOAuth = async () => {
+    setLoading(true);
+    setErrorMsg('');
     try {
-      const google = (window as any).google;
-      if (!google?.accounts?.oauth2) {
-        setErrorMsg('Google Services library is loading. Please try again in a few seconds.');
-        return;
-      }
-      setLoading(true);
-      const client = google.accounts.oauth2.initTokenClient({
-        client_id: '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com',
-        scope: 'https://www.googleapis.com/auth/drive.file',
-        callback: (tokenResponse: any) => {
-          setLoading(false);
-          if (tokenResponse.error) {
-            setErrorMsg(`Google Authorization error: ${tokenResponse.error}`);
-            return;
-          }
-          if (tokenResponse.access_token) {
-            localStorage.setItem('google_drive_access_token', tokenResponse.access_token);
-            setHasOAuth(true);
-            showToast('Personal Google Drive account authorized!');
-          }
-        }
-      });
-      client.requestAccessToken();
+      await requestGoogleDriveAccess();
+      setHasOAuth(true);
+      setGdriveStatus({ ...gdriveStatus, connected: true });
+      showToast('Personal Google Drive account authorized!');
     } catch (err: any) {
+      setErrorMsg(err.message || 'Google Drive authorization was cancelled');
+    } finally {
       setLoading(false);
-      setErrorMsg(err.message || 'Failed to start Google Drive authorization');
     }
   };
 

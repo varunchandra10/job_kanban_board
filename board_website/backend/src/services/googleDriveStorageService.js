@@ -134,6 +134,28 @@ class GoogleDriveStorageService extends BaseStorageService {
     return this.driveClient;
   }
 
+  async ensureAppRootFolder(drive) {
+    try {
+      const q = `'root' in parents and mimeType = 'application/vnd.google-apps.folder' and (name = 'job_kanban_board' or name = 'JobKanbanBoard') and trashed = false`;
+      const res = await drive.files.list({ q, fields: 'files(id, name)', pageSize: 1 });
+      if (res.data.files && res.data.files.length > 0) {
+        return res.data.files[0].id;
+      }
+      const created = await drive.files.create({
+        requestBody: {
+          name: 'job_kanban_board',
+          mimeType: 'application/vnd.google-apps.folder',
+          parents: ['root']
+        },
+        fields: 'id, name'
+      });
+      return created.data.id;
+    } catch (err) {
+      console.warn('[Google Drive] Note getting/creating root job_kanban_board:', err.message);
+      return 'root';
+    }
+  }
+
   async getOrCreateSubfolder(parentFolderId, folderType, client = null) {
     const drive = client || this.driveClient;
     if (!drive) {
@@ -145,10 +167,10 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
 
     const isCover = folderType === 'cover_letter' || folderType === 'cover_letters' || folderType === 'cover' || folderType === 'cover_letter_path';
-    const primaryName = isCover ? 'cover_letters' : 'resume';
+    const primaryName = isCover ? 'cover_letters' : 'resumes';
     const candidateNames = isCover
       ? ['cover_letters', 'cover_letter', 'Cover Letters', 'Cover Letter']
-      : ['resume', 'resumes', 'Resume', 'Resumes'];
+      : ['resumes', 'resume', 'Resumes', 'Resume'];
 
     // 1. Search for existing folder with any matching candidate names
     for (const name of candidateNames) {
@@ -197,15 +219,32 @@ class GoogleDriveStorageService extends BaseStorageService {
       if (m) targetFolder = m[1];
     }
     if (targetFolder) targetFolder = String(targetFolder).split('?')[0].trim();
-    if (!targetFolder) {
-      throw new Error('Google Drive folder not configured. Please connect your Google Drive folder.');
-    }
+
     const drive = this.getClient(userAccessToken);
     if (!drive) {
       throw new Error('Google Drive service is not configured with credentials');
     }
 
-    // Resolve or auto-create subfolder (resumes in resume folder, cover_letters in cover_letters folder)
+    if (userAccessToken) {
+      let isAccessible = false;
+      if (targetFolder) {
+        try {
+          await drive.files.get({ fileId: targetFolder, fields: 'id' });
+          isAccessible = true;
+        } catch (_) {
+          isAccessible = false;
+        }
+      }
+      if (!isAccessible) {
+        targetFolder = await this.ensureAppRootFolder(drive);
+      }
+    }
+
+    if (!targetFolder) {
+      throw new Error('Google Drive folder not configured. Please connect your Google Drive.');
+    }
+
+    // Resolve or auto-create subfolder (resumes in resumes folder, cover_letters in cover_letters folder)
     const uploadFolderId = await this.getOrCreateSubfolder(targetFolder, type, drive);
 
     const isCover = type === 'cover_letter' || type === 'cover_letters' || type === 'cover' || type === 'cover_letter_path';
