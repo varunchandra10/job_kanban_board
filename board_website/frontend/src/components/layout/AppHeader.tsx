@@ -172,7 +172,7 @@ export const AppHeader: React.FC = () => {
       {/* 3. Search Bar on Board/Learnings, or Flexible Spacer on Profile */}
       {!isProfileActive ? (
         <div
-          className={`order-4 flex h-9 min-w-0 w-full items-center gap-2 rounded-xl border px-3 transition-all duration-150 lg:order-none lg:ml-auto lg:w-auto lg:flex-1 lg:max-w-md ${
+          className={`order-4 ${isLearningsActive ? 'hidden lg:flex' : 'flex'} h-9 min-w-0 w-full items-center gap-2 rounded-xl border px-3 transition-all duration-150 lg:order-none lg:ml-auto lg:w-auto lg:flex-1 lg:max-w-md ${
             searchQuery
               ? 'border-blue-500 dark:border-indigo-500 bg-white dark:bg-[#18181b] shadow-sm'
               : 'border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
