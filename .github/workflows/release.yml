@@ -58,13 +58,13 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: desktop_app/src-tauri
 
       - name: Install Node dependencies
         run: npm ci || npm install
 
       - name: Headless Export & Permissions Verification
-        run: cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture
+        run: cargo test --manifest-path desktop_app/src-tauri/Cargo.toml -- --nocapture
 
       - name: Build Web Assets
         run: npm run build:web
@@ -76,6 +76,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
+          projectPath: desktop_app
           tagName: ${{ github.ref_name }}
           releaseName: 'Job Tracker Desktop ${{ github.ref_name }}'
           releaseBody: 'Production release for Job Tracker Desktop. See [CHANGELOG.md](https://github.com/varunchandra10/job_kanban_board/blob/main/CHANGELOG.md) for detailed notes.'

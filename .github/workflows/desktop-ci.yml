@@ -42,7 +42,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: desktop_app/src-tauri
 
       - name: Install Node dependencies
         run: npm ci || npm install
@@ -51,7 +51,7 @@ jobs:
         run: npm run build:web
 
       - name: Cargo Check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
+        run: cargo check --manifest-path desktop_app/src-tauri/Cargo.toml
 
       - name: Headless Export & Permissions Verification Test
-        run: cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture
+        run: cargo test --manifest-path desktop_app/src-tauri/Cargo.toml -- --nocapture
