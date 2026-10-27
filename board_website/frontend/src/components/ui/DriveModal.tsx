@@ -84,6 +84,7 @@ export const DriveModal: React.FC = () => {
 
     try {
       await api.connectDriveFolder(trimmedFolderId);
+      localStorage.setItem('gdrive_folder_id', trimmedFolderId);
       setGdriveStatus({
         connected: true,
         folderId: trimmedFolderId,

@@ -31,7 +31,7 @@ router.get('/storage/status', (req, res) => {
     }
   } catch (_) {}
 
-  const activeFolderId = userFolderId || null;
+  const activeFolderId = userFolderId || config.googleDriveFolderId || null;
   const isKeyConfigured = fs.existsSync(config.googleServiceAccountKeyPath);
 
   res.json({

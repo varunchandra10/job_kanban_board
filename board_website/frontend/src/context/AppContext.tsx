@@ -166,9 +166,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return null;
     }
   });
-  const [gdriveStatus, setGdriveStatus] = useState<{ connected: boolean; folderId: string | null }>({
-    connected: false,
-    folderId: null,
+  const [gdriveStatus, setGdriveStatus] = useState<{ connected: boolean; folderId: string | null }>(() => {
+    const savedFolder = localStorage.getItem('gdrive_folder_id');
+    return {
+      connected: !!savedFolder,
+      folderId: savedFolder || null,
+    };
   });
 
   // Core Data loaded from localStorage or initialized with defaults
@@ -333,13 +336,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       try {
         const storageData = await api.getStorageStatus();
         if (mounted && storageData) {
+          const isConn = !!(storageData.connected || storageData.folderId);
+          const fId = storageData.folderId || localStorage.getItem('gdrive_folder_id');
+          if (fId) localStorage.setItem('gdrive_folder_id', fId);
           setGdriveStatus({
-            connected: storageData.connected,
-            folderId: storageData.folderId,
+            connected: isConn,
+            folderId: fId,
           });
         }
       } catch (err) {
-        // Fallback
+        // Fallback to local storage if API call fails
       }
     };
 
