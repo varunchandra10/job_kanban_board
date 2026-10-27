@@ -260,7 +260,7 @@ if (db && typeof db.prepare === 'function') {
     }
     if (!db.prepare("select 1 from settings where key='seeded'").get()) {
       db.prepare('insert or ignore into resume_profile(id) values(1)').run();
-      db.prepare("insert into settings values('seeded','1')").run();
+      db.prepare("insert or ignore into settings (key, value, user_id) values ('seeded', '1', 'default_user')").run();
     }
   } catch (seedErr) {
     console.warn('[Database Seed Warning]:', seedErr.message);
