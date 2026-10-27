@@ -5,6 +5,7 @@
   "description": "Job Tracker Full-Stack Application",
   "scripts": {
     "build": "npm --prefix board_website run build",
+    "build:web": "npm run build",
     "start": "node board_website/backend/server.js"
   },
   "dependencies": {
