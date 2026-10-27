@@ -268,10 +268,10 @@ export const ApplicationModal: React.FC = () => {
         </div>
 
         {/* Panel Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="flex-1 overflow-y-auto px-3.5 sm:px-6 py-4 sm:py-5">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
             {/* 1. Target Category Pills */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <Briefcase size={14} className="text-blue-600 dark:text-indigo-400" />
                 Target Category
@@ -322,7 +322,7 @@ export const ApplicationModal: React.FC = () => {
             </div>
 
             {/* 2. Company & Role */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <div className="flex items-center justify-between mb-3">
                 <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                   <FileText size={14} className="text-blue-600 dark:text-indigo-400" />
@@ -365,13 +365,13 @@ export const ApplicationModal: React.FC = () => {
             </div>
 
             {/* 3. Stage & Timeline */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <Clock size={14} className="text-blue-600 dark:text-indigo-400" />
                 Stage & Timeline
               </span>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="modalStageSelect">
                     Pipeline Stage
                   </label>
@@ -379,7 +379,7 @@ export const ApplicationModal: React.FC = () => {
                     id="modalStageSelect"
                     value={stage}
                     onChange={e => setStage(e.target.value as ApplicationStage)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
                     {STAGES.map(s => (
                       <option key={s} value={s}>
@@ -388,7 +388,7 @@ export const ApplicationModal: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="modalDateApplied">
                     Date Applied
                   </label>
@@ -397,11 +397,11 @@ export const ApplicationModal: React.FC = () => {
                     id="modalDateApplied"
                     value={dateApplied}
                     onChange={e => setDateApplied(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   />
                 </div>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="modalDeadline">
                   Application Deadline <span className="text-slate-400 font-normal">(optional)</span>
                 </label>
@@ -410,19 +410,19 @@ export const ApplicationModal: React.FC = () => {
                   id="modalDeadline"
                   value={deadline}
                   onChange={e => setDeadline(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 />
               </div>
             </div>
 
             {/* 4. Location & Workplace */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <MapPin size={14} className="text-blue-600 dark:text-indigo-400" />
                 Location & Workplace
               </span>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="modalCountrySelect">
                     Country
                   </label>
@@ -430,7 +430,7 @@ export const ApplicationModal: React.FC = () => {
                     id="modalCountrySelect"
                     value={country}
                     onChange={e => setCountry(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
                     {COUNTRIES.map(c => (
                       <option key={c.code} value={c.code}>
@@ -439,7 +439,7 @@ export const ApplicationModal: React.FC = () => {
                     ))}
                   </select>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1" htmlFor="modalCityInput">
                     City / Workplace
                   </label>
@@ -449,20 +449,20 @@ export const ApplicationModal: React.FC = () => {
                     placeholder="e.g. San Francisco, Bengaluru"
                     value={city}
                     onChange={e => setCity(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   />
                 </div>
               </div>
             </div>
 
             {/* 5. Compensation */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <DollarSign size={14} className="text-blue-600 dark:text-indigo-400" />
                 Compensation
               </span>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="sm:col-span-2 min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     Salary / Stipend
                   </label>
@@ -471,15 +471,15 @@ export const ApplicationModal: React.FC = () => {
                     placeholder="e.g. 180,000 or 30 LPA"
                     value={salary}
                     onChange={e => setSalary(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Currency</label>
                   <select
                     value={currency}
                     onChange={e => setCurrency(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
                     <option value="USD">USD ($)</option>
                     <option value="INR">INR (₹)</option>
@@ -493,41 +493,41 @@ export const ApplicationModal: React.FC = () => {
             </div>
 
             {/* 6. Credentials & Portal */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <Key size={14} className="text-blue-600 dark:text-indigo-400" />
                 Portal Login & Credentials
               </span>
               <div className="space-y-2.5">
-                <div>
+                <div className="min-w-0">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Portal URL</label>
                   <input
                     type="url"
                     placeholder="https://company.wd1.myworkdayjobs.com/..."
                     value={portalUrl}
                     onChange={e => setPortalUrl(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="min-w-0">
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Username / Email</label>
                     <input
                       type="text"
                       placeholder="Username"
                       value={portalUser}
                       onChange={e => setPortalUser(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Password</label>
                     <input
                       type="text"
                       placeholder="Saved password"
                       value={portalPass}
                       onChange={e => setPortalPass(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                     />
                   </div>
                 </div>
@@ -535,26 +535,30 @@ export const ApplicationModal: React.FC = () => {
             </div>
 
             {/* 7. Recruiter Info */}
-            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-3.5 sm:p-4 overflow-hidden">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <UserCheck size={14} className="text-blue-600 dark:text-indigo-400" />
                 Recruiter Info
               </span>
-              <div className="grid grid-cols-2 gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Recruiter Name"
-                  value={recruiterName}
-                  onChange={e => setRecruiterName(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                />
-                <input
-                  type="email"
-                  placeholder="Recruiter Email"
-                  value={recruiterEmail}
-                  onChange={e => setRecruiterEmail(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2">
+                <div className="min-w-0">
+                  <input
+                    type="text"
+                    placeholder="Recruiter Name"
+                    value={recruiterName}
+                    onChange={e => setRecruiterName(e.target.value)}
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                </div>
+                <div className="min-w-0">
+                  <input
+                    type="email"
+                    placeholder="Recruiter Email"
+                    value={recruiterEmail}
+                    onChange={e => setRecruiterEmail(e.target.value)}
+                    className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  />
+                </div>
               </div>
               <textarea
                 placeholder="Interview notes, dates, or recruiter comments..."

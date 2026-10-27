@@ -59,6 +59,8 @@ interface AppContextType {
   isAuthModalOpen: boolean;
   isFollowUpOpen: boolean;
   followUpApp: Application | null;
+  isDataLoading: boolean;
+  refreshState: () => Promise<void>;
 
   // Setters & Actions
   setViewMode: (mode: ViewMode) => void;
@@ -172,6 +174,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       connected: !!savedFolder,
       folderId: savedFolder || null,
     };
+  });
+  const [isDataLoading, setIsDataLoading] = useState<boolean>(() => {
+    const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
+    if (isLoggedOut) return false;
+    const saved = localStorage.getItem('job_tracker_apps');
+    return !saved || saved === '[]';
   });
 
   // Core Data loaded from localStorage or initialized with defaults (ONLY if authenticated)
@@ -316,11 +324,55 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [quickLinks, isAuthenticated]);
 
+  // State synchronizer (syncs data across devices when switching tabs/windows)
+  const refreshState = async () => {
+    if (!isAuthenticated) return;
+    try {
+      const [stateRes, learnRes, gamifyRes] = await Promise.allSettled([
+        api.getState(),
+        api.getLearnings(),
+        api.getGamification(),
+      ]);
+      if (stateRes.status === 'fulfilled' && stateRes.value?.apps) {
+        setApplications(stateRes.value.apps);
+        if (stateRes.value.profile) setProfile(stateRes.value.profile);
+        if (stateRes.value.versions) setVersions(stateRes.value.versions);
+      }
+      if (learnRes.status === 'fulfilled' && learnRes.value) {
+        setLearnings(learnRes.value);
+      }
+      if (gamifyRes.status === 'fulfilled' && gamifyRes.value) {
+        setGamification(gamifyRes.value);
+      }
+    } catch (err) {
+      console.warn('[Auto-sync error]:', err);
+    }
+  };
+
+  // Cross-device sync listener: when window/tab is focused, sync state silently
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const handleSync = () => {
+      if (document.visibilityState === 'visible') {
+        refreshState();
+      }
+    };
+    document.addEventListener('visibilitychange', handleSync);
+    window.addEventListener('focus', handleSync);
+    return () => {
+      document.removeEventListener('visibilitychange', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, [isAuthenticated]);
+
   // Attempt backend initial fetch on mount (ONLY if authenticated)
   useEffect(() => {
     if (!isAuthenticated) return;
     let mounted = true;
     const fetchInitialData = async () => {
+      if (applications.length === 0) {
+        setIsDataLoading(true);
+      }
       try {
         const stateData = await api.getState();
         if (mounted && stateData?.apps) {
@@ -363,6 +415,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         }
       } catch (err) {
         // Fallback to local storage if API call fails
+      } finally {
+        if (mounted) {
+          setIsDataLoading(false);
+        }
       }
     };
 
@@ -883,6 +939,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         followUpApp,
         openFollowUpModal,
         closeFollowUpModal,
+        isDataLoading,
+        refreshState,
         openAddLearningModal,
         openEditLearningModal,
         closeLearningModal,

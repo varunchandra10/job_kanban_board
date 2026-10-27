@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LEARNING_TRACKS, APTITUDE_TOPICS } from '../../utils/constants';
 import { LearningCard } from './LearningCard';
+import { SkeletonLearningCard } from '../common/SkeletonLoader';
 import { FocusSprintBar } from './FocusSprintBar';
 import {
   Inbox,
@@ -26,6 +27,7 @@ export const LearningsBoard: React.FC = () => {
     searchQuery,
     openAddLearningModal,
     learningTracks,
+    isDataLoading,
   } = useApp();
 
   // Collapsed tracks state (open by default, closed only when user clicks button)
@@ -255,7 +257,12 @@ export const LearningsBoard: React.FC = () => {
 
                   {/* Column Cards Container - Scrollable Vertically Inside Each Lane */}
                   <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 pr-1">
-                    {trackLearnings.length === 0 ? (
+                    {isDataLoading && trackLearnings.length === 0 ? (
+                      <div className="flex flex-col gap-2.5">
+                        <SkeletonLearningCard />
+                        <SkeletonLearningCard />
+                      </div>
+                    ) : trackLearnings.length === 0 ? (
                       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
                         <Inbox size={26} className="opacity-40 mb-2" />
                         <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">

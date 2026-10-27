@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Application, ApplicationStage } from '../../types';
 import { STAGE_CONFIG } from '../../utils/constants';
 import { ApplicationCard } from './ApplicationCard';
+import { SkeletonColumn } from '../common/SkeletonLoader';
 import { useApp } from '../../context/AppContext';
 import { Bookmark, Send, Users, Trophy, XCircle, Inbox, ChevronDown } from 'lucide-react';
 
@@ -11,7 +12,7 @@ interface KanbanColumnProps {
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications }) => {
-  const { moveApplication, searchQuery } = useApp();
+  const { moveApplication, searchQuery, isDataLoading } = useApp();
   const [isDragOver, setIsDragOver] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
 
@@ -105,7 +106,9 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          {applications.length === 0 ? (
+          {isDataLoading && applications.length === 0 ? (
+            <SkeletonColumn count={2} />
+          ) : applications.length === 0 ? (
             <div className="flex flex-col items-center justify-center p-6 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
               <Inbox size={26} className="opacity-40 mb-2" />
               <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">
