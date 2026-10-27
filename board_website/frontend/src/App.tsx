@@ -6,11 +6,15 @@ import { ApplicationsPage } from './components/applications/ApplicationsPage';
 import { LearningsPage } from './components/learnings/LearningsPage';
 import { CareerProfile } from './components/profile/CareerProfile';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
+import { AuthModal } from './components/ui/AuthModal';
+import { Toast } from './components/ui/Toast';
 
 export const App: React.FC = () => {
   return (
     <>
       <ServerAwakeningLoader />
+      <AuthModal />
+      <Toast />
       <Routes>
         {/* Route 1: '/' -> Landing Page (matching & enhancing index.html) */}
         <Route path="/" element={<LandingPage />} />
