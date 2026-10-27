@@ -19,26 +19,20 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 
 The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
 
-### Step 1: Download Your Preferred Package
-Choose one of the following packages:
-* **Option A — Recommended MSI Installer (.msi)**:
-  👉 **[Download Job-Tracker-Setup.msi](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.msi)** *(Native Windows installer — avoids temporary extraction errors)*.
-* **Option B — Portable Edition (.exe)**:
-  👉 **[Download Job-Tracker-Portable.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Portable.exe)** *(No setup wizard required — double-click to launch directly)*.
-* **Option C — Standard Setup (.exe)**:
-  👉 **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.exe)**.
+### Step 1: Download the App
+Click to download the executable:
+👉 **[Download JobTracker.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe)** *(Located in the [`install_apps/`](../install_apps/) folder)*.
 
 ### Step 2: Run the Application
-1. Double-click the downloaded file (`.msi` or `.exe`).
+1. Double-click **`JobTracker.exe`**.
 2. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
    - Click **More info**.
    - Click **Run anyway** *(standard for independent software without a corporate code-signing certificate)*.
-3. **If you encounter "NSIS Error: Error writing temporary file"**:
-   - Run the **[.msi installer](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/installer/Job-Tracker-Setup.msi)** instead.
-   - Or move the file to your local `Downloads` folder (outside OneDrive) and right-click &rarr; **Run as administrator**.
 
 ### Step 3: Launch & Use
-Launch **Job Tracker** anytime from your Windows Start Menu or Desktop icon!
+The application opens instantly! No installation wizard or temporary extraction is needed.
+
+> 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
 
 > 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
 
