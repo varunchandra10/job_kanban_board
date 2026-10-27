@@ -67,8 +67,8 @@ ignored_folder/
 src-tauri/target/
 src-tauri/dist/
 desktop_app/src-tauri/target/
-desktop_app/src-tauri/dist/
 *.exe
+!installer/*.exe
 *.key
 src-tauri/*.key
 desktop_app/src-tauri/*.key

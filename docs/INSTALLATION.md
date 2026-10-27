@@ -6,42 +6,37 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 
 ## ⚡ Quick Navigation
 
-| Method | Target Platform | Difficulty | Guide Link |
-| :--- | :--- | :--- | :--- |
-| **💻 Windows Desktop App** | Windows 10 / 11 | Beginner (1-Click) | [Jump to Desktop Setup](#1-windows-desktop-app-installation) |
-| **🌐 Local Web Server** | Windows / macOS / Linux | Intermediate | [Jump to Web Setup](#2-local-web-application-setup) |
-| **☁️ Cloud Deployment** | Vercel Serverless | Advanced | [Jump to Vercel Deploy](#3-cloud-deployment-vercel) |
-| **🛠️ Compile from Source** | Developers (Rust + Node) | Advanced | [Jump to Source Build](#4-building-the-desktop-app-from-source) |
+| Target | Who Is This For? | How to Install |
+| :--- | :--- | :--- |
+| **💻 Windows Desktop App** | Regular Users | [Download & Install .exe](#1-windows-desktop-app-installation) |
+| **🌐 Local Web Server** | Developers / Self-Hosters | [Run Locally with Node.js](#2-local-web-application-setup) |
+| **☁️ Cloud Deployment** | Cloud Hosting | [Deploy to Vercel](#3-cloud-deployment-vercel) |
+| **🛠️ Compile from Source** | Developers / Contributors | [Build Tauri App from Source](#4-building-the-desktop-app-from-source) |
 
 ---
 
 ## 1. Windows Desktop App Installation
 
-The desktop edition is a lightweight, privacy-focused native app powered by **Tauri v2** with an embedded local SQLite database.
+The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
 
-### Option A: Official Windows Setup Wizard (`.exe`) — *Recommended*
-1. Locate the setup executable:
-   ```text
-   desktop_app/src-tauri/target/release/bundle/nsis/Job Tracker_0.2.0_x64-setup.exe
-   ```
-2. Double-click the `.exe` file.
-3. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
+### Step 1: Download the Installer
+Click to download the setup file:
+👉 **[Download Job-Tracker-Setup.exe](../installer/Job-Tracker-Setup.exe?raw=true)** *(or grab the latest release from [GitHub Releases](https://github.com/varunchandra10/job_kanban_board/releases))*.
+
+### Step 2: Run the Installer
+1. Double-click the downloaded **`Job-Tracker-Setup.exe`** file.
+2. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
    - Click **More info**.
-   - Click **Run anyway** *(standard for self-compiled binaries without third-party EV digital certificates)*.
-4. Follow the setup wizard:
-   - Select your installation folder (defaults to `%LOCALAPPDATA%\Programs\Job Tracker`).
-   - Check the boxes to create a **Desktop Shortcut** and **Start Menu entry**.
+   - Click **Run anyway** *(standard for independent software without a corporate code-signing certificate)*.
+3. Follow the wizard steps:
+   - Choose your installation directory.
+   - Keep the boxes checked to create a **Desktop icon** and **Start Menu entry**.
    - Click **Finish**.
 
-### Option B: Standalone Portable Binary (`app.exe`)
-- Path: `desktop_app/src-tauri/target/release/app.exe`
-- Run directly without installation.
+### Step 3: Launch & Use
+Launch **Job Tracker** anytime from your Windows Start Menu or Desktop icon!
 
-### Option C: 1-Click Auto Launcher (`start-desktop.bat`)
-- Double-click [`start-desktop.bat`](../start-desktop.bat) in the project root.
-- Automatically verifies if the background SQLite backend is running on `port 3000`. If offline, it starts it silently in the background (`APP_MODE=desktop`) and opens the native application window.
-
-> 💾 **Local Data Storage**: All applications, notes, analytics, and resume uploads are stored locally in `%APPDATA%\JobTracker\tracker.db`. Zero cloud accounts or external databases required.
+> 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
 
 ---
 
@@ -51,7 +46,7 @@ Run the full-stack web application locally in your browser.
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) v20.0.0 or higher
-- npm (bundled with Node.js)
+- Git
 
 ### Step-by-Step Setup
 1. **Clone the repository**:
@@ -60,26 +55,18 @@ Run the full-stack web application locally in your browser.
    cd job_kanban_board
    ```
 
-2. **Install all dependencies**:
+2. **Install dependencies**:
    ```bash
-   # Install root orchestration dependencies
    npm install
-
-   # Install frontend & backend packages
    cd board_website/frontend && npm install
    cd ../backend && npm install
    cd ../..
    ```
 
 3. **Configure Environment Variables**:
-   Copy `.env.example` to `.env` in the project root:
+   Copy `.env.example` to `.env`:
    ```bash
    cp .env.example .env
-   ```
-   *Key variables:*
-   ```env
-   PORT=3000
-   JWT_SECRET=your_jwt_secret_key_here
    ```
 
 4. **Launch the Application**:
@@ -95,7 +82,7 @@ Run the full-stack web application locally in your browser.
 
 ## 3. Cloud Deployment (Vercel)
 
-Deploy Job Tracker to Vercel with zero server maintenance.
+Deploy Job Tracker to Vercel with zero server maintenance:
 
 1. **Install Vercel CLI & Login**:
    ```bash
@@ -103,13 +90,13 @@ Deploy Job Tracker to Vercel with zero server maintenance.
    vercel login
    ```
 
-2. **Link & Configure Project**:
+2. **Link & Deploy**:
    ```bash
    vercel
    ```
 
 3. **Set Environment Variables in Vercel Dashboard**:
-   - `JWT_SECRET`: Random secure string.
+   - `JWT_SECRET`: Random secure string for authentication.
    - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID.
    - `GOOGLE_CLIENT_SECRET`: Your Google OAuth Client Secret.
    - `GOOGLE_DRIVE_FOLDER_ID`: Dedicated Google Drive folder ID for document uploads.
@@ -139,32 +126,28 @@ To compile your own customized desktop installer `.exe`:
    npm run build
    cd ../..
    ```
-   *(The `postbuild.js` script automatically syncs the output bundle into `desktop_app/src-tauri/dist`).*
 
 2. **Compile the Tauri Binary & NSIS Installer**:
    ```bash
    npm run build:desktop
    ```
-   *(Alternatively run `cargo tauri build` from `desktop_app`).*
 
-3. **Output Files**:
-   - **Setup Installer**: `desktop_app/src-tauri/target/release/bundle/nsis/Job Tracker_0.2.0_x64-setup.exe`
-   - **Portable Binary**: `desktop_app/src-tauri/target/release/app.exe`
+3. The compiled installer will be saved to:
+   ```text
+   installer/Job-Tracker-Setup.exe
+   ```
 
 ---
 
-## ❓ Frequently Asked Questions & Troubleshooting
+## ❓ Frequently Asked Questions
 
 ### Q: Windows SmartScreen blocked the installer?
-> **Answer**: This is normal for newly built or self-compiled software without a $500/year corporate code signing certificate. Click **More info** &rarr; **Run anyway**.
+> **Answer**: This is normal for open-source software that does not purchase a $500/year corporate code signing certificate. Simply click **More info** &rarr; **Run anyway**.
 
-### Q: Port 3000 is already in use?
-> **Answer**: You can change the port in `.env` by setting `PORT=3001` or any available port number.
-
-### Q: Where can I back up my local data?
-> **Answer**: In desktop mode, your complete database and uploaded files live in:
+### Q: Where is my data saved in desktop mode?
+> **Answer**: All data is stored locally in your Windows user profile:
 > ```text
 > %APPDATA%\JobTracker\tracker.db
 > %APPDATA%\JobTracker\documents\
 > ```
-> Simply back up that directory or use the **"Download Full Database (.db) as ZIP"** button inside the app.
+> To back up your data, you can copy this folder or use the in-app **"Download Database as ZIP"** feature.
