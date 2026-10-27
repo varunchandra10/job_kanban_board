@@ -7,12 +7,22 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Web%20%7C%20Windows%20Desktop%20%7C%20Vercel-orange.svg)]()
 
+<div align="center">
+
+[![Install Desktop App](https://img.shields.io/badge/💻_Desktop_App-Install_Guide_(.exe)-0078D4?style=for-the-badge&logo=windows&logoColor=white)](docs/INSTALLATION.md#1-windows-desktop-app-installation)
+[![Web Setup Guide](https://img.shields.io/badge/🌐_Web_App-Local_Setup_Guide-2EA44F?style=for-the-badge&logo=nodedotjs&logoColor=white)](docs/INSTALLATION.md#2-local-web-application-setup)
+[![Cloud Deploy Guide](https://img.shields.io/badge/☁️_Vercel-Cloud_Deploy_Guide-000000?style=for-the-badge&logo=vercel&logoColor=white)](docs/INSTALLATION.md#3-cloud-deployment-vercel)
+[![Full Manual](https://img.shields.io/badge/📖_Complete_Manual-docs%2FINSTALLATION.md-8A2BE2?style=for-the-badge&logo=gitbook&logoColor=white)](docs/INSTALLATION.md)
+
+</div>
+
 A high-performance, privacy-focused **Job Application Tracker & Career Management Hub** engineered with an interactive Kanban pipeline, daily learning logs, focus Pomodoro timer, streak gamification, activity heatmaps, Google Drive cloud storage, and native Windows desktop support via **Tauri v2**.
 
 ---
 
 ## 📑 Table of Contents
 
+- [Installation Directions](#-installation-directions)
 - [System Architecture](#-system-architecture)
 - [Key Features](#-key-features)
 - [Tech Stack](#-tech-stack)
@@ -27,6 +37,21 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 - [Google Services Setup](#-google-services-setup)
 - [Documentation & Deep Dives](#-documentation--deep-dives)
 - [License](#-license)
+
+---
+
+## 🚀 Installation Directions
+
+Choose your target setup using the quick-access buttons below:
+
+| Target Platform | Action Button | Description |
+| :--- | :--- | :--- |
+| **Windows Desktop (.exe)** | [👉 **Open Desktop Guide**](docs/INSTALLATION.md#1-windows-desktop-app-installation) | Step-by-step wizard setup (`Job Tracker_0.2.0_x64-setup.exe`) & 1-click launcher. |
+| **Local Web Application** | [👉 **Open Web Setup Guide**](docs/INSTALLATION.md#2-local-web-application-setup) | Local Node.js + Express + React dev server at `http://localhost:3000`. |
+| **Vercel Cloud Deploy** | [👉 **Open Vercel Guide**](docs/INSTALLATION.md#3-cloud-deployment-vercel) | Serverless cloud deployment with Google Drive document integration. |
+| **Build from Source** | [👉 **Open Source Build Guide**](docs/INSTALLATION.md#4-building-the-desktop-app-from-source) | Developer guide for compiling Tauri binaries with Rust & MSVC C++. |
+
+> 📖 **Full Installation Document**: For complete instructions, troubleshooting FAQs, and data backup steps, read **[docs/INSTALLATION.md](docs/INSTALLATION.md)**.
 
 ---
 
@@ -244,8 +269,9 @@ To enable Google OAuth and Google Drive resume storage:
 
 ## 📚 Documentation & Deep Dives
 
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** – Comprehensive architecture diagrams, authentication sequence flows, ER database schema, and security models.
-- **[docs/DESKTOP_GUIDE.md](docs/DESKTOP_GUIDE.md)** – Complete desktop guide covering installation, offline mode, system tray integration, and Tauri packaging.
+- **[docs/INSTALLATION.md](docs/INSTALLATION.md)** – Comprehensive step-by-step installation directions for Desktop (.exe), Local Web dev server, Vercel cloud, and build-from-source.
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** – System architecture diagrams, authentication sequence flows, ER database schema, and security models.
+- **[docs/DESKTOP_GUIDE.md](docs/DESKTOP_GUIDE.md)** – Native desktop manual covering offline mode, system tray integration, developer tools, and Tauri packaging.
 
 ---
 
