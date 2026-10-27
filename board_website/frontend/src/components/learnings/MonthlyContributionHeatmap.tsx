@@ -386,14 +386,61 @@ export const MonthlyContributionHeatmap: React.FC = () => {
                     )}
 
                     {/* Instant Hover Tooltip attached right to this cell */}
-                    <div className="hidden group-hover/cell:flex pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 flex-col items-center whitespace-nowrap">
-                      <div className="bg-slate-950/95 dark:bg-[#18181b]/95 text-white text-[11px] font-bold py-1 px-2.5 rounded-lg shadow-2xl border border-slate-700/80 flex items-center gap-1.5 backdrop-blur-md">
-                        <span>{cell.dayNumber} {monthNames[month]}:</span>
-                        <span className="text-emerald-400 font-extrabold">
-                          {cell.count} note{cell.count === 1 ? '' : 's'}{cell.minutes > 0 ? ` (${cell.minutes}m)` : ''}
-                        </span>
+                    <div
+                      className={`hidden group-hover/cell:flex pointer-events-none absolute ${
+                        dIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
+                      } ${
+                        wIdx <= 1
+                          ? 'left-0'
+                          : wIdx >= weeks.length - 1
+                          ? 'right-0'
+                          : 'left-1/2 -translate-x-1/2'
+                      } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
+                    >
+                      {/* Arrow pointing up for top rows */}
+                      {dIdx <= 2 && (
+                        <div
+                          className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
+                            wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= weeks.length - 1 ? 'self-end mr-2.5' : ''
+                          }`}
+                        />
+                      )}
+
+                      <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
+                        <div className="flex items-center justify-between gap-3 text-[10.5px]">
+                          <span className="font-bold text-slate-300">
+                            {formatDateLabel(cell)}
+                          </span>
+                          {cell.isToday && (
+                            <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 rounded">
+                              Today
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              cell.count > 0 || cell.minutes > 0
+                                ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]'
+                                : 'bg-slate-500'
+                            } shrink-0`}
+                          />
+                          <span className="text-xs font-black text-white">
+                            {cell.count > 0
+                              ? `${cell.count} Note${cell.count === 1 ? '' : 's'}${cell.minutes > 0 ? ` (${cell.minutes}m)` : ''}`
+                              : 'No study focus'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-950 dark:border-t-[#18181b]" />
+
+                      {/* Arrow pointing down for bottom rows */}
+                      {dIdx > 2 && (
+                        <div
+                          className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
+                            wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= weeks.length - 1 ? 'self-end mr-2.5' : ''
+                          }`}
+                        />
+                      )}
                     </div>
                   </div>
                 );

@@ -165,14 +165,14 @@ export const FocusSprintBar: React.FC = () => {
   const levelProgressPercent = Math.min(100, Math.round((currentLevelXP / 1000) * 100));
 
   return (
-    <div className="shrink-0 flex flex-col gap-2 transition-all">
+    <div className="shrink-0 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#121316]/95 shadow-sm hover:shadow-md backdrop-blur-xl transition-all overflow-hidden">
       {/* 1. Main Ultra-Slim Focus Sprint Bar */}
-      <div className="relative rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#141417]/95 shadow-xs backdrop-blur-xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
+      <div className="relative px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-3 flex-wrap sm:flex-nowrap">
         {/* Subtle Bottom Progress Track for Active Timer */}
         {isRunning && (
-          <div className="absolute inset-x-0 bottom-0 h-[2.5px] bg-slate-100 dark:bg-white/5 overflow-hidden rounded-b-2xl pointer-events-none">
+          <div className="absolute inset-x-0 bottom-0 h-[2.5px] bg-slate-100 dark:bg-white/5 overflow-hidden pointer-events-none">
             <div
-              className="h-full bg-gradient-to-r from-orange-500 via-amber-500 to-emerald-500 transition-all duration-1000"
+              className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 shadow-[0_0_8px_rgba(249,115,22,0.4)] transition-all duration-1000 ease-linear"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -183,19 +183,24 @@ export const FocusSprintBar: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsStatsOpen(prev => !prev)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-500/10 dark:bg-orange-500/15 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold hover:bg-orange-500/20 transition-all cursor-pointer shadow-2xs group"
+            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all cursor-pointer shadow-xs group"
             title="Click to toggle study stats & weekly punchcard"
             aria-expanded={isStatsOpen}
           >
-            <Flame size={15} className="text-orange-500 animate-pulse shrink-0" />
-            <span className="tabular-nums font-black">{gamification.streak}d Streak</span>
-            <span className="w-1 h-1 rounded-full bg-orange-400 opacity-60" />
-            <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 hidden md:inline">
+            <div className="relative flex items-center justify-center">
+              <Flame size={15} className="text-orange-500 fill-orange-500/30 animate-pulse shrink-0" />
+            </div>
+            <span className="tabular-nums font-black text-slate-900 dark:text-white">
+              {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
+              <span className="text-slate-600 dark:text-slate-300 font-bold ml-1">Streak</span>
+            </span>
+            <span className="w-1 h-1 rounded-full bg-orange-400/50" />
+            <span className="text-[11px] font-extrabold px-1.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-300 border border-orange-500/20 hidden md:inline">
               Lvl {gamification.level}
             </span>
             <ChevronDown
               size={13}
-              className={`transition-transform duration-200 opacity-70 group-hover:opacity-100 ${
+              className={`transition-transform duration-300 text-slate-400 group-hover:text-orange-500 ${
                 isStatsOpen ? 'rotate-180 text-orange-600' : ''
               }`}
             />
@@ -203,64 +208,71 @@ export const FocusSprintBar: React.FC = () => {
 
           {/* Today's Streak Status Indicator */}
           {gamification.todayCompleted ? (
-            <span className="hidden lg:inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
-              <CheckCircle2 size={12} strokeWidth={2.5} />
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
+              <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500" />
               <span>Done Today</span>
             </span>
           ) : (
-            <span className="hidden lg:inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg">
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
               <span>Study Today</span>
             </span>
           )}
         </div>
 
-        {/* CENTER: User Numeric Input & Live Countdown */}
-        <div className="flex items-center gap-3 flex-1 justify-center min-w-0">
-          {/* User Number Input for Minutes (ONLY NUMBERS, NO DEFAULT BUTTONS) */}
-          <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-white/[0.06] border border-slate-200/90 dark:border-white/10 rounded-xl px-2.5 py-1 shrink-0">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Timer:</span>
-            <div className="flex items-center gap-1">
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={inputMinutes}
-                disabled={isRunning}
-                onChange={handleInputChange}
-                title="Enter timer duration in minutes (numbers only, e.g. 45 or 50)"
-                placeholder="45"
-                className="w-12 h-6 text-center font-black text-xs bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 rounded-lg text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60"
-              />
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">min</span>
+        {/* CENTER: User Numeric Input & Live Countdown in Segmented Pod */}
+        <div className="flex items-center justify-center gap-2 flex-1 min-w-0">
+          <div className="flex items-center bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/10 rounded-xl p-1 shadow-inner">
+            {/* Target Duration input */}
+            <div className="flex items-center gap-1.5 px-2 py-0.5">
+              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+                Timer
+              </span>
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={inputMinutes}
+                  disabled={isRunning}
+                  onChange={handleInputChange}
+                  title="Enter timer duration in minutes (numbers only, e.g. 45 or 50)"
+                  placeholder="45"
+                  className="w-11 h-6 text-center font-black text-xs bg-white dark:bg-[#1a1b1f] border border-slate-200 dark:border-white/10 rounded-md text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60 shadow-2xs"
+                />
+                <span className="text-[10.5px] font-bold text-slate-400 dark:text-slate-500 ml-1">min</span>
+              </div>
             </div>
-          </div>
 
-          {/* Live Countdown Display */}
-          <div
-            className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl font-mono text-sm sm:text-base font-black tabular-nums transition-all border ${
-              isFinished
-                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 animate-pulse'
-                : isRunning
-                ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30 shadow-xs'
-                : 'bg-slate-100 dark:bg-white/5 text-slate-800 dark:text-slate-200 border-slate-200/80 dark:border-white/10'
-            }`}
-          >
-            <span>{timeFormatted}</span>
-            {isRunning && (
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping shrink-0" />
-            )}
+            {/* Hairline Divider */}
+            <div className="w-px h-5 bg-slate-200 dark:bg-white/10 mx-0.5" />
+
+            {/* Live Countdown Display */}
+            <div
+              className={`flex items-center gap-2 px-3 py-1 rounded-lg font-mono text-sm sm:text-base font-black tabular-nums tracking-wider transition-all ${
+                isFinished
+                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse'
+                  : isRunning
+                  ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.18)]'
+                  : 'text-slate-700 dark:text-slate-200'
+              }`}
+            >
+              <span>{timeFormatted}</span>
+              {isRunning && (
+                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.8)] shrink-0" />
+              )}
+            </div>
           </div>
         </div>
 
-        {/* RIGHT: Actions (Start, Stop, Reset, Bell) - Log Note removed per request */}
+        {/* RIGHT: Actions (Start, Stop, Reset, Bell) */}
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Start and Stop Buttons */}
           {isRunning ? (
             <button
               type="button"
               onClick={handleStopTimer}
-              className="flex items-center gap-1.5 px-3.5 py-1 sm:py-1.5 rounded-xl text-xs font-extrabold cursor-pointer transition-all shadow-xs bg-rose-600 hover:bg-rose-700 text-white"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-500/25 active:scale-95"
               title="Stop timer countdown"
             >
               <Square size={11} className="fill-current" />
@@ -270,7 +282,7 @@ export const FocusSprintBar: React.FC = () => {
             <button
               type="button"
               onClick={handleStartTimer}
-              className="flex items-center gap-1.5 px-3.5 py-1 sm:py-1.5 rounded-xl text-xs font-extrabold cursor-pointer transition-all shadow-xs bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95 text-white"
+              className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 text-white shadow-orange-500/25 active:scale-95"
               title="Start timer countdown"
             >
               <Play size={11} className="fill-current" />
@@ -282,21 +294,21 @@ export const FocusSprintBar: React.FC = () => {
           <button
             type="button"
             onClick={handleResetTimer}
-            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-2xs"
             title="Reset timer to entered minutes"
             aria-label="Reset timer"
           >
-            <RotateCcw size={13} strokeWidth={2.2} />
+            <RotateCcw size={13} strokeWidth={2.4} />
           </button>
 
           {/* Audio Chime Mute/Unmute */}
           <button
             type="button"
             onClick={handleToggleMute}
-            className={`p-1.5 rounded-xl border transition-colors cursor-pointer ${
+            className={`p-1.5 rounded-xl border active:scale-95 transition-all cursor-pointer shadow-2xs ${
               isMuted
-                ? 'border-slate-200 dark:border-white/10 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
-                : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20'
+                ? 'border-slate-200 dark:border-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+                : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 shadow-[0_0_8px_rgba(249,115,22,0.15)]'
             }`}
             title={isMuted ? 'Unmute finish bell chime' : 'Mute finish bell chime (click to test sound)'}
             aria-label={isMuted ? 'Unmute sound' : 'Mute sound'}
@@ -306,33 +318,33 @@ export const FocusSprintBar: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Expandable Study Stats & Gamification Drawer (Smooth Slide-down) */}
+      {/* 2. Seamless Expandable Study Stats & Gamification Drawer */}
       {isStatsOpen && (
-        <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/90 dark:bg-[#141417]/90 p-3.5 sm:p-4 shadow-sm backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-3.5 sm:p-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             {/* Level & XP Bar */}
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-500 font-black text-sm">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 text-orange-500 font-black text-sm shadow-inner">
                 L{gamification.level}
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-extrabold text-xs text-slate-800 dark:text-slate-200 m-0 truncate">
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white m-0 truncate">
                     {gamification.levelTitle || 'Code Virtuoso'}
                   </h4>
-                  <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400">
+                  <span className="text-[11px] font-extrabold px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                     {gamification.totalXP.toLocaleString()} XP
                   </span>
                 </div>
                 {/* XP Bar */}
-                <div className="mt-1 flex items-center gap-2 w-full max-w-xs">
-                  <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                <div className="mt-1.5 flex items-center gap-2 w-full max-w-xs">
+                  <div className="h-1.5 flex-1 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500 transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-400 transition-all duration-500 shadow-[0_0_6px_rgba(249,115,22,0.4)]"
                       style={{ width: `${levelProgressPercent}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 tabular-nums">
+                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 tabular-nums">
                     {levelProgressPercent}%
                   </span>
                 </div>
@@ -341,45 +353,45 @@ export const FocusSprintBar: React.FC = () => {
 
             {/* Metric Badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-xs">
-                <Trophy size={13} className="text-amber-500" />
-                <span className="text-slate-500 text-[11px]">Best:</span>
-                <span className="font-extrabold text-slate-800 dark:text-slate-200 tabular-nums">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                <Trophy size={13} className="text-amber-500 shrink-0" />
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Best:</span>
+                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
                   {gamification.longestStreak}d
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-xs">
-                <Clock size={13} className="text-blue-500" />
-                <span className="text-slate-500 text-[11px]">Hours:</span>
-                <span className="font-extrabold text-slate-800 dark:text-slate-200 tabular-nums">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                <Clock size={13} className="text-blue-500 shrink-0" />
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Hours:</span>
+                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
                   {totalHours}h
                 </span>
               </div>
 
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 text-xs">
-                <BookMarked size={13} className="text-purple-500" />
-                <span className="text-slate-500 text-[11px]">Notes:</span>
-                <span className="font-extrabold text-slate-800 dark:text-slate-200 tabular-nums">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
+                <BookMarked size={13} className="text-purple-500 shrink-0" />
+                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Notes:</span>
+                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
                   {learnings.length}
                 </span>
               </div>
             </div>
 
             {/* 7-Day Mini Punchcard */}
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1.5 shrink-0">
               {gamification.weekPunchcard?.map((day, idx) => (
                 <div
                   key={idx}
                   title={`${day.date} (${day.day}): ${day.active ? 'Completed' : day.frozen ? 'Frozen' : 'Pending'}`}
-                  className={`flex h-6 w-6 items-center justify-center rounded-lg text-[10px] font-bold border transition-transform ${
+                  className={`flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-extrabold border transition-all cursor-default ${
                     day.active
-                      ? 'bg-emerald-500 text-white border-emerald-600 shadow-2xs'
+                      ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs shadow-emerald-500/20'
                       : day.frozen
-                      ? 'bg-cyan-500 text-white border-cyan-600'
+                      ? 'bg-cyan-500 text-white border-cyan-600 shadow-xs'
                       : day.isToday
-                      ? 'bg-orange-500/15 text-orange-600 border-orange-500 ring-1 ring-orange-500/30 font-black'
-                      : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/10'
+                      ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500 ring-2 ring-orange-500/30 font-black'
+                      : 'bg-white dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/10'
                   }`}
                 >
                   {day.day[0]}

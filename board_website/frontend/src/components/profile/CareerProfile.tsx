@@ -275,21 +275,21 @@ export const CareerProfile: React.FC = () => {
   const getAppCellClass = (cell: DayCellData) => {
     if (!cell.dayNum) return 'opacity-0 pointer-events-none';
     const c = cell.count;
-    if (c === 0) return 'bg-[#ebedf0] dark:bg-[#1e293b] border-black/5 dark:border-white/5';
-    if (c === 1) return 'bg-[#bfdbfe] dark:bg-[#1e3a5f] border-blue-300 dark:border-blue-700';
-    if (c === 2) return 'bg-[#60a5fa] dark:bg-[#2563eb] border-blue-400 dark:border-blue-600';
-    if (c === 3) return 'bg-[#2563eb] dark:bg-[#3b82f6] border-blue-600 dark:border-blue-500';
-    return 'bg-[#1d4ed8] dark:bg-[#60a5fa] border-blue-800 dark:border-blue-400';
+    if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
+    if (c === 1) return 'bg-blue-200 dark:bg-[#163354] border-blue-300/80 dark:border-blue-700/60';
+    if (c === 2) return 'bg-blue-400 dark:bg-[#1d4ed8] border-blue-500 dark:border-blue-600';
+    if (c === 3) return 'bg-blue-600 dark:bg-[#2563eb] border-blue-700 dark:border-blue-500 shadow-2xs shadow-blue-500/20';
+    return 'bg-blue-700 dark:bg-[#3b82f6] border-blue-800 dark:border-blue-400 shadow-xs shadow-blue-500/30';
   };
 
   const getLearnCellClass = (cell: DayCellData) => {
     if (!cell.dayNum) return 'opacity-0 pointer-events-none';
     const c = cell.count;
-    if (c === 0) return 'bg-[#ebedf0] dark:bg-[#1e293b] border-black/5 dark:border-white/5';
-    if (c === 1) return 'bg-[#86efac] dark:bg-[#064e3b] border-emerald-300 dark:border-emerald-700';
-    if (c === 2) return 'bg-[#34d399] dark:bg-[#059669] border-emerald-400 dark:border-emerald-600';
-    if (c === 3) return 'bg-[#059669] dark:bg-[#10b981] border-emerald-600 dark:border-emerald-500';
-    return 'bg-[#064e3b] dark:bg-[#34d399] border-emerald-900 dark:border-emerald-400';
+    if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
+    if (c === 1) return 'bg-emerald-200 dark:bg-[#064e3b] border-emerald-300/80 dark:border-emerald-700/60';
+    if (c === 2) return 'bg-emerald-400 dark:bg-[#059669] border-emerald-500 dark:border-emerald-600';
+    if (c === 3) return 'bg-emerald-600 dark:bg-[#10b981] border-emerald-700 dark:border-emerald-500 shadow-2xs shadow-emerald-500/20';
+    return 'bg-emerald-700 dark:bg-[#34d399] border-emerald-800 dark:border-emerald-400 shadow-xs shadow-emerald-500/30';
   };
 
   // -------------------------------------------------------------
@@ -595,11 +595,11 @@ export const CareerProfile: React.FC = () => {
           </div>
 
           {/* Live Hover Info Banner - Displays the exact Day and Count */}
-          <div className="flex items-center justify-between px-3.5 py-2 mb-2 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs min-h-[40px] transition-all">
+          <div className="flex items-center justify-between px-3.5 py-2 mb-2 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs min-h-[42px] transition-all">
             {hoveredMatrixDay ? (
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <Calendar size={13} className="text-indigo-500" />
+                  <Calendar size={13} className={hoveredMatrixDay.type === 'applications' ? 'text-blue-500' : 'text-emerald-500'} />
                   <span>
                     {(() => {
                       const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -611,27 +611,37 @@ export const CareerProfile: React.FC = () => {
                 </span>
                 <span className="text-slate-400 font-bold">&bull;</span>
                 <span
-                  className={`font-black px-2.5 py-0.5 rounded-lg text-xs shadow-2xs ${
+                  className={`font-black px-2.5 py-0.5 rounded-lg text-xs shadow-2xs flex items-center gap-1.5 ${
                     hoveredMatrixDay.type === 'applications'
-                      ? 'bg-blue-600 text-white shadow-blue-500/20'
-                      : 'bg-emerald-600 text-white shadow-emerald-500/20'
+                      ? 'bg-blue-600 text-white shadow-blue-500/25'
+                      : 'bg-emerald-600 text-white shadow-emerald-500/25'
                   }`}
                 >
-                  {hoveredMatrixDay.count}{' '}
-                  {hoveredMatrixDay.type === 'applications'
-                    ? `Job Application${hoveredMatrixDay.count === 1 ? '' : 's'}`
-                    : `Learning Note${hoveredMatrixDay.count === 1 ? '' : 's'}`}
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                  <span>
+                    {hoveredMatrixDay.count}{' '}
+                    {hoveredMatrixDay.type === 'applications'
+                      ? `Job Application${hoveredMatrixDay.count === 1 ? '' : 's'}`
+                      : `Learning Note${hoveredMatrixDay.count === 1 ? '' : 's'}`}
+                  </span>
                 </span>
                 {hoveredMatrixDay.isToday && (
-                  <span className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.5 rounded-md shadow-2xs">
                     🔥 Today
                   </span>
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 text-xs">
-                <Sparkles size={13} className="text-indigo-400" />
-                <span>Hover over any day square in the matrix to view the day and count</span>
+              <div className="flex items-center justify-between w-full text-xs text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={13} className="text-indigo-500" />
+                  <span className="font-semibold">
+                    <strong className="text-slate-900 dark:text-white font-black">{monthActiveDays} active days</strong> ({Math.round((monthActiveDays / daysInMonth) * 100)}% consistency) in {monthNames[selectedMonth]}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                  Hover any cell for daily details
+                </span>
               </div>
             )}
           </div>
@@ -639,7 +649,7 @@ export const CareerProfile: React.FC = () => {
           {/* Dual Month Activity Blocks: Apps (Left) & Learnings (Right) */}
           <div
             onMouseLeave={() => setHoveredMatrixDay(null)}
-            className="flex gap-4 sm:gap-6 items-stretch justify-around my-2.5 p-4 rounded-xl border border-slate-200/70 dark:border-white/10 bg-slate-50/60 dark:bg-white/[0.02] overflow-x-auto"
+            className="flex gap-4 sm:gap-6 items-stretch justify-around my-2.5 px-4 py-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] overflow-x-auto"
           >
             {/* Job Applications Block */}
             <div className="flex flex-col gap-2.5 flex-1 min-w-[160px]">
@@ -661,10 +671,14 @@ export const CareerProfile: React.FC = () => {
 
               {/* Grid wrap with days legend (Mon, Wed, Fri) and week columns */}
               <div className="flex gap-2 items-start">
-                <div className="grid grid-rows-7 gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500 h-[148px] select-none">
-                  <span className="row-start-1 leading-4">Mon</span>
-                  <span className="row-start-3 leading-4">Wed</span>
-                  <span className="row-start-5 leading-4">Fri</span>
+                <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
+                  <div className="h-[18px] flex items-center leading-none">Mon</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px] flex items-center leading-none">Wed</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px] flex items-center leading-none">Fri</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px]" />
                 </div>
 
                 <div className="flex gap-1.5 flex-1">
@@ -684,23 +698,59 @@ export const CareerProfile: React.FC = () => {
                               });
                             }
                           }}
-                          title={
-                            cell.dateStr
-                              ? `${cell.dateStr}: ${cell.count} applications logged`
-                              : ''
-                          }
-                          className={`relative group/cell w-4 h-4 rounded-xs border transition-all cursor-pointer ${getAppCellClass(cell)} ${
-                            cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-                          } hover:ring-2 hover:ring-blue-500 hover:scale-125 z-10`}
+                          className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
+                            cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                          } hover:ring-2 hover:ring-blue-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
                         >
-                          {/* Instant Floating Tooltip */}
+                          {/* Modern Floating Popover */}
                           {cell.dayNum && (
-                            <div className="hidden group-hover/cell:flex pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 flex-col items-center whitespace-nowrap">
-                              <div className="bg-slate-900/95 dark:bg-[#1f1f23]/95 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-2xl border border-slate-700/60 dark:border-white/10 flex items-center gap-1.5">
-                                <span>{cell.dayNum} {monthNames[selectedMonth]}:</span>
-                                <span className="text-blue-400 font-extrabold">{cell.count} application{cell.count === 1 ? '' : 's'}</span>
+                            <div
+                              className={`hidden group-hover/cell:flex pointer-events-none absolute ${
+                                cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
+                              } ${
+                                wIdx <= 1
+                                  ? 'left-0'
+                                  : wIdx >= appWeeks.length - 1
+                                  ? 'right-0'
+                                  : 'left-1/2 -translate-x-1/2'
+                              } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
+                            >
+                              {/* Arrow pointing up for top rows */}
+                              {cIdx <= 2 && (
+                                <div
+                                  className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
+                                    wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                  }`}
+                                />
+                              )}
+
+                              <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
+                                <div className="flex items-center justify-between gap-3 text-[10.5px]">
+                                  <span className="font-bold text-slate-300">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
+                                  </span>
+                                  {cell.isToday && (
+                                    <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
+                                      Today
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
+                                  <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.9)]' : 'bg-slate-500'} shrink-0`} />
+                                  <span className="text-xs font-black text-white">
+                                    {cell.count > 0 ? `${cell.count} Application${cell.count === 1 ? '' : 's'}` : 'No applications'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900 dark:border-t-[#1f1f23]" />
+
+                              {/* Arrow pointing down for bottom rows */}
+                              {cIdx > 2 && (
+                                <div
+                                  className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
+                                    wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                  }`}
+                                />
+                              )}
                             </div>
                           )}
                         </div>
@@ -734,10 +784,14 @@ export const CareerProfile: React.FC = () => {
 
               {/* Grid wrap with days legend (Mon, Wed, Fri) and week columns */}
               <div className="flex gap-2 items-start">
-                <div className="grid grid-rows-7 gap-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500 h-[148px] select-none">
-                  <span className="row-start-1 leading-4">Mon</span>
-                  <span className="row-start-3 leading-4">Wed</span>
-                  <span className="row-start-5 leading-4">Fri</span>
+                <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
+                  <div className="h-[18px] flex items-center leading-none">Mon</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px] flex items-center leading-none">Wed</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px] flex items-center leading-none">Fri</div>
+                  <div className="h-[18px]" />
+                  <div className="h-[18px]" />
                 </div>
 
                 <div className="flex gap-1.5 flex-1">
@@ -757,23 +811,59 @@ export const CareerProfile: React.FC = () => {
                               });
                             }
                           }}
-                          title={
-                            cell.dateStr
-                              ? `${cell.dateStr}: ${cell.count} learnings logged`
-                              : ''
-                          }
-                          className={`relative group/cell w-4 h-4 rounded-xs border transition-all cursor-pointer ${getLearnCellClass(cell)} ${
-                            cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1' : ''
-                          } hover:ring-2 hover:ring-emerald-500 hover:scale-125 z-10`}
+                          className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
+                            cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                          } hover:ring-2 hover:ring-emerald-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
                         >
-                          {/* Instant Floating Tooltip */}
+                          {/* Modern Floating Popover */}
                           {cell.dayNum && (
-                            <div className="hidden group-hover/cell:flex pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 flex-col items-center whitespace-nowrap">
-                              <div className="bg-slate-900/95 dark:bg-[#1f1f23]/95 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-2xl border border-slate-700/60 dark:border-white/10 flex items-center gap-1.5">
-                                <span>{cell.dayNum} {monthNames[selectedMonth]}:</span>
-                                <span className="text-emerald-400 font-extrabold">{cell.count} learning{cell.count === 1 ? '' : 's'}</span>
+                            <div
+                              className={`hidden group-hover/cell:flex pointer-events-none absolute ${
+                                cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
+                              } ${
+                                wIdx <= 1
+                                  ? 'left-0'
+                                  : wIdx >= learnWeeks.length - 1
+                                  ? 'right-0'
+                                  : 'left-1/2 -translate-x-1/2'
+                              } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
+                            >
+                              {/* Arrow pointing up for top rows */}
+                              {cIdx <= 2 && (
+                                <div
+                                  className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
+                                    wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                  }`}
+                                />
+                              )}
+
+                              <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
+                                <div className="flex items-center justify-between gap-3 text-[10.5px]">
+                                  <span className="font-bold text-slate-300">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
+                                  </span>
+                                  {cell.isToday && (
+                                    <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
+                                      Today
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
+                                  <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]' : 'bg-slate-500'} shrink-0`} />
+                                  <span className="text-xs font-black text-white">
+                                    {cell.count > 0 ? `${cell.count} Note${cell.count === 1 ? '' : 's'}` : 'No learning notes'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900 dark:border-t-[#1f1f23]" />
+
+                              {/* Arrow pointing down for bottom rows */}
+                              {cIdx > 2 && (
+                                <div
+                                  className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
+                                    wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                  }`}
+                                />
+                              )}
                             </div>
                           )}
                         </div>
@@ -795,20 +885,20 @@ export const CareerProfile: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <span className="inline-flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-400">
-                <span className="w-2 h-2 rounded-xs bg-[#2563eb]" /> Apps
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-600 shadow-2xs shadow-blue-500/40" /> Apps
               </span>
               <span className="inline-flex items-center gap-1 font-semibold text-slate-600 dark:text-slate-400">
-                <span className="w-2 h-2 rounded-xs bg-[#10b981]" /> Learnings
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 shadow-2xs shadow-emerald-500/40" /> Learnings
               </span>
 
               {/* Less -> More Scale */}
               <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400">
                 <span>Less</span>
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#ebedf0] dark:bg-[#1e293b]" />
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#86efac] dark:bg-[#064e3b]" />
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#34d399] dark:bg-[#059669]" />
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#059669] dark:bg-[#10b981]" />
-                <span className="w-2.5 h-2.5 rounded-xs bg-[#064e3b] dark:bg-[#34d399]" />
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-slate-200/70 dark:bg-[#1b2230] border border-slate-300/40 dark:border-white/5" />
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-200 dark:bg-[#064e3b]" />
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-400 dark:bg-[#059669]" />
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 dark:bg-[#10b981]" />
+                <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-700 dark:bg-[#34d399]" />
                 <span>More</span>
               </div>
             </div>
