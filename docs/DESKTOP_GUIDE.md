@@ -8,9 +8,9 @@ This guide explains how to install, test, run, and package the native Windows De
 
 | Method | Target | Description |
 | :--- | :--- | :--- |
-| **🚀 1-Click Launcher (Recommended)** | [`start-desktop.bat`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/start-desktop.bat) | Auto-checks if local SQLite backend is running on `port 3000`. If not, boots it silently and opens `app.exe`. |
-| **📦 Windows Installer (.exe)** | [`Job Tracker_0.2.0_x64-setup.exe`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/target/release/bundle/nsis/Job%20Tracker_0.2.0_x64-setup.exe) | Official NSIS Windows setup wizard. Installs to `%LOCALAPPDATA%\Programs\Job Tracker`, creates Start Menu & Desktop shortcuts. |
-| **⚡ Standalone Portable (.exe)** | [`app.exe`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/target/release/app.exe) | Single-binary native release. Run directly without installation. |
+| **🚀 1-Click Launcher (Recommended)** | [`start-desktop.bat`](../start-desktop.bat) | Auto-checks if local SQLite backend is running on `port 3000`. If not, boots it silently and opens `app.exe`. |
+| **📦 Windows Installer (.exe)** | [`Job Tracker_0.2.0_x64-setup.exe`](../desktop_app/src-tauri/target/release/bundle/nsis/Job%20Tracker_0.2.0_x64-setup.exe) | Official NSIS Windows setup wizard. Installs to `%LOCALAPPDATA%\Programs\Job Tracker`, creates Start Menu & Desktop shortcuts. |
+| **⚡ Standalone Portable (.exe)** | [`app.exe`](../desktop_app/src-tauri/target/release/app.exe) | Single-binary native release. Run directly without installation. |
 
 ---
 
@@ -41,7 +41,7 @@ User Data Root: %APPDATA%\JobTracker\
 ```
 
 - **Zero Cloud Requirement**: You don't need Google Drive or external database servers to use the desktop version. All job data, notes, and uploaded files are saved locally.
-- **Port 3000 Engine**: When [`start-desktop.bat`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/start-desktop.bat) runs, it checks whether the backend engine is running on `http://127.0.0.1:3000`. If offline, it starts `node server.js` silently in the background with `APP_MODE=desktop`.
+- **Port 3000 Engine**: When [`start-desktop.bat`](../start-desktop.bat) runs, it checks whether the backend engine is running on `http://127.0.0.1:3000`. If offline, it starts `node server.js` silently in the background with `APP_MODE=desktop`.
 
 ---
 

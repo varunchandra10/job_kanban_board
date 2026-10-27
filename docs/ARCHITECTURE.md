@@ -100,7 +100,7 @@ The desktop application is built with **Tauri v2** to deliver native desktop cap
 - **Binary Size**: ~3.5 MB installer (vs. 150MB+ in typical Electron apps).
 - **Embedded Webview**: Utilizes Microsoft Edge WebView2 on Windows.
 - **Single-Executable Launcher**: `app.exe` natively embeds the compiled frontend bundle and bridges to local system APIs via Rust IPC.
-- **Background Engine Manager**: [`start-desktop.bat`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/start-desktop.bat) verifies if the background SQLite engine is running on `127.0.0.1:3000`. If offline, it starts it silently in the background with `APP_MODE=desktop`.
+- **Background Engine Manager**: [`start-desktop.bat`](../start-desktop.bat) verifies if the background SQLite engine is running on `127.0.0.1:3000`. If offline, it starts it silently in the background with `APP_MODE=desktop`.
 - **System Tray**:
   - Left-click icon toggles visibility.
   - Right-click menu provides quick access to *Show Window*, *Open Data Folder*, *Open Logs*, and *Quit*.
