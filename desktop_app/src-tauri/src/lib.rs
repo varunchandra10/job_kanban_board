@@ -229,5 +229,6 @@ pub fn run() -> tauri::Result<()> {
 
       Ok(())
     })
+    // Generate context embedding current dist bundle
     .run(tauri::generate_context!())
 }

@@ -35,6 +35,17 @@ if (fs.existsSync(indexHtml)) {
   fs.writeFileSync(path.join(dist, 'vercel.json'), JSON.stringify(vercelConfig, null, 2));
 
   console.log('[Postbuild] Generated 404.html and static route fallbacks for:', routes.join(', '));
+
+  // 4. Synchronize fresh bundle to desktop_app/src-tauri/dist for the PC application
+  const desktopDist = path.resolve(__dirname, '../../desktop_app/src-tauri/dist');
+  try {
+    if (fs.existsSync(path.dirname(desktopDist))) {
+      fs.cpSync(dist, desktopDist, { recursive: true, force: true });
+      console.log('[Postbuild] Synced fresh frontend build to desktop_app/src-tauri/dist');
+    }
+  } catch (syncErr) {
+    console.warn('[Postbuild] Note syncing to desktop dist:', syncErr.message);
+  }
 } else {
   console.warn('[Postbuild] index.html not found in dist. Skipping fallback generation.');
 }

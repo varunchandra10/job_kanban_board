@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { getApiEndpoint } from '../../services/api';
 import {
   Flame,
   Download,
@@ -421,7 +422,7 @@ export const CareerProfile: React.FC = () => {
 
             {/* Download DB as ZIP Button */}
             <a
-              href="/api/backup/export"
+              href={getApiEndpoint('/api/backup/export')}
               download
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-all shadow-xs no-underline"
               title="Download Full SQLite Database (.db) & Attached Resumes as ZIP"

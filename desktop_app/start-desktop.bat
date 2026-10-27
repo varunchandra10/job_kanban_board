@@ -6,7 +6,7 @@ echo [1/2] Checking local database engine...
 node -e "const http=require('http');http.get('http://127.0.0.1:3000/health',(r)=>{process.exit(r.statusCode===200?0:1)}).on('error',()=>process.exit(1));" >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo Starting local database engine in background...
-    start /min "Job Tracker Backend" cmd /c "cd /d \"%~dp0\\..\\board_website\\backend\" && node server.js"
+    start /min "Job Tracker Backend" cmd /c "cd /d \"%~dp0\\..\\board_website\\backend\" && set APP_MODE=desktop && node server.js"
     timeout /t 2 /nobreak >nul
 ) else (
     echo Local database engine is running.

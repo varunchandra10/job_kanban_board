@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Server, RefreshCw, Sparkles, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getApiEndpoint } from '../../services/api';
 
 export const ServerAwakeningLoader: React.FC = () => {
   const { showToast } = useApp();
@@ -45,7 +46,7 @@ export const ServerAwakeningLoader: React.FC = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 12000);
 
-        const res = await fetch('/api/health', {
+        const res = await fetch(getApiEndpoint('/api/health'), {
           signal: controller.signal,
           headers: { 'Cache-Control': 'no-cache' }
         });

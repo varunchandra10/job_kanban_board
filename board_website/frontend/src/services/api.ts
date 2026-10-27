@@ -1,6 +1,21 @@
 import { Application, Learning, GamificationStats, UserProfile, ResumeVersion } from '../types';
 
-const API_BASE = '/api';
+export const isTauri = typeof window !== 'undefined' && (
+  Boolean((window as any).__TAURI_INTERNALS__) ||
+  Boolean((window as any).__TAURI__) ||
+  window.location.protocol === 'tauri:' ||
+  window.location.hostname === 'tauri.localhost' ||
+  window.location.origin.includes('tauri.localhost')
+);
+
+export const SERVER_BASE = isTauri ? 'http://127.0.0.1:3000' : '';
+export const API_BASE = `${SERVER_BASE}/api`;
+
+export function getApiEndpoint(path: string): string {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${SERVER_BASE}${cleanPath}`;
+}
+
 
 function getAuthHeaders(): Record<string, string> {
   const token = localStorage.getItem('auth_token');
@@ -291,7 +306,7 @@ export const api = {
   getDocumentUrl(filePath: string): string {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
-    if (filePath.startsWith('/api/')) return filePath;
+    if (filePath.startsWith('/api/')) return getApiEndpoint(filePath);
     return `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
   },
 };

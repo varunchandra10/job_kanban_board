@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { getApiEndpoint } from '../../services/api';
 import {
   ArrowRight,
   CheckCircle2,
@@ -558,7 +559,7 @@ export const LandingPage: React.FC = () => {
                       if (!isAuthenticated) {
                         openAuthModal();
                       } else {
-                        window.location.href = '/api/backup/csv';
+                        window.location.href = getApiEndpoint('/api/backup/csv');
                       }
                     }}
                     className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer text-left font-inherit text-sm"
@@ -573,7 +574,7 @@ export const LandingPage: React.FC = () => {
                       if (!isAuthenticated) {
                         openAuthModal();
                       } else {
-                        window.location.href = '/api/backup/export';
+                        window.location.href = getApiEndpoint('/api/backup/export');
                       }
                     }}
                     className="text-slate-400 hover:text-indigo-400 transition-colors bg-transparent border-0 p-0 cursor-pointer text-left font-inherit text-sm"

@@ -6,7 +6,9 @@
   "scripts": {
     "build": "npm --prefix board_website run build",
     "build:web": "npm run build",
-    "start": "node board_website/backend/server.js"
+    "build:desktop": "npm run build && node desktop_app/scripts/desktop-check.js build --release",
+    "start": "node board_website/backend/server.js",
+    "start:desktop": "node desktop_app/scripts/desktop-runner.js"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
