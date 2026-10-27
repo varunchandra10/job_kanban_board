@@ -234,4 +234,48 @@ export const api = {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   },
+
+  async uploadDocument(
+    file: File,
+    type: 'resume' | 'cover_letter',
+    appId?: number
+  ): Promise<{
+    ok: number;
+    fullPath: string;
+    path: string;
+    relativePath?: string;
+    name: string;
+    size?: number;
+    isGoogleDrive?: boolean;
+    fileId?: string;
+  }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    if (appId) {
+      formData.append('appId', String(appId));
+    }
+
+    const headers = getAuthHeaders();
+    delete headers['Content-Type'];
+
+    const res = await fetch(`${API_BASE}/upload-document`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+    }
+    return data;
+  },
+
+  getDocumentUrl(filePath: string): string {
+    if (!filePath) return '';
+    if (/^https?:\/\//i.test(filePath)) return filePath;
+    if (filePath.startsWith('/api/')) return filePath;
+    return `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
+  },
 };
+

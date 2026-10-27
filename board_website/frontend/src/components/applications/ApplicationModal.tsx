@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import {
@@ -16,6 +17,12 @@ import {
   X,
   Check,
   Mail,
+  Paperclip,
+  Upload,
+  HardDrive,
+  ExternalLink,
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 
 export const ApplicationModal: React.FC = () => {
@@ -28,6 +35,9 @@ export const ApplicationModal: React.FC = () => {
     addApplication,
     updateApplication,
     versions,
+    gdriveStatus,
+    setIsDriveModalOpen,
+    showToast,
   } = useApp();
 
   const [company, setCompany] = useState('');
@@ -52,6 +62,12 @@ export const ApplicationModal: React.FC = () => {
   const [customTags, setCustomTags] = useState('');
   const [resumeVersionId, setResumeVersionId] = useState<number | null>(null);
   const [resumePath, setResumePath] = useState('');
+  const [coverLetterPath, setCoverLetterPath] = useState('');
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+
+  const resumeInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // Prefill or reset on open
   useEffect(() => {
@@ -80,6 +96,7 @@ export const ApplicationModal: React.FC = () => {
       setCustomTags(editingApp.custom_tags || '');
       setResumeVersionId(editingApp.resume_version_id || null);
       setResumePath(editingApp.resume_path || '');
+      setCoverLetterPath(editingApp.cover_letter_path || '');
     } else {
       setCompany('');
       setRole('');
@@ -103,8 +120,49 @@ export const ApplicationModal: React.FC = () => {
       setCustomTags('');
       setResumeVersionId(versions[0]?.id || null);
       setResumePath(versions[0]?.pdf_name || '');
+      setCoverLetterPath('');
     }
   }, [isAddAppOpen, editingApp, selectedCalDate, versions]);
+
+  const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingResume(true);
+    try {
+      const res = await api.uploadDocument(file, 'resume', editingApp?.id);
+      setResumePath(res.fullPath || res.path || file.name);
+      showToast(
+        res.isGoogleDrive
+          ? 'Resume uploaded to your Google Drive!'
+          : 'Resume attached successfully!'
+      );
+    } catch (err: any) {
+      showToast(err.message || 'Failed to upload resume');
+    } finally {
+      setIsUploadingResume(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingCover(true);
+    try {
+      const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id);
+      setCoverLetterPath(res.fullPath || res.path || file.name);
+      showToast(
+        res.isGoogleDrive
+          ? 'Cover letter uploaded to your Google Drive!'
+          : 'Cover letter attached successfully!'
+      );
+    } catch (err: any) {
+      showToast(err.message || 'Failed to upload cover letter');
+    } finally {
+      setIsUploadingCover(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   if (!isAddAppOpen) return null;
 
@@ -135,6 +193,7 @@ export const ApplicationModal: React.FC = () => {
       custom_tags: customTags.trim(),
       resume_version_id: resumeVersionId,
       resume_path: resumePath,
+      cover_letter_path: coverLetterPath,
     };
 
     if (editingApp) {
@@ -491,7 +550,219 @@ export const ApplicationModal: React.FC = () => {
               />
             </div>
 
-            {/* 8. Custom Tags */}
+            {/* 8. Documents (Resume & Cover Letter) */}
+            <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <Paperclip size={14} className="text-blue-600 dark:text-indigo-400" />
+                  Documents (Resume & Cover Letter)
+                </span>
+                {gdriveStatus.connected ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDriveModalOpen(true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors"
+                    title="Google Drive is connected. Uploaded files stream directly to your Google Drive folder."
+                  >
+                    <HardDrive size={11} />
+                    <span>Google Drive Active</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsDriveModalOpen(true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-colors"
+                    title="Click to connect your Google Drive folder so resumes and cover letters sync automatically."
+                  >
+                    <HardDrive size={11} />
+                    <span>Connect Drive</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Hidden file inputs */}
+              <input
+                ref={resumeInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx"
+                className="hidden"
+                onChange={handleResumeUpload}
+              />
+              <input
+                ref={coverInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.txt"
+                className="hidden"
+                onChange={handleCoverUpload}
+              />
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Resume Card */}
+                <div className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] p-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Resume
+                      </label>
+                      {resumePath && (
+                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                          Attached
+                        </span>
+                      )}
+                    </div>
+
+                    {versions.length > 0 && (
+                      <div className="mb-2">
+                        <select
+                          value={resumeVersionId || ''}
+                          onChange={(e) => {
+                            const id = e.target.value ? Number(e.target.value) : null;
+                            setResumeVersionId(id);
+                            const found = versions.find((v) => v.id === id);
+                            if (found?.pdf_name) setResumePath(found.pdf_name);
+                          }}
+                          className="w-full px-2 py-1 text-[11px] rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-700 dark:text-slate-300"
+                        >
+                          <option value="">Choose Saved Version...</option>
+                          {versions.map((v) => (
+                            <option key={v.id} value={v.id}>
+                              {v.label || v.pdf_name || `Version #${v.id}`}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    {resumePath ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-blue-50/60 dark:bg-blue-500/10 border border-blue-200/60 dark:border-blue-500/20 text-xs">
+                        <FileText size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs flex-1" title={resumePath}>
+                          {resumePath.split('/').pop() || resumePath}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = api.getDocumentUrl(resumePath);
+                            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors"
+                          title="Preview / Open in new tab"
+                        >
+                          <ExternalLink size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setResumePath('');
+                            setResumeVersionId(null);
+                          }}
+                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                          title="Remove attached resume"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                        No resume attached. Upload PDF or Word document.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      disabled={isUploadingResume}
+                      onClick={() => resumeInputRef.current?.click()}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-blue-300 dark:border-blue-500/30 hover:border-blue-500 bg-blue-50/40 dark:bg-blue-500/5 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-blue-700 dark:text-blue-400 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isUploadingResume ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={13} />
+                          <span>{resumePath ? 'Replace Resume' : 'Upload Resume'}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Cover Letter Card */}
+                <div className="rounded-lg border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] p-3 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Cover Letter
+                      </label>
+                      {coverLetterPath && (
+                        <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded">
+                          Attached
+                        </span>
+                      )}
+                    </div>
+
+                    {coverLetterPath ? (
+                      <div className="flex items-center gap-2 p-2 rounded-lg bg-purple-50/60 dark:bg-purple-500/10 border border-purple-200/60 dark:border-purple-500/20 text-xs">
+                        <FileText size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span className="truncate font-medium text-slate-800 dark:text-slate-200 text-xs flex-1" title={coverLetterPath}>
+                          {coverLetterPath.split('/').pop() || coverLetterPath}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = api.getDocumentUrl(coverLetterPath);
+                            if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                          }}
+                          className="p-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 transition-colors"
+                          title="Preview / Open in new tab"
+                        >
+                          <ExternalLink size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCoverLetterPath('')}
+                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                          title="Remove attached cover letter"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
+                        No cover letter attached. Upload PDF, Word, or text file.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      disabled={isUploadingCover}
+                      onClick={() => coverInputRef.current?.click()}
+                      className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-purple-300 dark:border-purple-500/30 hover:border-purple-500 bg-purple-50/40 dark:bg-purple-500/5 hover:bg-purple-50 dark:hover:bg-purple-500/10 text-purple-700 dark:text-purple-400 text-xs font-semibold transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isUploadingCover ? (
+                        <>
+                          <Loader2 size={13} className="animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={13} />
+                          <span>{coverLetterPath ? 'Replace Cover Letter' : 'Upload Cover Letter'}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 9. Custom Tags */}
             <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4">
               <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-3">
                 <Tag size={14} className="text-blue-600 dark:text-indigo-400" />

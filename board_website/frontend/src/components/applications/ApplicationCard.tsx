@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Application, ApplicationStage } from '../../types';
 import { useApp } from '../../context/AppContext';
+import { api } from '../../services/api';
 import { STAGES } from '../../utils/constants';
 import { CompanyLogo } from '../common/CompanyLogo';
 import {
@@ -384,7 +385,11 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             title={`Resume attached: ${app.resume_path}`}
             onClick={(e) => {
               e.stopPropagation();
-              showToast(`Opening resume: ${app.resume_path}`);
+              const url = api.getDocumentUrl(app.resume_path!);
+              if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+                showToast(`Opening resume: ${app.resume_path}`);
+              }
             }}
           >
             <FileText size={10} />
@@ -400,7 +405,11 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             title={`Cover letter attached: ${app.cover_letter_path}`}
             onClick={(e) => {
               e.stopPropagation();
-              showToast(`Opening cover letter: ${app.cover_letter_path}`);
+              const url = api.getDocumentUrl(app.cover_letter_path!);
+              if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+                showToast(`Opening cover letter: ${app.cover_letter_path}`);
+              }
             }}
           >
             <FileText size={10} />
