@@ -12,10 +12,88 @@ router.delete('/delete-document', documentsController.deleteDocument);
 router.post('/upload-document', upload.single('file'), documentsController.uploadDocument);
 router.get('/gdrive-files', documentsController.listDriveFiles);
 router.get('/file-content', documentsController.getFileContent);
+router.get('/document-content', documentsController.getFileContent);
 router.post('/file-info', documentsController.getFileInfo);
 router.get('/file-info', documentsController.getFileInfo);
 router.post('/open-file', documentsController.openFile);
 router.post('/reveal-file', documentsController.revealFile);
+
+// Local Storage Info & Folder Management
+router.get('/storage/local-info', (req, res) => {
+  const userId = req.user?.id || null;
+  let customDir = null;
+  if (userId) {
+    try {
+      const row = db.prepare("SELECT value FROM settings WHERE key = 'custom_storage_dir' AND user_id = ?").get(userId);
+      if (row && row.value) customDir = row.value.trim();
+    } catch (_) {}
+  }
+  const activeDir = (customDir && fs.existsSync(customDir)) ? customDir : config.uploadDir;
+
+  res.json({
+    ok: 1,
+    isDesktop: config.isDesktop || false,
+    activeDir,
+    defaultDir: config.uploadDir,
+    customDir: customDir || null,
+    canOpenFolder: process.platform === 'win32' || process.platform === 'darwin'
+  });
+});
+
+router.post('/storage/open-local-folder', (req, res) => {
+  try {
+    const userId = req.user?.id || null;
+    let targetDir = req.body?.folderPath;
+    if (!targetDir && userId) {
+      try {
+        const row = db.prepare("SELECT value FROM settings WHERE key = 'custom_storage_dir' AND user_id = ?").get(userId);
+        if (row && row.value) targetDir = row.value.trim();
+      } catch (_) {}
+    }
+    if (!targetDir) targetDir = config.uploadDir;
+
+    if (!fs.existsSync(targetDir)) {
+      try { fs.mkdirSync(targetDir, { recursive: true }); } catch (_) {}
+    }
+
+    const { exec } = require('child_process');
+    if (process.platform === 'win32') {
+      exec(`explorer "${targetDir}"`);
+    } else if (process.platform === 'darwin') {
+      exec(`open "${targetDir}"`);
+    } else {
+      exec(`xdg-open "${targetDir}"`);
+    }
+
+    res.json({ ok: 1, opened: true, path: targetDir });
+  } catch (err) {
+    res.status(500).json({ ok: 0, error: err.message });
+  }
+});
+
+router.post('/storage/set-local-folder', (req, res) => {
+  const userId = req.user?.id || null;
+  const folderPath = req.body?.folderPath ? String(req.body.folderPath).trim() : null;
+  if (!folderPath) {
+    return res.status(400).json({ ok: 0, error: 'Please provide a valid directory path' });
+  }
+
+  try {
+    if (!fs.existsSync(folderPath)) {
+      fs.mkdirSync(folderPath, { recursive: true });
+    }
+    if (userId) {
+      db.prepare(`
+        INSERT INTO settings (key, value, user_id)
+        VALUES ('custom_storage_dir', ?, ?)
+        ON CONFLICT(key, user_id) DO UPDATE SET value = excluded.value
+      `).run(folderPath, userId);
+    }
+    res.json({ ok: 1, folderPath, message: 'Local storage folder updated successfully' });
+  } catch (err) {
+    res.status(500).json({ ok: 0, error: `Failed to set storage directory: ${err.message}` });
+  }
+});
 
 // Storage Status & Multi-User Google Drive Settings
 router.get('/storage/status', (req, res) => {

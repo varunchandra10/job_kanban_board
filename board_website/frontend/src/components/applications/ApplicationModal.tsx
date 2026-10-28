@@ -24,6 +24,7 @@ import {
   ExternalLink,
   Trash2,
   Loader2,
+  Database,
 } from 'lucide-react';
 
 export const ApplicationModal: React.FC = () => {
@@ -154,7 +155,7 @@ export const ApplicationModal: React.FC = () => {
       showToast(
         res.isGoogleDrive
           ? 'Resume uploaded to Google Drive!'
-          : 'Resume stored in local database!'
+          : 'Resume saved to local storage folder!'
       );
     } catch (err: any) {
       showToast(err.message || 'Failed to upload resume');
@@ -183,7 +184,7 @@ export const ApplicationModal: React.FC = () => {
       showToast(
         res.isGoogleDrive
           ? 'Cover letter uploaded to Google Drive!'
-          : 'Cover letter stored in local database!'
+          : 'Cover letter saved to local storage folder!'
       );
     } catch (err: any) {
       showToast(err.message || 'Failed to upload cover letter');
@@ -590,11 +591,21 @@ export const ApplicationModal: React.FC = () => {
                   <Paperclip size={14} className="text-blue-600 dark:text-indigo-400" />
                   Documents (Resume & Cover Letter)
                 </span>
-                {gdriveStatus.connected ? (
+                {storageMode === 'local_storage' ? (
                   <button
                     type="button"
                     onClick={() => setIsDriveModalOpen(true)}
-                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 px-2.5 py-0.5 rounded-full hover:bg-indigo-100 transition-colors cursor-pointer"
+                    title="Local System Storage active. Click to view or change destination folder."
+                  >
+                    <Database size={11} />
+                    <span>Local Storage Active</span>
+                  </button>
+                ) : gdriveStatus.connected ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsDriveModalOpen(true)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded-full hover:bg-emerald-100 transition-colors cursor-pointer"
                     title="Google Drive is connected. Uploaded files stream directly to your Google Drive folder."
                   >
                     <HardDrive size={11} />
@@ -604,7 +615,7 @@ export const ApplicationModal: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsDriveModalOpen(true)}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-colors"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2 py-0.5 rounded-full hover:bg-amber-100 transition-colors cursor-pointer"
                     title="Click to connect your Google Drive folder so resumes and cover letters sync automatically."
                   >
                     <HardDrive size={11} />
@@ -612,6 +623,22 @@ export const ApplicationModal: React.FC = () => {
                   </button>
                 )}
               </div>
+
+              {storageMode === 'local_storage' && (
+                <div className="mb-3 px-3 py-1.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 truncate">
+                    <Database size={12} className="shrink-0" />
+                    <span>Saving locally: documents are organized in your local documents folder</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsDriveModalOpen(true)}
+                    className="underline hover:text-indigo-950 dark:hover:text-white font-bold shrink-0 ml-2 cursor-pointer"
+                  >
+                    Change / Browse
+                  </button>
+                </div>
+              )}
 
               {/* Hidden file inputs */}
               <input
@@ -721,7 +748,7 @@ export const ApplicationModal: React.FC = () => {
                       </div>
                     ) : (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                        No resume attached. Upload PDF or Word document to save to Google Drive.
+                        No resume attached. Upload PDF or Word document to save to {storageMode === 'local_storage' ? 'Local Storage' : 'Google Drive'}.
                       </p>
                     )}
                   </div>
@@ -814,7 +841,7 @@ export const ApplicationModal: React.FC = () => {
                       </div>
                     ) : (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-2">
-                        No cover letter attached. Upload PDF, Word, or text file to save to Google Drive.
+                        No cover letter attached. Upload PDF, Word, or text file to save to {storageMode === 'local_storage' ? 'Local Storage' : 'Google Drive'}.
                       </p>
                     )}
                   </div>

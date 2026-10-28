@@ -53,6 +53,22 @@ pub async fn save_file_from_bytes(
     }
 }
 
+/// Native command to select a folder via OS dialog.
+#[tauri::command]
+pub async fn select_folder(app: AppHandle) -> Result<Option<String>, String> {
+    let folder_path = app
+        .dialog()
+        .file()
+        .blocking_pick_folder();
+
+    if let Some(path) = folder_path {
+        let path_buf: PathBuf = path.into_path().map_err(|e| e.to_string())?;
+        Ok(Some(path_buf.to_string_lossy().to_string()))
+    } else {
+        Ok(None)
+    }
+}
+
 /// Resolves the operating system's application data folder for Job Tracker.
 #[tauri::command]
 pub async fn get_app_data_path(app: AppHandle) -> Result<String, String> {

@@ -101,6 +101,30 @@ exports.uploadDocument = async (req, res, next) => {
       }
 
       const viewPath = `/api/document-content?doc_id=${docId}`;
+      let savedDiskPath = null;
+      let activeLocalDir = config.uploadDir;
+
+      // Also persist physical copy to local hard drive if directory is accessible
+      try {
+        const fs = require('fs');
+        if (userId) {
+          const row = db.prepare("SELECT value FROM settings WHERE key = 'custom_storage_dir' AND user_id = ?").get(userId);
+          if (row && row.value && fs.existsSync(row.value.trim())) {
+            activeLocalDir = row.value.trim();
+          }
+        }
+        if (activeLocalDir) {
+          const subDir = path.join(activeLocalDir, type === 'cover_letter' ? 'cover_letter' : 'resume');
+          if (!fs.existsSync(subDir)) fs.mkdirSync(subDir, { recursive: true });
+          const safeName = `${Date.now()}_${path.basename(originalName || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          const diskTarget = path.join(subDir, safeName);
+          fs.writeFileSync(diskTarget, fileBuffer);
+          savedDiskPath = diskTarget;
+        }
+      } catch (diskErr) {
+        console.warn('[Local Storage Disk Write Note]:', diskErr.message);
+      }
+
       if (appId) {
         const isCover = type === 'cover_letter' || type === 'cover_letters' || type === 'cover_letter_path';
         const col = isCover ? 'cover_letter_path' : 'resume_path';
@@ -121,7 +145,9 @@ exports.uploadDocument = async (req, res, next) => {
         ext: path.extname(originalName || '').toLowerCase(),
         isLocalStorage: true,
         isGoogleDrive: false,
-        docId
+        docId,
+        localDirectory: activeLocalDir,
+        savedDiskPath
       });
     }
 
@@ -275,15 +301,20 @@ exports.getFileContent = async (req, res, next) => {
 
           const buf = Buffer.from(doc.data, 'base64');
           res.writeHead(200, {
-            'Content-Type': doc.mime_type || 'application/octet-stream',
+            'Content-Type': doc.mime_type || 'application/pdf',
             'Content-Length': buf.length,
             'Content-Disposition': `inline; filename="${encodeURIComponent(doc.name)}"`,
             'Cache-Control': 'private, max-age=86400'
           });
           return res.end(buf);
+        } else if (!targetPath) {
+          return res.status(404).send('Document not found or has been removed from local storage');
         }
       } catch (docErr) {
         console.warn('[Documents] document_files fetch error:', docErr.message);
+        if (!targetPath) {
+          return res.status(500).send('Error retrieving document content');
+        }
       }
     }
 

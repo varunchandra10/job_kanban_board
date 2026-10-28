@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   HardDrive,
@@ -9,9 +9,12 @@ import {
   CheckCircle2,
   X,
   AlertCircle,
+  FolderOpen,
+  Folder,
 } from 'lucide-react';
 
 import { isDesktopApp } from '../../utils/environment';
+import { api } from '../../services/api';
 
 export const StorageSwitchModal: React.FC = () => {
   const {
@@ -20,12 +23,22 @@ export const StorageSwitchModal: React.FC = () => {
     storageMode,
     confirmStorageModeChange,
     cancelStorageModeChange,
+    showToast,
   } = useApp();
 
   const isDesktop = isDesktopApp();
+  const [localDir, setLocalDir] = useState<string>('');
+  const [canOpenFolder, setCanOpenFolder] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isStorageConfirmModalOpen) return;
+
+    api.getLocalStorageInfo()
+      .then((info) => {
+        if (info.activeDir) setLocalDir(info.activeDir);
+        setCanOpenFolder(info.canOpenFolder || isDesktop);
+      })
+      .catch(() => {});
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -35,11 +48,24 @@ export const StorageSwitchModal: React.FC = () => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isStorageConfirmModalOpen, cancelStorageModeChange]);
+  }, [isStorageConfirmModalOpen, cancelStorageModeChange, isDesktop]);
 
   if (!isStorageConfirmModalOpen || !pendingStorageMode) return null;
 
   const isSwitchingToLocal = pendingStorageMode === 'local_storage';
+
+  const handleOpenFolder = async () => {
+    try {
+      if ((window as any).__TAURI__?.core?.invoke) {
+        await (window as any).__TAURI__.core.invoke('open_data_folder');
+      } else {
+        await api.openLocalFolder(localDir);
+      }
+      showToast('Opening storage folder in File Explorer');
+    } catch (err: any) {
+      showToast('Could not open folder: ' + (err.message || 'Unknown error'));
+    }
+  };
 
   return (
     <div
@@ -124,6 +150,30 @@ export const StorageSwitchModal: React.FC = () => {
 
             {isSwitchingToLocal ? (
               <div className="space-y-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-xs">
+                {localDir && (
+                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-500/10 p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                        <Folder size={13} className="text-indigo-600 dark:text-indigo-400" />
+                        Storage Destination Folder:
+                      </span>
+                      {canOpenFolder && (
+                        <button
+                          type="button"
+                          onClick={handleOpenFolder}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold shadow-xs transition cursor-pointer"
+                          title="Open this folder in Windows File Explorer"
+                        >
+                          <FolderOpen size={12} />
+                          <span>Open in Explorer</span>
+                        </button>
+                      )}
+                    </div>
+                    <code className="block text-[11px] font-mono break-all bg-white dark:bg-black/30 p-2 rounded-lg border border-indigo-100 dark:border-indigo-500/20 text-slate-800 dark:text-indigo-300 select-all">
+                      {localDir}
+                    </code>
+                  </div>
+                )}
                 <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
                   <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>

@@ -310,7 +310,7 @@ export const api = {
     rootFolderId?: string;
     folderId?: string;
   }> {
-    const activeMode = storageMode || localStorage.getItem('job_tracker_storage_preference') || 'local_storage';
+    const activeMode = storageMode || localStorage.getItem('job_tracker_storage_preference') || 'g_drive';
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
@@ -352,8 +352,60 @@ export const api = {
   getDocumentUrl(filePath: string): string {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
-    if (filePath.startsWith('/api/')) return getApiEndpoint(filePath);
-    return `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
+    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || '') : '';
+    const tokenParam = token ? `token=${encodeURIComponent(token)}` : '';
+
+    if (filePath.startsWith('/api/')) {
+      const url = getApiEndpoint(filePath);
+      if (!tokenParam) return url;
+      return url.includes('?') ? `${url}&${tokenParam}` : `${url}?${tokenParam}`;
+    }
+
+    const base = `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
+    if (!tokenParam) return base;
+    return base.includes('?') ? `${base}&${tokenParam}` : `${base}?${tokenParam}`;
+  },
+
+  async getLocalStorageInfo(): Promise<{
+    ok: number;
+    isDesktop: boolean;
+    activeDir: string;
+    defaultDir: string;
+    customDir: string | null;
+    canOpenFolder: boolean;
+  }> {
+    const res = await fetch(`${API_BASE}/storage/local-info`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error('Failed to fetch local storage info');
+    return res.json();
+  },
+
+  async openLocalFolder(folderPath?: string): Promise<{ ok: number; opened: boolean; path: string }> {
+    const res = await fetch(`${API_BASE}/storage/open-local-folder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ folderPath }),
+    });
+    if (!res.ok) throw new Error('Failed to open folder');
+    return res.json();
+  },
+
+  async setLocalFolder(folderPath: string): Promise<{ ok: number; folderPath: string; message: string }> {
+    const res = await fetch(`${API_BASE}/storage/set-local-folder`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeaders(),
+      },
+      body: JSON.stringify({ folderPath }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Failed to update folder location');
+    return data;
   },
 };
 

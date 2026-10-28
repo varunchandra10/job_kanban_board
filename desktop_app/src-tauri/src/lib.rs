@@ -19,6 +19,7 @@ pub fn run() -> tauri::Result<()> {
       commands::get_app_data_path,
       commands::open_data_folder,
       commands::open_in_file_manager,
+      commands::select_folder,
       commands::check_for_updates,
       commands::toggle_devtools,
       commands::get_log_dir,
@@ -216,13 +217,12 @@ pub fn run() -> tauri::Result<()> {
         })
         .build(app)?;
 
-      // 3. Minimize to System Tray on Window Close
+      // 3. Clean Window Close (Terminates process cleanly, preventing ghost background processes)
       if let Some(main_win) = app.get_webview_window("main") {
-        let win_clone = main_win.clone();
+        let app_handle = app.handle().clone();
         main_win.on_window_event(move |event| {
-          if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-            api.prevent_close();
-            let _ = win_clone.hide();
+          if let tauri::WindowEvent::CloseRequested { .. } = event {
+            app_handle.exit(0);
           }
         });
       }

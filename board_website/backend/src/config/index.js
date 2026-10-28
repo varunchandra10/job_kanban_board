@@ -86,6 +86,9 @@ function resolveStoragePaths() {
   const uploadDir = path.resolve(backendDir, process.env.UPLOAD_DIR || 'documents');
   const backupDir = path.resolve(backendDir, 'backups');
 
+  if (!fs.existsSync(dataDir)) {
+    try { fs.mkdirSync(dataDir, { recursive: true }); } catch (_) {}
+  }
   if (!fs.existsSync(uploadDir)) {
     try { fs.mkdirSync(uploadDir, { recursive: true }); } catch (_) {}
   }

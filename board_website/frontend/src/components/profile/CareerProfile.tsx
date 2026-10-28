@@ -9,6 +9,7 @@ import {
   Plus,
   Trash2,
   Check,
+  Folder,
   Briefcase,
   Layers,
   Copy,
@@ -435,30 +436,46 @@ export const CareerProfile: React.FC = () => {
               </span>
             </button>
 
-            {/* G-Drive Button */}
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
-              onClick={() => setIsDriveModalOpen(true)}
-              title="Manage Your Google Drive Storage & Setup"
-            >
-              {/* Google Drive Tri-Color Icon */}
-              <svg viewBox="0 0 87.3 78" width="16" height="14.3" className="shrink-0">
-                <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA" />
-                <path d="M43.65 25.15L29.05 0c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.35.6-.55 1.2-.7 1.85h29z" fill="#00AC47" />
-                <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L73.55 76.8z" fill="#EA4335" />
-                <path d="M43.65 25.15L58.25 0H29.05l14.6 25.15z" fill="#00832D" />
-                <path d="M58.3 52.2H29L13.75 76.8c1.35.8 2.85 1.2 4.45 1.2H69.1c1.6 0 3.1-.45 4.45-1.2z" fill="#2684FC" />
-                <path d="M73.4 26.5L58.25 0c-1.35.8-2.5 1.9-3.3 3.3L43.65 25.15 58.3 52.2h29c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00" />
-              </svg>
-              <span>G-Drive</span>
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  gdriveStatus.connected ? 'bg-emerald-500 ring-2 ring-emerald-500/20' : 'bg-amber-500'
-                }`}
-                title={gdriveStatus.connected ? 'Google Drive Connected' : 'Google Drive Disconnected'}
-              />
-            </button>
+            {/* Storage Settings Button (dynamically switches between G-Drive and Local Storage) */}
+            {storageMode === 'local_storage' ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50/70 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                onClick={() => setIsDriveModalOpen(true)}
+                title="View & Change Local Storage Folder Path"
+              >
+                <Folder size={15} className="text-indigo-600 dark:text-indigo-400" />
+                <span>Local Storage</span>
+                <span
+                  className="h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20"
+                  title="Local System Storage Active"
+                />
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                onClick={() => setIsDriveModalOpen(true)}
+                title="Manage Your Google Drive Storage & Setup"
+              >
+                {/* Google Drive Tri-Color Icon */}
+                <svg viewBox="0 0 87.3 78" width="16" height="14.3" className="shrink-0">
+                  <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA" />
+                  <path d="M43.65 25.15L29.05 0c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.35.6-.55 1.2-.7 1.85h29z" fill="#00AC47" />
+                  <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L73.55 76.8z" fill="#EA4335" />
+                  <path d="M43.65 25.15L58.25 0H29.05l14.6 25.15z" fill="#00832D" />
+                  <path d="M58.3 52.2H29L13.75 76.8c1.35.8 2.85 1.2 4.45 1.2H69.1c1.6 0 3.1-.45 4.45-1.2z" fill="#2684FC" />
+                  <path d="M73.4 26.5L58.25 0c-1.35.8-2.5 1.9-3.3 3.3L43.65 25.15 58.3 52.2h29c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00" />
+                </svg>
+                <span>G-Drive</span>
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    gdriveStatus.connected ? 'bg-emerald-500 ring-2 ring-emerald-500/20' : 'bg-amber-500'
+                  }`}
+                  title={gdriveStatus.connected ? 'Google Drive Connected' : 'Google Drive Disconnected'}
+                />
+              </button>
+            )}
 
             {/* Download as CSV Button */}
             <button

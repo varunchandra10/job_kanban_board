@@ -15,13 +15,15 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 
 ## 📥 Get Job Tracker for Windows
 
-<a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
-  <img src="https://img.shields.io/badge/🚀_INSTALL_JOB_TRACKER-DOWNLOAD_.EXE_FOR_WINDOWS-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download and Install Job Tracker for Windows" height="52" />
+<div align="center">
+
+<a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip">
+  <img src="https://img.shields.io/badge/📦_DOWNLOAD_JOB_TRACKER_FOR_WINDOWS-ZIP_PACKAGE_(APP_+_UNINSTALLER)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job Tracker Windows ZIP" height="52" />
 </a>
 
 <br/><br/>
 
-[![Download Windows Installer](https://img.shields.io/badge/Standalone_Installer-Job--Tracker--Setup.exe-2563eb?style=flat-square&logo=windows&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe)
+[![Download Windows ZIP](https://img.shields.io/badge/Windows_Package-Job--Tracker--Windows.zip-0078D4?style=flat-square&logo=archive&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip)
 [![GitHub Releases](https://img.shields.io/badge/Releases-Latest_Build-8A2BE2?style=flat-square&logo=github&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/releases)
 [![Installation Guide](https://img.shields.io/badge/Docs-Installation_Guide-2EA44F?style=flat-square&logo=gitbook&logoColor=white)](docs/INSTALLATION.md)
 
@@ -29,29 +31,18 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 
 ---
 
-## ⚡ Quick Start: How to Install (1 Minute)
+## ⚡ Quick Start: How to Run on Windows (30 Seconds)
 
-Follow these simple steps:
+1. **Download the Package**:
+   Download [**`Job-Tracker-Windows.zip`**](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip) from the button above (saved in [`install_apps/`](install_apps/)).
+2. **Extract**:
+   Right-click `Job-Tracker-Windows.zip` and choose **Extract All**.
+3. **Launch**:
+   Double-click **`JobTracker.exe`** to start using the app immediately with local system storage and offline SQLite!
+4. **Clean Uninstall Anytime**:
+   Inside the ZIP, double-click **`Uninstall-Job-Tracker.bat`** to completely clean up any shortcuts, registry entries, or cached files in 1 click.
 
-1. **Download the Installer**:
-   
-   <p align="left">
-     <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
-       <img src="https://img.shields.io/badge/⬇️_DOWNLOAD_NOW-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="38" />
-     </a>
-   </p>
-   
-   *(Direct installer saved in the [`install_apps/`](install_apps/) directory)*.
-
-2. **Run the Setup**:
-   Double-click `Job-Tracker-Setup.exe`.
-   * It automatically installs Job Tracker to your computer.
-   * Creates a **Desktop shortcut** and a **Start Menu shortcut**.
-   * Launches the application immediately!
-   > **Note on Windows SmartScreen**: If Windows displays *"Windows protected your PC"*, click **More info** &rarr; **Run anyway**. *(Standard for newly built independent software without an enterprise code-signing certificate).*
-
-3. **Start Tracking**:
-   The app opens with your interactive Kanban board, Pomodoro focus timer, resume manager, and cloud sync!
+> **Note on Windows SmartScreen**: If Windows displays *"Windows protected your PC"*, click **More info** &rarr; **Run anyway**. *(Standard for newly built independent software without an enterprise code-signing certificate).*
 
 ---
 

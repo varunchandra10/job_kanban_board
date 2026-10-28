@@ -50,8 +50,9 @@ tracker*.db
 *.sqlite-journal
 *.db-journal
 backups/
-DB/*
+DB/
 *.zip
+!install_apps/*.zip
 
 # IMPORTANT PRIVACY NOTE:
 tracker.db
