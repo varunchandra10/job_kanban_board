@@ -14,6 +14,9 @@ import {
   ArrowUpRight,
   LoaderCircle,
   Info,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const DriveModal: React.FC = () => {
@@ -32,6 +35,7 @@ export const DriveModal: React.FC = () => {
   const [errorMsg, setErrorMsg] = useState('');
   const [copiedEmail, setCopiedEmail] = useState(false);
   const [hasOAuth, setHasOAuth] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const serviceAccountEmail =
     'job-tracker-storage@job-tracker-512318.iam.gserviceaccount.com';
@@ -148,7 +152,7 @@ export const DriveModal: React.FC = () => {
                   Google Drive Storage
                 </h2>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                  Connect a folder to store your job tracker documents.
+                  Connect your Google Drive to store and sync resumes.
                 </p>
               </div>
             </div>
@@ -191,175 +195,166 @@ export const DriveModal: React.FC = () => {
           </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleConnect}>
-          <div className="space-y-5 px-6 py-5">
-            {/* Quick 1-Click Personal Account Authorization */}
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-50/50 dark:bg-blue-500/5 p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span>1-Click Personal Account Access</span>
-                    {hasOAuth && (
-                      <span className="rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 text-[9px] font-bold">
-                        Active
-                      </span>
-                    )}
+        {/* Modal Body */}
+        <div className="space-y-4 px-6 py-5 max-h-[70vh] overflow-y-auto">
+          {/* PRIMARY: 1-Click Personal Account Access */}
+          <div className={`rounded-2xl border p-4 transition-all ${
+            hasOAuth
+              ? 'border-emerald-500/30 bg-emerald-500/5'
+              : 'border-blue-500/25 bg-blue-50/50 dark:bg-blue-500/5'
+          }`}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white m-0">
+                    Direct Google Account Connection
                   </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Authorize your Google account to upload resumes directly into your 15 GB quota.
-                  </p>
+                  {hasOAuth ? (
+                    <span className="rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+                      <CheckCircle2 size={11} /> Connected
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30 px-2 py-0.5 text-[10px] font-bold">
+                      Recommended
+                    </span>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleAuthorizeOAuth}
-                  disabled={loading}
-                  className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-600/30 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
-                >
-                  <ShieldCheck size={13} />
-                  <span>{hasOAuth ? 'Re-authorize' : 'Authorize'}</span>
-                </button>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed m-0">
+                  {hasOAuth
+                    ? 'Your Google account is authorized. Resumes and cover letters are stored directly in your personal Google Drive (15 GB quota).'
+                    : 'Authorize your Google Drive in 1 click. No service account sharing or folder IDs needed.'}
+                </p>
               </div>
+
+              <button
+                type="button"
+                onClick={handleAuthorizeOAuth}
+                disabled={loading}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50 text-white ${
+                  hasOAuth
+                    ? 'bg-slate-700 hover:bg-slate-600 border border-slate-600'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500'
+                }`}
+              >
+                <ShieldCheck size={13} />
+                <span>{hasOAuth ? 'Re-authorize' : 'Authorize 1-Click'}</span>
+              </button>
             </div>
 
-            {/* Step 1 */}
-            <section>
-              <div className="mb-2.5 flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
-                  1
-                </div>
-
-                <div>
-                  <h3 className="m-0 text-sm font-bold text-slate-900 dark:text-white">
-                    Grant folder access
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Share your Google Drive folder with this service account as an <strong>Editor</strong>.
-                  </p>
-                </div>
-              </div>
-
-              <div className="ml-9 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 p-3.5">
-                <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  <ShieldCheck size={14} />
-                  Service account email
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="min-w-0 flex-1 break-all rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] px-3 py-2 font-mono text-[11px] text-slate-800 dark:text-slate-200">
-                    {serviceAccountEmail}
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={copyEmail}
-                    aria-label="Copy service account email"
-                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] px-3 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer"
-                  >
-                    {copiedEmail ? <CheckCheck size={14} className="text-emerald-500" /> : <Copy size={14} />}
-                    {copiedEmail ? 'Copied' : 'Copy'}
-                  </button>
-                </div>
-
+            {hasOAuth && (
+              <div className="mt-3 pt-3 border-t border-emerald-500/20 flex items-center justify-between text-xs">
+                <span className="text-emerald-700 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                  <Check size={13} /> Direct OAuth Active — uploads will save to your Google Drive
+                </span>
                 <a
                   href="https://drive.google.com/drive/my-drive"
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-indigo-400 hover:underline"
+                  className="inline-flex items-center gap-1 text-blue-600 dark:text-indigo-400 font-bold hover:underline"
                 >
-                  Open Google Drive
-                  <ArrowUpRight size={13} />
+                  Open Drive ↗
                 </a>
-              </div>
-            </section>
-
-            {/* Step 2 */}
-            <section>
-              <div className="mb-2.5 flex items-start gap-3">
-                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-[11px] font-bold text-white">
-                  2
-                </div>
-
-                <div>
-                  <h3 className="m-0 text-sm font-bold text-slate-900 dark:text-white">
-                    Choose your storage folder
-                  </h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                    Paste the folder ID from its Google Drive URL.
-                  </p>
-                </div>
-              </div>
-
-              <div className="ml-9">
-                <label htmlFor="drive-folder-id" className="mb-1.5 block text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Google Drive Folder ID
-                </label>
-
-                <div className="relative">
-                  <FolderOpen size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input
-                    id="drive-folder-id"
-                    type="text"
-                    placeholder="Paste folder ID or link here..."
-                    value={folderId}
-                    onChange={(e) => {
-                      setFolderId(e.target.value);
-                      if (errorMsg) setErrorMsg('');
-                    }}
-                    disabled={loading}
-                    autoComplete="off"
-                    spellCheck={false}
-                    required
-                    className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] py-2.5 pl-10 pr-3 font-mono text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60 transition"
-                  />
-                </div>
-
-                <div className="mt-2 flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">
-                  <Info size={13} className="mt-0.5 shrink-0" />
-                  <p className="m-0">
-                    Example URL: <span className="font-mono text-blue-600 dark:text-indigo-400">drive.google.com/drive/folders/<strong>FOLDER_ID</strong></span>
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* Error Message */}
-            {errorMsg && (
-              <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs leading-relaxed text-red-600 dark:text-red-400">
-                <AlertCircle size={15} className="mt-0.5 shrink-0" />
-                <span>{errorMsg}</span>
               </div>
             )}
           </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between gap-3 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-6 py-4">
-            <div className="hidden items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 sm:flex">
-              <ShieldCheck size={14} />
-              Your folder permissions stay in your control.
-            </div>
+          {/* Collapsible Advanced Custom Service Account & Folder Setup */}
+          <div className="border border-slate-200/80 dark:border-white/10 rounded-2xl overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/70 dark:bg-white/[0.02] text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/[0.05] transition cursor-pointer"
+            >
+              <span>Custom Service Account / Folder ID (Advanced)</span>
+              {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
 
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                type="button"
-                onClick={closeModal}
-                disabled={loading}
-                className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer disabled:opacity-50"
-              >
-                Cancel
-              </button>
+            {showAdvanced && (
+              <form onSubmit={handleConnect} className="p-4 space-y-4 border-t border-slate-200/80 dark:border-white/10">
+                <p className="text-[11.5px] text-slate-500 dark:text-slate-400 m-0">
+                  Optional: If you need to share documents with an automated service account or specify a custom shared folder:
+                </p>
 
-              <button
-                type="submit"
-                disabled={loading || !folderId.trim()}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 px-5 py-2 text-xs font-bold text-white shadow-md shadow-blue-500/25 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? <LoaderCircle size={14} className="animate-spin" /> : <Check size={14} />}
-                {loading ? 'Connecting...' : 'Save & Connect'}
-              </button>
-            </div>
+                {/* Step 1 */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    1. Share folder with service account email:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="min-w-0 flex-1 break-all rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] px-3 py-1.5 font-mono text-[11px] text-slate-800 dark:text-slate-200">
+                      {serviceAccountEmail}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={copyEmail}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer shrink-0"
+                    >
+                      {copiedEmail ? <CheckCheck size={13} className="text-emerald-500" /> : <Copy size={13} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Step 2 */}
+                <div className="space-y-1.5">
+                  <label htmlFor="drive-folder-id" className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                    2. Custom Google Drive Folder ID:
+                  </label>
+                  <div className="relative">
+                    <FolderOpen size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      id="drive-folder-id"
+                      type="text"
+                      placeholder="Paste folder ID..."
+                      value={folderId}
+                      onChange={(e) => {
+                        setFolderId(e.target.value);
+                        if (errorMsg) setErrorMsg('');
+                      }}
+                      className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] py-2 pl-9 pr-3 font-mono text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500/20"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={loading || !folderId.trim()}
+                    className="px-4 py-1.5 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition disabled:opacity-50 cursor-pointer"
+                  >
+                    Save Custom Folder
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
-        </form>
+
+          {/* Error Message */}
+          {errorMsg && (
+            <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-xs leading-relaxed text-red-600 dark:text-red-400">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between gap-3 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-6 py-4">
+          <div className="hidden items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 sm:flex">
+            <ShieldCheck size={14} />
+            Your folder permissions stay in your control.
+          </div>
+
+          <div className="ml-auto flex items-center gap-2">
+            <button
+              type="button"
+              onClick={closeModal}
+              disabled={loading}
+              className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition cursor-pointer disabled:opacity-50"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

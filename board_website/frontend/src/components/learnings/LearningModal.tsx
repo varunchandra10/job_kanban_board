@@ -58,9 +58,18 @@ export const LearningModal: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
-  // Prefill or reset on modal open
+  const prevOpenRef = useRef(false);
+  const prevEditingIdRef = useRef<number | null | undefined>(undefined);
+
+  // Prefill or reset ONLY when modal transitions from closed to open, or when editingLearning changes
   useEffect(() => {
+    const justOpened = !prevOpenRef.current && isAddLearningOpen;
+    const editingChanged = editingLearning?.id !== prevEditingIdRef.current;
+    prevOpenRef.current = isAddLearningOpen;
+    prevEditingIdRef.current = editingLearning?.id;
+
     if (!isAddLearningOpen) return;
+    if (!justOpened && !editingChanged) return;
 
     if (editingLearning) {
       setCategory(editingLearning.category || 'General Aptitude');
@@ -95,7 +104,7 @@ export const LearningModal: React.FC = () => {
       setTags('');
     }
     setIsTrackDropdownOpen(false);
-  }, [isAddLearningOpen, editingLearning, selectedCalDate, learningTracks, learningPrefill]);
+  }, [isAddLearningOpen, editingLearning, selectedCalDate]);
 
   if (!isAddLearningOpen) return null;
 

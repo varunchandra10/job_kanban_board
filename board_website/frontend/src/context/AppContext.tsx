@@ -293,7 +293,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (parsed && parsed.full_name === 'Varun Chandra' && parsed.email === 'varunchandra@example.com') {
+        if (parsed && (parsed.full_name === 'Varun Chandra' || parsed.email === 'varunchandra@example.com')) {
           return INITIAL_PROFILE;
         }
         return parsed;

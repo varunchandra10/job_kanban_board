@@ -71,9 +71,18 @@ export const ApplicationModal: React.FC = () => {
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
-  // Prefill or reset on open
+  const prevOpenRef = useRef(false);
+  const prevEditingAppIdRef = useRef<number | null | undefined>(undefined);
+
+  // Prefill or reset ONLY when modal transitions from closed to open, or when editingApp changes
   useEffect(() => {
+    const justOpened = !prevOpenRef.current && isAddAppOpen;
+    const editingAppChanged = editingApp?.id !== prevEditingAppIdRef.current;
+    prevOpenRef.current = isAddAppOpen;
+    prevEditingAppIdRef.current = editingApp?.id;
+
     if (!isAddAppOpen) return;
+    if (!justOpened && !editingAppChanged) return;
 
     if (editingApp) {
       setCompany(editingApp.company || '');
@@ -124,7 +133,7 @@ export const ApplicationModal: React.FC = () => {
       setResumePath(versions[0]?.pdf_name || '');
       setCoverLetterPath('');
     }
-  }, [isAddAppOpen, editingApp, selectedCalDate, versions]);
+  }, [isAddAppOpen, editingApp, selectedCalDate]);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

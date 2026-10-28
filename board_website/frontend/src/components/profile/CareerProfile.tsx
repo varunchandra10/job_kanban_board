@@ -39,6 +39,7 @@ export const CareerProfile: React.FC = () => {
     openAuthModal,
     storageMode,
     requestStorageModeChange,
+    currentUser,
   } = useApp();
 
   // Momentum Activity Matrix Date controls
@@ -359,30 +360,39 @@ export const CareerProfile: React.FC = () => {
       >
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
           {/* User Identity */}
-          <div className="flex items-center gap-4 sm:gap-5">
-            {/* Avatar Circle */}
-            <div className="flex h-16 w-16 sm:h-18 sm:w-18 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
-              {profile.full_name
-                .split(' ')
-                .map(n => n[0])
-                .join('')
-                .toUpperCase() || 'VC'}
-            </div>
+          {(() => {
+            const displayName = profile.full_name?.trim() || currentUser?.name?.trim() || (currentUser?.email ? currentUser.email.split('@')[0] : 'My Profile');
+            const avatarInitials = displayName
+              .split(' ')
+              .filter(Boolean)
+              .map((n: string) => n[0])
+              .join('')
+              .toUpperCase()
+              .slice(0, 2) || 'U';
 
-            <div className="min-w-0">
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0 truncate">
-                {profile.full_name || 'Varun Chandra'}
-              </h1>
+            return (
+              <div className="flex items-center gap-4 sm:gap-5">
+                {/* Avatar Circle */}
+                <div className="flex h-16 w-16 sm:h-18 sm:w-18 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
+                  {avatarInitials}
+                </div>
 
-              {/* Streak badge right below the name */}
-              <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-3 py-1 rounded-full shadow-2xs">
-                  <Flame size={14} className="text-orange-500 animate-pulse" />
-                  <span>{streak}-Day Focus Streak</span>
-                </span>
+                <div className="min-w-0">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0 truncate">
+                    {displayName}
+                  </h1>
+
+                  {/* Streak badge right below the name */}
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-3 py-1 rounded-full shadow-2xs">
+                      <Flame size={14} className="text-orange-500 animate-pulse" />
+                      <span>{streak}-Day Focus Streak</span>
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Action Buttons: Storage Mode Toggle | G-Drive | Download as CSV | Download DB as ZIP */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">

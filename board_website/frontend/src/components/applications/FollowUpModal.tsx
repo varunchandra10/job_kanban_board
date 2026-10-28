@@ -79,6 +79,7 @@ export const FollowUpModal: React.FC = () => {
     followUpApp,
     closeFollowUpModal,
     profile,
+    currentUser,
     updateApplication,
     showToast,
   } = useApp();
@@ -124,7 +125,7 @@ export const FollowUpModal: React.FC = () => {
 
     const company = followUpApp.company || 'the team';
     const role = followUpApp.role || 'this position';
-    const applicantName = profile?.full_name?.trim() || 'Varun Chandra';
+    const applicantName = profile?.full_name?.trim() || currentUser?.name?.trim() || (currentUser?.email ? currentUser.email.split('@')[0] : 'Applicant');
     const contactGreeting = recruiterName.trim()
       ? `Dear ${recruiterName.trim()}`
       : `Dear ${company} Recruiting Team`;

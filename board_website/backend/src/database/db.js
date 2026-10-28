@@ -326,11 +326,37 @@ const getState = (userId = null) => {
       settings: {}
     };
   }
+
+  let prof = db.prepare('select * from resume_profile where user_id=? limit 1').get(userId) || null;
+  try {
+    const userRow = db.prepare('select name, email from users where id=?').get(userId);
+    if (!prof && userRow) {
+      prof = {
+        user_id: userId,
+        full_name: userRow.name || (userRow.email ? userRow.email.split('@')[0] : ''),
+        email: userRow.email || '',
+        phone: '',
+        linkedin: '',
+        github: '',
+        school: '',
+        degree: '',
+        grad_date: '',
+        gpa: '',
+        skills: '',
+        projects: '',
+        experience: '',
+        gdrive_folder_id: ''
+      };
+    } else if (prof && (!prof.full_name || prof.full_name === 'Varun Chandra') && userRow && userRow.name && userRow.name !== 'Varun Chandra') {
+      prof.full_name = userRow.name;
+    }
+  } catch (_) {}
+
   return {
     apps: db.prepare('select * from applications where user_id=? order by position, id').all(userId),
     companies: db.prepare('select * from companies order by name').all(),
     roles: db.prepare("select name from roles where user_id=? order by name").all(userId).map(r => r.name),
-    profile: db.prepare('select * from resume_profile where user_id=? limit 1').get(userId) || null,
+    profile: prof,
     versions: db.prepare("select id,label,region,text,pdf_name,(pdf_data!='') as has_pdf from resume_versions where user_id=? order by id").all(userId),
     settings: Object.fromEntries(db.prepare('select * from settings where user_id=?').all(userId).map(r => [r.key, r.value])),
   };
