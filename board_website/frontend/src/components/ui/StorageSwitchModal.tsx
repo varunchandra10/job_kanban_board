@@ -29,13 +29,19 @@ export const StorageSwitchModal: React.FC = () => {
   const isDesktop = isDesktopApp();
   const [localDir, setLocalDir] = useState<string>('');
   const [canOpenFolder, setCanOpenFolder] = useState<boolean>(false);
+  const [customPathInput, setCustomPathInput] = useState<string>('');
+  const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
+  const [isSavingPath, setIsSavingPath] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isStorageConfirmModalOpen) return;
 
     api.getLocalStorageInfo()
       .then((info) => {
-        if (info.activeDir) setLocalDir(info.activeDir);
+        if (info.activeDir) {
+          setLocalDir(info.activeDir);
+          setCustomPathInput(info.activeDir);
+        }
         setCanOpenFolder(info.canOpenFolder || isDesktop);
       })
       .catch(() => {});
@@ -65,6 +71,55 @@ export const StorageSwitchModal: React.FC = () => {
     } catch (err: any) {
       showToast('Could not open folder: ' + (err.message || 'Unknown error'));
     }
+  };
+
+  const handleBrowseFolder = async () => {
+    try {
+      if ((window as any).__TAURI__?.core?.invoke) {
+        const selected = await (window as any).__TAURI__.core.invoke('select_folder');
+        if (selected) {
+          setCustomPathInput(selected);
+          setIsEditingPath(true);
+        }
+      } else if (typeof (window as any).showDirectoryPicker === 'function') {
+        const dirHandle = await (window as any).showDirectoryPicker();
+        if (dirHandle?.name) {
+          setCustomPathInput(dirHandle.name);
+          setIsEditingPath(true);
+        }
+      }
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error('Directory browse failed:', err);
+      }
+    }
+  };
+
+  const handleSavePathOnly = async () => {
+    const trimmed = customPathInput.trim();
+    if (!trimmed) return;
+    setIsSavingPath(true);
+    try {
+      await api.setLocalFolder(trimmed);
+      setLocalDir(trimmed);
+      setIsEditingPath(false);
+      showToast('Storage folder updated with resumes & cover_letter folders!');
+    } catch (err: any) {
+      showToast('Error: ' + (err.message || 'Failed to update folder'));
+    } finally {
+      setIsSavingPath(false);
+    }
+  };
+
+  const handleConfirmSwitch = async () => {
+    if (isSwitchingToLocal && customPathInput.trim() && customPathInput.trim() !== localDir) {
+      try {
+        await api.setLocalFolder(customPathInput.trim());
+      } catch (err) {
+        console.warn('Failed to save preferred folder path:', err);
+      }
+    }
+    confirmStorageModeChange();
   };
 
   return (
@@ -150,13 +205,25 @@ export const StorageSwitchModal: React.FC = () => {
 
             {isSwitchingToLocal ? (
               <div className="space-y-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-xs">
-                {localDir && (
-                  <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-500/10 p-3 space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
-                        <Folder size={13} className="text-indigo-600 dark:text-indigo-400" />
-                        Storage Destination Folder:
-                      </span>
+                <div className="rounded-xl border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/70 dark:bg-indigo-500/10 p-3.5 space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-900 dark:text-indigo-200 uppercase tracking-wider">
+                      <Folder size={13} className="text-indigo-600 dark:text-indigo-400" />
+                      Storage Destination Folder:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isEditingPath) {
+                            setCustomPathInput(localDir || '');
+                          }
+                          setIsEditingPath(!isEditingPath);
+                        }}
+                        className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        {isEditingPath ? 'Cancel' : 'Change Path'}
+                      </button>
                       {canOpenFolder && (
                         <button
                           type="button"
@@ -169,11 +236,52 @@ export const StorageSwitchModal: React.FC = () => {
                         </button>
                       )}
                     </div>
-                    <code className="block text-[11px] font-mono break-all bg-white dark:bg-black/30 p-2 rounded-lg border border-indigo-100 dark:border-indigo-500/20 text-slate-800 dark:text-indigo-300 select-all">
-                      {localDir}
-                    </code>
                   </div>
-                )}
+
+                  {isEditingPath ? (
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={customPathInput}
+                          onChange={(e) => setCustomPathInput(e.target.value)}
+                          placeholder="e.g. C:\Users\YourName\Documents\Resumes"
+                          className="flex-1 px-3 py-1.5 text-xs font-mono rounded-lg border border-indigo-200 dark:border-indigo-500/40 bg-white dark:bg-black/60 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleBrowseFolder}
+                          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-300 dark:border-indigo-500/30 bg-white dark:bg-indigo-500/10 hover:bg-indigo-50 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition cursor-pointer"
+                          title="Browse folder on your computer"
+                        >
+                          <FolderOpen size={13} />
+                          <span>Browse...</span>
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-[10.5px] text-slate-500 dark:text-slate-400">
+                        <span>Resumes &amp; cover_letter subfolders will be auto-created inside.</span>
+                        <button
+                          type="button"
+                          onClick={handleSavePathOnly}
+                          disabled={isSavingPath || !customPathInput.trim()}
+                          className="px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition cursor-pointer disabled:opacity-50"
+                        >
+                          {isSavingPath ? 'Saving...' : 'Save Path'}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <code className="block text-[11px] font-mono break-all bg-white dark:bg-black/30 p-2 rounded-lg border border-indigo-100 dark:border-indigo-500/20 text-slate-800 dark:text-indigo-300 select-all">
+                        {localDir || customPathInput || 'Default Documents Folder'}
+                      </code>
+                      <p className="text-[10px] text-indigo-700/80 dark:text-indigo-300/80 m-0 pl-0.5">
+                        📁 Contains auto-created <code>resumes/</code> and <code>cover_letter/</code> subfolders.
+                      </p>
+                    </div>
+                  )}
+                </div>
                 <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
                   <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
@@ -246,7 +354,7 @@ export const StorageSwitchModal: React.FC = () => {
 
           <button
             type="button"
-            onClick={confirmStorageModeChange}
+            onClick={handleConfirmSwitch}
             className={`inline-flex items-center justify-center gap-1.5 rounded-xl px-5 py-2 text-xs font-bold text-white shadow-md transition cursor-pointer ${
               isSwitchingToLocal
                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-500/25'

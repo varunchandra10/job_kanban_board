@@ -114,10 +114,34 @@ exports.uploadDocument = async (req, res, next) => {
           }
         }
         if (activeLocalDir) {
-          const subDir = path.join(activeLocalDir, type === 'cover_letter' ? 'cover_letter' : 'resume');
-          if (!fs.existsSync(subDir)) fs.mkdirSync(subDir, { recursive: true });
+          if (!fs.existsSync(activeLocalDir)) {
+            try { fs.mkdirSync(activeLocalDir, { recursive: true }); } catch (_) {}
+          }
+
+          // Automatically ensure resumes and cover_letter subfolders exist
+          const resumesDir = path.join(activeLocalDir, 'resumes');
+          const resumeAltDir = path.join(activeLocalDir, 'resume');
+          if (!fs.existsSync(resumesDir) && !fs.existsSync(resumeAltDir)) {
+            try { fs.mkdirSync(resumesDir, { recursive: true }); } catch (_) {}
+          }
+
+          const coverLetterDir = path.join(activeLocalDir, 'cover_letter');
+          const coverLettersAltDir = path.join(activeLocalDir, 'cover_letters');
+          if (!fs.existsSync(coverLetterDir) && !fs.existsSync(coverLettersAltDir)) {
+            try { fs.mkdirSync(coverLetterDir, { recursive: true }); } catch (_) {}
+          }
+
+          const isCover = type === 'cover_letter' || type === 'cover_letters';
+          let targetSubDir = isCover
+            ? (fs.existsSync(coverLetterDir) ? coverLetterDir : (fs.existsSync(coverLettersAltDir) ? coverLettersAltDir : coverLetterDir))
+            : (fs.existsSync(resumesDir) ? resumesDir : (fs.existsSync(resumeAltDir) ? resumeAltDir : resumesDir));
+
+          if (!fs.existsSync(targetSubDir)) {
+            try { fs.mkdirSync(targetSubDir, { recursive: true }); } catch (_) {}
+          }
+
           const safeName = `${Date.now()}_${path.basename(originalName || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')}`;
-          const diskTarget = path.join(subDir, safeName);
+          const diskTarget = path.join(targetSubDir, safeName);
           fs.writeFileSync(diskTarget, fileBuffer);
           savedDiskPath = diskTarget;
         }

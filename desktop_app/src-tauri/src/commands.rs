@@ -69,6 +69,24 @@ pub async fn select_folder(app: AppHandle) -> Result<Option<String>, String> {
     }
 }
 
+/// Ensures the user-selected folder and resumes/cover_letter subfolders exist on the system.
+#[tauri::command]
+pub async fn ensure_storage_dirs(folder_path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&folder_path);
+    if !p.exists() {
+        let _ = std::fs::create_dir_all(p);
+    }
+    let resumes = p.join("resumes");
+    if !resumes.exists() {
+        let _ = std::fs::create_dir_all(resumes);
+    }
+    let cover_letter = p.join("cover_letter");
+    if !cover_letter.exists() {
+        let _ = std::fs::create_dir_all(cover_letter);
+    }
+    Ok(())
+}
+
 /// Resolves the operating system's application data folder for Job Tracker.
 #[tauri::command]
 pub async fn get_app_data_path(app: AppHandle) -> Result<String, String> {

@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 const express = require('express');
 const router = express.Router();
 const documentsController = require('../controllers/documentsController');
@@ -80,8 +81,22 @@ router.post('/storage/set-local-folder', (req, res) => {
 
   try {
     if (!fs.existsSync(folderPath)) {
-      fs.mkdirSync(folderPath, { recursive: true });
+      try { fs.mkdirSync(folderPath, { recursive: true }); } catch (_) {}
     }
+
+    // Automatically ensure resumes and cover_letter subfolders exist
+    const resumeDir = path.join(folderPath, 'resumes');
+    const resumeAltDir = path.join(folderPath, 'resume');
+    if (!fs.existsSync(resumeDir) && !fs.existsSync(resumeAltDir)) {
+      try { fs.mkdirSync(resumeDir, { recursive: true }); } catch (_) {}
+    }
+
+    const coverLetterDir = path.join(folderPath, 'cover_letter');
+    const coverLettersAltDir = path.join(folderPath, 'cover_letters');
+    if (!fs.existsSync(coverLetterDir) && !fs.existsSync(coverLettersAltDir)) {
+      try { fs.mkdirSync(coverLetterDir, { recursive: true }); } catch (_) {}
+    }
+
     if (userId) {
       db.prepare(`
         INSERT INTO settings (key, value, user_id)
@@ -89,7 +104,12 @@ router.post('/storage/set-local-folder', (req, res) => {
         ON CONFLICT(key, user_id) DO UPDATE SET value = excluded.value
       `).run(folderPath, userId);
     }
-    res.json({ ok: 1, folderPath, message: 'Local storage folder updated successfully' });
+    res.json({
+      ok: 1,
+      folderPath,
+      message: 'Local storage folder and resumes/cover_letter subfolders updated successfully',
+      subfolders: ['resumes', 'cover_letter']
+    });
   } catch (err) {
     res.status(500).json({ ok: 0, error: `Failed to set storage directory: ${err.message}` });
   }

@@ -20,6 +20,7 @@ pub fn run() -> tauri::Result<()> {
       commands::open_data_folder,
       commands::open_in_file_manager,
       commands::select_folder,
+      commands::ensure_storage_dirs,
       commands::check_for_updates,
       commands::toggle_devtools,
       commands::get_log_dir,

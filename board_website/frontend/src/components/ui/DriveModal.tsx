@@ -378,7 +378,7 @@ export const DriveModal: React.FC = () => {
               <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 text-xs text-slate-600 dark:text-slate-400">
                 <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Automatic Organization:</strong> Resumes and cover letters uploaded in Local Storage mode are automatically sorted into <code>resume/</code> and <code>cover_letter/</code> subfolders.
+                  <strong>Automatic Organization:</strong> Resumes and cover letters uploaded in Local Storage mode are automatically organized into <code>resumes/</code> and <code>cover_letter/</code> subfolders (created automatically if missing).
                 </span>
               </div>
             </div>

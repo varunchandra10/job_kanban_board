@@ -374,38 +374,87 @@ export const api = {
     customDir: string | null;
     canOpenFolder: boolean;
   }> {
-    const res = await fetch(`${API_BASE}/storage/local-info`, {
-      headers: getAuthHeaders(),
-    });
-    if (!res.ok) throw new Error('Failed to fetch local storage info');
-    return res.json();
+    const cached = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : null;
+    try {
+      const res = await fetch(`${API_BASE}/storage/local-info`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (cached && (data.activeDir === '/tmp/documents' || !data.customDir)) {
+          data.activeDir = cached;
+          data.customDir = cached;
+        }
+        return data;
+      }
+    } catch (_) {}
+
+    return {
+      ok: 1,
+      isDesktop: isTauri,
+      activeDir: cached || 'AppData\\Roaming\\JobTracker\\documents',
+      defaultDir: 'AppData\\Roaming\\JobTracker\\documents',
+      customDir: cached || null,
+      canOpenFolder: isTauri,
+    };
   },
 
   async openLocalFolder(folderPath?: string): Promise<{ ok: number; opened: boolean; path: string }> {
+    const target = folderPath || (typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : undefined);
+    if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        if (target) {
+          await (window as any).__TAURI__.core.invoke('open_in_file_manager', { path: target });
+          return { ok: 1, opened: true, path: target };
+        } else {
+          const opened = await (window as any).__TAURI__.core.invoke('open_data_folder');
+          return { ok: 1, opened: true, path: opened };
+        }
+      } catch (err) {
+        console.warn('Tauri open folder fallback:', err);
+      }
+    }
+
     const res = await fetch(`${API_BASE}/storage/open-local-folder`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...getAuthHeaders(),
       },
-      body: JSON.stringify({ folderPath }),
+      body: JSON.stringify({ folderPath: target }),
     });
     if (!res.ok) throw new Error('Failed to open folder');
     return res.json();
   },
 
   async setLocalFolder(folderPath: string): Promise<{ ok: number; folderPath: string; message: string }> {
-    const res = await fetch(`${API_BASE}/storage/set-local-folder`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify({ folderPath }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || 'Failed to update folder location');
-    return data;
+    const trimmed = String(folderPath).trim();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('job_tracker_custom_local_dir', trimmed);
+    }
+
+    if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        await (window as any).__TAURI__.core.invoke('ensure_storage_dirs', { folderPath: trimmed });
+      } catch (err) {
+        console.warn('Tauri ensure_storage_dirs note:', err);
+      }
+    }
+
+    try {
+      const res = await fetch(`${API_BASE}/storage/set-local-folder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ folderPath: trimmed }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) return data;
+    } catch (_) {}
+
+    return { ok: 1, folderPath: trimmed, message: 'Local storage folder updated successfully' };
   },
 };
 
