@@ -37,6 +37,8 @@ export const CareerProfile: React.FC = () => {
     showToast,
     isAuthenticated,
     openAuthModal,
+    storageMode,
+    requestStorageModeChange,
   } = useApp();
 
   // Momentum Activity Matrix Date controls
@@ -382,8 +384,47 @@ export const CareerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Action Buttons: G-Drive | Download as CSV | Download DB as ZIP */}
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+          {/* Action Buttons: Storage Mode Toggle | G-Drive | Download as CSV | Download DB as ZIP */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
+            {/* Storage Mode Toggle Button matching screenshot aesthetic */}
+            <button
+              type="button"
+              onClick={() => requestStorageModeChange(storageMode === 'local_storage' ? 'g_drive' : 'local_storage')}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-700/70 dark:border-white/15 bg-slate-900/90 dark:bg-[#18181b] hover:border-slate-500 shadow-sm transition-all cursor-pointer group select-none"
+              title={`Active Storage: ${storageMode === 'local_storage' ? 'Local Storage (Click to switch to Google Drive)' : 'Google Drive (Click to switch to Local Storage)'}`}
+            >
+              <span
+                className={`text-[11px] font-black tracking-wider transition-colors duration-200 ${
+                  storageMode === 'local_storage'
+                    ? 'text-[#a78bfa] drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]'
+                    : 'text-slate-400 group-hover:text-slate-300'
+                }`}
+              >
+                LOCAL_STORAGE
+              </span>
+
+              {/* Pill track and thumb */}
+              <div className="w-10 h-5 rounded-full bg-[#27272a] border border-[#3f3f46] p-0.5 flex items-center relative transition-colors">
+                <div
+                  className={`w-4 h-4 rounded-full transition-transform duration-200 ease-out shadow-md ${
+                    storageMode === 'local_storage'
+                      ? 'translate-x-0 bg-[#8b5cf6]'
+                      : 'translate-x-5 bg-[#8b5cf6]'
+                  }`}
+                />
+              </div>
+
+              <span
+                className={`text-[11px] font-black tracking-wider transition-colors duration-200 ${
+                  storageMode === 'g_drive'
+                    ? 'text-[#a78bfa] drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]'
+                    : 'text-slate-400 group-hover:text-slate-300'
+                }`}
+              >
+                G_DRIVE
+              </span>
+            </button>
+
             {/* G-Drive Button */}
             <button
               type="button"

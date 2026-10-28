@@ -294,7 +294,8 @@ export const api = {
   async uploadDocument(
     file: File,
     type: 'resume' | 'cover_letter',
-    appId?: number
+    appId?: number,
+    storageMode?: 'local_storage' | 'g_drive'
   ): Promise<{
     ok: number;
     fullPath: string;
@@ -303,13 +304,17 @@ export const api = {
     name: string;
     size?: number;
     isGoogleDrive?: boolean;
+    isLocalStorage?: boolean;
+    docId?: string;
     fileId?: string;
     rootFolderId?: string;
     folderId?: string;
   }> {
+    const activeMode = storageMode || localStorage.getItem('job_tracker_storage_preference') || 'local_storage';
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
+    formData.append('storageMode', activeMode);
     if (appId) {
       formData.append('appId', String(appId));
     }

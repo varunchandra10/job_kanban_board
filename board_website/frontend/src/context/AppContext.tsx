@@ -24,6 +24,7 @@ import {
   TRACK_PALETTE,
 } from '../utils/constants';
 import { api } from '../services/api';
+import { getInitialStorageMode, StorageMode } from '../utils/environment';
 
 interface ToastState {
   message: string;
@@ -61,6 +62,12 @@ interface AppContextType {
   followUpApp: Application | null;
   isDataLoading: boolean;
   refreshState: () => Promise<void>;
+  storageMode: StorageMode;
+  pendingStorageMode: StorageMode | null;
+  isStorageConfirmModalOpen: boolean;
+  requestStorageModeChange: (targetMode: StorageMode) => void;
+  confirmStorageModeChange: () => void;
+  cancelStorageModeChange: () => void;
 
   // Setters & Actions
   setViewMode: (mode: ViewMode) => void;
@@ -176,6 +183,34 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       folderId: savedFolder || null,
     };
   });
+  const [storageMode, setStorageMode] = useState<StorageMode>(() => getInitialStorageMode());
+  const [pendingStorageMode, setPendingStorageMode] = useState<StorageMode | null>(null);
+  const [isStorageConfirmModalOpen, setIsStorageConfirmModalOpen] = useState<boolean>(false);
+
+  const requestStorageModeChange = (targetMode: StorageMode) => {
+    if (targetMode === storageMode) return;
+    setPendingStorageMode(targetMode);
+    setIsStorageConfirmModalOpen(true);
+  };
+
+  const confirmStorageModeChange = () => {
+    if (pendingStorageMode) {
+      setStorageMode(pendingStorageMode);
+      localStorage.setItem('job_tracker_storage_preference', pendingStorageMode);
+      showToast(
+        pendingStorageMode === 'local_storage'
+          ? 'Storage switched to Local Database'
+          : 'Storage switched to Google Drive'
+      );
+    }
+    setIsStorageConfirmModalOpen(false);
+    setPendingStorageMode(null);
+  };
+
+  const cancelStorageModeChange = () => {
+    setIsStorageConfirmModalOpen(false);
+    setPendingStorageMode(null);
+  };
   const [isDataLoading, setIsDataLoading] = useState<boolean>(() => {
     const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
     if (isLoggedOut) return false;
@@ -982,6 +1017,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         updateProfile,
         addQuickLink,
         removeQuickLink,
+        storageMode,
+        pendingStorageMode,
+        isStorageConfirmModalOpen,
+        requestStorageModeChange,
+        confirmStorageModeChange,
+        cancelStorageModeChange,
       }}
     >
       {children}

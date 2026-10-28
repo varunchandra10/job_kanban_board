@@ -23,6 +23,8 @@ export const DriveModal: React.FC = () => {
     gdriveStatus,
     setGdriveStatus,
     showToast,
+    storageMode,
+    requestStorageModeChange,
   } = useApp();
 
   const [folderId, setFolderId] = useState(gdriveStatus.folderId || '');
@@ -166,19 +168,26 @@ export const DriveModal: React.FC = () => {
             <div className="flex items-center gap-2">
               <ShieldCheck size={16} className="text-blue-600 dark:text-indigo-400" />
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                Secure service account access
+                Active Storage Engine:
+              </span>
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
+                storageMode === 'local_storage'
+                  ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20'
+                  : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+              }`}>
+                {storageMode === 'local_storage' ? 'Local Storage' : 'Google Drive'}
               </span>
             </div>
 
-            <span
-              className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
-                gdriveStatus.connected
-                  ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
-              }`}
+            <button
+              type="button"
+              onClick={() => {
+                requestStorageModeChange(storageMode === 'local_storage' ? 'g_drive' : 'local_storage');
+              }}
+              className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
             >
-              {gdriveStatus.connected ? 'CONFIGURED' : 'SETUP REQUIRED'}
-            </span>
+              Change
+            </button>
           </div>
         </div>
 

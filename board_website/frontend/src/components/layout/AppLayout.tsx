@@ -10,6 +10,7 @@ import { LearningModal } from '../learnings/LearningModal';
 import { AllItemsListModal } from '../common/AllItemsListModal';
 import { ShutdownModal } from '../ui/ShutdownModal';
 import { DriveModal } from '../ui/DriveModal';
+import { StorageSwitchModal } from '../ui/StorageSwitchModal';
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -49,6 +50,7 @@ export const AppLayout: React.FC = () => {
       <AllItemsListModal />
       <ShutdownModal />
       <DriveModal />
+      <StorageSwitchModal />
     </div>
   );
 };

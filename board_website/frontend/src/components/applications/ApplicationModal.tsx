@@ -39,6 +39,7 @@ export const ApplicationModal: React.FC = () => {
     gdriveStatus,
     setIsDriveModalOpen,
     showToast,
+    storageMode,
   } = useApp();
 
   const [company, setCompany] = useState('');
@@ -130,19 +131,21 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingResume(true);
     try {
-      if (!getStoredGoogleDriveToken()) {
-        try {
-          await ensureGoogleDriveToken();
-        } catch (tokenErr) {
-          console.warn('[Google Drive Auth]:', tokenErr);
+      if (storageMode === 'g_drive') {
+        if (!getStoredGoogleDriveToken()) {
+          try {
+            await ensureGoogleDriveToken();
+          } catch (tokenErr) {
+            console.warn('[Google Drive Auth]:', tokenErr);
+          }
         }
       }
-      const res = await api.uploadDocument(file, 'resume', editingApp?.id);
+      const res = await api.uploadDocument(file, 'resume', editingApp?.id, storageMode);
       setResumePath(res.fullPath || res.path || file.name);
       showToast(
         res.isGoogleDrive
           ? 'Resume uploaded to Google Drive!'
-          : 'Resume attached successfully!'
+          : 'Resume stored in local database!'
       );
     } catch (err: any) {
       showToast(err.message || 'Failed to upload resume');
@@ -157,19 +160,21 @@ export const ApplicationModal: React.FC = () => {
     if (!file) return;
     setIsUploadingCover(true);
     try {
-      if (!getStoredGoogleDriveToken()) {
-        try {
-          await ensureGoogleDriveToken();
-        } catch (tokenErr) {
-          console.warn('[Google Drive Auth]:', tokenErr);
+      if (storageMode === 'g_drive') {
+        if (!getStoredGoogleDriveToken()) {
+          try {
+            await ensureGoogleDriveToken();
+          } catch (tokenErr) {
+            console.warn('[Google Drive Auth]:', tokenErr);
+          }
         }
       }
-      const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id);
+      const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id, storageMode);
       setCoverLetterPath(res.fullPath || res.path || file.name);
       showToast(
         res.isGoogleDrive
           ? 'Cover letter uploaded to Google Drive!'
-          : 'Cover letter attached successfully!'
+          : 'Cover letter stored in local database!'
       );
     } catch (err: any) {
       showToast(err.message || 'Failed to upload cover letter');

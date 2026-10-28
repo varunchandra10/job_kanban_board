@@ -75,6 +75,56 @@ exports.uploadDocument = async (req, res, next) => {
       return res.status(400).json({ error: 'No file data received' });
     }
 
+    const storageMode = (req.body.storageMode || req.headers['x-storage-mode'] || '').toLowerCase();
+
+    // If storage mode is local/local_storage, store securely in the database document_files table
+    if (storageMode === 'local' || storageMode === 'local_storage') {
+      const docId = `doc_${crypto.randomUUID()}`;
+      const mimeType = req.file ? req.file.mimetype : 'application/pdf';
+
+      try {
+        db.prepare(`
+          INSERT INTO document_files (id, user_id, app_id, type, name, mime_type, data, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        `).run(
+          docId,
+          userId,
+          appId,
+          type,
+          originalName || 'document.pdf',
+          mimeType,
+          fileBuffer.toString('base64')
+        );
+      } catch (dbErr) {
+        console.error('[Document Files Local Storage Error]:', dbErr.message);
+        throw new Error(`Failed to store document in local database: ${dbErr.message}`);
+      }
+
+      const viewPath = `/api/document-content?doc_id=${docId}`;
+      if (appId) {
+        const isCover = type === 'cover_letter' || type === 'cover_letters' || type === 'cover_letter_path';
+        const col = isCover ? 'cover_letter_path' : 'resume_path';
+        try {
+          db.prepare(`UPDATE applications SET ${col} = ? WHERE id = ?`).run(viewPath, appId);
+        } catch (dbErr) {
+          console.warn(`[Database] Note updating ${col} for app ${appId}:`, dbErr.message);
+        }
+      }
+
+      return res.json({
+        ok: 1,
+        fullPath: viewPath,
+        path: viewPath,
+        relativePath: viewPath,
+        name: originalName || 'document.pdf',
+        size: fileBuffer.length,
+        ext: path.extname(originalName || '').toLowerCase(),
+        isLocalStorage: true,
+        isGoogleDrive: false,
+        docId
+      });
+    }
+
     // Get user's Google Drive folder from request body, database, or config
     let userFolderId = req.body.folderId ? String(req.body.folderId).trim() : null;
     if (userFolderId && userFolderId.includes('folders/')) {
@@ -375,8 +425,19 @@ exports.deleteDocument = async (req, res, next) => {
     }
 
     let deleted = false;
+    if (filePath.includes('doc_id=')) {
+      const m = filePath.match(/doc_id=([a-zA-Z0-9_-]+)/);
+      if (m) {
+        try {
+          db.prepare('DELETE FROM document_files WHERE id = ?').run(m[1]);
+          deleted = true;
+        } catch (_) {}
+      }
+    }
+
     try {
-      deleted = await storageService.deleteFile(filePath);
+      const resDel = await storageService.deleteFile(filePath);
+      if (resDel) deleted = true;
     } catch (delErr) {
       console.warn('[Storage] Error deleting file:', delErr.message);
     }
