@@ -64,10 +64,10 @@ class GoogleDriveStorageService extends BaseStorageService {
     if (/drive\.google\.com|docs\.google\.com/i.test(str) || /^gdrive:[a-zA-Z0-9_-]{20,}/i.test(str) || /^[a-zA-Z0-9_-]{25,}$/.test(str)) {
       return str;
     }
-    if (this.localFallback) {
+    if (this.localFallback && typeof this.localFallback.resolveSafePath === 'function') {
       return this.localFallback.resolveSafePath(inputPath);
     }
-    return str;
+    return null;
   }
 
   async testConnection(customFolderId) {

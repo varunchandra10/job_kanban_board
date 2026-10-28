@@ -285,6 +285,11 @@ exports.uploadDocument = async (req, res, next) => {
 
 exports.getFileInfo = async (req, res, next) => {
   try {
+    const callerId = req.user?.id || null;
+    if (!callerId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
     const targetPath = (req.body && req.body.path) || (req.query && req.query.path);
     if (!targetPath) return res.status(400).json({ error: 'No path specified' });
 
@@ -292,8 +297,11 @@ exports.getFileInfo = async (req, res, next) => {
       const m = targetPath.match(/doc_id=([a-zA-Z0-9_-]+)/);
       if (m) {
         try {
-          const doc = db.prepare('SELECT name, mime_type, length(data) as len FROM document_files WHERE id = ?').get(m[1]);
+          const doc = db.prepare('SELECT name, mime_type, length(data) as len, user_id FROM document_files WHERE id = ?').get(m[1]);
           if (doc) {
+            if (doc.user_id && doc.user_id !== 'default_user' && doc.user_id !== callerId) {
+              return res.status(403).json({ error: 'Unauthorized document access' });
+            }
             return res.json({
               ok: 1,
               exists: true,
@@ -316,6 +324,11 @@ exports.getFileInfo = async (req, res, next) => {
 
 exports.getFileContent = async (req, res, next) => {
   try {
+    const callerId = req.user?.id || null;
+    if (!callerId) {
+      return res.status(401).send('Authentication required to access document content');
+    }
+
     let docId = req.query.doc_id || req.query.id;
     let targetPath = req.query.path;
 
@@ -332,8 +345,7 @@ exports.getFileContent = async (req, res, next) => {
       try {
         const doc = db.prepare('SELECT name, mime_type, data, user_id FROM document_files WHERE id = ?').get(docId);
         if (doc) {
-          const callerId = req.user?.id;
-          if (doc.user_id && doc.user_id !== 'default_user' && callerId && callerId !== doc.user_id) {
+          if (doc.user_id && doc.user_id !== 'default_user' && doc.user_id !== callerId) {
             return res.status(403).send('Unauthorized document access');
           }
 
@@ -364,8 +376,7 @@ exports.getFileContent = async (req, res, next) => {
       try {
         const doc = db.prepare('SELECT name, mime_type, data, user_id FROM document_files WHERE name = ? ORDER BY created_at DESC LIMIT 1').get(bn);
         if (doc) {
-          const callerId = req.user?.id;
-          if (doc.user_id && doc.user_id !== 'default_user' && callerId && callerId !== doc.user_id) {
+          if (doc.user_id && doc.user_id !== 'default_user' && doc.user_id !== callerId) {
             return res.status(403).send('Unauthorized document access');
           }
 
@@ -382,6 +393,20 @@ exports.getFileContent = async (req, res, next) => {
 
       if (/^https?:\/\//i.test(targetPath)) {
         return res.redirect(targetPath);
+      }
+
+      // Check caller ownership of target disk path:
+      // Verify that the caller has an application referencing this file or it's local single-user
+      if (callerId !== 'default_user') {
+        const ownsFile = db.prepare(`
+          SELECT 1 FROM applications 
+          WHERE user_id = ? AND (resume_path LIKE ? OR cover_letter_path LIKE ?)
+          LIMIT 1
+        `).get(callerId, `%${bn}%`, `%${bn}%`);
+        
+        if (!ownsFile) {
+          return res.status(403).send('Unauthorized document access');
+        }
       }
     }
 
@@ -485,6 +510,11 @@ exports.revealFile = async (req, res, next) => {
 
 exports.deleteDocument = async (req, res, next) => {
   try {
+    const userId = req.user?.id || null;
+    if (!userId) {
+      return res.status(401).json({ ok: 0, error: 'Authentication required to delete documents' });
+    }
+
     const filePath = req.body.path || req.query.path;
     const appId = req.body.appId ? parseInt(req.body.appId, 10) : null;
     const type = req.body.type || (req.body.key === 'resume_path' ? 'resume' : 'cover_letter');
@@ -498,7 +528,11 @@ exports.deleteDocument = async (req, res, next) => {
       const m = filePath.match(/doc_id=([a-zA-Z0-9_-]+)/);
       if (m) {
         try {
-          db.prepare('DELETE FROM document_files WHERE id = ?').run(m[1]);
+          if (userId === 'default_user') {
+            db.prepare('DELETE FROM document_files WHERE id = ?').run(m[1]);
+          } else {
+            db.prepare('DELETE FROM document_files WHERE id = ? AND user_id = ?').run(m[1], userId);
+          }
           deleted = true;
         } catch (_) {}
       }
@@ -515,7 +549,11 @@ exports.deleteDocument = async (req, res, next) => {
       const isCover = type === 'cover' || type === 'cover_letter' || type === 'cover_letter_path';
       const col = isCover ? 'cover_letter_path' : 'resume_path';
       try {
-        db.prepare(`update applications set ${col}='' where id=?`).run(appId);
+        if (userId === 'default_user') {
+          db.prepare(`update applications set ${col}='' where id=?`).run(appId);
+        } else {
+          db.prepare(`update applications set ${col}='' where id=? and user_id=?`).run(appId, userId);
+        }
       } catch (dbErr) {
         console.warn('DB update warning on delete:', dbErr.message);
       }

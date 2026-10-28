@@ -84,7 +84,7 @@ interface AppContextType {
   openAuthModal: () => void;
   closeAuthModal: () => void;
   login: (email?: string, password?: string) => Promise<void>;
-  googleLogin: (profile: { email: string; name?: string; picture?: string; sub?: string }) => Promise<void>;
+  googleLogin: (payload: { credential?: string; accessToken?: string; profile?: { email: string; name?: string; picture?: string; sub?: string } }) => Promise<void>;
   setSession: (token: string, user: any) => void;
   forgotPassword: (email: string) => Promise<{ ok: number; message: string }>;
   resetPassword: (email: string, code: string, newPass: string) => Promise<{ ok: number; message: string; token: string; user: any }>;
@@ -834,9 +834,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  const googleLogin = async (profile: { email: string; name?: string; picture?: string; sub?: string }) => {
+  const googleLogin = async (payload: { credential?: string; accessToken?: string; profile?: { email: string; name?: string; picture?: string; sub?: string } }) => {
     try {
-      const res = await api.googleAuth(profile);
+      const res = await api.googleAuth(payload);
       if (res && res.token) {
         localStorage.setItem('auth_token', res.token);
       }

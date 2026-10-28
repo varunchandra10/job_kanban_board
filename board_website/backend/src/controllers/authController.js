@@ -145,35 +145,99 @@ exports.status = (req, res) => {
   });
 };
 
+const { OAuth2Client } = require('google-auth-library');
+
+const validGoogleAudiences = [
+  config.googleClientId,
+  config.googleDesktopClientId,
+  '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com',
+  '836791560954-ttg8psif4aqp8m4enpajbjab23hua8lc.apps.googleusercontent.com'
+].filter(Boolean);
+
 /**
  * Google OAuth verification / sign-in endpoint
+ * Requires cryptographically verified Google ID token (credential) or verified OAuth2 access token
  */
 exports.googleAuth = async (req, res) => {
   try {
-    const { credential, profile } = req.body || {};
+    const { credential, accessToken } = req.body || {};
 
-    let email = profile?.email;
-    let name = profile?.name;
-    let picture = profile?.picture;
-    let googleId = profile?.sub;
+    let email = null;
+    let name = null;
+    let picture = null;
+    let googleId = null;
 
-    if (credential && !email) {
+    // 1. Google ID Token (JWT) cryptographic verification
+    if (credential && typeof credential === 'string') {
       try {
-        const parts = credential.split('.');
-        if (parts.length === 3) {
-          const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-          email = payload.email;
-          name = payload.name;
-          picture = payload.picture;
-          googleId = payload.sub;
+        const client = new OAuth2Client();
+        const ticket = await client.verifyIdToken({
+          idToken: credential,
+          audience: validGoogleAudiences
+        });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+          return res.status(401).json({ error: 'Invalid Google ID token: email missing from verified payload.' });
         }
-      } catch (e) {
-        return res.status(400).json({ error: 'Invalid Google credential' });
+        if (payload.email_verified === false) {
+          return res.status(401).json({ error: 'Google email address is not verified.' });
+        }
+        email = payload.email;
+        name = payload.name;
+        picture = payload.picture;
+        googleId = payload.sub;
+      } catch (verifyErr) {
+        console.warn('[Google Auth] ID Token verification failed:', verifyErr.message);
+        return res.status(401).json({ error: `Google ID token verification failed: ${verifyErr.message}` });
       }
+    }
+    // 2. Google OAuth2 Access Token verification
+    else if (accessToken && typeof accessToken === 'string') {
+      try {
+        // Verify token authenticity and audience with Google's tokeninfo API
+        const tokenInfoRes = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(accessToken)}`);
+        if (!tokenInfoRes.ok) {
+          return res.status(401).json({ error: 'Google access token is invalid or expired.' });
+        }
+        const tokenInfo = await tokenInfoRes.json();
+
+        // Validate audience matches our Google Client ID
+        const tokenAud = tokenInfo.aud || tokenInfo.azp;
+        const isAudValid = validGoogleAudiences.some(a => a === tokenAud);
+        if (!isAudValid) {
+          console.warn(`[Google Auth] Access token audience mismatch: ${tokenAud}`);
+          return res.status(401).json({ error: 'Google access token was not issued for this application.' });
+        }
+
+        // Fetch verified profile from Google's UserInfo API
+        const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (!userInfoRes.ok) {
+          return res.status(401).json({ error: 'Failed to retrieve profile from Google UserInfo.' });
+        }
+        const userInfo = await userInfoRes.json();
+        if (!userInfo || !userInfo.email) {
+          return res.status(401).json({ error: 'Google profile does not contain a verified email.' });
+        }
+
+        email = userInfo.email;
+        name = userInfo.name;
+        picture = userInfo.picture;
+        googleId = userInfo.sub;
+      } catch (tokenErr) {
+        console.warn('[Google Auth] Access token validation failed:', tokenErr.message);
+        return res.status(401).json({ error: `Google access token validation failed: ${tokenErr.message}` });
+      }
+    } else {
+      // Strictly reject any unverified profile spoofing
+      return res.status(400).json({
+        error: 'Google authentication requires a valid cryptographic ID token (credential) or verified access token.'
+      });
     }
 
     if (!email) {
-      return res.status(400).json({ error: 'Google email is required' });
+      return res.status(400).json({ error: 'Google email is required.' });
     }
 
     const cleanEmail = email.toLowerCase().trim();

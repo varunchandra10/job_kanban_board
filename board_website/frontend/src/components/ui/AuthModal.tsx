@@ -183,10 +183,13 @@ export const AuthModal: React.FC = () => {
             const profile = await profileRes.json();
 
             await googleLogin({
-              email: profile.email,
-              name: profile.name,
-              picture: profile.picture,
-              sub: profile.sub,
+              accessToken: tokenResponse.access_token,
+              profile: {
+                email: profile.email,
+                name: profile.name,
+                picture: profile.picture,
+                sub: profile.sub,
+              }
             });
             navigate('/job-applications');
           } catch (err: any) {

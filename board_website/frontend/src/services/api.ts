@@ -215,11 +215,11 @@ export const api = {
     return res.json();
   },
 
-  async googleAuth(profile: { email: string; name?: string; picture?: string; sub?: string }): Promise<{ ok: number; token: string; user: any }> {
+  async googleAuth(payload: { credential?: string; accessToken?: string; profile?: { email: string; name?: string; picture?: string; sub?: string } }): Promise<{ ok: number; token: string; user: any }> {
     const res = await fetch(`${API_BASE}/auth/google`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ profile }),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

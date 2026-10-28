@@ -3,15 +3,52 @@ const path = require('path');
 const config = require('../config');
 const { cleanFilePath } = require('../database/db');
 
-
-
 const { BaseStorageService, getMimeType } = require('./baseStorageService');
+
+function isPathInside(childPath, parentDir) {
+  if (!childPath || !parentDir) return false;
+  try {
+    const normalizedChild = path.resolve(childPath).toLowerCase();
+    const normalizedParent = path.resolve(parentDir).toLowerCase();
+    if (normalizedChild === normalizedParent) return true;
+    const rel = path.relative(normalizedParent, normalizedChild);
+    return !rel.startsWith('..') && !path.isAbsolute(rel);
+  } catch (_) {
+    return false;
+  }
+}
+
+function isSystemPath(targetPath) {
+  if (!targetPath || typeof targetPath !== 'string') return true;
+  try {
+    const p = path.resolve(targetPath);
+    const parsed = path.parse(p);
+    if (p.toLowerCase() === parsed.root.toLowerCase()) return true;
+
+    if (process.platform === 'win32') {
+      const winDir = process.env.SystemRoot || process.env.windir || 'C:\\Windows';
+      if (isPathInside(p, winDir)) return true;
+      const progFiles = process.env['ProgramFiles'] || 'C:\\Program Files';
+      if (isPathInside(p, progFiles)) return true;
+      const progFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)';
+      if (isPathInside(p, progFilesX86)) return true;
+    } else {
+      const unixSys = ['/etc', '/bin', '/sbin', '/usr', '/var', '/root', '/proc', '/sys', '/dev'];
+      for (const sys of unixSys) {
+        if (p === sys || isPathInside(p, sys)) return true;
+      }
+    }
+    return false;
+  } catch (_) {
+    return true;
+  }
+}
 
 class LocalStorageService extends BaseStorageService {
   constructor(baseDir) {
     super();
     this.baseDir = baseDir || config.uploadDir;
-    this.rootDir = config.rootDir;
+    this.rootDir = config.rootDir || path.resolve(__dirname, '../../../../');
     this._ensureDirectories();
   }
 
@@ -27,7 +64,58 @@ class LocalStorageService extends BaseStorageService {
     }
   }
 
+  getAllowedDirectories() {
+    const allowed = [];
+    if (this.baseDir) {
+      const bDir = path.resolve(this.baseDir);
+      if (!isSystemPath(bDir)) allowed.push(bDir);
+    }
+    if (config.uploadDir) {
+      const uDir = path.resolve(config.uploadDir);
+      if (!isSystemPath(uDir) && !allowed.includes(uDir)) allowed.push(uDir);
+    }
+    if (config.dataDir) {
+      const docSub = path.resolve(config.dataDir, 'documents');
+      if (!isSystemPath(docSub) && !allowed.includes(docSub)) allowed.push(docSub);
+    }
+
+    try {
+      const { db } = require('../database/db');
+      if (db && typeof db.prepare === 'function') {
+        const rows = db.prepare("SELECT value FROM settings WHERE key = 'custom_storage_dir'").all();
+        for (const row of rows) {
+          if (row && row.value && typeof row.value === 'string' && row.value.trim()) {
+            const trimmed = path.resolve(row.value.trim());
+            if (!isSystemPath(trimmed) && fs.existsSync(trimmed) && !allowed.includes(trimmed)) {
+              allowed.push(trimmed);
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    return allowed;
+  }
+
+  isPathAllowed(targetPath) {
+    if (!targetPath) return false;
+    if (targetPath.indexOf('\0') !== -1) return false;
+    const resolved = path.resolve(targetPath);
+    if (isSystemPath(resolved)) return false;
+
+    const allowedDirs = this.getAllowedDirectories();
+    for (const dir of allowedDirs) {
+      if (isPathInside(resolved, dir)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   resolveSafePath(inputPath) {
+    if (!inputPath || typeof inputPath !== 'string') return null;
+    if (inputPath.indexOf('\0') !== -1) return null;
+
     let p = cleanFilePath(inputPath);
     if (!p || p.toUpperCase() === 'NA') return null;
 
@@ -36,32 +124,65 @@ class LocalStorageService extends BaseStorageService {
       return p;
     }
 
-    if (!path.isAbsolute(p)) {
-      p = path.resolve(this.rootDir, p);
-    } else {
-      p = path.normalize(p);
+    const allowedDirs = this.getAllowedDirectories();
+    const basename = path.basename(p);
+
+    // If an absolute path was passed
+    if (path.isAbsolute(p)) {
+      const normalized = path.resolve(p);
+      // Strictly allow ONLY if normalized path is within an allowed directory
+      if (this.isPathAllowed(normalized) && fs.existsSync(normalized)) {
+        return normalized;
+      }
+
+      // If an absolute path was submitted that isn't inside allowed directories,
+      // check if a file with the identical basename exists safely inside allowed storage
+      for (const dir of allowedDirs) {
+        const subDirs = ['', 'resumes', 'resume', 'cover_letter', 'cover_letters'];
+        for (const sub of subDirs) {
+          const candidate = path.resolve(dir, sub, basename);
+          if (this.isPathAllowed(candidate) && fs.existsSync(candidate)) {
+            return candidate;
+          }
+        }
+      }
+
+      console.warn(`[Security Alert] Blocked potential path traversal or unauthorized access: ${inputPath}`);
+      return null;
     }
 
-    if (!fs.existsSync(p)) {
-      const bn = path.basename(p);
-      const inResumes = path.resolve(this.baseDir, 'resumes', bn);
-      if (fs.existsSync(inResumes)) return inResumes;
-      const inResume = path.resolve(this.baseDir, 'resume', bn);
-      if (fs.existsSync(inResume)) return inResume;
-      const inCover = path.resolve(this.baseDir, 'cover_letter', bn);
-      if (fs.existsSync(inCover)) return inCover;
-      const inCovers = path.resolve(this.baseDir, 'cover_letters', bn);
-      if (fs.existsSync(inCovers)) return inCovers;
-      const inUpload = path.resolve(this.baseDir, bn);
-      if (fs.existsSync(inUpload)) return inUpload;
+    // Relative path passed: check within allowed directories
+    for (const dir of allowedDirs) {
+      // 1. Direct path relative to allowed directory
+      const directCandidate = path.resolve(dir, p);
+      if (this.isPathAllowed(directCandidate) && fs.existsSync(directCandidate)) {
+        return directCandidate;
+      }
 
-      const rel = path.relative(this.rootDir, p);
-      if (rel.startsWith('..') && !path.isAbsolute(rel)) {
-        console.warn(`[Security Alert] Blocked potential path traversal: ${inputPath}`);
-        return null;
+      // 2. Subdirectory search
+      const subDirs = ['resumes', 'resume', 'cover_letter', 'cover_letters'];
+      for (const sub of subDirs) {
+        const candidate = path.resolve(dir, sub, basename);
+        if (this.isPathAllowed(candidate) && fs.existsSync(candidate)) {
+          return candidate;
+        }
+      }
+
+      // 3. Root of allowed directory with basename
+      const rootCandidate = path.resolve(dir, basename);
+      if (this.isPathAllowed(rootCandidate) && fs.existsSync(rootCandidate)) {
+        return rootCandidate;
       }
     }
-    return p;
+
+    // If the file does not exist yet (e.g. for saving a new file with relative path)
+    const defaultTarget = path.resolve(this.baseDir, p);
+    if (this.isPathAllowed(defaultTarget)) {
+      return defaultTarget;
+    }
+
+    console.warn(`[Security Alert] Blocked potential path traversal: ${inputPath}`);
+    return null;
   }
 
   async saveFile({ buffer, originalName, type, appId }) {
@@ -144,9 +265,39 @@ class LocalStorageService extends BaseStorageService {
 
   async deleteFile(filePath) {
     const p = this.resolveSafePath(filePath);
-    if (p && fs.existsSync(p)) {
-      await fs.promises.unlink(p);
-      return true;
+    if (!p) {
+      console.warn(`[Security Alert] Blocked delete request for unsafe path: ${filePath}`);
+      return false;
+    }
+
+    if (!this.isPathAllowed(p)) {
+      console.warn(`[Security Alert] Refusing to delete file outside allowed storage directories: ${p}`);
+      return false;
+    }
+
+    // Protect system, code, and database files
+    const lower = path.basename(p).toLowerCase();
+    if (
+      lower.endsWith('.db') ||
+      lower.endsWith('.sqlite') ||
+      lower.endsWith('.db-wal') ||
+      lower.endsWith('.db-shm') ||
+      lower.endsWith('.bak') ||
+      lower.endsWith('.env') ||
+      lower.endsWith('.js') ||
+      lower.endsWith('.json') ||
+      lower.endsWith('.ts')
+    ) {
+      console.warn(`[Security Alert] Refusing to delete protected system/code file: ${p}`);
+      return false;
+    }
+
+    if (fs.existsSync(p)) {
+      const stats = await fs.promises.stat(p);
+      if (stats.isFile()) {
+        await fs.promises.unlink(p);
+        return true;
+      }
     }
     return false;
   }

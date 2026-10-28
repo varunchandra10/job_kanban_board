@@ -66,7 +66,10 @@ exports.createApplication = (req, res, next) => {
   try {
     const userId = getEffectiveUserId(req);
     if (!userId) return res.status(401).json({ error: 'Please log in to add applications', loggedOut: true });
-    const b = req.body;
+    const b = { ...(req.body || {}) };
+    delete b.user_id;
+    delete b.id;
+
     const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage='Applied' and user_id=?").get(userId);
     const min = minRow ? minRow.p : 0;
     const cat = b.category || 'Industry';
@@ -101,7 +104,10 @@ exports.updateApplication = (req, res, next) => {
     const userId = getEffectiveUserId(req);
     if (!userId) return res.status(401).json({ error: 'Please log in' });
     const id = parseInt(req.params.id, 10);
-    patch('applications', id, req.body, userId);
+    const b = { ...(req.body || {}) };
+    delete b.user_id;
+    delete b.id;
+    patch('applications', id, b, userId);
     res.json({ ok: 1 });
   } catch (err) {
     next(err);

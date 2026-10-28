@@ -6,7 +6,7 @@ function authMiddleware(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader?.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
-    : (req.headers['x-auth-token'] || req.query.token);
+    : (req.headers?.['x-auth-token'] || req.query?.token);
 
   if (token) {
     const decoded = verifyToken(token);
@@ -16,15 +16,16 @@ function authMiddleware(req, res, next) {
   }
 
   const fullPath = (req.originalUrl || req.url || req.path || '').split('?')[0];
+  const reqPath = req.path || fullPath;
 
   // Auth endpoints, health checks, vendor assets do not require prior login
   if (
     fullPath.startsWith('/api/auth/') ||
-    req.path.startsWith('/auth/') ||
+    reqPath.startsWith('/auth/') ||
     fullPath === '/api/health' ||
-    req.path === '/health' ||
+    reqPath === '/health' ||
     fullPath.startsWith('/vendor/') ||
-    req.path.startsWith('/vendor/')
+    reqPath.startsWith('/vendor/')
   ) {
     return next();
   }
@@ -37,8 +38,8 @@ function authMiddleware(req, res, next) {
   // Read-only calls when logged out / unauthenticated:
   // Allow them to proceed with req.user = null so controllers return empty/zero data
   const readOnlyPaths = [
-    '/api/state', '/api/learnings', '/api/gamification', '/api/storage/status', '/api/storage/local-info', '/api/file-content', '/api/document-content',
-    '/state', '/learnings', '/gamification', '/storage/status', '/storage/local-info', '/file-content', '/document-content'
+    '/api/state', '/api/learnings', '/api/gamification', '/api/storage/status', '/api/storage/local-info',
+    '/state', '/learnings', '/gamification', '/storage/status', '/storage/local-info'
   ];
   if (req.method === 'GET' && (readOnlyPaths.includes(fullPath) || readOnlyPaths.includes(req.path))) {
     req.user = null;

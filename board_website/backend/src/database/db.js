@@ -268,10 +268,12 @@ if (db && typeof db.prepare === 'function') {
 }
 
 const COLS = {
-  applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path user_id'.split(' '),
-  resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience user_id'.split(' '),
-  resume_versions: 'label region text pdf_name pdf_data user_id'.split(' '),
+  applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
+  resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience'.split(' '),
+  resume_versions: 'label region text pdf_name pdf_data'.split(' '),
 };
+
+const IMMUTABLE_FIELDS = ['user_id', 'id', 'created_at', 'updated_at'];
 
 function cleanFilePath(raw) {
   if (!raw || typeof raw !== 'string') return '';
@@ -283,17 +285,26 @@ function cleanFilePath(raw) {
 }
 
 function patch(table, id, body, userId = null) {
-  if (table === 'applications') {
-    if (body.resume_path !== undefined) body.resume_path = cleanFilePath(body.resume_path);
-    if (body.cover_letter_path !== undefined) body.cover_letter_path = cleanFilePath(body.cover_letter_path);
+  if (!body || typeof body !== 'object' || !COLS[table]) return;
+
+  // Shallow copy to prevent mutating caller object and strictly strip immutable keys
+  const safeBody = { ...body };
+  for (const field of IMMUTABLE_FIELDS) {
+    delete safeBody[field];
   }
-  const ks = Object.keys(body).filter(k => COLS[table].includes(k));
+
+  if (table === 'applications') {
+    if (safeBody.resume_path !== undefined) safeBody.resume_path = cleanFilePath(safeBody.resume_path);
+    if (safeBody.cover_letter_path !== undefined) safeBody.cover_letter_path = cleanFilePath(safeBody.cover_letter_path);
+  }
+
+  const ks = Object.keys(safeBody).filter(k => COLS[table].includes(k));
   if (!ks.length) return;
 
   if (userId && userId !== 'default_user') {
-    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=? and user_id=?`).run(...ks.map(k => body[k]), id, userId);
+    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=? and user_id=?`).run(...ks.map(k => safeBody[k]), id, userId);
   } else {
-    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=?`).run(...ks.map(k => body[k]), id);
+    db.prepare(`update ${table} set ${ks.map(k => k + '=?').join(',')} where id=?`).run(...ks.map(k => safeBody[k]), id);
   }
 }
 
