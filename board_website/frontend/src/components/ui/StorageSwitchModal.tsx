@@ -11,6 +11,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
+import { isDesktopApp } from '../../utils/environment';
+
 export const StorageSwitchModal: React.FC = () => {
   const {
     isStorageConfirmModalOpen,
@@ -19,6 +21,8 @@ export const StorageSwitchModal: React.FC = () => {
     confirmStorageModeChange,
     cancelStorageModeChange,
   } = useApp();
+
+  const isDesktop = isDesktopApp();
 
   useEffect(() => {
     if (!isStorageConfirmModalOpen) return;
@@ -119,23 +123,32 @@ export const StorageSwitchModal: React.FC = () => {
             </h4>
 
             {isSwitchingToLocal ? (
-              <div className="space-y-2 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-xs">
+              <div className="space-y-2.5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] p-4 text-xs">
                 <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
                   <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Fast &amp; Offline Ready:</strong> Files are stored directly inside the database without depending on external Google API connections.
+                    <strong>Fast &amp; Private:</strong> Files are stored directly in your private database account without requiring Google Drive OAuth or cloud permissions.
                   </span>
                 </div>
+                {isDesktop ? (
+                  <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Windows System Disk Storage:</strong> Files are stored locally on your PC hard drive for instant offline access and file explorer viewing.
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
+                    <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
+                    <span>
+                      <strong>Mobile &amp; Web Device Storage:</strong> Tapping attached files downloads directly to your phone's native <em>Files / Downloads</em> folder.
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
                   <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
                   <span>
-                    <strong>Zero Setup Required:</strong> You don't need to configure Google Drive folder IDs or grant service account permissions.
-                  </span>
-                </div>
-                <div className="flex items-start gap-2.5 text-slate-700 dark:text-slate-300">
-                  <CheckCircle2 size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                  <span>
-                    <strong>Default for Desktop App:</strong> Recommended for the desktop executable for swift file handling.
+                    <strong>Zero Setup:</strong> No service account emails or Google Drive folder IDs needed.
                   </span>
                 </div>
               </div>
