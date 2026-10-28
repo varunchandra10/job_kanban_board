@@ -48,7 +48,20 @@ const passwordResetLimiter = rateLimit({
   }
 });
 
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes window
+  max: 10, // Maximum 10 login attempts per IP per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  skip: () => process.env.DISABLE_IP_RATE_LIMIT === 'true',
+  message: {
+    error: 'Too many login attempts from this IP address. Please try again after 15 minutes.'
+  }
+});
+
 module.exports = {
   createRateLimiter,
-  passwordResetLimiter
+  passwordResetLimiter,
+  loginLimiter
 };

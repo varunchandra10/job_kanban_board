@@ -488,20 +488,38 @@ exports.openFile = async (req, res, next) => {
       return res.json({ ok: 1, opened: true, url: resolved });
     }
 
-    const platform = process.platform;
-    let cmd;
-    if (platform === 'win32') {
-      cmd = `start "" "${resolved}"`;
-    } else if (platform === 'darwin') {
-      cmd = `open "${resolved}"`;
-    } else {
-      cmd = `xdg-open "${resolved}"`;
+    // In web / cloud mode, direct host OS GUI file opening is prohibited
+    if (!config.isDesktop) {
+      return res.json({
+        ok: 1,
+        opened: false,
+        url: `/api/file-content?path=${encodeURIComponent(targetPath)}`,
+        message: 'Direct desktop host application launch is disabled in web deployment. Use the web document preview.'
+      });
     }
 
-    exec(cmd, (err) => {
-      if (err) return next(err);
-      res.json({ ok: 1, opened: true, path: resolved });
-    });
+    if (!fs.existsSync(resolved)) {
+      return res.status(404).json({ error: 'File does not exist on disk' });
+    }
+
+    const { execFile } = require('child_process');
+    const platform = process.platform;
+    if (platform === 'win32') {
+      execFile('rundll32.exe', ['url.dll,FileProtocolHandler', resolved], (err) => {
+        if (err) return next(err);
+        res.json({ ok: 1, opened: true, path: resolved });
+      });
+    } else if (platform === 'darwin') {
+      execFile('open', [resolved], (err) => {
+        if (err) return next(err);
+        res.json({ ok: 1, opened: true, path: resolved });
+      });
+    } else {
+      execFile('xdg-open', [resolved], (err) => {
+        if (err) return next(err);
+        res.json({ ok: 1, opened: true, path: resolved });
+      });
+    }
   } catch (err) {
     next(err);
   }
@@ -509,19 +527,42 @@ exports.openFile = async (req, res, next) => {
 
 exports.revealFile = async (req, res, next) => {
   try {
-    const p = await storageService.resolveSafePath(req.body.path);
+    // In web / cloud mode, host OS file revealing is disabled
+    if (!config.isDesktop) {
+      return res.status(400).json({
+        ok: 0,
+        error: 'File manager reveal is only supported in local desktop app mode.'
+      });
+    }
+
+    const rawPath = req.body?.path || req.query?.path;
+    if (!rawPath) return res.status(400).json({ ok: 0, error: 'Path is required' });
+
+    const p = await storageService.resolveSafePath(rawPath);
+    if (!p) return res.status(404).json({ ok: 0, error: 'File path could not be resolved' });
+
     const info = await storageService.getFileInfo(p);
     if (!info.exists) {
       return res.status(404).json({ ok: 0, error: 'File not found' });
     }
 
+    const { execFile } = require('child_process');
     if (process.platform === 'win32') {
-      exec(`explorer /select,"${p}"`);
+      execFile('explorer.exe', [`/select,${p}`], () => {
+        res.json({ ok: 1 });
+      });
     } else if (process.platform === 'darwin') {
-      exec(`open -R "${p}"`);
+      execFile('open', ['-R', p], (err) => {
+        if (err) return next(err);
+        res.json({ ok: 1 });
+      });
+    } else {
+      const parentDir = path.dirname(p);
+      execFile('xdg-open', [parentDir], (err) => {
+        if (err) return next(err);
+        res.json({ ok: 1 });
+      });
     }
-
-    res.json({ ok: 1 });
   } catch (err) {
     next(err);
   }

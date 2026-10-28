@@ -43,6 +43,14 @@ router.get('/storage/local-info', (req, res) => {
 
 router.post('/storage/open-local-folder', (req, res) => {
   try {
+    // Opening server host folders is strictly disabled in web/cloud mode
+    if (!config.isDesktop) {
+      return res.status(400).json({
+        ok: 0,
+        error: 'Opening server host folders is disabled in web/cloud deployment mode. Please use the desktop application.'
+      });
+    }
+
     const userId = req.user?.id || null;
     let targetDir = req.body?.folderPath;
     if (!targetDir && userId) {
@@ -53,20 +61,27 @@ router.post('/storage/open-local-folder', (req, res) => {
     }
     if (!targetDir) targetDir = config.uploadDir;
 
-    if (!fs.existsSync(targetDir)) {
-      try { fs.mkdirSync(targetDir, { recursive: true }); } catch (_) {}
+    const resolvedTarget = path.resolve(String(targetDir));
+    if (!fs.existsSync(resolvedTarget)) {
+      try { fs.mkdirSync(resolvedTarget, { recursive: true }); } catch (_) {}
     }
 
-    const { exec } = require('child_process');
+    const { execFile } = require('child_process');
     if (process.platform === 'win32') {
-      exec(`explorer "${targetDir}"`);
+      execFile('explorer.exe', [resolvedTarget], () => {
+        res.json({ ok: 1, opened: true, path: resolvedTarget });
+      });
     } else if (process.platform === 'darwin') {
-      exec(`open "${targetDir}"`);
+      execFile('open', [resolvedTarget], (err) => {
+        if (err) return res.status(500).json({ ok: 0, error: err.message });
+        res.json({ ok: 1, opened: true, path: resolvedTarget });
+      });
     } else {
-      exec(`xdg-open "${targetDir}"`);
+      execFile('xdg-open', [resolvedTarget], (err) => {
+        if (err) return res.status(500).json({ ok: 0, error: err.message });
+        res.json({ ok: 1, opened: true, path: resolvedTarget });
+      });
     }
-
-    res.json({ ok: 1, opened: true, path: targetDir });
   } catch (err) {
     res.status(500).json({ ok: 0, error: err.message });
   }

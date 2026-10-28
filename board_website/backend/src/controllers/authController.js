@@ -4,7 +4,7 @@ const config = require('../config');
 const { db } = require('../database/db');
 const { signToken, verifyToken } = require('../services/jwtService');
 const { hashPassword, verifyPassword } = require('../services/passwordService');
-const { sendPasswordResetEmail } = require('../services/emailService');
+const emailService = require('../services/emailService');
 
 /**
  * Get currently authenticated user details
@@ -94,18 +94,24 @@ exports.login = (req, res) => {
       db.prepare('INSERT INTO users (id, email, name, password_hash) VALUES (?, ?, ?, ?)').run(id, cleanEmail, cleanName, passHash);
       user = { id, email: cleanEmail, name: cleanName };
     } else {
-      // Existing user: verify password if hash exists
-      if (user.password_hash) {
-        if (!rawPassword || !verifyPassword(rawPassword, user.password_hash)) {
-          return res.status(401).json({ error: 'Incorrect password. Please verify and try again.' });
-        }
-      } else if (rawPassword) {
-        // Set password for accounts previously without a password
-        if (rawPassword.length < 6) {
-          return res.status(400).json({ error: 'Please enter a password with at least 6 characters.' });
-        }
-        const passHash = hashPassword(rawPassword);
-        db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(passHash, user.id);
+      // Existing user: check if account was registered via Google Sign-In (no password_hash)
+      const hasPassword = Boolean(
+        user.password_hash &&
+        typeof user.password_hash === 'string' &&
+        user.password_hash.trim().length > 0
+      );
+
+      if (!hasPassword) {
+        return res.status(403).json({
+          error: 'This account was registered using Google Sign-In. Please sign in with Google, or use "Forgot Password" to establish a direct password.',
+          authProvider: 'google',
+          requiresGoogleAuth: true
+        });
+      }
+
+      // Existing user with password: verify submitted credentials
+      if (!rawPassword || !verifyPassword(rawPassword, user.password_hash)) {
+        return res.status(401).json({ error: 'Incorrect password. Please verify and try again.' });
       }
     }
 
@@ -616,7 +622,11 @@ exports.forgotPassword = async (req, res) => {
     const cleanEmail = email.toLowerCase().trim();
     const user = db.prepare('SELECT id, email, name FROM users WHERE email = ?').get(cleanEmail);
     if (!user) {
-      return res.status(404).json({ error: 'No account registered with this email address.' });
+      // Uniform generic response to prevent user email enumeration
+      return res.json({
+        ok: 1,
+        message: `If an account is associated with ${cleanEmail}, a 6-digit verification code has been dispatched. Please check your inbox and spam folder.`
+      });
     }
 
     // Generate cryptographically secure 6-digit code
@@ -646,11 +656,11 @@ exports.forgotPassword = async (req, res) => {
     db.prepare('INSERT INTO password_resets (email, code, expires_at, attempts) VALUES (?, ?, ?, 0)').run(cleanEmail, code, expiresAt);
 
     // Send email using nodemailer Gmail SMTP
-    await sendPasswordResetEmail(cleanEmail, code);
+    await emailService.sendPasswordResetEmail(cleanEmail, code);
 
     return res.json({
       ok: 1,
-      message: `A 6-digit verification code has been sent to ${cleanEmail}. Please check your inbox and spam folder.`
+      message: `If an account is associated with ${cleanEmail}, a 6-digit verification code has been dispatched. Please check your inbox and spam folder.`
     });
   } catch (err) {
     console.error('[Auth Controller] forgotPassword error:', err);

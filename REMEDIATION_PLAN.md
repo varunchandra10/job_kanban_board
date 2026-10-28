@@ -203,29 +203,31 @@ flowchart TD
 
 ### Phase 6: Critical Security & Remote Execution Hardening (P0)
 
-#### Task 6.1: Prevent Google OAuth Account Takeover in `authController.js`
+#### Task 6.1: Prevent Google OAuth Account Takeover in `authController.js` [COMPLETED]
 * **Files Affected:** [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L85-L115)
-* **Problem:** Existing Google OAuth accounts have `password_hash = NULL`. Submitting that email to `/api/auth/login` with any password currently overwrites the user's password, while sending with an empty password immediately issues a signed JWT token without credentials.
-* **Implementation Plan:**
-  1. In `login()`, if user exists and `password_hash` is `NULL`, reject the request with `403 Forbidden: This account is registered via Google Sign-In. Please sign in with Google or request a password reset code.`
-  2. Prevent any unauthenticated password setting for existing accounts; password initialization must strictly require a verified reset code.
-* **Testing:** Attempt login against a Google-authenticated email with empty password and with arbitrary password; verify `403` rejection with zero token generation.
+* **Problem:** Existing Google OAuth accounts have `password_hash = NULL`. Submitting that email to `/api/auth/login` with any password previously overwrote the user's password, while sending with an empty password immediately issued a signed JWT token without credentials.
+* **Status:** Resolved & Verified.
+  1. Updated `login()` in `authController.js`: if user exists and `password_hash` is null or empty, the request is immediately rejected with `403 Forbidden: This account was registered using Google Sign-In. Please sign in with Google, or use "Forgot Password" to establish a direct password.` with `{ requiresGoogleAuth: true }`.
+  2. Blocked arbitrary password establishment on existing accounts; setting a password on an existing Google account now strictly requires passing the cryptographically verified 6-digit email challenge in `resetPassword()`.
+* **Testing:** Automated test suite (`test_google_oauth_takeover_prevention.js`) verified that submitting arbitrary passwords against a Google account is rejected with `403`, submitting empty passwords against a Google account is rejected with `403`, zero tokens are issued, user record `password_hash` remains strictly un-mutated, and standard email accounts continue authenticating properly.
 
-#### Task 6.2: Eliminate Server-Side Command Injection & Host GUI Spawning
-* **Files Affected:** [`board_website/backend/src/routes/documents.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/documents.js#L60-L75), [`board_website/backend/src/controllers/documentsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/documentsController.js#L475-L528)
-* **Problem:** In `/storage/open-local-folder`, `openFile`, and `revealFile`, the backend server runs `child_process.exec()` with user-influenced path strings (`start "" "${resolved}"`, `explorer "${targetDir}"`, `open "${targetDir}"`), causing command injection vulnerabilities and hanging headless cloud servers (AWS, Vercel, Docker).
-* **Implementation Plan:**
-  1. In `documents.js:open-local-folder`, restrict execution strictly to local desktop mode (`config.isDesktop`). If running as web server, return `400: Folder opening is only supported in the desktop app client.`
-  2. In `documentsController.js`, replace string-concatenated `child_process.exec()` with safe `child_process.execFile()` avoiding shell interpretation, and sanitize paths to existing directories within the allowed storage boundary.
-* **Testing:** Send shell metacharacters (`"C:\\Windows\\System32 & calc.exe"`) to endpoints; verify command execution is prevented.
+#### Task 6.2: Eliminate Server-Side Command Injection & Host GUI Spawning [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/routes/documents.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/documents.js#L44-L75), [`board_website/backend/src/controllers/documentsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/documentsController.js#L475-L555)
+* **Problem:** In `/storage/open-local-folder`, `openFile`, and `revealFile`, the backend server ran `child_process.exec()` with user-influenced path strings (`start "" "${resolved}"`, `explorer "${targetDir}"`, `open "${targetDir}"`), causing command injection vulnerabilities and hanging headless cloud servers (AWS, Vercel, Docker).
+* **Status:** Resolved & Verified.
+  1. In `documents.js:open-local-folder`, restricted execution strictly to desktop client mode (`config.isDesktop`). In web/cloud mode, immediately returns `400 Bad Request` without executing commands.
+  2. In `documentsController.js:openFile`, when running in web mode, returns safe web preview URL (`/api/file-content`) with `{ opened: false }` instead of spawning host OS GUI processes.
+  3. In `documentsController.js:revealFile`, strictly restricted host file manager revealing to local desktop mode (`config.isDesktop`).
+  4. In desktop execution branches, replaced string-concatenated `child_process.exec()` with safe `child_process.execFile()` arrays (`rundll32.exe`, `explorer.exe`, `open`, `xdg-open`), completely bypassing intermediate command shells (`cmd.exe`/`sh`) and preventing command injection.
+* **Testing:** Automated test suite (`test_server_command_injection.js`) verified that web mode rejects folder opening and file reveals with `400`, `openFile` returns web preview URLs without process spawning, and paths containing shell metacharacters (`&`, `|`, `;`) cannot escape or execute shell commands.
 
-#### Task 6.3: Login Rate Limiting & User Email Enumeration Defense
-* **Files Affected:** [`board_website/backend/src/routes/auth.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/auth.js#L6-L11), [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L618-L620), [`board_website/backend/src/middleware/rateLimiter.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/rateLimiter.js)
-* **Problem:** `/api/auth/login` has no rate limiter (vulnerable to high-speed credential stuffing), and `/api/auth/forgot-password` returns `404: No account registered with this email address`, allowing attackers to harvest registered user emails.
-* **Implementation Plan:**
-  1. Add `loginLimiter` (15-minute window, max 10 failed attempts per IP) to `POST /api/auth/login`.
-  2. Normalize `forgotPassword()` response: always return `200 OK` with a generic message (*"If an account is associated with this email, a 6-digit verification code has been dispatched."*), preventing account enumeration.
-* **Testing:** Script 11 login attempts and verify 11th is rejected with `429`; query an unregistered email in `forgotPassword` and verify uniform response without revealing user presence.
+#### Task 6.3: Login Rate Limiting & User Email Enumeration Defense [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/routes/auth.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/auth.js#L6-L11), [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L618-L620), [`board_website/backend/src/middleware/rateLimiter.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/rateLimiter.js#L50-L65)
+* **Problem:** `/api/auth/login` had no rate limiter (vulnerable to high-speed credential stuffing), and `/api/auth/forgot-password` returned `404: No account registered with this email address`, allowing attackers to harvest registered user emails.
+* **Status:** Resolved & Verified.
+  1. Configured `loginLimiter` (15-minute window, max 10 attempts per IP) and mounted it directly to `POST /api/auth/login` in `routes/auth.js`.
+  2. Normalized `forgotPassword()` in `authController.js`: when an email is not found, the endpoint returns `200 OK` with `{ ok: 1, message: 'If an account is associated with <email>, a 6-digit verification code has been dispatched. Please check your inbox and spam folder.' }`, identical to registered user requests, completely preventing email enumeration.
+* **Testing:** Automated test suite (`test_login_rate_limiting_and_enumeration.js`) verified that `loginLimiter` allows 10 requests and rejects the 11th with `429 Too Many Requests`, and verified that `forgotPassword` returns identical uniform success responses for registered vs unregistered emails without leaking account existence.
 
 ---
 
