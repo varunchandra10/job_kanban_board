@@ -25,6 +25,12 @@ import {
 } from '../utils/constants';
 import { api } from '../services/api';
 import { getInitialStorageMode, StorageMode } from '../utils/environment';
+import {
+  enqueueMutation,
+  flushMutationQueue,
+  hasPendingMutations,
+  resolveId,
+} from '../services/offlineSync';
 
 interface ToastState {
   message: string;
@@ -360,9 +366,31 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [quickLinks, isAuthenticated]);
 
+  // Offline mutation queue synchronizer
+  const syncOfflineQueue = async () => {
+    if (!isAuthenticated || !hasPendingMutations()) return;
+    try {
+      const result = await flushMutationQueue((tempId, serverId, type) => {
+        if (type === 'application') {
+          setApplications(prev => prev.map(a => (a.id === tempId ? { ...a, id: serverId } : a)));
+        } else if (type === 'learning') {
+          setLearnings(prev => prev.map(l => (l.id === tempId ? { ...l, id: serverId } : l)));
+        }
+      });
+      if (result.processed > 0) {
+        showToast(`Synced ${result.processed} offline change${result.processed === 1 ? '' : 's'} with server.`);
+      }
+    } catch (err) {
+      console.warn('[OfflineSync] Flush warning:', err);
+    }
+  };
+
   // State synchronizer (syncs data across devices when switching tabs/windows)
   const refreshState = async () => {
     if (!isAuthenticated) return;
+    if (hasPendingMutations()) {
+      await syncOfflineQueue();
+    }
     try {
       const [stateRes, learnRes, gamifyRes] = await Promise.allSettled([
         api.getState(),
@@ -385,17 +413,29 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  // Cross-device sync listener: when window/tab is focused, sync state silently
+  // Cross-device and offline sync listener: when window/tab is focused or network recovers, sync
   useEffect(() => {
     if (!isAuthenticated) return;
-    const handleSync = () => {
+    const handleSync = async () => {
+      if (hasPendingMutations()) {
+        await syncOfflineQueue();
+      }
       if (document.visibilityState === 'visible') {
         refreshState();
       }
     };
+
+    window.addEventListener('online', handleSync);
     document.addEventListener('visibilitychange', handleSync);
     window.addEventListener('focus', handleSync);
+
+    // Initial check on mount
+    if (typeof navigator !== 'undefined' && navigator.onLine && hasPendingMutations()) {
+      handleSync();
+    }
+
     return () => {
+      window.removeEventListener('online', handleSync);
       document.removeEventListener('visibilitychange', handleSync);
       window.removeEventListener('focus', handleSync);
     };
@@ -599,7 +639,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setApplications(prev => prev.map(a => (a.id === newApp.id ? serverApp : a)));
       }
     } catch (err) {
-      // Local state already updated
+      enqueueMutation('create_application', newApp, newApp.id);
+      showToast(`Saved offline (${newApp.company}). Will sync when connected.`);
     }
   };
 
@@ -608,9 +649,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     showToast('Application updated');
 
     try {
-      await api.updateApplication(id, data);
+      const effectiveId = resolveId(id);
+      await api.updateApplication(effectiveId, data);
     } catch (err) {
-      // Local state already updated
+      enqueueMutation('update_application', data, undefined, id);
     }
   };
 
@@ -630,9 +672,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
 
     try {
-      await api.deleteApplication(id);
+      const effectiveId = resolveId(id);
+      await api.deleteApplication(effectiveId);
     } catch (err) {
-      // Local state already updated
+      enqueueMutation('delete_application', {}, undefined, id);
     }
   };
 
@@ -651,9 +694,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
 
     try {
-      await api.moveApplication(id, stage);
+      const effectiveId = resolveId(id);
+      await api.moveApplication(effectiveId, stage);
     } catch (err) {
-      // Local state updated
+      enqueueMutation('move_application', { stage }, undefined, id);
     }
   };
 
@@ -689,7 +733,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setLearnings(prev => prev.map(l => (l.id === newLearning.id ? serverLearning : l)));
       }
     } catch (err) {
-      // Local state updated
+      enqueueMutation('create_learning', newLearning, newLearning.id);
+      showToast(`Saved offline (${newLearning.title}). Will sync when connected.`);
     }
   };
 
@@ -698,9 +743,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     showToast('Learning updated');
 
     try {
-      await api.updateLearning(id, data);
+      const effectiveId = resolveId(id);
+      await api.updateLearning(effectiveId, data);
     } catch (err) {
-      // Local state updated
+      enqueueMutation('update_learning', data, undefined, id);
     }
   };
 
@@ -719,9 +765,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     });
 
     try {
-      await api.deleteLearning(id);
+      const effectiveId = resolveId(id);
+      await api.deleteLearning(effectiveId);
     } catch (err) {
-      // Local state updated
+      enqueueMutation('delete_learning', {}, undefined, id);
     }
   };
 

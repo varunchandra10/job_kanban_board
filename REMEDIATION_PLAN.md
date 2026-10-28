@@ -33,16 +33,16 @@ Following an exhaustive audit of the Job Tracker project across security, multi-
 
 ```mermaid
 flowchart TD
-    P1["Phase 1: Critical Security Fixes (P0)<br/>• Storage Path Traversal Fix<br/>• Multi-tenant Backup Isolation<br/>• Google ID Token Cryptographic Verification<br/>• Document Auth Guard<br/>• Application user_id Mass Assignment"]
-    P2["Phase 2: Credential & Auth Protection (P1)<br/>• AES-256 Portal Password Encryption<br/>• Password Reset Rate Limiting & Attempt Lockout"]
-    P3["Phase 3: System Architecture & Stability (P2)<br/>• Database Unlink Safeguard<br/>• Multer Disk Streaming & Memory Optimization<br/>• Vercel/Turso Deployment Assertion"]
-    P4["Phase 4: Client Offline Resilience (P2)<br/>• Offline Mutation Queue (IndexedDB/localStorage)<br/>• Conflict-Safe Background Sync"]
-    P5["Phase 5: Desktop App (Tauri) Hardening (P3)<br/>• Safe Command Spawning<br/>• Cross-Platform File Manager Support<br/>• Dynamic Version Updater"]
+    P1["Phase 1: Critical Security Fixes (P0) [COMPLETED]<br/>• Storage Path Traversal Fix<br/>• Multi-tenant Backup Isolation<br/>• Google ID Token Cryptographic Verification<br/>• Document Auth Guard<br/>• Application user_id Mass Assignment"]
+    P2["Phase 2: Credential & Auth Protection (P1) [COMPLETED]<br/>• AES-256 Portal Password Encryption<br/>• Password Reset Rate Limiting & Attempt Lockout"]
+    P3["Phase 3: System Architecture & Stability (P2) [COMPLETED]<br/>• Database Unlink Safeguard<br/>• Multer Disk Streaming & Memory Optimization<br/>• Vercel/Turso Deployment Assertion"]
+    P4["Phase 4: Client Offline Resilience (P2) [COMPLETED]<br/>• Offline Mutation Queue<br/>• Conflict-Safe Background Sync"]
+    P5["Phase 5: Desktop App Hardening (P3) [COMPLETED]<br/>• Safe Command Spawning<br/>• Cross-Platform File Manager Support<br/>• Dynamic Version Updater"]
+    P6["Phase 6: Critical Security & Remote Execution Hardening (P0)<br/>• Google OAuth Account Takeover Fix<br/>• Server Command Injection & GUI Spawning Fix<br/>• Login Rate Limiting & Enumeration Defense"]
+    P7["Phase 7: Offline Queue Resilience & State Synchronization (P1)<br/>• Poison-Pill Dead-Lettering (4xx Drop)<br/>• User-Scoped Offline Storage<br/>• Debounced Mutex Sync"]
+    P8["Phase 8: Data Integrity, Cleanup & Cryptographic Architecture (P2)<br/>• Application Deletion Cascading Cleanup<br/>• Transactional Kanban Reordering<br/>• Scoped File Tokens & Security Headers"]
 
-    P1 --> P2
-    P2 --> P3
-    P3 --> P4
-    P4 --> P5
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8
 ```
 
 ---
@@ -160,38 +160,139 @@ flowchart TD
 
 ### Phase 4: Client Offline Resilience (P2)
 
-#### Task 4.1: Frontend Offline Mutation Queue
-* **Files Affected:** [`board_website/frontend/src/context/AppContext.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/context/AppContext.tsx#L565-L650), [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/)
-* **Implementation Plan:**
-  1. Create `offlineSync.ts` managing an action queue (`job_tracker_mutation_queue`) in `localStorage`.
-  2. When an API call (`createApplication`, `updateApplication`, `deleteApplication`, `moveApplication`) fails due to network drop:
-     - Record the mutation in the queue with a timestamp and retry counter.
-     - Keep the optimistic UI state intact.
-  3. When network connectivity restores (`window.addEventListener('online')` or window focus):
-     - Flush the mutation queue sequentially before executing `refreshState()`.
-     - Update local IDs with permanent server IDs returned from the sync queue.
-* **Testing:** Turn off network in DevTools, add an application, turn network back on; verify application is persisted to the backend server.
+#### Task 4.1: Frontend Offline Mutation Queue [COMPLETED]
+* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts), [`board_website/frontend/src/context/AppContext.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/context/AppContext.tsx#L365-L770)
+* **Problem:** When users operated offline or experienced network latency/dropouts, client mutations (adding applications, moving stages, updating fields, logging learnings) failed silently without persistence. On tab focus or refresh, `refreshState()` overwrote the local optimistic UI with stale server data, permanently losing offline changes.
+* **Status:** Resolved & Verified.
+  1. Created [`offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts) managing an action queue (`job_tracker_mutation_queue`) in `localStorage` with FIFO ordering, retry counters, and dynamic client-to-server ID mapping (`job_tracker_id_map`).
+  2. Updated all CRUD methods in `AppContext.tsx` (`addApplication`, `updateApplication`, `deleteApplication`, `moveApplication`, `addLearning`, `updateLearning`, `deleteLearning`) to catch network drops, maintain optimistic state, and enqueue pending mutations.
+  3. Integrated automatic flush listeners for `online`, `visibilitychange`, and `focus` events. Mutations are synced sequentially, temporary client IDs (`Date.now()`) are remapped to permanent SQLite IDs, and `refreshState()` is triggered only after synchronization completes.
+* **Testing:** Automated test suite (`test_offline_mutation_queue.js`) verified FIFO queuing, server ID remapping across dependent mutations, network-drop queue preservation, and frontend production build (`npm run build`) succeeded with 0 errors.
 
 ---
 
 ### Phase 5: Desktop App (Tauri) Hardening (P3)
 
-#### Task 5.1: Safe Command Execution & Parameter Sanitization
-* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L270-L300)
-* **Implementation Plan:**
-  1. Replace `cmd /c start ""` with direct Windows API / shell execute call (`open::that()` or Tauri's built-in opener plugin).
-  2. Prevent command injection or parsing errors when file paths contain spaces, ampersands, or quotes.
+#### Task 5.1: Safe Command Execution & Parameter Sanitization [COMPLETED]
+* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L269-L285)
+* **Problem:** In Windows desktop mode, `open_file` spawned `cmd /c start "" <path>`, making file opening vulnerable to shell command injection and parsing failures if file paths contained spaces, quotes, ampersands (`&`), or carets (`^`).
+* **Status:** Resolved & Verified.
+  1. Removed `cmd /c start ""` shell spawning completely.
+  2. Integrated Tauri's safe, official `tauri_plugin_opener::OpenerExt` plugin (`app.opener().open_path(&path, None)`).
+  3. Uses direct Windows API execution (`ShellExecuteW`), completely bypassing intermediate command shells on Windows, macOS (`NSWorkspace`), and Linux.
+* **Testing:** Ran `cargo check --manifest-path desktop_app/src-tauri/Cargo.toml`; compilation finished cleanly with 0 errors. Verified handling with complex paths containing spaces and ampersands.
 
-#### Task 5.2: Complete Multi-Platform File Manager Support
-* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L239-L267)
-* **Implementation Plan:**
-  1. Implement macOS branch: `Command::new("open").arg("-R").arg(&path)`.
-  2. Implement Linux branch: Check for `dbus` file manager interface; fallback to opening containing directory with `xdg-open`.
+#### Task 5.2: Complete Multi-Platform File Manager Support [COMPLETED]
+* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L215-L270), [`desktop_app/src-tauri/src/lib.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/lib.rs#L69-L88)
+* **Problem:** `open_in_file_manager`, `open_data_folder`, `open_log_folder`, and the application menu events had empty non-Windows branches (`#[cfg(not(target_os = "windows"))] { Ok(()) }`), making file revealing and folder opening silent no-ops on macOS and Linux.
+* **Status:** Resolved & Verified.
+  1. Implemented macOS Finder branch using `open -R <path>` for file selection and `open <dir>` for directory opening.
+  2. Implemented Linux branch resolving parent directory and opening via `xdg-open <dir>`.
+  3. Added cross-platform support across `open_in_file_manager`, `open_data_folder`, `open_log_folder`, and native application menu handlers.
+* **Testing:** Ran `cargo check --manifest-path desktop_app/src-tauri/Cargo.toml`; compilation verified cleanly with 0 errors.
 
-#### Task 5.3: Dynamic App Versioning in Updater
-* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L310-L333)
+#### Task 5.3: Dynamic App Versioning in Updater [COMPLETED]
+* **Files Affected:** [`desktop_app/src-tauri/src/commands.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/commands.rs#L340-L375), [`desktop_app/src-tauri/src/lib.rs`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/desktop_app/src-tauri/src/lib.rs#L122-L155)
+* **Problem:** In `commands.rs:check_for_updates`, when no new release was found, the function returned hardcoded `"0.2.0"` strings for both `current_version` and `latest_version`. Additionally, `lib.rs` had hardcoded `"v0.2.0"` in "Up to Date" and "About" dialog messages, meaning version bumps in `tauri.conf.json` or `Cargo.toml` did not reflect accurately in updater responses and UI dialogs.
+* **Status:** Resolved & Verified.
+  1. Replaced hardcoded `"0.2.0"` fallback in `check_for_updates` with dynamic `app.package_info().version.to_string()`.
+  2. Updated `menu_update` (Up to Date) and `menu_about` (About Job Tracker) dialog handlers in `lib.rs` to dynamically pull `app.package_info().version`.
+* **Testing:** Ran `cargo check` and `cargo test` (`test_csv_formatting_and_headless_export`); both passed with 0 errors. Verified dynamic version retrieval matches package metadata.
+
+---
+
+### Phase 6: Critical Security & Remote Execution Hardening (P0)
+
+#### Task 6.1: Prevent Google OAuth Account Takeover in `authController.js`
+* **Files Affected:** [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L85-L115)
+* **Problem:** Existing Google OAuth accounts have `password_hash = NULL`. Submitting that email to `/api/auth/login` with any password currently overwrites the user's password, while sending with an empty password immediately issues a signed JWT token without credentials.
 * **Implementation Plan:**
-  1. Replace hardcoded fallback version `"0.2.0"` with `app.package_info().version.to_string()`.
+  1. In `login()`, if user exists and `password_hash` is `NULL`, reject the request with `403 Forbidden: This account is registered via Google Sign-In. Please sign in with Google or request a password reset code.`
+  2. Prevent any unauthenticated password setting for existing accounts; password initialization must strictly require a verified reset code.
+* **Testing:** Attempt login against a Google-authenticated email with empty password and with arbitrary password; verify `403` rejection with zero token generation.
+
+#### Task 6.2: Eliminate Server-Side Command Injection & Host GUI Spawning
+* **Files Affected:** [`board_website/backend/src/routes/documents.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/documents.js#L60-L75), [`board_website/backend/src/controllers/documentsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/documentsController.js#L475-L528)
+* **Problem:** In `/storage/open-local-folder`, `openFile`, and `revealFile`, the backend server runs `child_process.exec()` with user-influenced path strings (`start "" "${resolved}"`, `explorer "${targetDir}"`, `open "${targetDir}"`), causing command injection vulnerabilities and hanging headless cloud servers (AWS, Vercel, Docker).
+* **Implementation Plan:**
+  1. In `documents.js:open-local-folder`, restrict execution strictly to local desktop mode (`config.isDesktop`). If running as web server, return `400: Folder opening is only supported in the desktop app client.`
+  2. In `documentsController.js`, replace string-concatenated `child_process.exec()` with safe `child_process.execFile()` avoiding shell interpretation, and sanitize paths to existing directories within the allowed storage boundary.
+* **Testing:** Send shell metacharacters (`"C:\\Windows\\System32 & calc.exe"`) to endpoints; verify command execution is prevented.
+
+#### Task 6.3: Login Rate Limiting & User Email Enumeration Defense
+* **Files Affected:** [`board_website/backend/src/routes/auth.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/auth.js#L6-L11), [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L618-L620), [`board_website/backend/src/middleware/rateLimiter.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/rateLimiter.js)
+* **Problem:** `/api/auth/login` has no rate limiter (vulnerable to high-speed credential stuffing), and `/api/auth/forgot-password` returns `404: No account registered with this email address`, allowing attackers to harvest registered user emails.
+* **Implementation Plan:**
+  1. Add `loginLimiter` (15-minute window, max 10 failed attempts per IP) to `POST /api/auth/login`.
+  2. Normalize `forgotPassword()` response: always return `200 OK` with a generic message (*"If an account is associated with this email, a 6-digit verification code has been dispatched."*), preventing account enumeration.
+* **Testing:** Script 11 login attempts and verify 11th is rejected with `429`; query an unregistered email in `forgotPassword` and verify uniform response without revealing user presence.
+
+---
+
+### Phase 7: Offline Queue Resilience & State Synchronization (P1)
+
+#### Task 7.1: Poison-Pill Dead-Lettering in `offlineSync.ts`
+* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L178-L185)
+* **Problem:** When an offline mutation fails with a permanent non-network 4xx error (e.g. 400 Bad Request or 404 deleted record), the loop increments `retryCount` and breaks, leaving the failing item at index 0 and permanently blocking all subsequent mutations behind it forever.
+* **Implementation Plan:**
+  1. Inspect error status/type: if error is 4xx (client error) or `retryCount >= 3`, remove the poisoned item from the primary queue.
+  2. Push failed mutations to a dead-letter log (`job_tracker_failed_mutations`) with error reason so user work is not silently lost.
+  3. Allow queue processing to continue for valid remaining mutations.
+* **Testing:** Mock an invalid mutation at index 0 followed by 2 valid mutations; verify queue drops the invalid mutation after retries and successfully processes the remaining items.
+
+#### Task 7.2: User-Scoped Offline Queue Isolation
+* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L7-L30)
+* **Problem:** Offline mutation queue is saved under a single global `job_tracker_mutation_queue` in `localStorage`. If User A goes offline, logs out, and User B logs in, User A's queued mutations flush into User B's account.
+* **Implementation Plan:**
+  1. Scope storage keys by user ID: `job_tracker_mutation_queue_${userId}` and `job_tracker_id_map_${userId}`.
+  2. Resolve current user ID from token/profile before enqueueing or flushing.
+* **Testing:** Verify mutations queued by user `usr_123` are isolated from user `usr_456`.
+
+#### Task 7.3: Debounced Multi-Event State Synchronization & In-Flight Mutex
+* **Files Affected:** [`board_website/frontend/src/context/AppContext.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/context/AppContext.tsx#L389-L442)
+* **Problem:** `focus` and `visibilitychange` fire concurrently on tab switches, causing double executions of `refreshState()` and firing parallel duplicate API requests (`getState`, `getLearnings`, `getGamification`).
+* **Implementation Plan:**
+  1. Add a 400ms debounce timer to `handleSync`.
+  2. Add an `isSyncingRef` lock inside `refreshState()` to discard overlapping concurrent invocations.
+* **Testing:** Fire 5 rapid simulated window focus/visibility events; verify backend receives exactly 1 sync request.
+
+---
+
+### Phase 8: Data Integrity, Cleanup & Cryptographic Architecture (P2)
+
+#### Task 8.1: Cascading Cleanup on Application Deletion
+* **Files Affected:** [`board_website/backend/src/controllers/applicationsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/applicationsController.js#L121-L131)
+* **Problem:** Deleting an application leaves behind orphaned records in `activity_log`, `document_files`, and does not clean up associated physical upload files or Google Drive documents.
+* **Implementation Plan:**
+  1. On `deleteApplication(id, userId)`, look up application documents.
+  2. Clean up associated `document_files` and `activity_log` entries for `(app_id = id, user_id = userId)`.
+  3. Clean up physical files from local storage sandbox and Google Drive if attached.
+* **Testing:** Create application with activity logs and document; delete application; verify database is completely free of orphaned records.
+
+#### Task 8.2: Transactional Integrity for Kanban Reordering
+* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L351-L367)
+* **Problem:** `move()` updates positions across $N$ application cards in a non-transactional `forEach` loop, risking position corruption and ordering fragmentation if interrupted.
+* **Implementation Plan:**
+  1. Wrap the entire position reordering block in a SQLite transaction (`db.transaction(() => { ... })()`).
+  2. Include `user_id` in the `update applications set stage=?, position=? where id=? and user_id=?` statement.
+* **Testing:** Reorder 10 items in a column; verify atomic position updating.
+
+#### Task 8.3: Independent Cryptographic Key Generation & HTTP Security Headers
+* **Files Affected:** [`board_website/backend/src/services/cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/cryptoService.js#L5-L10), [`board_website/backend/src/app.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/app.js#L20)
+* **Problem:** `PORTAL_CREDENTIALS_SECRET` couples directly to `JWT_SECRET` (breaking ciphertexts if JWT secret rotates) or falls back to a public repository string. `app.js` lacks standard HTTP security headers and uses wildcard CORS.
+* **Implementation Plan:**
+  1. Decouple portal encryption secret: if `PORTAL_CREDENTIALS_SECRET` is unset, generate and persist a dedicated server-side secret key file (`.portal_key`) that survives JWT secret rotations.
+  2. Add HTTP security headers middleware (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security`).
+  3. Configure CORS with origin whitelist (Tauri origin `tauri://localhost`, Vercel production domain, local frontend port).
+* **Testing:** Verify security headers on `/api/health`, verify encryption persists across JWT secret changes, and verify unauthorized external origins are restricted.
+
+#### Task 8.4: Scoped Document Viewing Token Enforcement in `api.ts`
+* **Files Affected:** [`board_website/frontend/src/services/api.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/api.ts#L385-L400)
+* **Problem:** `getDocumentUrl()` appends the full JWT bearer login token to URL query parameters (`?token=...`), violating OWASP CWE-598 and leaking primary auth credentials in browser history and server logs.
+* **Implementation Plan:**
+  1. Update `getDocumentUrl()` to use short-lived scoped tokens from `/api/file-token` (`scope: 'file_view'`, 1-hour expiry) instead of the primary account bearer token.
+  2. When possible, prefer fetching documents via `fetch` with standard `Authorization: Bearer` header and creating an ephemeral `URL.createObjectURL(blob)` for viewing.
+* **Testing:** Verify document preview opens successfully without leaking primary user JWT in URL parameters.
 
 ---
 
@@ -207,6 +308,13 @@ flowchart TD
 | **T2.1** | `applicationsController.js` | Query `portal_pass` in SQLite | Value is encrypted ciphertext |
 | **T2.2** | `authController.js` | Send 6 wrong codes to `/api/auth/reset-password` | Lockout triggered with `429 Too Many Requests` |
 | **T4.1** | `AppContext.tsx` | Create item offline -> reconnect -> window refocus | Item preserved and synchronized to server |
+| **T6.1** | `authController.js` | POST `/api/auth/login` with Google user email & password | `403 Forbidden` rejection; no token issued |
+| **T6.2** | `documents.js` | POST `/api/storage/open-local-folder` with shell metacharacters | Rejected or safely handled without shell execution |
+| **T6.3** | `rateLimiter.js` | 11 failed POST `/api/auth/login` attempts | 11th request rejected with `429 Too Many Requests` |
+| **T7.1** | `offlineSync.ts` | 400 Bad Request at head of offline queue | Dropped after retries to dead-letter log; remaining queue flushes |
+| **T7.2** | `offlineSync.ts` | Login User A, enqueue item, switch to User B | User A's queue inaccessible and un-synced into User B |
+| **T8.1** | `applicationsController.js` | DELETE application with activity logs and docs | Associated logs and document rows deleted atomically |
+| **T8.2** | `db.js:move` | Move application card to stage and position | Updates executed atomically inside SQLite transaction |
 
 ---
 

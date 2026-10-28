@@ -228,14 +228,36 @@ pub async fn open_data_folder(app: AppHandle) -> Result<String, String> {
         Ok(path_str)
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
+    {
+        let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+        if !path.exists() {
+            let _ = std::fs::create_dir_all(&path);
+        }
+        let path_str = path.to_string_lossy().to_string();
+        let _ = std::process::Command::new("open").arg(&path_str).spawn();
+        Ok(path_str)
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
+        if !path.exists() {
+            let _ = std::fs::create_dir_all(&path);
+        }
+        let path_str = path.to_string_lossy().to_string();
+        let _ = std::process::Command::new("xdg-open").arg(&path_str).spawn();
+        Ok(path_str)
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
         let path = app.path().app_data_dir().map_err(|e| e.to_string())?;
         Ok(path.to_string_lossy().to_string())
     }
 }
 
-/// Opens a path in Windows Explorer (or system file manager).
+/// Opens a path in Windows Explorer, macOS Finder, or Linux file manager.
 #[tauri::command]
 pub async fn open_in_file_manager(path: String) -> Result<(), String> {
     let p = std::path::Path::new(&path);
@@ -260,43 +282,59 @@ pub async fn open_in_file_manager(path: String) -> Result<(), String> {
         Ok(())
     }
 
-    #[cfg(not(target_os = "windows"))]
-    {
-        Ok(())
-    }
-}
-
-/// Opens a file with the default system application (e.g. Acrobat/Word/Browser).
-#[tauri::command]
-pub async fn open_file(path: String) -> Result<(), String> {
-    let p = std::path::Path::new(&path);
-    if !p.exists() {
-        return Err(format!("File does not exist: {}", path));
-    }
-
-    #[cfg(target_os = "windows")]
-    {
-        use std::process::Command;
-        Command::new("cmd")
-            .args(["/c", "start", "", &path])
-            .spawn()
-            .map_err(|e| e.to_string())?;
-        Ok(())
-    }
-
     #[cfg(target_os = "macos")]
     {
         use std::process::Command;
-        Command::new("open").arg(&path).spawn().map_err(|e| e.to_string())?;
+        if p.is_file() {
+            Command::new("open")
+                .arg("-R")
+                .arg(&path)
+                .spawn()
+                .map_err(|e| format!("Failed to reveal file in Finder: {}", e))?;
+        } else {
+            Command::new("open")
+                .arg(&path)
+                .spawn()
+                .map_err(|e| format!("Failed to open directory in Finder: {}", e))?;
+        }
         Ok(())
     }
 
     #[cfg(target_os = "linux")]
     {
         use std::process::Command;
-        Command::new("xdg-open").arg(&path).spawn().map_err(|e| e.to_string())?;
+        let target_dir = if p.is_file() {
+            p.parent().unwrap_or(p)
+        } else {
+            p
+        };
+        Command::new("xdg-open")
+            .arg(target_dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open file manager via xdg-open: {}", e))?;
         Ok(())
     }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        Ok(())
+    }
+}
+
+/// Opens a file with the default system application (e.g. Acrobat/Word/Browser)
+/// using Tauri's safe OS opener plugin (direct Windows ShellExecuteW / macOS NSWorkspace, no cmd.exe).
+#[tauri::command]
+pub async fn open_file(app: AppHandle, path: String) -> Result<(), String> {
+    use tauri_plugin_opener::OpenerExt;
+
+    let p = std::path::Path::new(&path);
+    if !p.exists() {
+        return Err(format!("File does not exist: {}", path));
+    }
+
+    app.opener()
+        .open_path(&path, None::<&str>)
+        .map_err(|e| format!("Failed to open file: {}", e))
 }
 
 #[derive(serde::Serialize)]
@@ -323,10 +361,11 @@ pub async fn check_for_updates(app: AppHandle) -> Result<UpdateCheckResult, Stri
             notes: update.body.unwrap_or_default(),
         })
     } else {
+        let current_ver = app.package_info().version.to_string();
         Ok(UpdateCheckResult {
             available: false,
-            current_version: "0.2.0".to_string(),
-            latest_version: "0.2.0".to_string(),
+            current_version: current_ver.clone(),
+            latest_version: current_ver,
             notes: "You are already using the latest version of Job Tracker.".to_string(),
         })
     }
@@ -368,6 +407,16 @@ pub async fn open_log_folder(app: AppHandle) -> Result<String, String> {
     #[cfg(target_os = "windows")]
     {
         let _ = std::process::Command::new("explorer").arg(&path_str).spawn();
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let _ = std::process::Command::new("open").arg(&path_str).spawn();
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let _ = std::process::Command::new("xdg-open").arg(&path_str).spawn();
     }
 
     Ok(path_str)

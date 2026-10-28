@@ -73,6 +73,18 @@ pub fn run() -> tauri::Result<()> {
               let target_dir = std::path::Path::new(&appdata).join("JobTracker");
               let _ = std::process::Command::new("explorer").arg(target_dir).spawn();
             }
+            #[cfg(target_os = "macos")]
+            {
+              if let Ok(data_dir) = app.path().app_data_dir() {
+                let _ = std::process::Command::new("open").arg(data_dir).spawn();
+              }
+            }
+            #[cfg(target_os = "linux")]
+            {
+              if let Ok(data_dir) = app.path().app_data_dir() {
+                let _ = std::process::Command::new("xdg-open").arg(data_dir).spawn();
+              }
+            }
           }
           "menu_open_logs" => {
             if let Ok(log_dir) = app.path().app_log_dir() {
@@ -82,6 +94,14 @@ pub fn run() -> tauri::Result<()> {
               #[cfg(target_os = "windows")]
               {
                 let _ = std::process::Command::new("explorer").arg(log_dir).spawn();
+              }
+              #[cfg(target_os = "macos")]
+              {
+                let _ = std::process::Command::new("open").arg(log_dir).spawn();
+              }
+              #[cfg(target_os = "linux")]
+              {
+                let _ = std::process::Command::new("xdg-open").arg(log_dir).spawn();
               }
             }
           }
@@ -112,7 +132,8 @@ pub fn run() -> tauri::Result<()> {
                     handle.dialog().message(msg).title("Update Available").blocking_show();
                   }
                   Ok(None) => {
-                    handle.dialog().message("You are already using the latest version of Job Tracker (v0.2.0).").title("Up to Date").blocking_show();
+                    let cur_ver = handle.package_info().version.to_string();
+                    handle.dialog().message(format!("You are already using the latest version of Job Tracker (v{}).", cur_ver)).title("Up to Date").blocking_show();
                   }
                   Err(e) => {
                     handle.dialog().message(format!("Could not reach update server:\n{}", e)).title("Update Check").blocking_show();
@@ -126,8 +147,9 @@ pub fn run() -> tauri::Result<()> {
           }
           "menu_about" => {
             use tauri_plugin_dialog::DialogExt;
+            let cur_ver = app.package_info().version.to_string();
             app.dialog()
-              .message("Job Tracker Desktop Edition v0.2.0\nHigh-performance career management hub with embedded SQLite.")
+              .message(format!("Job Tracker Desktop Edition v{}\nHigh-performance career management hub with embedded SQLite.", cur_ver))
               .title("About Job Tracker")
               .blocking_show();
           }
