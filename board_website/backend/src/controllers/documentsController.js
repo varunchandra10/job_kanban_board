@@ -263,11 +263,21 @@ exports.uploadDocument = async (req, res, next) => {
   } catch (err) {
     console.error('[Upload Document Error]:', err.message);
     let msg = err.message || 'Unknown upload error';
-    if (msg.includes('quota') || msg.includes('Service Accounts do not have storage quota')) {
-      msg = 'Personal Google Drive requires user authorization. Please open Google Drive Settings (cloud/drive icon in header) and click "Authorize" to enable direct uploads with your Google Account.';
+    let needsAuth = false;
+    if (
+      msg.includes('Google Drive service is not configured with credentials') ||
+      msg.includes('Google Drive folder not configured') ||
+      msg.includes('quota') ||
+      msg.includes('Service Accounts do not have storage quota') ||
+      msg.includes('invalid_grant') ||
+      msg.includes('invalid_token')
+    ) {
+      msg = 'Google Drive requires authorization with your Google Account. Please open Google Drive Settings (cloud icon in header) and click "Authorize" to enable direct Google Drive uploads.';
+      needsAuth = true;
     }
     return res.status(500).json({
       ok: 0,
+      needsAuth,
       error: `Google Drive upload failed: ${msg}`
     });
   }

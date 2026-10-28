@@ -83,6 +83,9 @@ export const AuthModal: React.FC = () => {
             if (pollRes.ready && pollRes.token && pollRes.user) {
               clearInterval(pollInterval);
               window.removeEventListener('focus', checkAuth);
+              if (pollRes.googleAccessToken) {
+                localStorage.setItem('google_drive_access_token', pollRes.googleAccessToken);
+              }
               setSuccessMessage('Authenticated! Connecting to Job Tracker...');
               setSession(pollRes.token, pollRes.user);
               setIsLoading(false);

@@ -94,6 +94,9 @@ export const DriveModal: React.FC = () => {
     setLoading(true);
     setErrorMsg('');
     try {
+      if (isDesktop) {
+        showToast('Please authorize Google Drive in the opened browser window');
+      }
       await requestGoogleDriveAccess();
       setHasOAuth(true);
       setGdriveStatus({ ...gdriveStatus, connected: true });

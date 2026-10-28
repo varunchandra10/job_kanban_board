@@ -277,10 +277,10 @@ exports.desktopGoogleStart = (req, res) => {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'openid email profile',
+    scope: 'openid email profile https://www.googleapis.com/auth/drive.file',
     state: sessionId,
     access_type: 'offline',
-    prompt: 'select_account'
+    prompt: 'consent select_account'
   }).toString();
 
   try {
@@ -395,6 +395,18 @@ exports.googleCallback = async (req, res) => {
       }
     }
 
+    if (tokenData.refresh_token) {
+      try {
+        db.prepare('UPDATE users SET google_refresh_token = ? WHERE id = ?').run(
+          tokenData.refresh_token,
+          user.id
+        );
+        console.log(`[Google OAuth] Persisted refresh token for user ${user.id}`);
+      } catch (tokenSaveErr) {
+        console.warn('[Google OAuth] Could not persist refresh token:', tokenSaveErr.message);
+      }
+    }
+
     const token = signToken({ id: user.id, email: user.email, name: user.name });
 
     if (sessionId) {
@@ -411,14 +423,19 @@ exports.googleCallback = async (req, res) => {
             session_id TEXT PRIMARY KEY,
             token TEXT NOT NULL,
             user_json TEXT NOT NULL,
+            google_access_token TEXT,
             created_at INTEGER NOT NULL
           );
         `);
+        try {
+          db.exec('ALTER TABLE pending_desktop_auth ADD COLUMN google_access_token TEXT');
+        } catch (_) {}
+
         db.prepare(`
-          INSERT INTO pending_desktop_auth (session_id, token, user_json, created_at)
-          VALUES (?, ?, ?, ?)
-          ON CONFLICT(session_id) DO UPDATE SET token = excluded.token, user_json = excluded.user_json, created_at = excluded.created_at
-        `).run(sessionId, token, JSON.stringify(userPayload), Date.now());
+          INSERT INTO pending_desktop_auth (session_id, token, user_json, google_access_token, created_at)
+          VALUES (?, ?, ?, ?, ?)
+          ON CONFLICT(session_id) DO UPDATE SET token = excluded.token, user_json = excluded.user_json, google_access_token = excluded.google_access_token, created_at = excluded.created_at
+        `).run(sessionId, token, JSON.stringify(userPayload), tokenData.access_token || '', Date.now());
       } catch (dbErr) {
         console.warn('[Desktop OAuth DB Store Note]:', dbErr.message);
       }
@@ -426,6 +443,7 @@ exports.googleCallback = async (req, res) => {
       pendingDesktopAuth.set(sessionId, {
         token,
         user: userPayload,
+        googleAccessToken: tokenData.access_token || '',
         expiresAt: Date.now() + 180000
       });
     }
@@ -488,7 +506,7 @@ exports.desktopGooglePoll = (req, res) => {
 
   // 1. Primary check: Persistent SQLite / Turso edge database
   try {
-    const row = db.prepare('SELECT token, user_json FROM pending_desktop_auth WHERE session_id = ?').get(sessionId);
+    const row = db.prepare('SELECT token, user_json, google_access_token FROM pending_desktop_auth WHERE session_id = ?').get(sessionId);
     if (row && row.token) {
       try {
         db.prepare('DELETE FROM pending_desktop_auth WHERE session_id = ?').run(sessionId);
@@ -497,7 +515,8 @@ exports.desktopGooglePoll = (req, res) => {
         ok: 1,
         ready: true,
         token: row.token,
-        user: JSON.parse(row.user_json)
+        user: JSON.parse(row.user_json),
+        googleAccessToken: row.google_access_token || undefined
       });
     }
   } catch (err) {
@@ -512,7 +531,8 @@ exports.desktopGooglePoll = (req, res) => {
       ok: 1,
       ready: true,
       token: data.token,
-      user: data.user
+      user: data.user,
+      googleAccessToken: data.googleAccessToken || undefined
     });
   }
 

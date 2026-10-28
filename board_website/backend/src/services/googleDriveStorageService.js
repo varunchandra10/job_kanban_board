@@ -126,9 +126,11 @@ class GoogleDriveStorageService extends BaseStorageService {
 
   getClient(userAccessToken, userRefreshToken = null) {
     if (userRefreshToken) {
+      const clientId = config.googleClientId || config.googleDesktopClientId;
+      const clientSecret = config.googleClientSecret || config.googleDesktopClientSecret;
       const oauth2Client = new google.auth.OAuth2(
-        config.googleClientId,
-        config.googleClientSecret
+        clientId,
+        clientSecret
       );
       oauth2Client.setCredentials({
         access_token: userAccessToken || undefined,

@@ -237,7 +237,7 @@ export const api = {
     return res.json();
   },
 
-  async pollDesktopGoogleAuth(sessionId: string): Promise<{ ok: number; ready: boolean; token?: string; user?: any }> {
+  async pollDesktopGoogleAuth(sessionId: string): Promise<{ ok: number; ready: boolean; token?: string; user?: any; googleAccessToken?: string }> {
     const res = await fetch(`${API_BASE}/auth/google/desktop/poll?sessionId=${encodeURIComponent(sessionId)}`);
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));

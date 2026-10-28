@@ -166,8 +166,13 @@ export const ApplicationModal: React.FC = () => {
         if (!getStoredGoogleDriveToken()) {
           try {
             await ensureGoogleDriveToken();
-          } catch (tokenErr) {
+          } catch (tokenErr: any) {
             console.warn('[Google Drive Auth]:', tokenErr);
+            showToast('Google Drive authorization required to upload cloud documents');
+            setIsDriveModalOpen(true);
+            setIsUploadingResume(false);
+            if (e.target) e.target.value = '';
+            return;
           }
         }
       }
@@ -179,6 +184,9 @@ export const ApplicationModal: React.FC = () => {
           : 'Resume saved to local storage folder!'
       );
     } catch (err: any) {
+      if (err.message && (err.message.includes('credentials') || err.message.includes('authorization'))) {
+        setIsDriveModalOpen(true);
+      }
       showToast(err.message || 'Failed to upload resume');
     } finally {
       setIsUploadingResume(false);
@@ -195,8 +203,13 @@ export const ApplicationModal: React.FC = () => {
         if (!getStoredGoogleDriveToken()) {
           try {
             await ensureGoogleDriveToken();
-          } catch (tokenErr) {
+          } catch (tokenErr: any) {
             console.warn('[Google Drive Auth]:', tokenErr);
+            showToast('Google Drive authorization required to upload cloud documents');
+            setIsDriveModalOpen(true);
+            setIsUploadingCover(false);
+            if (e.target) e.target.value = '';
+            return;
           }
         }
       }
@@ -208,6 +221,9 @@ export const ApplicationModal: React.FC = () => {
           : 'Cover letter saved to local storage folder!'
       );
     } catch (err: any) {
+      if (err.message && (err.message.includes('credentials') || err.message.includes('authorization'))) {
+        setIsDriveModalOpen(true);
+      }
       showToast(err.message || 'Failed to upload cover letter');
     } finally {
       setIsUploadingCover(false);
