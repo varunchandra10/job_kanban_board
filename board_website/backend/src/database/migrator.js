@@ -16,6 +16,13 @@ function runMigrations(db) {
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_resets_email ON password_resets(email);
+    CREATE TABLE IF NOT EXISTS pending_desktop_auth (
+      session_id TEXT PRIMARY KEY,
+      token TEXT NOT NULL,
+      user_json TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_pending_auth_sess ON pending_desktop_auth(session_id);
   `);
 
   const appliedRows = db.prepare('SELECT name FROM schema_migrations').all();

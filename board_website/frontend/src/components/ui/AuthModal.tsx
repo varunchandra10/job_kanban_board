@@ -73,31 +73,42 @@ export const AuthModal: React.FC = () => {
 
         setSuccessMessage('Browser opened! Please complete Google Sign-In in your browser...');
 
-        // Poll for session completion
+        // Fast polling with window-focus reactivity
         let attempts = 0;
-        const maxAttempts = 100;
+        const maxAttempts = 120; // 2 minutes
+
+        const checkAuth = async () => {
+          try {
+            const pollRes = await api.pollDesktopGoogleAuth(sessionId);
+            if (pollRes.ready && pollRes.token && pollRes.user) {
+              clearInterval(pollInterval);
+              window.removeEventListener('focus', checkAuth);
+              setSuccessMessage('Authenticated! Connecting to Job Tracker...');
+              setSession(pollRes.token, pollRes.user);
+              setIsLoading(false);
+              navigate('/job-applications');
+              return true;
+            }
+          } catch {
+            // Keep polling
+          }
+          return false;
+        };
+
         const pollInterval = setInterval(async () => {
           attempts++;
           if (attempts > maxAttempts) {
             clearInterval(pollInterval);
+            window.removeEventListener('focus', checkAuth);
             setIsLoading(false);
             setErrorMessage('Google Sign-In timed out. Please try again or use Email & Password below.');
             setSuccessMessage('');
             return;
           }
+          await checkAuth();
+        }, 1000);
 
-          try {
-            const pollRes = await api.pollDesktopGoogleAuth(sessionId);
-            if (pollRes.ready && pollRes.token && pollRes.user) {
-              clearInterval(pollInterval);
-              setIsLoading(false);
-              setSession(pollRes.token, pollRes.user);
-              navigate('/job-applications');
-            }
-          } catch {
-            // Keep polling
-          }
-        }, 1500);
+        window.addEventListener('focus', checkAuth);
       } catch (desktopErr: any) {
         setIsLoading(false);
         setSuccessMessage('');

@@ -102,7 +102,16 @@ fn main() {
         create_shortcut(&target_exe, &start_shortcut);
     }
 
-    // 3. Register in Windows Registry (Add/Remove Programs)
+    // 3. Register custom deep-link URI protocol (jobtracker://)
+    let protocol_reg = format!(
+        r#"$p = 'HKCU:\Software\Classes\jobtracker'; if (!(Test-Path $p)) {{ New-Item -Path $p -Force | Out-Null }}; Set-ItemProperty -Path $p -Name '(Default)' -Value 'URL:Job Tracker Protocol'; Set-ItemProperty -Path $p -Name 'URL Protocol' -Value ''; $cmd = "$p\shell\open\command"; if (!(Test-Path $cmd)) {{ New-Item -Path $cmd -Force | Out-Null }}; Set-ItemProperty -Path $cmd -Name '(Default)' -Value '"{}" "%1"'"#,
+        target_exe.to_string_lossy().replace('\'', "''")
+    );
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-NonInteractive", "-WindowStyle", "Hidden", "-Command", &protocol_reg])
+        .output();
+
+    // 4. Register in Windows Registry (Add/Remove Programs)
     let uninstall_reg = format!(
         r#"$path = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\JobTracker'; if (!(Test-Path $path)) {{ New-Item -Path $path -Force | Out-Null }}; Set-ItemProperty -Path $path -Name 'DisplayName' -Value 'Job Tracker'; Set-ItemProperty -Path $path -Name 'DisplayVersion' -Value '0.2.0'; Set-ItemProperty -Path $path -Name 'Publisher' -Value 'Job Tracker Team'; Set-ItemProperty -Path $path -Name 'InstallLocation' -Value '{}'; Set-ItemProperty -Path $path -Name 'DisplayIcon' -Value '{}'"#,
         install_dir.to_string_lossy().replace('\'', "''"),

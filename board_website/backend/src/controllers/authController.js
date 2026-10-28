@@ -398,14 +398,34 @@ exports.googleCallback = async (req, res) => {
     const token = signToken({ id: user.id, email: user.email, name: user.name });
 
     if (sessionId) {
+      const userPayload = {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar_url: user.avatar_url || profile.picture || ''
+      };
+
+      try {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS pending_desktop_auth (
+            session_id TEXT PRIMARY KEY,
+            token TEXT NOT NULL,
+            user_json TEXT NOT NULL,
+            created_at INTEGER NOT NULL
+          );
+        `);
+        db.prepare(`
+          INSERT INTO pending_desktop_auth (session_id, token, user_json, created_at)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(session_id) DO UPDATE SET token = excluded.token, user_json = excluded.user_json, created_at = excluded.created_at
+        `).run(sessionId, token, JSON.stringify(userPayload), Date.now());
+      } catch (dbErr) {
+        console.warn('[Desktop OAuth DB Store Note]:', dbErr.message);
+      }
+
       pendingDesktopAuth.set(sessionId, {
         token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar_url: user.avatar_url || profile.picture || ''
-        },
+        user: userPayload,
         expiresAt: Date.now() + 180000
       });
     }
@@ -421,7 +441,9 @@ exports.googleCallback = async (req, res) => {
           .card { background: #18181b; padding: 48px 40px; border-radius: 20px; border: 1px solid #27272a; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); }
           .icon { width: 68px; height: 68px; background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 34px; border: 2px solid rgba(34,197,94,0.3); }
           h1 { margin: 0 0 12px; font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
-          p { color: #a1a1aa; font-size: 15px; line-height: 1.6; margin: 0 0 28px; }
+          p { color: #a1a1aa; font-size: 15px; line-height: 1.6; margin: 0 0 24px; }
+          .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; box-sizing: border-box; padding: 14px 20px; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; font-weight: 600; font-size: 14px; border-radius: 12px; text-decoration: none; box-shadow: 0 10px 15px -3px rgba(59,130,246,0.3); transition: all 0.2s; margin-bottom: 20px; }
+          .btn:hover { opacity: 0.95; transform: translateY(-1px); }
           .badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; background: #27272a; border-radius: 9999px; font-size: 13px; color: #e4e4e7; font-weight: 500; border: 1px solid #3f3f46; }
           .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; }
         </style>
@@ -430,11 +452,19 @@ exports.googleCallback = async (req, res) => {
         <div class="card">
           <div class="icon">✓</div>
           <h1>Signed In Successfully!</h1>
-          <p>Authenticated as <strong>${profile.name || cleanEmail}</strong>.<br>You can now close this browser tab and return to the Job Tracker desktop app.</p>
-          <div class="badge"><span class="dot"></span>Desktop App Connected</div>
+          <p>Authenticated as <strong>${profile.name || cleanEmail}</strong>.<br>You are now connected. Return to the Job Tracker desktop app.</p>
+          <a href="jobtracker://auth?token=${encodeURIComponent(token)}" class="btn" id="openBtn">
+            <span>Open Job Tracker Desktop</span> &rarr;
+          </a>
+          <div>
+            <div class="badge"><span class="dot"></span>Desktop App Connected</div>
+          </div>
         </div>
         <script>
-          setTimeout(() => { try { window.close(); } catch(e) {} }, 2500);
+          try {
+            window.location.href = "jobtracker://auth?token=" + encodeURIComponent("${token}");
+          } catch (_) {}
+          setTimeout(() => { try { window.close(); } catch(e) {} }, 4000);
         </script>
       </body>
       </html>
@@ -452,18 +482,41 @@ exports.googleCallback = async (req, res) => {
 
 exports.desktopGooglePoll = (req, res) => {
   const { sessionId } = req.query;
-  if (!sessionId || !pendingDesktopAuth.has(sessionId)) {
+  if (!sessionId) {
     return res.json({ ok: 1, ready: false });
   }
 
-  const data = pendingDesktopAuth.get(sessionId);
-  pendingDesktopAuth.delete(sessionId);
-  res.json({
-    ok: 1,
-    ready: true,
-    token: data.token,
-    user: data.user
-  });
+  // 1. Primary check: Persistent SQLite / Turso edge database
+  try {
+    const row = db.prepare('SELECT token, user_json FROM pending_desktop_auth WHERE session_id = ?').get(sessionId);
+    if (row && row.token) {
+      try {
+        db.prepare('DELETE FROM pending_desktop_auth WHERE session_id = ?').run(sessionId);
+      } catch (_) {}
+      return res.json({
+        ok: 1,
+        ready: true,
+        token: row.token,
+        user: JSON.parse(row.user_json)
+      });
+    }
+  } catch (err) {
+    console.warn('[Desktop Poll Database Check Note]:', err.message);
+  }
+
+  // 2. Fallback check: In-memory store (for single-instance local runs)
+  if (pendingDesktopAuth.has(sessionId)) {
+    const data = pendingDesktopAuth.get(sessionId);
+    pendingDesktopAuth.delete(sessionId);
+    return res.json({
+      ok: 1,
+      ready: true,
+      token: data.token,
+      user: data.user
+    });
+  }
+
+  res.json({ ok: 1, ready: false });
 };
 
 /**
