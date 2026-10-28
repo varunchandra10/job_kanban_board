@@ -6,10 +6,15 @@ This guide covers features, options, and data management for the native Windows 
 
 ## 1. Installation
 
-1. Download the Windows installer:
-   👉 **[Download Job-Tracker-Setup.exe](../installer/Job-Tracker-Setup.exe?raw=true)** *(or from [GitHub Releases](https://github.com/varunchandra10/job_kanban_board/releases))*.
-2. Run `Job-Tracker-Setup.exe` and follow the setup wizard.
-3. Open **Job Tracker** from your Desktop or Start Menu.
+<p align="left">
+  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
+    <img src="https://img.shields.io/badge/🚀_DOWNLOAD_INSTALLER-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="42" />
+  </a>
+</p>
+
+1. Download **`Job-Tracker-Setup.exe`** from the button above (or from [`install_apps/Job-Tracker-Setup.exe`](../install_apps/Job-Tracker-Setup.exe)).
+2. Double-click `Job-Tracker-Setup.exe` to run the 1-click installer.
+3. Open **Job Tracker** anytime from your Desktop or Start Menu.
 
 ---
 
@@ -24,12 +29,21 @@ User Data Directory: %APPDATA%\JobTracker\
 └── backups\            # Automatic local snapshots
 ```
 
+- **Default Storage Engine**: On the desktop app, storage defaults to **`LOCAL_STORAGE`** (saved directly to your local PC hard drive).
 - **Zero Cloud Requirement**: You don't need Google Drive or external database servers to use the desktop version. All job data, notes, and uploaded files are saved locally on your computer.
-- **Data Portability**: You can easily back up your data anytime by copying the `%APPDATA%\JobTracker` folder or using the **"Download Full Database as ZIP"** button in the app.
+- **Data Portability**: You can easily back up your data anytime by copying the `%APPDATA%\JobTracker` folder or using the **"Download DB as ZIP"** button in your profile.
 
 ---
 
-## 3. Native Desktop Features
+## 3. Real-Time Cloud Sync (Optional)
+
+If you log in with your email account (via email/password or Google OAuth), the desktop app automatically connects to the cloud backend:
+- Any job application or study note added on the web or your mobile phone synchronizes to your desktop app in real time.
+- You can switch between **`LOCAL_STORAGE`** and **`G_DRIVE`** anytime via the toggle in your Profile card (protected by a confirmation modal).
+
+---
+
+## 4. Native Desktop Features
 
 - **System Tray**:
   - Closing the application window minimizes it to the Windows System Tray (near your system clock).
@@ -38,20 +52,23 @@ User Data Directory: %APPDATA%\JobTracker\
 - **Application Menu**:
   - `File` → `Open Data Folder`: Opens `%APPDATA%\JobTracker\` in Windows File Explorer.
   - `View` → `Toggle Developer Tools`: Press <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>I</kbd> or <kbd>F12</kbd> to inspect frontend console logs.
-  - `Help` → `Check for Updates`: Checks GitHub releases for cryptographically signed updates using Minisign.
+- **Deep-Link Authentication**:
+  - Automatically registers `jobtracker://` in Windows so browser Google Logins automatically refocus the desktop app.
 
 ---
 
-## 4. Building from Source (Developers)
+## 5. Building from Source (Developers)
 
-If you are a developer and want to compile your own desktop executable:
+To compile your own desktop executable:
 
 1. **Prerequisites**: Node.js (v20+), Rust & Cargo, and Visual Studio C++ Build Tools.
-2. **Build command**:
+2. **Build commands**:
    ```bash
-   npm run build:desktop
+   cd board_website/frontend && npm run build
+   cd ../../desktop_app/src-tauri && cargo build --release
+   cd ../installer_src && cargo build --release
    ```
-3. The newly generated installer will be output to:
+3. The newly generated standalone installer is located at:
    ```text
-   installer/Job-Tracker-Setup.exe
+   install_apps/Job-Tracker-Setup.exe
    ```

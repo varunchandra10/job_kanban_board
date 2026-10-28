@@ -20,15 +20,20 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
 
 ### Step 1: Download the Setup Package
-Download your preferred format:
-* **[Download Job-Tracker-Setup.exe](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe)** *(Recommended: 1-Click Setup, creates Desktop & Start Menu shortcuts)*.
-* **[Download Job-Tracker-Setup.msi](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.msi)** *(Standard Windows MSI installer package)*.
+
+<p align="left">
+  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
+    <img src="https://img.shields.io/badge/🚀_DOWNLOAD_WINDOWS_INSTALLER-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="42" />
+  </a>
+</p>
+
+* **Single Standalone Setup**: [`install_apps/Job-Tracker-Setup.exe`](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe) *(1-Click Setup, creates Desktop & Start Menu shortcuts)*.
 
 ### Step 2: Run the Setup
-1. Double-click **`Job-Tracker-Setup.exe`** (or `.msi`).
+1. Double-click **`Job-Tracker-Setup.exe`**.
 2. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
    - Click **More info**.
-   - Click **Run anyway** *(standard for independent software without a corporate code-signing certificate)*.
+   - Click **Run anyway** *(standard notification for newly compiled independent software without an enterprise certificate)*.
 
 ### Step 3: Launch & Use
 The application installs to your computer, creates your Desktop shortcut, and opens automatically!
@@ -60,91 +65,56 @@ Run the full-stack web application locally in your browser.
    cd ../..
    ```
 
-3. **Configure Environment Variables**:
-   Copy `.env.example` to `.env`:
+3. **Start Development Server**:
    ```bash
-   cp .env.example .env
+   npm run dev
    ```
-
-4. **Launch the Application**:
-   ```bash
-   npm start
-   ```
-   Open your browser and navigate to:
-   ```text
-   http://localhost:3000
-   ```
+   * Frontend: `http://localhost:5173`
+   * Backend API: `http://localhost:3000`
 
 ---
 
 ## 3. Cloud Deployment (Vercel)
 
-Deploy Job Tracker to Vercel with zero server maintenance:
+The web edition is optimized for serverless edge deployment on Vercel:
 
-1. **Install Vercel CLI & Login**:
-   ```bash
-   npm install -g vercel
-   vercel login
-   ```
-
-2. **Link & Deploy**:
-   ```bash
-   vercel
-   ```
-
-3. **Set Environment Variables in Vercel Dashboard**:
-   - `JWT_SECRET`: Random secure string for authentication.
-   - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID.
-   - `GOOGLE_CLIENT_SECRET`: Your Google OAuth Client Secret.
-   - `GOOGLE_DRIVE_FOLDER_ID`: Dedicated Google Drive folder ID for document uploads.
-   - `GOOGLE_SERVICE_ACCOUNT_KEY`: Paste the full raw JSON content of your Google Service Account key.
-
-4. **Deploy to Production**:
-   ```bash
-   vercel --prod
-   ```
+1. Push your repository to GitHub.
+2. Import the project in your Vercel Dashboard.
+3. Configure the following Environment Variables:
+   - `TURSO_DATABASE_URL`: Your Turso Database URL
+   - `TURSO_AUTH_TOKEN`: Your Turso Auth Token
+   - `JWT_SECRET`: Random 64-character secret
+   - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID
+   - `GOOGLE_CLIENT_SECRET`: Your Google OAuth Client Secret
+4. Deploy! Vercel automatically runs the frontend build and serves backend routes via serverless functions.
 
 ---
 
 ## 4. Building the Desktop App from Source
 
-To compile your own customized desktop installer `.exe`:
+To compile your own standalone Windows desktop installer:
 
 ### Prerequisites
-1. **Node.js**: v20.0.0+
-2. **Rust & Cargo**: v1.78.0+ via [rustup.rs](https://rustup.rs/)
-3. **C++ Build Tools (Windows)**:
-   - Microsoft Visual Studio 2022 C++ Build Tools with the **"Desktop development with C++"** workload.
+- [Rust & Cargo](https://rustup.rs/) (stable MSVC toolchain)
+- Visual Studio C++ Build Tools
+- Node.js (v20+)
 
-### Build Steps
-1. **Build the Frontend Bundle**:
-   ```bash
-   cd board_website/frontend
-   npm run build
-   cd ../..
-   ```
+### Build Commands
+```bash
+# 1. Build the frontend assets
+cd board_website/frontend
+npm run build
 
-2. **Compile the Tauri Binary & NSIS Installer**:
-   ```bash
-   npm run build:desktop
-   ```
+# 2. Compile the Tauri app
+cd ../../desktop_app/src-tauri
+cargo build --release
 
-3. The compiled installer will be saved to:
-   ```text
-   installer/Job-Tracker-Setup.exe
-   ```
+# 3. Build the standalone single-file installer
+cd ../installer_src
+cargo build --release
+```
 
----
-
-## ❓ Frequently Asked Questions
-
-### Q: Windows SmartScreen blocked the installer?
-> **Answer**: This is normal for open-source software that does not purchase a $500/year corporate code signing certificate. Simply click **More info** &rarr; **Run anyway**.
-
-### Q: Where is my data saved in desktop mode?
-> **Answer**: All data is stored locally in your Windows user profile:
-> ```text
-> %APPDATA%\JobTracker\tracker.db
-> %APPDATA%\JobTracker\documents\
-> ```
-> To back up your data, you can copy this folder or use the in-app **"Download Database as ZIP"** feature.
+The output installer is generated at:
+```text
+install_apps/Job-Tracker-Setup.exe
+```

@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-10-28
+
+### 🌟 Dual Storage Engine, Single Standalone Installer & Authentication Parity
+
+#### Added
+- **Dual Storage Engine (`LOCAL_STORAGE` & `G_DRIVE`)**:
+  - Added user profile storage pill toggle switch with interactive confirmation guard modal (`StorageSwitchModal`).
+  - Intelligent environment defaults: Desktop `.exe` defaults to `LOCAL_STORAGE` (local database / PC disk); Web application defaults to `G_DRIVE` (1-Click Google Drive).
+  - Mobile-responsive flow supporting native iOS Safari and Android Chrome *Files / Downloads* storage.
+- **Standalone Single Windows Installer**:
+  - Replaced legacy `.msi` and multi-file builds with a single unified installer [`Job-Tracker-Setup.exe`](install_apps/Job-Tracker-Setup.exe).
+  - Embedded Windows PE resource metadata (Product Name: *Job Tracker*, Company: *Job Tracker*, Version: *1.0.0.0*, Copyright: *Copyright © 2026 Job Tracker*, and high-res application icon).
+- **Database-Backed OAuth Desktop Flow**:
+  - Implemented `pending_desktop_auth` database persistence for Google OAuth handoffs across serverless cloud lambdas.
+  - Added Windows protocol handler (`jobtracker://`) in the installer for auto-focusing the desktop app post-login.
+- **Prominent Installation Buttons**:
+  - Replaced small markdown links in README and docs with high-visibility, 1-click Windows installer badges and action buttons.
+
+#### Fixed
+- **Form Input Wipe Bug**:
+  - Resolved issue where uploading a resume or cover letter wiped out entered company, role, or documents on window focus / file picker closing via strict `prevOpenRef` transition guards.
+- **Dynamic Profile Identity**:
+  - Removed hardcoded "Varun Chandra" / "VC" default fallbacks. The profile dynamically inherits the logged-in user's name and generates custom avatar initials.
+- **Streamlined 1-Click Google Drive Setup**:
+  - Completely stripped out obsolete Google Service Account emails (`job-tracker-storage@...`) and manual folder ID inputs in favor of pure 1-click direct Google OAuth.
+
+---
+
 ## [0.2.0] - 2026-10-24
 
 ### 🚀 Desktop Application Release (Tauri v2 + Rust)
