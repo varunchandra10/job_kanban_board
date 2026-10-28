@@ -267,6 +267,14 @@ if (db && typeof db.prepare === 'function') {
   }
 }
 
+const { encryptCredential, decryptCredential, migratePlaintextCredentials } = require('../services/cryptoService');
+
+if (db && typeof db.prepare === 'function') {
+  try {
+    migratePlaintextCredentials(db);
+  } catch (_) {}
+}
+
 const COLS = {
   applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
   resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience'.split(' '),
@@ -296,6 +304,9 @@ function patch(table, id, body, userId = null) {
   if (table === 'applications') {
     if (safeBody.resume_path !== undefined) safeBody.resume_path = cleanFilePath(safeBody.resume_path);
     if (safeBody.cover_letter_path !== undefined) safeBody.cover_letter_path = cleanFilePath(safeBody.cover_letter_path);
+    if (safeBody.portal_pass !== undefined && safeBody.portal_pass) {
+      safeBody.portal_pass = encryptCredential(safeBody.portal_pass);
+    }
   }
 
   const ks = Object.keys(safeBody).filter(k => COLS[table].includes(k));
@@ -363,8 +374,16 @@ const getState = (userId = null) => {
     }
   } catch (_) {}
 
+  const rawApps = db.prepare('select * from applications where user_id=? order by position, id').all(userId);
+  const decryptedApps = rawApps.map(app => {
+    if (app.portal_pass) {
+      return { ...app, portal_pass: decryptCredential(app.portal_pass) };
+    }
+    return app;
+  });
+
   return {
-    apps: db.prepare('select * from applications where user_id=? order by position, id').all(userId),
+    apps: decryptedApps,
     companies: db.prepare('select * from companies order by name').all(),
     roles: db.prepare("select name from roles where user_id=? order by name").all(userId).map(r => r.name),
     profile: prof,
@@ -380,5 +399,7 @@ module.exports = {
   patch,
   move,
   getState,
-  performDbBackup
+  performDbBackup,
+  encryptCredential,
+  decryptCredential
 };

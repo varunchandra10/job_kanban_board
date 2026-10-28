@@ -630,12 +630,20 @@ exports.forgotPassword = async (req, res) => {
         email TEXT NOT NULL,
         code TEXT NOT NULL,
         expires_at INTEGER NOT NULL,
+        attempts INTEGER DEFAULT 0,
         created_at TEXT DEFAULT (datetime('now'))
       )
     `).run();
 
+    try {
+      const resetCols = db.prepare('pragma table_info(password_resets)').all().map(c => c.name);
+      if (resetCols.length && !resetCols.includes('attempts')) {
+        db.prepare('alter table password_resets add column attempts integer default 0').run();
+      }
+    } catch (_) {}
+
     db.prepare('DELETE FROM password_resets WHERE email = ?').run(cleanEmail);
-    db.prepare('INSERT INTO password_resets (email, code, expires_at) VALUES (?, ?, ?)').run(cleanEmail, code, expiresAt);
+    db.prepare('INSERT INTO password_resets (email, code, expires_at, attempts) VALUES (?, ?, ?, 0)').run(cleanEmail, code, expiresAt);
 
     // Send email using nodemailer Gmail SMTP
     await sendPasswordResetEmail(cleanEmail, code);
@@ -668,14 +676,36 @@ exports.resetPassword = (req, res) => {
       return res.status(400).json({ error: 'New password must be at least 6 characters long.' });
     }
 
-    const resetRecord = db.prepare('SELECT * FROM password_resets WHERE email = ? AND code = ?').get(cleanEmail, cleanCode);
+    // Lookup the most recent reset record for this email
+    const resetRecord = db.prepare('SELECT * FROM password_resets WHERE email = ? ORDER BY id DESC LIMIT 1').get(cleanEmail);
     if (!resetRecord) {
-      return res.status(400).json({ error: 'Invalid verification code. Please double check and try again.' });
+      return res.status(400).json({ error: 'Invalid or expired verification request. Please request a new code.' });
     }
 
     if (Date.now() > resetRecord.expires_at) {
       db.prepare('DELETE FROM password_resets WHERE id = ?').run(resetRecord.id);
       return res.status(400).json({ error: 'Verification code has expired (15 minute limit). Please request a new code.' });
+    }
+
+    // Check if already locked out
+    if ((resetRecord.attempts || 0) >= 5) {
+      db.prepare('DELETE FROM password_resets WHERE id = ?').run(resetRecord.id);
+      return res.status(429).json({ error: 'Maximum verification attempts exceeded. Reset code has been locked and invalidated. Please request a new code.' });
+    }
+
+    // Verify verification code match
+    if (resetRecord.code !== cleanCode) {
+      const newAttempts = (resetRecord.attempts || 0) + 1;
+      if (newAttempts >= 5) {
+        db.prepare('DELETE FROM password_resets WHERE id = ?').run(resetRecord.id);
+        return res.status(429).json({ error: 'Maximum verification attempts exceeded. Reset code has been locked and invalidated. Please request a new code.' });
+      }
+
+      db.prepare('UPDATE password_resets SET attempts = ? WHERE id = ?').run(newAttempts, resetRecord.id);
+      const remaining = 5 - newAttempts;
+      return res.status(400).json({
+        error: `Invalid verification code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+      });
     }
 
     // Hash and update password

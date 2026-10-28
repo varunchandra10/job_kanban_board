@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../config');
-const { db } = require('../database/db');
+const { db, decryptCredential } = require('../database/db');
 const { storageService } = require('../services/storageService');
 
 async function createZipArchive(options) {
@@ -52,7 +52,13 @@ exports.exportZip = async (req, res, next) => {
     archive.pipe(res);
 
     // 1. Fetch strictly user-scoped database records
-    const applications = db.prepare('SELECT * FROM applications WHERE user_id=? ORDER BY position, id').all(userId);
+    const rawApplications = db.prepare('SELECT * FROM applications WHERE user_id=? ORDER BY position, id').all(userId);
+    const applications = rawApplications.map(app => {
+      if (app.portal_pass) {
+        return { ...app, portal_pass: decryptCredential(app.portal_pass) };
+      }
+      return app;
+    });
     const profile = db.prepare('SELECT * FROM resume_profile WHERE user_id=? LIMIT 1').get(userId) || null;
     const versions = db.prepare("SELECT id, label, region, text, pdf_name, user_id, (pdf_data IS NOT NULL AND pdf_data != '') as has_pdf FROM resume_versions WHERE user_id=? ORDER BY id").all(userId);
     const activity = db.prepare('SELECT * FROM activity_log WHERE user_id=? ORDER BY id DESC').all(userId);

@@ -105,23 +105,26 @@ flowchart TD
 
 ### Phase 2: Credential & Account Protection (P1)
 
-#### Task 2.1: Symmetric Encryption for Portal Passwords
-* **Files Affected:** [`board_website/backend/src/services/cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/), [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js), [`board_website/backend/src/controllers/applicationsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/applicationsController.js)
-* **Implementation Plan:**
-  1. Create a lightweight `cryptoService.js` using Node.js built-in `crypto` with `aes-256-gcm`.
-  2. Derive an encryption key from a dedicated `PORTAL_CREDENTIALS_SECRET` or fallback to `JWT_SECRET`.
-  3. Encrypt `portal_pass` before storing in SQLite (format: `iv:authTag:ciphertext`).
-  4. Decrypt `portal_pass` when serving the application to the authenticated owner.
-* **Testing:** Inspect `tracker.db` directly; confirm `portal_pass` column contains ciphertext rather than plaintext.
+#### Task 2.1: Symmetric Encryption for Portal Passwords [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/services/cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/cryptoService.js), [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L270-L385), [`board_website/backend/src/controllers/applicationsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/applicationsController.js#L65-L100), [`board_website/backend/src/controllers/backupController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/backupController.js#L54-L63)
+* **Problem:** Portal credentials (`portal_pass`) were saved in clear text in SQLite, allowing anyone with database read access to view external corporate portal passwords.
+* **Status:** Resolved & Verified.
+  1. Created [`cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/cryptoService.js) implementing AES-256-GCM authenticated encryption with 12-byte random IVs and 16-byte authentication tags (ciphertext format: `enc:v1:<iv>:<tag>:<ciphertext>`).
+  2. Derived encryption key from dedicated `PORTAL_CREDENTIALS_SECRET` or fallback `JWT_SECRET` with cryptographic domain separation salt.
+  3. Modified `patch()` in `db.js` and `createApplication` in `applicationsController.js` to automatically encrypt passwords before writing to SQLite.
+  4. Modified `getState()` and user `exportZip` in `backupController.js` to decrypt `portal_pass` before returning to authenticated owner.
+  5. Implemented `migratePlaintextCredentials()` to automatically and idempotently encrypt legacy plaintext rows on startup.
+* **Testing:** Automated test suite (`test_portal_password_crypto.js`) verified primitive encryption/decryption, tamper detection, SQLite ciphertext storage, `getState()` owner decryption, `patch()` update encryption, and automatic legacy plaintext migration.
 
-#### Task 2.2: Rate Limiting & Attempt Lockout for Password Resets
-* **Files Affected:** [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L545-L637)
-* **Implementation Plan:**
-  1. Add an `attempts` column (default `0`) to `password_resets` table.
-  2. On each failed verification attempt in `resetPassword`, increment `attempts`.
-  3. If `attempts >= 5`, delete the reset record and return `429 Too Many Requests: Maximum verification attempts exceeded. Please request a new code.`
-  4. Add express-rate-limit to `/api/auth/forgot-password` and `/api/auth/reset-password` (maximum 5 requests per IP per 15 minutes).
-* **Testing:** Script 6 incorrect attempts against `/api/auth/reset-password`; verify that subsequent attempts are immediately rejected.
+#### Task 2.2: Rate Limiting & Attempt Lockout for Password Resets [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/controllers/authController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/authController.js#L605-L730), [`board_website/backend/src/routes/auth.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/routes/auth.js#L9-L10), [`board_website/backend/src/middleware/rateLimiter.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/rateLimiter.js#L38-L50), [`board_website/backend/src/database/migrator.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/migrator.js#L11-L35)
+* **Problem:** 6-digit password reset verification codes lacked attempt limits and rate limiting, leaving them susceptible to online brute-force guessing and endpoint abuse.
+* **Status:** Resolved & Verified.
+  1. Updated `password_resets` schema in `migrator.js` and `authController.js` to track `attempts INTEGER DEFAULT 0`.
+  2. In `resetPassword`, tracked failed verification code attempts against the specific reset record, providing clear warning notices (e.g. "4 attempts remaining before lockout").
+  3. On the 5th incorrect attempt, the reset token is permanently deleted and caller receives `429 Too Many Requests: Maximum verification attempts exceeded. Reset code has been locked and invalidated. Please request a new code.`
+  4. Installed `express-rate-limit` and configured `passwordResetLimiter` (15-minute window, max 5 requests per IP) across both `/api/auth/forgot-password` and `/api/auth/reset-password` endpoints.
+* **Testing:** Automated test suite (`test_password_reset_lockout.js`) confirmed schema migration, progressive attempt counter increments (attempts 1-4), immediate record deletion and `429` rejection on attempt 5, permanent lockout on subsequent attempts, password update on valid submission, and IP rate limiting (5 allowed, 6th blocked with `429`).
 
 ---
 

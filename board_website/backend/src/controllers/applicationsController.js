@@ -1,4 +1,4 @@
-const { db, patch, move, getState } = require('../database/db');
+const { db, patch, move, getState, encryptCredential, decryptCredential } = require('../database/db');
 const config = require('../config');
 
 function getEffectiveUserId(req) {
@@ -73,9 +73,10 @@ exports.createApplication = (req, res, next) => {
     const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage='Applied' and user_id=?").get(userId);
     const min = minRow ? minRow.p : 0;
     const cat = b.category || 'Industry';
+    const portalPass = b.portal_pass ? encryptCredential(b.portal_pass) : '';
 
     const r = db.prepare("insert into applications(company,role,country,city,date_applied,stage,position,category,portal_url,portal_user,portal_pass,portal_notes,custom_tags,user_id) values(?,?,?,?,?,'Applied',?,?,?,?,?,?,?,?)")
-      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', min, cat, b.portal_url || '', b.portal_user || '', b.portal_pass || '', b.portal_notes || '', b.custom_tags || '', userId);
+      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', min, cat, b.portal_url || '', b.portal_user || '', portalPass, b.portal_notes || '', b.custom_tags || '', userId);
 
     const id = Number(r.lastInsertRowid);
     patch('applications', id, b, userId);
@@ -93,6 +94,9 @@ exports.createApplication = (req, res, next) => {
     );
 
     const created = db.prepare('select * from applications where id=? and user_id=?').get(id, userId);
+    if (created && created.portal_pass) {
+      created.portal_pass = decryptCredential(created.portal_pass);
+    }
     res.status(201).json(created);
   } catch (err) {
     next(err);

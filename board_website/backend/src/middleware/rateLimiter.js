@@ -1,3 +1,5 @@
+const rateLimit = require('express-rate-limit');
+
 function createRateLimiter(options = {}) {
   const windowMs = options.windowMs || 60 * 1000;
   const max = options.max || 300;
@@ -34,4 +36,19 @@ function createRateLimiter(options = {}) {
   };
 }
 
-module.exports = { createRateLimiter };
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes window
+  max: 5, // Maximum 5 requests per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  statusCode: 429,
+  skip: () => process.env.DISABLE_IP_RATE_LIMIT === 'true',
+  message: {
+    error: 'Too many password reset requests from this IP address. Please try again after 15 minutes.'
+  }
+});
+
+module.exports = {
+  createRateLimiter,
+  passwordResetLimiter
+};

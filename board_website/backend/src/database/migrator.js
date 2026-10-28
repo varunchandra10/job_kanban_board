@@ -13,6 +13,7 @@ function runMigrations(db) {
       email TEXT NOT NULL,
       code TEXT NOT NULL,
       expires_at INTEGER NOT NULL,
+      attempts INTEGER DEFAULT 0,
       created_at TEXT DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_resets_email ON password_resets(email);
@@ -24,6 +25,16 @@ function runMigrations(db) {
     );
     CREATE INDEX IF NOT EXISTS idx_pending_auth_sess ON pending_desktop_auth(session_id);
   `);
+
+  try {
+    const resetCols = db.prepare('pragma table_info(password_resets)').all().map(c => c.name);
+    if (resetCols.length && !resetCols.includes('attempts')) {
+      db.prepare('alter table password_resets add column attempts integer default 0').run();
+      console.log('[Migrator] Added attempts column to password_resets');
+    }
+  } catch (err) {
+    console.warn('[Migrator] Note ensuring password_resets.attempts:', err.message);
+  }
 
   const appliedRows = db.prepare('SELECT name FROM schema_migrations').all();
   const appliedSet = new Set(appliedRows.map(r => r.name));
