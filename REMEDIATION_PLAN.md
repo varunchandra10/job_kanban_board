@@ -265,39 +265,56 @@ flowchart TD
 
 ### Phase 8: Data Integrity, Cleanup & Cryptographic Architecture (P2)
 
-#### Task 8.1: Cascading Cleanup on Application Deletion
-* **Files Affected:** [`board_website/backend/src/controllers/applicationsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/applicationsController.js#L121-L131)
-* **Problem:** Deleting an application leaves behind orphaned records in `activity_log`, `document_files`, and does not clean up associated physical upload files or Google Drive documents.
-* **Implementation Plan:**
-  1. On `deleteApplication(id, userId)`, look up application documents.
-  2. Clean up associated `document_files` and `activity_log` entries for `(app_id = id, user_id = userId)`.
-  3. Clean up physical files from local storage sandbox and Google Drive if attached.
-* **Testing:** Create application with activity logs and document; delete application; verify database is completely free of orphaned records.
+#### Task 8.1: Cascading Cleanup on Application Deletion [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/controllers/applicationsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/applicationsController.js#L122-L162), [`board_website/backend/src/services/storageService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/storageService.js#L265-L280)
+* **Problem:** Deleting an application previously left behind orphaned records in `activity_log`, `document_files`, and did not clean up associated physical upload files or Google Drive documents.
+* **Status:** Resolved & Verified.
+  1. Updated `deleteApplication(req, res, next)` to look up the application and all attached documents (`resume_path`, `cover_letter_path`).
+  2. Integrated physical file & Google Drive cleanup via `storageService.deleteFile()`, removing physical files from disk without false security alerts for `doc_id` or cloud URLs.
+  3. Wrapped database record deletion in an atomic SQLite transaction (`BEGIN TRANSACTION; ... COMMIT;`), ensuring all `document_files`, `activity_log`, and `applications` entries are completely wiped simultaneously with automatic rollback on error.
+  4. Enforced strict tenant isolation: users can only delete their own applications and cascading records.
+* **Testing:** Automated test suite (`test_cascading_application_deletion.js`) verified that creating an application with 3 activity logs, 2 database documents, and 1 physical disk file followed by deletion completely eliminates all database records and unlinks the physical file from disk, while leaving other users' applications, logs, and files completely untouched. Cross-tenant deletion attempts were blocked.
 
-#### Task 8.2: Transactional Integrity for Kanban Reordering
-* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L351-L367)
-* **Problem:** `move()` updates positions across $N$ application cards in a non-transactional `forEach` loop, risking position corruption and ordering fragmentation if interrupted.
-* **Implementation Plan:**
-  1. Wrap the entire position reordering block in a SQLite transaction (`db.transaction(() => { ... })()`).
-  2. Include `user_id` in the `update applications set stage=?, position=? where id=? and user_id=?` statement.
-* **Testing:** Reorder 10 items in a column; verify atomic position updating.
+#### Task 8.2: Transactional Integrity for Kanban Reordering [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L351-L380)
+* **Problem:** `move()` previously updated positions across $N$ application cards in a non-transactional `forEach` loop, risking position corruption and ordering fragmentation if interrupted. In addition, the SQL update statement did not constrain by `user_id`.
+* **Status:** Resolved & Verified.
+  1. Implemented universal `runInTransaction(fn)` supporting both SQLite driver transaction APIs (`db.transaction`) and standard SQLite transactions (`BEGIN TRANSACTION; ... COMMIT;` with `ROLLBACK` on error).
+  2. Wrapped column card reordering and `activity_log` creation inside `runInTransaction()`, guaranteeing ACID atomicity.
+  3. Enforced `user_id` scoping on both `cur` retrieval, target position listing, and card updating (`update applications set stage=?, position=? where id=?${userClause}`), preventing cross-tenant position mutations.
+* **Testing:** Automated test suite (`test_kanban_transactional_move.js`) verified:
+  - Reordering 10 items in a column updates all 10 cards with contiguous positions 0..9 without gaps or duplicates.
+  - Stage transitions record `stage_change` in `activity_log` atomically within the same transaction.
+  - Cross-tenant card moves are rejected without altering other users' positions or stages.
+  - Mid-transaction failures trigger complete rollbacks, preserving database state without partial corruption.
 
-#### Task 8.3: Independent Cryptographic Key Generation & HTTP Security Headers
-* **Files Affected:** [`board_website/backend/src/services/cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/cryptoService.js#L5-L10), [`board_website/backend/src/app.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/app.js#L20)
-* **Problem:** `PORTAL_CREDENTIALS_SECRET` couples directly to `JWT_SECRET` (breaking ciphertexts if JWT secret rotates) or falls back to a public repository string. `app.js` lacks standard HTTP security headers and uses wildcard CORS.
-* **Implementation Plan:**
-  1. Decouple portal encryption secret: if `PORTAL_CREDENTIALS_SECRET` is unset, generate and persist a dedicated server-side secret key file (`.portal_key`) that survives JWT secret rotations.
-  2. Add HTTP security headers middleware (`X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `Strict-Transport-Security`).
-  3. Configure CORS with origin whitelist (Tauri origin `tauri://localhost`, Vercel production domain, local frontend port).
-* **Testing:** Verify security headers on `/api/health`, verify encryption persists across JWT secret changes, and verify unauthorized external origins are restricted.
+#### Task 8.3: Independent Cryptographic Key Generation & HTTP Security Headers [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/services/cryptoService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/cryptoService.js#L5-L45), [`board_website/backend/src/app.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/app.js#L20-L75)
+* **Problem:** `PORTAL_CREDENTIALS_SECRET` previously coupled directly to `JWT_SECRET` (breaking ciphertexts if JWT secret rotated) or fell back to a public repository string. `app.js` lacked standard HTTP security headers and used wildcard CORS.
+* **Status:** Resolved & Verified.
+  1. Decoupled portal encryption secret in `cryptoService.js`: implemented `resolvePortalSecret()` which looks for `PORTAL_CREDENTIALS_SECRET` in environment, searches for `.portal_key` on disk, or generates and persists a cryptographically secure 256-bit random key (`.portal_key` with 0600 permissions).
+  2. Maintained seamless backward compatibility: if primary key decryption fails, `decryptCredential` automatically falls back to keys derived from `config.jwtSecret` and legacy salt, ensuring existing database credentials decrypt without data loss.
+  3. Added HTTP security headers middleware in `app.js`: `X-Content-Type-Options: nosniff`, `X-Frame-Options: SAMEORIGIN`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-XSS-Protection: 1; mode=block`, and conditional `Strict-Transport-Security` (HSTS).
+  4. Configured CORS with strict origin whitelisting: explicitly authorizes Tauri desktop origins (`tauri://localhost`), local development hosts (`localhost`, `127.0.0.1`), configured frontend production URLs, and `*.vercel.app` domains, while stripping CORS headers from unauthorized external origins.
+* **Testing:** Automated test suite (`test_crypto_and_security_headers.js`) verified:
+  - All 4 standard security headers are present on `/api/health`.
+  - CORS allows requests from `http://localhost:5173`, `tauri://localhost`, and Vercel domains, while blocking `https://malicious-attacker.com`.
+  - Ciphertexts remain 100% decryptable even after `config.jwtSecret` is mutated/rotated.
+  - Legacy ciphertexts encrypted prior to key decoupling decrypt cleanly through fallback.
 
-#### Task 8.4: Scoped Document Viewing Token Enforcement in `api.ts`
-* **Files Affected:** [`board_website/frontend/src/services/api.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/api.ts#L385-L400)
-* **Problem:** `getDocumentUrl()` appends the full JWT bearer login token to URL query parameters (`?token=...`), violating OWASP CWE-598 and leaking primary auth credentials in browser history and server logs.
-* **Implementation Plan:**
-  1. Update `getDocumentUrl()` to use short-lived scoped tokens from `/api/file-token` (`scope: 'file_view'`, 1-hour expiry) instead of the primary account bearer token.
-  2. When possible, prefer fetching documents via `fetch` with standard `Authorization: Bearer` header and creating an ephemeral `URL.createObjectURL(blob)` for viewing.
-* **Testing:** Verify document preview opens successfully without leaking primary user JWT in URL parameters.
+#### Task 8.4: Scoped Document Viewing Token Enforcement in `api.ts` [COMPLETED]
+* **Files Affected:** [`board_website/frontend/src/services/api.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/api.ts#L385-L450), [`board_website/backend/src/middleware/auth.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/auth.js#L30-L45), [`board_website/frontend/src/components/applications/ApplicationCard.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/components/applications/ApplicationCard.tsx#L388-L415), [`board_website/frontend/src/components/applications/ApplicationModal.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/components/applications/ApplicationModal.tsx#L750-L885)
+* **Problem:** `getDocumentUrl()` previously appended the full JWT bearer login token to URL query parameters (`?token=...`), violating OWASP CWE-598 and leaking primary auth credentials in browser history, bookmarks, and server logs.
+* **Status:** Resolved & Verified.
+  1. Updated `getDocumentUrl()` in `api.ts`: strictly removed appending primary `auth_token` to URL parameters. Only appends short-lived scoped tokens (`scope: 'file_view'`, 1-hour expiry) retrieved via `getScopedFileToken()` and cached in memory.
+  2. Implemented `api.openDocument(filePath)` and `api.fetchDocumentBlob(filePath)`: fetches documents using standard `Authorization: Bearer <token>` HTTP headers and creates ephemeral in-memory blob object URLs (`URL.createObjectURL(blob)`), completely eliminating tokens from browser history and URLs.
+  3. Enforced least-privilege token scope checks on backend in `auth.js`: tokens signed with `scope: 'file_view'` are strictly permitted on `/api/file-content` and `/api/document-content`, and rejected with `403 Forbidden` if used on any modifying endpoints or user settings.
+  4. Updated document open buttons in `ApplicationCard.tsx` and `ApplicationModal.tsx` to use `api.openDocument()`.
+* **Testing:** Automated test suite (`test_scoped_file_token_enforcement.js`) verified:
+  - `/api/file-token` issues a 1-hour token with `scope: 'file_view'`.
+  - Scoped file tokens authenticate and view document content on `/api/file-content`.
+  - Mutation endpoints (`POST /api/applications`, `POST /api/settings`) reject scoped file tokens with `403 Forbidden`.
+  - Frontend URL helpers never expose primary login JWTs. Production frontend build (`npm run build`) completed with 0 errors.
 
 ---
 

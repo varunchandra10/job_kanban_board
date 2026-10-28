@@ -17,7 +17,57 @@ const settingsRoutes = require('./routes/settings');
 const backupRoutes = require('./routes/backup');
 const learningsRoutes = require('./routes/learnings');
 
-app.use(cors());
+// ---------------------------------------------------------------------
+// HTTP Security Headers & CORS Configuration
+// ---------------------------------------------------------------------
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  const isSecure = Boolean(req.socket?.encrypted) || req.headers?.['x-forwarded-proto'] === 'https' || config.nodeEnv === 'production';
+  if (isSecure) {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
+const allowedOrigins = [
+  'tauri://localhost',
+  'http://tauri.localhost',
+  'https://tauri.localhost',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+  'http://127.0.0.1:5174'
+];
+
+if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+if (process.env.APP_URL) allowedOrigins.push(process.env.APP_URL.replace(/\/$/, ''));
+if (process.env.VERCEL_URL) allowedOrigins.push(`https://${process.env.VERCEL_URL.replace(/\/$/, '')}`);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow non-browser requests without origin header (e.g. desktop native, curl, postman)
+    if (!origin) return callback(null, true);
+
+    const isExplicitlyAllowed = allowedOrigins.includes(origin);
+    const isVercelApp = /^https:\/\/[a-zA-Z0-9_.-]+\.vercel\.app$/i.test(origin);
+    const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
+
+    if (isExplicitlyAllowed || isVercelApp || isLocalhost) {
+      return callback(null, true);
+    }
+    return callback(null, false);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'x-storage-mode', 'x-custom-storage-dir']
+};
+
+app.use(cors(corsOptions));
 app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 500 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));

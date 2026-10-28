@@ -752,8 +752,7 @@ export const ApplicationModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              const url = api.getDocumentUrl(resumePath);
-                              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                              api.openDocument(resumePath);
                             }}
                             className="p-1 text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors cursor-pointer"
                             title="Preview / Open in new tab"
@@ -876,8 +875,7 @@ export const ApplicationModal: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              const url = api.getDocumentUrl(coverLetterPath);
-                              if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                              api.openDocument(coverLetterPath);
                             }}
                             className="p-1 text-purple-600 hover:text-purple-800 dark:text-purple-400 transition-colors cursor-pointer"
                             title="Preview / Open in new tab"

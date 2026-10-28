@@ -264,6 +264,22 @@ class LocalStorageService extends BaseStorageService {
   }
 
   async deleteFile(filePath) {
+    if (!filePath || typeof filePath !== 'string') return false;
+    if (filePath.includes('doc_id=')) return true; // Stored in document_files database table
+
+    if (isGoogleDriveLink(filePath)) {
+      try {
+        const GoogleDriveStorageService = require('./googleDriveStorageService');
+        const driveService = new GoogleDriveStorageService({ localFallback: this });
+        if (driveService.driveClient || driveService.isConfigured()) {
+          return await driveService.deleteFile(filePath);
+        }
+      } catch (gErr) {
+        console.warn('[Storage Service] Google Drive file deletion warning:', gErr.message);
+      }
+      return false;
+    }
+
     const p = this.resolveSafePath(filePath);
     if (!p) {
       console.warn(`[Security Alert] Blocked delete request for unsafe path: ${filePath}`);

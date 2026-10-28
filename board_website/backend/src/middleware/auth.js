@@ -32,6 +32,17 @@ function authMiddleware(req, res, next) {
 
   // If user successfully authenticated via JWT
   if (req.user && req.user.id) {
+    // If token is scoped strictly for file viewing, reject any non-file-view endpoint
+    if (req.user.scope === 'file_view') {
+      const isFileViewPath =
+        fullPath.startsWith('/api/file-content') ||
+        fullPath.startsWith('/api/document-content') ||
+        reqPath.startsWith('/file-content') ||
+        reqPath.startsWith('/document-content');
+      if (!isFileViewPath) {
+        return res.status(403).json({ error: 'Scoped file viewing token cannot access this endpoint.' });
+      }
+    }
     return next();
   }
 

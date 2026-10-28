@@ -51,6 +51,8 @@ function getAuthHeaders(): Record<string, string> {
   return headers;
 }
 
+let cachedFileToken: { token: string; expiresAt: number } | null = null;
+
 export const api = {
   // State bundle
   async getState(): Promise<{
@@ -382,11 +384,33 @@ export const api = {
     return data;
   },
 
+  async getScopedFileToken(): Promise<string> {
+    const now = Date.now();
+    if (cachedFileToken && cachedFileToken.expiresAt > now + 60000) {
+      return cachedFileToken.token;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/file-token`, {
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.token) {
+          cachedFileToken = { token: data.token, expiresAt: now + 50 * 60 * 1000 };
+          return data.token;
+        }
+      }
+    } catch (_) {}
+    return '';
+  },
+
   getDocumentUrl(filePath: string): string {
     if (!filePath) return '';
     if (/^https?:\/\//i.test(filePath)) return filePath;
-    const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || '') : '';
-    const tokenParam = token ? `token=${encodeURIComponent(token)}` : '';
+
+    // Use short-lived scoped file token if cached; NEVER expose primary auth_token in URL query parameters
+    const scopedToken = (cachedFileToken && cachedFileToken.expiresAt > Date.now()) ? cachedFileToken.token : '';
+    const tokenParam = scopedToken ? `token=${encodeURIComponent(scopedToken)}` : '';
 
     if (filePath.startsWith('/api/')) {
       const url = getApiEndpoint(filePath);
@@ -397,6 +421,49 @@ export const api = {
     const base = `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
     if (!tokenParam) return base;
     return base.includes('?') ? `${base}&${tokenParam}` : `${base}?${tokenParam}`;
+  },
+
+  async fetchDocumentBlob(filePath: string): Promise<Blob> {
+    const cleanPath = filePath.replace(/[?&]token=[^&]+/g, '');
+    const url = cleanPath.startsWith('/api/')
+      ? getApiEndpoint(cleanPath)
+      : `${API_BASE}/file-content?path=${encodeURIComponent(cleanPath)}`;
+
+    const res = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch document (HTTP ${res.status})`);
+    }
+    return await res.blob();
+  },
+
+  async openDocument(filePath: string): Promise<void> {
+    if (!filePath) return;
+    if (/^https?:\/\//i.test(filePath)) {
+      window.open(filePath, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 1. Prefer safe blob URL viewing (Bearer token sent via HTTP headers, not exposed in query parameters)
+    try {
+      const blob = await this.fetchDocumentBlob(filePath);
+      const objectUrl = URL.createObjectURL(blob);
+      const win = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+      if (win) return;
+    } catch (e) {
+      console.warn('[Document Preview] Blob fetch failed, falling back to scoped token URL:', e);
+    }
+
+    // 2. Fallback: ensure scoped token is loaded and open scoped URL
+    const scopedToken = await this.getScopedFileToken();
+    const tokenParam = scopedToken ? `token=${encodeURIComponent(scopedToken)}` : '';
+    const url = filePath.startsWith('/api/')
+      ? getApiEndpoint(filePath)
+      : `${API_BASE}/file-content?path=${encodeURIComponent(filePath)}`;
+    const finalUrl = tokenParam ? (url.includes('?') ? `${url}&${tokenParam}` : `${url}?${tokenParam}`) : url;
+    window.open(finalUrl, '_blank', 'noopener,noreferrer');
   },
 
   async getLocalStorageInfo(): Promise<{

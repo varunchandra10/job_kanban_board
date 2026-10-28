@@ -1,9 +1,63 @@
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const config = require('../config');
 
-// Dedicated key derivation with domain separation
-const secret = process.env.PORTAL_CREDENTIALS_SECRET || config.jwtSecret || 'job-tracker-dev-portal-secret-key';
-const encryptionKey = crypto.createHash('sha256').update(secret + ':portal_credentials_salt_v1').digest();
+/**
+ * Resolves the persistent portal credentials encryption secret.
+ * 1. Checks process.env.PORTAL_CREDENTIALS_SECRET
+ * 2. Checks for a persisted .portal_key secret file
+ * 3. Generates and persists a dedicated 256-bit random key that survives JWT secret rotations
+ */
+function resolvePortalSecret() {
+  if (process.env.PORTAL_CREDENTIALS_SECRET && process.env.PORTAL_CREDENTIALS_SECRET.trim()) {
+    return process.env.PORTAL_CREDENTIALS_SECRET.trim();
+  }
+
+  const keyCandidates = [
+    path.join(config.dataDir || '', '.portal_key'),
+    path.join(config.backendDir || '', '.portal_key'),
+    path.resolve(__dirname, '../../.portal_key')
+  ];
+
+  for (const candidate of keyCandidates) {
+    if (candidate && fs.existsSync(candidate)) {
+      try {
+        const stored = fs.readFileSync(candidate, 'utf8').trim();
+        if (stored.length >= 32) {
+          return stored;
+        }
+      } catch (_) {}
+    }
+  }
+
+  // Generate and persist a brand-new independent 32-byte (64 hex characters) key
+  const generatedSecret = crypto.randomBytes(32).toString('hex');
+  const targetPath = keyCandidates[0] || path.resolve(__dirname, '../../.portal_key');
+  try {
+    const dir = path.dirname(targetPath);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(targetPath, generatedSecret, { mode: 0o600 });
+    console.log(`[Crypto Service] Generated and saved independent encryption key: ${targetPath}`);
+  } catch (err) {
+    console.warn('[Crypto Service] Note: Could not save .portal_key to disk:', err.message);
+  }
+
+  return generatedSecret;
+}
+
+const activeSecret = resolvePortalSecret();
+const encryptionKey = crypto.createHash('sha256').update(activeSecret + ':portal_credentials_salt_v1').digest();
+
+// Dynamic fallback keys derived from config.jwtSecret and the legacy default for backward-compatibility with existing database ciphertexts
+function getLegacyFallbackKeys() {
+  const keys = [];
+  if (config.jwtSecret) {
+    keys.push(crypto.createHash('sha256').update(config.jwtSecret + ':portal_credentials_salt_v1').digest());
+  }
+  keys.push(crypto.createHash('sha256').update('job-tracker-dev-portal-secret-key:portal_credentials_salt_v1').digest());
+  return keys;
+}
 
 /**
  * Encrypts a sensitive string (e.g. portal password) using AES-256-GCM.
@@ -64,11 +118,25 @@ function decryptCredential(cipherText) {
     const authTag = Buffer.from(parts[3], 'hex');
     const ciphertextHex = parts[4];
 
-    const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, iv);
-    decipher.setAuthTag(authTag);
-    let decrypted = decipher.update(ciphertextHex, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return decrypted;
+    try {
+      const decipher = crypto.createDecipheriv('aes-256-gcm', encryptionKey, iv);
+      decipher.setAuthTag(authTag);
+      let decrypted = decipher.update(ciphertextHex, 'hex', 'utf8');
+      decrypted += decipher.final('utf8');
+      return decrypted;
+    } catch (primaryErr) {
+      const fallbackKeys = getLegacyFallbackKeys();
+      for (const fallbackKey of fallbackKeys) {
+        try {
+          const fallbackDecipher = crypto.createDecipheriv('aes-256-gcm', fallbackKey, iv);
+          fallbackDecipher.setAuthTag(authTag);
+          let decryptedFallback = fallbackDecipher.update(ciphertextHex, 'hex', 'utf8');
+          decryptedFallback += fallbackDecipher.final('utf8');
+          return decryptedFallback;
+        } catch (_) {}
+      }
+      throw primaryErr;
+    }
   } catch (err) {
     console.warn('[Crypto Service] Decryption failed or authentication tag mismatch:', err.message);
     return '';

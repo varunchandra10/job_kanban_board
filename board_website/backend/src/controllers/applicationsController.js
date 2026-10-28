@@ -1,4 +1,5 @@
 const { db, patch, move, getState, encryptCredential, decryptCredential } = require('../database/db');
+const { storageService } = require('../services/storageService');
 const config = require('../config');
 
 function getEffectiveUserId(req) {
@@ -118,13 +119,44 @@ exports.updateApplication = (req, res, next) => {
   }
 };
 
-exports.deleteApplication = (req, res, next) => {
+exports.deleteApplication = async (req, res, next) => {
   try {
     const userId = getEffectiveUserId(req);
     if (!userId) return res.status(401).json({ error: 'Please log in' });
     const id = parseInt(req.params.id, 10);
-    db.prepare('delete from applications where id=? and user_id=?').run(id, userId);
-    res.json({ ok: 1 });
+    if (!id || isNaN(id)) return res.status(400).json({ error: 'Invalid application ID' });
+
+    const userCondition = userId === 'default_user' ? '(user_id = ? OR user_id IS NULL)' : 'user_id = ?';
+    const app = db.prepare(`SELECT id, resume_path, cover_letter_path FROM applications WHERE id = ? AND ${userCondition}`).get(id, userId);
+
+    if (!app) {
+      return res.json({ ok: 1, deleted: false });
+    }
+
+    // Clean up physical and/or cloud documents attached to the application
+    const filePaths = [app.resume_path, app.cover_letter_path].filter(Boolean);
+    for (const filePath of filePaths) {
+      try {
+        await storageService.deleteFile(filePath);
+      } catch (fileErr) {
+        console.warn(`[Application Cleanup] Warning deleting file for app ${id}:`, fileErr.message);
+      }
+    }
+
+    // Atomically cascade delete all related database records
+    try {
+      db.exec('BEGIN TRANSACTION;');
+      db.prepare(`DELETE FROM document_files WHERE app_id = ? AND ${userCondition}`).run(id, userId);
+      db.prepare(`DELETE FROM activity_log WHERE app_id = ? AND ${userCondition}`).run(id, userId);
+      db.prepare(`DELETE FROM applications WHERE id = ? AND ${userCondition}`).run(id, userId);
+      db.exec('COMMIT;');
+    } catch (dbErr) {
+      try { db.exec('ROLLBACK;'); } catch (_) {}
+      console.error(`[Application Cleanup] Database transaction error for app ${id}:`, dbErr.message);
+      throw dbErr;
+    }
+
+    res.json({ ok: 1, deleted: true });
   } catch (err) {
     next(err);
   }

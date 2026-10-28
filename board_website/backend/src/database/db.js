@@ -348,9 +348,24 @@ function patch(table, id, body, userId = null) {
   }
 }
 
+function runInTransaction(fn) {
+  if (typeof db.transaction === 'function') {
+    return db.transaction(fn)();
+  }
+  db.exec('BEGIN TRANSACTION;');
+  try {
+    const result = fn();
+    db.exec('COMMIT;');
+    return result;
+  } catch (err) {
+    try { db.exec('ROLLBACK;'); } catch (_) {}
+    throw err;
+  }
+}
+
 function move(id, stage, before, userId = null) {
-  const userClause = (userId && userId !== 'default_user') ? ' and user_id=?' : '';
-  const userParam = (userId && userId !== 'default_user') ? [userId] : [];
+  const userClause = userId ? (userId !== 'default_user' ? ' and user_id=?' : ' and (user_id=? or user_id is null)') : '';
+  const userParam = userId ? [userId] : [];
 
   const cur = db.prepare(`select stage from applications where id=?${userClause}`).get(id, ...userParam)?.stage;
   if (!cur) return;
@@ -359,11 +374,18 @@ function move(id, stage, before, userId = null) {
   let i = before ? ids.indexOf(+before) : -1;
   if (i < 0) i = ids.length;
   ids.splice(i, 0, id);
-  const up = db.prepare('update applications set stage=?, position=? where id=?');
-  ids.forEach((x, p) => up.run(stage, p, x));
-  if (cur && cur !== stage) {
-    db.prepare("insert into activity_log(app_id, type, detail, user_id) values(?, 'stage_change', ?, ?)").run(id, `Moved from ${cur} to ${stage}`, userId || 'default_user');
-  }
+
+  const updateStmt = db.prepare(`update applications set stage=?, position=? where id=?${userClause}`);
+  const logStmt = (cur !== stage)
+    ? db.prepare("insert into activity_log(app_id, type, detail, user_id) values(?, 'stage_change', ?, ?)")
+    : null;
+
+  runInTransaction(() => {
+    ids.forEach((x, p) => updateStmt.run(stage, p, x, ...userParam));
+    if (logStmt) {
+      logStmt.run(id, `Moved from ${cur} to ${stage}`, userId || 'default_user');
+    }
+  });
 }
 
 const getState = (userId = null) => {
@@ -431,5 +453,6 @@ module.exports = {
   performDbBackup,
   encryptCredential,
   decryptCredential,
+  runInTransaction,
   openDatabaseWithRetry
 };

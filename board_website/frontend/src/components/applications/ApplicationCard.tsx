@@ -387,11 +387,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
               title={isGDrive ? `View Resume in Google Drive: ${app.resume_path}` : 'View / Download Attached Resume'}
               onClick={(e) => {
                 e.stopPropagation();
-                const url = api.getDocumentUrl(app.resume_path!);
-                if (url) {
-                  window.open(url, '_blank', 'noopener,noreferrer');
-                  showToast(isGDrive ? 'Opening resume in Google Drive' : 'Opening resume document');
-                }
+                api.openDocument(app.resume_path!);
+                showToast(isGDrive ? 'Opening resume in Google Drive' : 'Opening resume document');
               }}
             >
               <FileText size={10} />
@@ -410,11 +407,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
               title={isGDrive ? `View Cover Letter in Google Drive: ${app.cover_letter_path}` : 'View / Download Attached Cover Letter'}
               onClick={(e) => {
                 e.stopPropagation();
-                const url = api.getDocumentUrl(app.cover_letter_path!);
-                if (url) {
-                  window.open(url, '_blank', 'noopener,noreferrer');
-                  showToast(isGDrive ? 'Opening cover letter in Google Drive' : 'Opening cover letter document');
-                }
+                api.openDocument(app.cover_letter_path!);
+                showToast(isGDrive ? 'Opening cover letter in Google Drive' : 'Opening cover letter document');
               }}
             >
               <FileText size={10} />
