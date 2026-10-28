@@ -100,14 +100,17 @@ exports.uploadDocument = async (req, res, next) => {
         throw new Error(`Failed to store document in local database: ${dbErr.message}`);
       }
 
-      const viewPath = `/api/document-content?doc_id=${docId}`;
+      const viewPath = `/api/document-content?doc_id=${docId}&name=${encodeURIComponent(originalName || 'document.pdf')}`;
       let savedDiskPath = null;
       let activeLocalDir = config.uploadDir;
 
       // Also persist physical copy to local hard drive if directory is accessible
       try {
         const fs = require('fs');
-        if (userId) {
+        const customCandidate = req.body?.customDir || req.headers?.['x-custom-storage-dir'];
+        if (customCandidate && typeof customCandidate === 'string' && fs.existsSync(customCandidate.trim())) {
+          activeLocalDir = customCandidate.trim();
+        } else if (userId) {
           const row = db.prepare("SELECT value FROM settings WHERE key = 'custom_storage_dir' AND user_id = ?").get(userId);
           if (row && row.value && fs.existsSync(row.value.trim())) {
             activeLocalDir = row.value.trim();
@@ -140,7 +143,8 @@ exports.uploadDocument = async (req, res, next) => {
             try { fs.mkdirSync(targetSubDir, { recursive: true }); } catch (_) {}
           }
 
-          const safeName = `${Date.now()}_${path.basename(originalName || 'document.pdf').replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+          const safeName = path.basename(originalName || (isCover ? 'cover_letter.pdf' : 'resume.pdf'))
+            .replace(/[^a-zA-Z0-9._ -]/g, '_');
           const diskTarget = path.join(targetSubDir, safeName);
           fs.writeFileSync(diskTarget, fileBuffer);
           savedDiskPath = diskTarget;

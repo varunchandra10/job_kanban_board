@@ -16,9 +16,11 @@ pub fn run() -> tauri::Result<()> {
     .invoke_handler(tauri::generate_handler![
       commands::export_csv,
       commands::save_file_from_bytes,
+      commands::save_uploaded_document,
       commands::get_app_data_path,
       commands::open_data_folder,
       commands::open_in_file_manager,
+      commands::open_file,
       commands::select_folder,
       commands::ensure_storage_dirs,
       commands::check_for_updates,

@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_dialog::DialogExt;
 
@@ -69,12 +69,125 @@ pub async fn select_folder(app: AppHandle) -> Result<Option<String>, String> {
     }
 }
 
+fn get_default_documents_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let appdata = std::env::var("APPDATA").unwrap_or_default();
+        if !appdata.is_empty() {
+            return Ok(PathBuf::from(appdata).join("JobTracker").join("documents"));
+        }
+    }
+    app.path()
+        .app_data_dir()
+        .map(|p| p.join("documents"))
+        .map_err(|e| format!("Failed to resolve app data dir: {}", e))
+}
+
+#[derive(serde::Serialize)]
+pub struct SavedDocumentResult {
+    pub success: bool,
+    pub path: String,
+    pub filename: String,
+    pub size: usize,
+}
+
+/// Saves an uploaded resume or cover letter directly into the user's local storage folder.
+#[tauri::command]
+pub async fn save_uploaded_document(
+    app: AppHandle,
+    folder_path: Option<String>,
+    doc_type: String,
+    file_name: String,
+    bytes: Vec<u8>,
+) -> Result<SavedDocumentResult, String> {
+    let base_dir = if let Some(ref fp) = folder_path {
+        let trimmed = fp.trim();
+        if !trimmed.is_empty() {
+            PathBuf::from(trimmed)
+        } else {
+            get_default_documents_dir(&app)?
+        }
+    } else {
+        get_default_documents_dir(&app)?
+    };
+
+    if !base_dir.exists() {
+        fs::create_dir_all(&base_dir)
+            .map_err(|e| format!("Failed to create storage folder {:?}: {}", base_dir, e))?;
+    }
+
+    let is_cover = doc_type == "cover_letter" || doc_type == "cover_letters" || doc_type == "cover_letter_path";
+
+    // Ensure subfolders exist (resumes / cover_letter)
+    let sub_dir = if is_cover {
+        if base_dir.join("cover_letter").exists() {
+            base_dir.join("cover_letter")
+        } else if base_dir.join("cover_letters").exists() {
+            base_dir.join("cover_letters")
+        } else {
+            let target = base_dir.join("cover_letter");
+            fs::create_dir_all(&target)
+                .map_err(|e| format!("Failed to create cover_letter folder: {}", e))?;
+            target
+        }
+    } else {
+        if base_dir.join("resumes").exists() {
+            base_dir.join("resumes")
+        } else if base_dir.join("resume").exists() {
+            base_dir.join("resume")
+        } else {
+            let target = base_dir.join("resumes");
+            fs::create_dir_all(&target)
+                .map_err(|e| format!("Failed to create resumes folder: {}", e))?;
+            target
+        }
+    };
+
+    if !sub_dir.exists() {
+        fs::create_dir_all(&sub_dir)
+            .map_err(|e| format!("Failed to create subfolder {:?}: {}", sub_dir, e))?;
+    }
+
+    let raw_name = Path::new(&file_name)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| (if is_cover { "cover_letter.pdf" } else { "resume.pdf" }).to_string());
+
+    let sanitized_name = raw_name
+        .chars()
+        .map(|c| if c.is_alphanumeric() || c == '.' || c == '_' || c == '-' || c == ' ' { c } else { '_' })
+        .collect::<String>();
+
+    let target_file = sub_dir.join(&sanitized_name);
+    fs::write(&target_file, &bytes)
+        .map_err(|e| format!("Failed to write document to {:?}: {}", target_file, e))?;
+
+    let path_str = target_file.to_string_lossy().to_string();
+
+    Ok(SavedDocumentResult {
+        success: true,
+        path: path_str,
+        filename: sanitized_name,
+        size: bytes.len(),
+    })
+}
+
 /// Ensures the user-selected folder and resumes/cover_letter subfolders exist on the system.
 #[tauri::command]
-pub async fn ensure_storage_dirs(folder_path: String) -> Result<(), String> {
-    let p = std::path::Path::new(&folder_path);
+pub async fn ensure_storage_dirs(app: AppHandle, folder_path: Option<String>) -> Result<String, String> {
+    let p = if let Some(ref fp) = folder_path {
+        let trimmed = fp.trim();
+        if !trimmed.is_empty() {
+            PathBuf::from(trimmed)
+        } else {
+            get_default_documents_dir(&app)?
+        }
+    } else {
+        get_default_documents_dir(&app)?
+    };
+
     if !p.exists() {
-        let _ = std::fs::create_dir_all(p);
+        let _ = std::fs::create_dir_all(&p);
     }
     let resumes = p.join("resumes");
     if !resumes.exists() {
@@ -84,7 +197,7 @@ pub async fn ensure_storage_dirs(folder_path: String) -> Result<(), String> {
     if !cover_letter.exists() {
         let _ = std::fs::create_dir_all(cover_letter);
     }
-    Ok(())
+    Ok(p.to_string_lossy().to_string())
 }
 
 /// Resolves the operating system's application data folder for Job Tracker.
@@ -149,6 +262,39 @@ pub async fn open_in_file_manager(path: String) -> Result<(), String> {
 
     #[cfg(not(target_os = "windows"))]
     {
+        Ok(())
+    }
+}
+
+/// Opens a file with the default system application (e.g. Acrobat/Word/Browser).
+#[tauri::command]
+pub async fn open_file(path: String) -> Result<(), String> {
+    let p = std::path::Path::new(&path);
+    if !p.exists() {
+        return Err(format!("File does not exist: {}", path));
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        use std::process::Command;
+        Command::new("cmd")
+            .args(["/c", "start", "", &path])
+            .spawn()
+            .map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        use std::process::Command;
+        Command::new("open").arg(&path).spawn().map_err(|e| e.to_string())?;
+        Ok(())
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Command;
+        Command::new("xdg-open").arg(&path).spawn().map_err(|e| e.to_string())?;
         Ok(())
     }
 }

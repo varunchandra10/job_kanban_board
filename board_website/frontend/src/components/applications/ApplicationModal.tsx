@@ -25,7 +25,28 @@ import {
   Trash2,
   Loader2,
   Database,
+  FolderOpen,
 } from 'lucide-react';
+
+const getDisplayFileName = (pathStr: string, fallback: string = 'Document') => {
+  if (!pathStr) return fallback;
+  if (pathStr.includes('drive.google.com') || pathStr.includes('docs.google.com')) {
+    return 'Google Drive Document';
+  }
+  try {
+    const urlMatch = pathStr.match(/[?&]name=([^&]+)/);
+    if (urlMatch) {
+      return decodeURIComponent(urlMatch[1]);
+    }
+  } catch (_) {}
+  const clean = pathStr.split('?')[0];
+  const parts = clean.split(/[/\\]/);
+  const last = parts.pop();
+  if (last && last !== 'document-content' && last !== 'file-content') {
+    return last;
+  }
+  return fallback;
+};
 
 export const ApplicationModal: React.FC = () => {
   const {
@@ -698,8 +719,20 @@ export const ApplicationModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <FileText size={16} className="text-blue-600 dark:text-blue-400 shrink-0" />
                           <span className="truncate font-semibold text-slate-800 dark:text-slate-200 text-xs flex-1">
-                            {resumePath.includes('drive.google.com') ? 'Google Drive Resume' : (resumePath.split('/').pop() || resumePath)}
+                            {getDisplayFileName(resumePath, 'Resume Document')}
                           </span>
+                          {storageMode === 'local_storage' && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await api.openLocalFolder();
+                              }}
+                              className="p-1 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                              title="Open local storage folder in File Explorer"
+                            >
+                              <FolderOpen size={13} />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -723,27 +756,43 @@ export const ApplicationModal: React.FC = () => {
                             <Trash2 size={13} />
                           </button>
                         </div>
-                        {resumePath.startsWith('http') && (
-                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20">
-                            <a
-                              href={resumePath}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] text-blue-600 dark:text-indigo-400 hover:underline truncate flex-1 font-mono"
-                              title={resumePath}
+                        {storageMode === 'local_storage' ? (
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20 text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="truncate">Saved locally in resumes folder</span>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await api.openLocalFolder();
+                              }}
+                              className="inline-flex items-center gap-1 font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0 cursor-pointer"
                             >
-                              {resumePath}
-                            </a>
-                            <a
-                              href={resumePath}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 shrink-0"
-                            >
-                              <span>View Link</span>
-                              <ExternalLink size={10} />
-                            </a>
+                              <span>Open Folder</span>
+                              <FolderOpen size={10} />
+                            </button>
                           </div>
+                        ) : (
+                          resumePath.startsWith('http') && (
+                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20">
+                              <a
+                                href={resumePath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-blue-600 dark:text-indigo-400 hover:underline truncate flex-1 font-mono"
+                                title={resumePath}
+                              >
+                                {resumePath}
+                              </a>
+                              <a
+                                href={resumePath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 shrink-0"
+                              >
+                                <span>View Link</span>
+                                <ExternalLink size={10} />
+                              </a>
+                            </div>
+                          )
                         )}
                       </div>
                     ) : (
@@ -794,8 +843,20 @@ export const ApplicationModal: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <FileText size={16} className="text-purple-600 dark:text-purple-400 shrink-0" />
                           <span className="truncate font-semibold text-slate-800 dark:text-slate-200 text-xs flex-1">
-                            {coverLetterPath.includes('drive.google.com') ? 'Google Drive Cover Letter' : (coverLetterPath.split('/').pop() || coverLetterPath)}
+                            {getDisplayFileName(coverLetterPath, 'Cover Letter Document')}
                           </span>
+                          {storageMode === 'local_storage' && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await api.openLocalFolder();
+                              }}
+                              className="p-1 text-slate-500 hover:text-purple-600 dark:text-slate-400 dark:hover:text-purple-400 transition-colors cursor-pointer"
+                              title="Open local storage folder in File Explorer"
+                            >
+                              <FolderOpen size={13} />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -816,27 +877,43 @@ export const ApplicationModal: React.FC = () => {
                             <Trash2 size={13} />
                           </button>
                         </div>
-                        {coverLetterPath.startsWith('http') && (
-                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20">
-                            <a
-                              href={coverLetterPath}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline truncate flex-1 font-mono"
-                              title={coverLetterPath}
+                        {storageMode === 'local_storage' ? (
+                          <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20 text-[10px] text-slate-500 dark:text-slate-400">
+                            <span className="truncate">Saved locally in cover_letter folder</span>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await api.openLocalFolder();
+                              }}
+                              className="inline-flex items-center gap-1 font-semibold text-purple-600 dark:text-purple-400 hover:underline shrink-0 cursor-pointer"
                             >
-                              {coverLetterPath}
-                            </a>
-                            <a
-                              href={coverLetterPath}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 shrink-0"
-                            >
-                              <span>View Link</span>
-                              <ExternalLink size={10} />
-                            </a>
+                              <span>Open Folder</span>
+                              <FolderOpen size={10} />
+                            </button>
                           </div>
+                        ) : (
+                          coverLetterPath.startsWith('http') && (
+                            <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20">
+                              <a
+                                href={coverLetterPath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline truncate flex-1 font-mono"
+                                title={coverLetterPath}
+                              >
+                                {coverLetterPath}
+                              </a>
+                              <a
+                                href={coverLetterPath}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 shrink-0"
+                              >
+                                <span>View Link</span>
+                                <ExternalLink size={10} />
+                              </a>
+                            </div>
+                          )
                         )}
                       </div>
                     ) : (

@@ -62,11 +62,7 @@ export const StorageSwitchModal: React.FC = () => {
 
   const handleOpenFolder = async () => {
     try {
-      if ((window as any).__TAURI__?.core?.invoke) {
-        await (window as any).__TAURI__.core.invoke('open_data_folder');
-      } else {
-        await api.openLocalFolder(localDir);
-      }
+      await api.openLocalFolder(customPathInput.trim() || localDir);
       showToast('Opening storage folder in File Explorer');
     } catch (err: any) {
       showToast('Could not open folder: ' + (err.message || 'Unknown error'));
@@ -112,11 +108,14 @@ export const StorageSwitchModal: React.FC = () => {
   };
 
   const handleConfirmSwitch = async () => {
-    if (isSwitchingToLocal && customPathInput.trim() && customPathInput.trim() !== localDir) {
-      try {
-        await api.setLocalFolder(customPathInput.trim());
-      } catch (err) {
-        console.warn('Failed to save preferred folder path:', err);
+    if (isSwitchingToLocal) {
+      const targetFolder = customPathInput.trim() || localDir;
+      if (targetFolder) {
+        try {
+          await api.setLocalFolder(targetFolder);
+        } catch (err) {
+          console.warn('Failed to save preferred folder path:', err);
+        }
       }
     }
     confirmStorageModeChange();

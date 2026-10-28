@@ -309,12 +309,41 @@ export const api = {
     fileId?: string;
     rootFolderId?: string;
     folderId?: string;
+    savedDiskPath?: string;
+    localDiskPath?: string;
   }> {
     const activeMode = storageMode || localStorage.getItem('job_tracker_storage_preference') || 'g_drive';
+    const customLocalDir = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : null;
+
+    let savedLocalPath: string | undefined = undefined;
+
+    // 1. If in Tauri desktop app and local storage mode, physically save file into local resumes/cover_letter folder!
+    if (activeMode === 'local_storage' && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        const buffer = await file.arrayBuffer();
+        const bytes = Array.from(new Uint8Array(buffer));
+        const tauriRes = await (window as any).__TAURI__.core.invoke('save_uploaded_document', {
+          folderPath: customLocalDir || null,
+          docType: type,
+          fileName: file.name,
+          bytes,
+        });
+        if (tauriRes && tauriRes.path) {
+          savedLocalPath = tauriRes.path;
+          console.log('[Tauri Desktop] Document saved to local disk:', savedLocalPath);
+        }
+      } catch (tauriErr) {
+        console.warn('[Tauri Desktop] Failed to save document to local disk:', tauriErr);
+      }
+    }
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('type', type);
     formData.append('storageMode', activeMode);
+    if (customLocalDir) {
+      formData.append('customDir', customLocalDir);
+    }
     if (appId) {
       formData.append('appId', String(appId));
     }
@@ -345,6 +374,10 @@ export const api = {
     }
     if (data.rootFolderId) {
       localStorage.setItem('gdrive_folder_id', data.rootFolderId);
+    }
+    if (savedLocalPath) {
+      data.savedDiskPath = savedLocalPath;
+      data.localDiskPath = savedLocalPath;
     }
     return data;
   },
@@ -425,6 +458,22 @@ export const api = {
     });
     if (!res.ok) throw new Error('Failed to open folder');
     return res.json();
+  },
+
+  async openLocalFile(filePath: string): Promise<boolean> {
+    if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        await (window as any).__TAURI__.core.invoke('open_file', { path: filePath });
+        return true;
+      } catch (err) {
+        console.warn('Tauri open_file fallback to open_in_file_manager:', err);
+        try {
+          await (window as any).__TAURI__.core.invoke('open_in_file_manager', { path: filePath });
+          return true;
+        } catch (_) {}
+      }
+    }
+    return false;
   },
 
   async setLocalFolder(folderPath: string): Promise<{ ok: number; folderPath: string; message: string }> {

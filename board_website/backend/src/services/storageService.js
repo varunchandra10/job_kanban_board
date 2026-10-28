@@ -17,9 +17,10 @@ class LocalStorageService extends BaseStorageService {
 
   _ensureDirectories() {
     try {
+      const resumesDir = path.join(this.baseDir, 'resumes');
       const resumeDir = path.join(this.baseDir, 'resume');
       const coverDir = path.join(this.baseDir, 'cover_letter');
-      if (!fs.existsSync(resumeDir)) fs.mkdirSync(resumeDir, { recursive: true });
+      if (!fs.existsSync(resumesDir) && !fs.existsSync(resumeDir)) fs.mkdirSync(resumesDir, { recursive: true });
       if (!fs.existsSync(coverDir)) fs.mkdirSync(coverDir, { recursive: true });
     } catch (e) {
       console.warn('[Storage Service] Directory creation failed:', e.message);
@@ -43,10 +44,14 @@ class LocalStorageService extends BaseStorageService {
 
     if (!fs.existsSync(p)) {
       const bn = path.basename(p);
+      const inResumes = path.resolve(this.baseDir, 'resumes', bn);
+      if (fs.existsSync(inResumes)) return inResumes;
       const inResume = path.resolve(this.baseDir, 'resume', bn);
       if (fs.existsSync(inResume)) return inResume;
       const inCover = path.resolve(this.baseDir, 'cover_letter', bn);
       if (fs.existsSync(inCover)) return inCover;
+      const inCovers = path.resolve(this.baseDir, 'cover_letters', bn);
+      if (fs.existsSync(inCovers)) return inCovers;
       const inUpload = path.resolve(this.baseDir, bn);
       if (fs.existsSync(inUpload)) return inUpload;
 
