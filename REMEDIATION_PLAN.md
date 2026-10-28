@@ -233,30 +233,33 @@ flowchart TD
 
 ### Phase 7: Offline Queue Resilience & State Synchronization (P1)
 
-#### Task 7.1: Poison-Pill Dead-Lettering in `offlineSync.ts`
-* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L178-L185)
-* **Problem:** When an offline mutation fails with a permanent non-network 4xx error (e.g. 400 Bad Request or 404 deleted record), the loop increments `retryCount` and breaks, leaving the failing item at index 0 and permanently blocking all subsequent mutations behind it forever.
-* **Implementation Plan:**
-  1. Inspect error status/type: if error is 4xx (client error) or `retryCount >= 3`, remove the poisoned item from the primary queue.
-  2. Push failed mutations to a dead-letter log (`job_tracker_failed_mutations`) with error reason so user work is not silently lost.
-  3. Allow queue processing to continue for valid remaining mutations.
-* **Testing:** Mock an invalid mutation at index 0 followed by 2 valid mutations; verify queue drops the invalid mutation after retries and successfully processes the remaining items.
+#### Task 7.1: Poison-Pill Dead-Lettering in `offlineSync.ts` [COMPLETED]
+* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L20-L45)
+* **Problem:** When an offline mutation failed with a permanent non-network 4xx error (e.g. 400 Bad Request or 404 deleted record), the loop previously incremented `retryCount` and broke, leaving the failing item at index 0 and permanently blocking all subsequent mutations behind it forever (Head-of-Line Blocking).
+* **Status:** Resolved & Verified.
+  1. Updated `flushMutationQueue` to inspect error status: permanent 4xx client errors (excluding 429 rate limit) or mutations that exceed 3 attempts are automatically moved out of the primary queue into a dead-letter log (`job_tracker_dead_letter_queue`).
+  2. Implemented `pushDeadLetter()`, `getDeadLetterQueue()`, and `clearDeadLetterQueue()` to preserve failed mutations and diagnostic error details without stopping queue processing.
+  3. The flush loop continues immediately via `continue` to process and persist all remaining valid mutations.
+* **Testing:** Automated test suite (`test_offline_mutation_queue.js`) verified that an invalid mutation (HTTP 400 empty company) at index 0 is dead-lettered and shifted out, while subsequent valid offline mutations flush and persist completely with zero queue stagnation.
 
-#### Task 7.2: User-Scoped Offline Queue Isolation
-* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L7-L30)
-* **Problem:** Offline mutation queue is saved under a single global `job_tracker_mutation_queue` in `localStorage`. If User A goes offline, logs out, and User B logs in, User A's queued mutations flush into User B's account.
-* **Implementation Plan:**
-  1. Scope storage keys by user ID: `job_tracker_mutation_queue_${userId}` and `job_tracker_id_map_${userId}`.
-  2. Resolve current user ID from token/profile before enqueueing or flushing.
-* **Testing:** Verify mutations queued by user `usr_123` are isolated from user `usr_456`.
+#### Task 7.2: User-Scoped Offline Queue Isolation [COMPLETED]
+* **Files Affected:** [`board_website/frontend/src/services/offlineSync.ts`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/services/offlineSync.ts#L40-L120)
+* **Problem:** Offline mutation queue was saved under a single global `job_tracker_mutation_queue` in `localStorage`. If User A went offline, logged out, and User B logged in, User A's queued mutations flushed into User B's account.
+* **Status:** Resolved & Verified.
+  1. Implemented `getActiveUserId()` to safely resolve the active user ID from `auth_user` JSON profile or decoded JWT payload in `auth_token` with an `'anonymous'` fallback.
+  2. Scoped all offline storage keys by user ID: `getQueueStorageKey(userId)`, `getIdMapStorageKey(userId)`, and `getDeadLetterStorageKey(userId)` producing `job_tracker_mutation_queue_${userId}`, `job_tracker_id_map_${userId}`, and `job_tracker_dead_letter_queue_${userId}`.
+  3. Added `userId?: string` to `QueuedMutation` tracking author identity for every queued mutation.
+  4. Added seamless legacy data migration (`checkAndMigrateLegacyQueue`) that automatically adopts and migrates un-scoped legacy queue items into the active user's key upon first read.
+  5. Updated `getMutationQueue`, `saveMutationQueue`, `getIdMap`, `recordIdMapping`, `resolveId`, `enqueueMutation`, `hasPendingMutations`, `clearMutationQueue`, `getDeadLetterQueue`, `saveDeadLetterQueue`, `pushDeadLetter`, `clearDeadLetterQueue`, and `flushMutationQueue` to support user isolation.
+* **Testing:** Ran automated test suite (`test_offline_mutation_queue.js` Test 5); verified User A's queued offline items are completely isolated from User B, User B cannot see or flush User A's mutations, User A's items persist across switches, and legacy un-scoped items migrate cleanly. Verified production frontend build (`npm run build`) completed with 0 errors.
 
-#### Task 7.3: Debounced Multi-Event State Synchronization & In-Flight Mutex
-* **Files Affected:** [`board_website/frontend/src/context/AppContext.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/context/AppContext.tsx#L389-L442)
+#### Task 7.3: Debounced Multi-Event State Synchronization & In-Flight Mutex [COMPLETED]
+* **Files Affected:** [`board_website/frontend/src/context/AppContext.tsx`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/frontend/src/context/AppContext.tsx#L370-L450)
 * **Problem:** `focus` and `visibilitychange` fire concurrently on tab switches, causing double executions of `refreshState()` and firing parallel duplicate API requests (`getState`, `getLearnings`, `getGamification`).
-* **Implementation Plan:**
-  1. Add a 400ms debounce timer to `handleSync`.
-  2. Add an `isSyncingRef` lock inside `refreshState()` to discard overlapping concurrent invocations.
-* **Testing:** Fire 5 rapid simulated window focus/visibility events; verify backend receives exactly 1 sync request.
+* **Status:** Resolved & Verified.
+  1. Added a 400ms debounce timer via `syncDebounceTimerRef` in `handleSync` to merge simultaneous or rapid window `focus`, `visibilitychange`, and `online` events into a single sync execution.
+  2. Implemented `isSyncingRef` mutex lock in `refreshState()` to prevent and discard concurrent in-flight state synchronizations.
+* **Testing:** Ran automated test suite (`test_sync_debounce_and_mutex.js`); verified that 5 rapid simulated window focus/visibility events trigger exactly 1 sync execution, and concurrent calls to `refreshState` are safely discarded by the mutex. Verified production frontend build (`npm run build`) completed with 0 errors.
 
 ---
 

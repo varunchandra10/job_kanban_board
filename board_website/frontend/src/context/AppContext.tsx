@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   Application,
   Learning,
@@ -366,6 +366,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [quickLinks, isAuthenticated]);
 
+  // In-flight sync mutex and debounce refs
+  const isSyncingRef = useRef<boolean>(false);
+  const syncDebounceTimerRef = useRef<any>(null);
+
   // Offline mutation queue synchronizer
   const syncOfflineQueue = async () => {
     if (!isAuthenticated || !hasPendingMutations()) return;
@@ -386,12 +390,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   // State synchronizer (syncs data across devices when switching tabs/windows)
+  // Protected with isSyncingRef mutex against concurrent/overlapping executions
   const refreshState = async () => {
-    if (!isAuthenticated) return;
-    if (hasPendingMutations()) {
-      await syncOfflineQueue();
-    }
+    if (!isAuthenticated || isSyncingRef.current) return;
+    isSyncingRef.current = true;
     try {
+      if (hasPendingMutations()) {
+        await syncOfflineQueue();
+      }
       const [stateRes, learnRes, gamifyRes] = await Promise.allSettled([
         api.getState(),
         api.getLearnings(),
@@ -410,19 +416,31 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       }
     } catch (err) {
       console.warn('[Auto-sync error]:', err);
+    } finally {
+      isSyncingRef.current = false;
     }
   };
 
-  // Cross-device and offline sync listener: when window/tab is focused or network recovers, sync
+  // Cross-device and offline sync listener: when window/tab is focused or network recovers,
+  // debounced with 400ms delay to merge simultaneous focus and visibilitychange events.
   useEffect(() => {
     if (!isAuthenticated) return;
-    const handleSync = async () => {
-      if (hasPendingMutations()) {
+
+    const executeSync = async () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        await refreshState();
+      } else if (hasPendingMutations()) {
         await syncOfflineQueue();
       }
-      if (document.visibilityState === 'visible') {
-        refreshState();
+    };
+
+    const handleSync = () => {
+      if (syncDebounceTimerRef.current) {
+        clearTimeout(syncDebounceTimerRef.current);
       }
+      syncDebounceTimerRef.current = setTimeout(() => {
+        executeSync();
+      }, 400);
     };
 
     window.addEventListener('online', handleSync);
@@ -435,6 +453,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
 
     return () => {
+      if (syncDebounceTimerRef.current) {
+        clearTimeout(syncDebounceTimerRef.current);
+      }
       window.removeEventListener('online', handleSync);
       document.removeEventListener('visibilitychange', handleSync);
       window.removeEventListener('focus', handleSync);
