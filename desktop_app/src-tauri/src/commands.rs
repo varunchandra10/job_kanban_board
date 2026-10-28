@@ -327,13 +327,29 @@ pub async fn open_in_file_manager(path: String) -> Result<(), String> {
 pub async fn open_file(app: AppHandle, path: String) -> Result<(), String> {
     use tauri_plugin_opener::OpenerExt;
 
-    let p = std::path::Path::new(&path);
-    if !p.exists() {
+    let mut target = std::path::PathBuf::from(&path);
+    if !target.exists() {
+        if let Ok(default_dir) = get_default_documents_dir(&app) {
+            let direct = default_dir.join(&path);
+            let in_resumes = default_dir.join("resumes").join(&path);
+            let in_cover = default_dir.join("cover_letter").join(&path);
+            if direct.exists() {
+                target = direct;
+            } else if in_resumes.exists() {
+                target = in_resumes;
+            } else if in_cover.exists() {
+                target = in_cover;
+            }
+        }
+    }
+
+    if !target.exists() {
         return Err(format!("File does not exist: {}", path));
     }
 
+    let target_str = target.to_string_lossy().to_string();
     app.opener()
-        .open_path(&path, None::<&str>)
+        .open_path(&target_str, None::<&str>)
         .map_err(|e| format!("Failed to open file: {}", e))
 }
 

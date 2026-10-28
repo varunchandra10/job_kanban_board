@@ -333,9 +333,22 @@ export const api = {
         if (tauriRes && tauriRes.path) {
           savedLocalPath = tauriRes.path;
           console.log('[Tauri Desktop] Document saved to local disk:', savedLocalPath);
+          return {
+            ok: 1,
+            fullPath: savedLocalPath,
+            path: savedLocalPath,
+            relativePath: savedLocalPath,
+            name: tauriRes.filename || file.name,
+            size: tauriRes.size || file.size,
+            isGoogleDrive: false,
+            isLocalStorage: true,
+            savedDiskPath: savedLocalPath,
+            localDiskPath: savedLocalPath,
+          };
         }
-      } catch (tauriErr) {
-        console.warn('[Tauri Desktop] Failed to save document to local disk:', tauriErr);
+      } catch (tauriErr: any) {
+        console.error('[Tauri Desktop] Failed to save document to local disk:', tauriErr);
+        throw new Error(typeof tauriErr === 'string' ? tauriErr : (tauriErr?.message || 'Failed to save document to local disk'));
       }
     }
 
@@ -362,26 +375,43 @@ export const api = {
       headers['x-google-access-token'] = gDriveToken;
     }
 
-    const res = await fetch(`${API_BASE}/upload-document`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      if (res.status === 401 || (data.error && /invalid_token|invalid_grant|unauthorized/i.test(data.error))) {
-        localStorage.removeItem('google_drive_access_token');
+    try {
+      const res = await fetch(`${API_BASE}/upload-document`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 401 || (data.error && /invalid_token|invalid_grant|unauthorized/i.test(data.error))) {
+          localStorage.removeItem('google_drive_access_token');
+        }
+        throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
       }
-      throw new Error(data.error || `Upload failed (HTTP ${res.status})`);
+      if (data.rootFolderId) {
+        localStorage.setItem('gdrive_folder_id', data.rootFolderId);
+      }
+      if (savedLocalPath) {
+        data.savedDiskPath = savedLocalPath;
+        data.localDiskPath = savedLocalPath;
+      }
+      return data;
+    } catch (fetchErr: any) {
+      if (activeMode === 'local_storage') {
+        console.warn('[uploadDocument] Server upload unreachable, operating in offline local mode:', fetchErr);
+        return {
+          ok: 1,
+          fullPath: file.name,
+          path: file.name,
+          relativePath: file.name,
+          name: file.name,
+          size: file.size,
+          isGoogleDrive: false,
+          isLocalStorage: true,
+        };
+      }
+      throw fetchErr;
     }
-    if (data.rootFolderId) {
-      localStorage.setItem('gdrive_folder_id', data.rootFolderId);
-    }
-    if (savedLocalPath) {
-      data.savedDiskPath = savedLocalPath;
-      data.localDiskPath = savedLocalPath;
-    }
-    return data;
   },
 
   async getScopedFileToken(): Promise<string> {
@@ -443,6 +473,16 @@ export const api = {
     if (/^https?:\/\//i.test(filePath)) {
       window.open(filePath, '_blank', 'noopener,noreferrer');
       return;
+    }
+
+    // 0. If in Tauri desktop app, use native OS opener!
+    if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        const opened = await this.openLocalFile(filePath);
+        if (opened) return;
+      } catch (tauriErr) {
+        console.warn('[Tauri Desktop] openLocalFile failed, falling back to browser preview:', tauriErr);
+      }
     }
 
     // 1. Prefer safe blob URL viewing (Bearer token sent via HTTP headers, not exposed in query parameters)
@@ -515,16 +555,21 @@ export const api = {
       }
     }
 
-    const res = await fetch(`${API_BASE}/storage/open-local-folder`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...getAuthHeaders(),
-      },
-      body: JSON.stringify({ folderPath: target }),
-    });
-    if (!res.ok) throw new Error('Failed to open folder');
-    return res.json();
+    try {
+      const res = await fetch(`${API_BASE}/storage/open-local-folder`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({ folderPath: target }),
+      });
+      if (!res.ok) throw new Error('Failed to open folder');
+      return res.json();
+    } catch (e: any) {
+      console.warn('Backend open-local-folder unreachable:', e);
+      return { ok: 1, opened: false, path: target || '' };
+    }
   },
 
   async openLocalFile(filePath: string): Promise<boolean> {
