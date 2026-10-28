@@ -106,11 +106,24 @@ const normalizedStorageProvider = (rawStorageProvider === 'google-drive' || rawS
   ? 'google_drive'
   : rawStorageProvider;
 
+const tursoDatabaseUrl = (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.STORAGE_URL || '').trim();
+const tursoAuthToken = (process.env.TURSO_AUTH_TOKEN || process.env.TURSO_DATABASE_AUTH_TOKEN || process.env.TURSO_TOKEN || process.env.STORAGE_AUTH_TOKEN || '').trim();
+const isEphemeralStorage = Boolean(isVercel && !tursoDatabaseUrl);
+
+if (isVercel && !tursoDatabaseUrl) {
+  console.warn('\n' + '='.repeat(70));
+  console.warn('⚠️  [PRODUCTION WARNING] Running in Vercel serverless environment without TURSO_DATABASE_URL.');
+  console.warn('   SQLite storage will use ephemeral /tmp/tracker.db, which is wiped on instance recycling.');
+  console.warn('   For persistent production data, configure TURSO_DATABASE_URL and TURSO_AUTH_TOKEN.');
+  console.warn('='.repeat(70) + '\n');
+}
+
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
   nodeEnv: process.env.NODE_ENV || (isVercel ? 'production' : 'development'),
   isDesktop,
   isVercel,
+  isEphemeralStorage,
   googleClientId: (process.env.GOOGLE_CLIENT_ID || '').trim(),
   googleClientSecret: (process.env.GOOGLE_CLIENT_SECRET || '').trim(),
   googleDesktopClientId: (process.env.GOOGLE_DESKTOP_CLIENT_ID || '').trim(),
@@ -123,8 +136,8 @@ const config = {
   dbPath: storagePaths.dbPath,
   uploadDir: storagePaths.uploadDir,
   backupDir: storagePaths.backupDir,
-  tursoDatabaseUrl: (process.env.TURSO_DATABASE_URL || process.env.TURSO_URL || process.env.STORAGE_URL || '').trim(),
-  tursoAuthToken: (process.env.TURSO_AUTH_TOKEN || process.env.TURSO_DATABASE_AUTH_TOKEN || process.env.TURSO_TOKEN || process.env.STORAGE_AUTH_TOKEN || '').trim(),
+  tursoDatabaseUrl,
+  tursoAuthToken,
   jwtSecret: process.env.JWT_SECRET || 'job-tracker-dev-secret-key-change-in-prod',
   frontendDir: fs.existsSync(path.resolve(boardWebsiteDir, 'frontend/dist'))
     ? path.resolve(boardWebsiteDir, 'frontend/dist')

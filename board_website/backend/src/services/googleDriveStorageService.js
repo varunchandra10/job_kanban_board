@@ -300,7 +300,7 @@ class GoogleDriveStorageService extends BaseStorageService {
     }
   }
 
-  async saveFile({ buffer, originalName, type, appId, folderId, userAccessToken, userRefreshToken }) {
+  async saveFile({ buffer, filePath, originalName, type, appId, folderId, userAccessToken, userRefreshToken }) {
     let targetFolder = folderId || this.folderId;
     if (targetFolder && String(targetFolder).includes('folders/')) {
       const m = String(targetFolder).match(/folders\/([a-zA-Z0-9_-]+)/);
@@ -340,9 +340,14 @@ class GoogleDriveStorageService extends BaseStorageService {
     const safeName = path.basename(originalName || (isCover ? 'cover_letter.pdf' : 'resume.pdf')).replace(/[^a-zA-Z0-9._ -]/g, '_');
     const mime = getMimeType(safeName);
 
-    const stream = new Readable();
-    stream.push(buffer);
-    stream.push(null);
+    const stream = (filePath && fs.existsSync(filePath))
+      ? fs.createReadStream(filePath)
+      : (() => {
+          const s = new Readable();
+          s.push(buffer);
+          s.push(null);
+          return s;
+        })();
 
     const fileMetadata = {
       name: safeName,

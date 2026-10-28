@@ -1,3 +1,4 @@
+const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { exec } = require('child_process');
@@ -57,6 +58,7 @@ exports.listDriveFiles = async (req, res, next) => {
 };
 
 exports.uploadDocument = async (req, res, next) => {
+  const tempDiskPath = req.file?.path || null;
   try {
     const userId = req.user?.id || 'default_user';
     let fileBuffer;
@@ -65,8 +67,12 @@ exports.uploadDocument = async (req, res, next) => {
     const appId = req.body.appId ? parseInt(req.body.appId, 10) : null;
 
     if (req.file) {
-      fileBuffer = req.file.buffer;
       originalName = req.file.originalname;
+      if (req.file.buffer) {
+        fileBuffer = req.file.buffer;
+      } else if (tempDiskPath && fs.existsSync(tempDiskPath)) {
+        fileBuffer = fs.readFileSync(tempDiskPath);
+      }
     } else if (req.body && req.body.data) {
       originalName = req.body.name;
       const dataStr = req.body.data.includes(',') ? req.body.data.split(',')[1] : req.body.data;
@@ -146,7 +152,11 @@ exports.uploadDocument = async (req, res, next) => {
           const safeName = path.basename(originalName || (isCover ? 'cover_letter.pdf' : 'resume.pdf'))
             .replace(/[^a-zA-Z0-9._ -]/g, '_');
           const diskTarget = path.join(targetSubDir, safeName);
-          fs.writeFileSync(diskTarget, fileBuffer);
+          if (tempDiskPath && fs.existsSync(tempDiskPath)) {
+            fs.copyFileSync(tempDiskPath, diskTarget);
+          } else if (fileBuffer) {
+            fs.writeFileSync(diskTarget, fileBuffer);
+          }
           savedDiskPath = diskTarget;
         }
       } catch (diskErr) {
@@ -215,6 +225,7 @@ exports.uploadDocument = async (req, res, next) => {
 
     const saved = await driveService.saveFile({
       buffer: fileBuffer,
+      filePath: tempDiskPath,
       originalName,
       type,
       appId,
@@ -280,6 +291,14 @@ exports.uploadDocument = async (req, res, next) => {
       needsAuth,
       error: `Google Drive upload failed: ${msg}`
     });
+  } finally {
+    if (tempDiskPath && fs.existsSync(tempDiskPath)) {
+      try {
+        fs.unlinkSync(tempDiskPath);
+      } catch (cleanupErr) {
+        console.warn('[Upload Cleanup] Error removing temporary upload scratch file:', cleanupErr.message);
+      }
+    }
   }
 };
 

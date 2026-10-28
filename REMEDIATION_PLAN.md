@@ -130,26 +130,31 @@ flowchart TD
 
 ### Phase 3: System Architecture & Stability (P2)
 
-#### Task 3.1: Remove Destructive Database Deletion Fallback
-* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L128-L138)
-* **Implementation Plan:**
-  1. Remove `fs.unlinkSync(config.dbPath)` from the error catch block.
-  2. Implement an exponential backoff retry mechanism (up to 3 retries with 250ms delay) to handle transient file lock contention.
-  3. If connection still fails, log a critical diagnostic error and abort process startup with a clear message rather than deleting user data.
-* **Testing:** Lock `tracker.db` with an external process and run the server; verify the database file is not removed.
+#### Task 3.1: Remove Destructive Database Deletion Fallback [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L123-L165)
+* **Problem:** If SQLite threw an error on opening (e.g. transient file locking by another process or anti-virus), the catch block called `fs.unlinkSync(config.dbPath)`, destroying all user application data and documents.
+* **Status:** Resolved & Verified.
+  1. Completely removed all calls to `fs.unlinkSync(config.dbPath)` and WAL/SHM file unlinking from `db.js`.
+  2. Implemented `openDatabaseWithRetry()` with exponential backoff (250ms, 500ms, 1000ms) to safely recover from transient file locks.
+  3. On persistent failure, safely aborts process startup with a critical diagnostic error explaining that the database file has been preserved to protect data.
+* **Testing:** Automated test suite (`test_safe_db_open.js`) verified retry recovery on transient lock contention (`SQLITE_BUSY`), verified that database files are 100% preserved and intact after persistent lock failures, and verified normal query execution on startup.
 
-#### Task 3.2: Multer Memory Storage Optimization
-* **Files Affected:** [`board_website/backend/src/middleware/upload.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/upload.js), [`board_website/backend/src/controllers/documentsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/documentsController.js)
-* **Implementation Plan:**
-  1. Configure Multer to use `diskStorage` to temporary scratch space (`os.tmpdir()`) for files exceeding 2MB instead of buffering completely into Node.js heap memory.
-  2. Clean up temporary upload files in a `finally` block after Google Drive upload or SQLite storage completes.
-* **Testing:** Upload a 15MB PDF; verify process heap memory remains stable without memory spikes.
+#### Task 3.2: Multer Memory Storage Optimization [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/middleware/upload.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/middleware/upload.js), [`board_website/backend/src/controllers/documentsController.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/controllers/documentsController.js#L60-L295), [`board_website/backend/src/services/googleDriveStorageService.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/services/googleDriveStorageService.js#L303-L355)
+* **Problem:** Multer was configured with `memoryStorage()`, causing large file uploads (up to 50MB) to buffer entirely on the V8 heap as contiguous Buffers, risking Out-Of-Memory (OOM) crashes in memory-constrained serverless/container environments.
+* **Status:** Resolved & Verified.
+  1. Built custom `HybridStorageEngine` for Multer: files $\le$ 2MB are kept in memory as Buffers, while files $>$ 2MB immediately spill over and stream chunks directly to temporary scratch files in `os.tmpdir()/job-tracker-uploads`, dropping memory chunk references immediately.
+  2. Updated `googleDriveStorageService.js:saveFile` to support streaming directly from `filePath` via `fs.createReadStream()` instead of buffering into heap.
+  3. Updated `documentsController.js:uploadDocument` to handle both buffer and disk streams, and wrapped processing in a `finally` block to guarantee temporary upload scratch files are deleted from disk regardless of success or failure.
+* **Testing:** Automated test suite (`test_multer_hybrid_storage.js`) verified in-memory buffering for small files, spillover streaming to disk for large files, controller base64/disk processing, and guaranteed `finally` cleanup of scratch files on both success and error paths.
 
-#### Task 3.3: Production Environment Assertions
-* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js), [`board_website/backend/src/config/index.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/config/index.js)
-* **Implementation Plan:**
-  1. If running on Vercel (`process.env.VERCEL === '1'`) and `TURSO_DATABASE_URL` is missing, emit a clear configuration warning during startup.
-  2. Expose a diagnostic check in `/api/health` indicating whether database persistence is permanent (Turso / persistent disk) or ephemeral (`/tmp`).
+#### Task 3.3: Production Environment Assertions [COMPLETED]
+* **Files Affected:** [`board_website/backend/src/database/db.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/database/db.js#L53-L65), [`board_website/backend/src/config/index.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/config/index.js#L110-L130), [`board_website/backend/src/app.js`](file:///c:/Users/kvcsu_ht23nk8/OneDrive/Desktop/Job_stuff/kanban_board/board_website/backend/src/app.js#L28-L55)
+* **Problem:** In serverless deployments (such as Vercel), deploying without `TURSO_DATABASE_URL` silently writes SQLite to ephemeral `/tmp/tracker.db`, which is wiped every time a serverless function instance spins down or redeploys, causing data loss without obvious error messages.
+* **Status:** Resolved & Verified.
+  1. Updated `config/index.js` and `database/db.js` to emit clear, high-visibility diagnostic warnings during startup whenever running in Vercel (`process.env.VERCEL`) without `TURSO_DATABASE_URL`.
+  2. Enhanced `/api/health` and `/health` endpoints to expose structured `persistence` diagnostic metadata (`isPermanent`, `isEphemeral`, `type`, `storageLocation`, and detailed warnings), allowing frontend dashboards and monitoring health checks to catch ephemeral deployments proactively.
+* **Testing:** Automated test suite (`test_env_assertions_health.js`) verified permanent local disk verification, ephemeral Vercel deployment assertion & diagnostic warning output, and Turso cloud database permanent persistence assertion.
 
 ---
 

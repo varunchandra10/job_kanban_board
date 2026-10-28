@@ -32,19 +32,36 @@ const healthHandler = (req, res) => {
     sqliteOk = !!db && typeof db.prepare === 'function';
   } catch (_) {}
 
+  const isVercel = Boolean(process.env.VERCEL);
+  const isTurso = Boolean(config.tursoDatabaseUrl);
+  const isEphemeral = Boolean(isVercel && !isTurso);
+  const persistenceType = isTurso
+    ? 'permanent_turso_cloud'
+    : (isVercel ? 'ephemeral_tmp' : (config.isDesktop ? 'permanent_desktop_disk' : 'permanent_local_disk'));
+
   res.json({
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
     node: process.version,
     sqliteOk,
-    database: config.tursoDatabaseUrl ? 'turso_cloud' : 'local_sqlite',
-    environment: process.env.VERCEL ? 'vercel' : (config.isDesktop ? 'desktop' : 'server')
+    database: isTurso ? 'turso_cloud' : 'local_sqlite',
+    environment: isVercel ? 'vercel' : (config.isDesktop ? 'desktop' : 'server'),
+    persistence: {
+      isPermanent: !isEphemeral,
+      isEphemeral,
+      type: persistenceType,
+      storageLocation: isTurso ? config.tursoDatabaseUrl : config.dbPath,
+      warning: isEphemeral
+        ? 'Running in Vercel serverless environment with ephemeral /tmp storage. Data will reset on function recycling. Set TURSO_DATABASE_URL for persistent cloud storage.'
+        : null
+    }
   });
 };
 
 app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
+app.healthHandler = healthHandler;
 
 const handleShutdown = (req, res) => {
   res.json({ ok: 1, message: 'Server is stopping gracefully...' });

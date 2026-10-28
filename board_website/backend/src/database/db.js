@@ -51,6 +51,15 @@ if (!process.env.VERCEL && !config.tursoDatabaseUrl) {
 }
 
 if (process.env.VERCEL && !config.tursoDatabaseUrl) {
+  console.warn('\n' + '='.repeat(70));
+  console.warn('⚠️  [CRITICAL ARCHITECTURAL NOTICE: EPHEMERAL VERCEL DEPLOYMENT]');
+  console.warn('   Application is running in serverless Vercel environment without TURSO_DATABASE_URL.');
+  console.warn('   Data will be stored in /tmp/tracker.db, which is ephemeral and will be wiped');
+  console.warn('   when serverless function instances spin down.');
+  console.warn('   To guarantee permanent multi-user persistence, configure TURSO_DATABASE_URL');
+  console.warn('   and TURSO_AUTH_TOKEN in your Vercel Project Settings.');
+  console.warn('='.repeat(70) + '\n');
+
   const tmpDir = path.dirname(config.dbPath);
   if (!fs.existsSync(tmpDir)) {
     try { fs.mkdirSync(tmpDir, { recursive: true }); } catch (_) {}
@@ -120,30 +129,50 @@ if (config.tursoDatabaseUrl) {
   }
 }
 
-if (!db) {
-  if (DatabaseSync) {
+function openDatabaseWithRetry(DbConstructor, dbPath, maxRetries = 3, initialDelayMs = 250) {
+  let attempt = 0;
+  let delay = initialDelayMs;
+  let lastError = null;
+
+  while (attempt <= maxRetries) {
     try {
-      db = new DatabaseSync(config.dbPath);
-    } catch (openErr) {
-      console.warn('[Local SQLite] Error opening database file, retrying fresh in /tmp:', openErr.message);
-      try {
-        if (fs.existsSync(config.dbPath)) fs.unlinkSync(config.dbPath);
-        if (fs.existsSync(config.dbPath + '-wal')) fs.unlinkSync(config.dbPath + '-wal');
-        if (fs.existsSync(config.dbPath + '-shm')) fs.unlinkSync(config.dbPath + '-shm');
-        db = new DatabaseSync(config.dbPath);
-      } catch (memErr) {
-        console.error('[Local SQLite] Falling back to in-memory database:', memErr.message);
-        db = new DatabaseSync(':memory:');
+      const instance = new DbConstructor(dbPath);
+      if (attempt > 0) {
+        console.log(`[Local SQLite] Successfully opened database after ${attempt} retr${attempt === 1 ? 'y' : 'ies'}.`);
+      }
+      return instance;
+    } catch (err) {
+      lastError = err;
+      attempt++;
+      if (attempt <= maxRetries) {
+        console.warn(`[Local SQLite] Warning opening ${path.basename(dbPath)} (attempt ${attempt}/${maxRetries}): ${err.message}. Retrying in ${delay}ms...`);
+        try {
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, delay);
+        } catch (_) {}
+        delay *= 2; // exponential backoff
       }
     }
+  }
+
+  // If explicit in-memory fallback is requested by test environment
+  if (process.env.ALLOW_IN_MEMORY_FALLBACK === 'true') {
+    console.warn('[Local SQLite] ALLOW_IN_MEMORY_FALLBACK=true detected. Falling back to in-memory database.');
+    return new DbConstructor(':memory:');
+  }
+
+  // Critical failure: NEVER delete or unlink user database files
+  const criticalMsg = `[CRITICAL DATABASE ERROR] Failed to open SQLite database at "${dbPath}" after ${maxRetries} retries (${lastError?.message}). ` +
+    `The database file has been PRESERVED to prevent data loss. ` +
+    `Please ensure no other process (another instance, SQLite viewer, or file lock) is locking the file and restart the application.`;
+  console.error(criticalMsg);
+  throw new Error(criticalMsg);
+}
+
+if (!db) {
+  if (DatabaseSync) {
+    db = openDatabaseWithRetry(DatabaseSync, config.dbPath);
   } else if (LibsqlDatabase) {
-    try {
-      console.log('[Local SQLite] Using local LibSQL database:', config.dbPath);
-      db = new LibsqlDatabase(config.dbPath);
-    } catch (libLocalErr) {
-      console.error('[Local SQLite] LibSQL local open error:', libLocalErr.message);
-      db = new LibsqlDatabase(':memory:');
-    }
+    db = openDatabaseWithRetry(LibsqlDatabase, config.dbPath);
   } else {
     const errMsg = `SQLite engine is not available on Node.js ${process.version}. Please verify Node.js version >= 22.5.0 or install dependencies.`;
     console.error('[Database Error]', errMsg);
@@ -401,5 +430,6 @@ module.exports = {
   getState,
   performDbBackup,
   encryptCredential,
-  decryptCredential
+  decryptCredential,
+  openDatabaseWithRetry
 };
