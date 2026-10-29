@@ -322,35 +322,48 @@ export const CareerProfile: React.FC = () => {
     .join(', ') || 'Various';
 
   // -------------------------------------------------------------
-  // Learnings Stats Calculation
+  // Learnings Stats Calculation (Dynamic according to user topics)
   // -------------------------------------------------------------
   const streak = gamification.streak || 0;
   const studyHours = (gamification.totalMinutes / 60).toFixed(1);
-  const totalXp = gamification.totalXP || 0;
-  const currentRank = `Lvl ${gamification.level || 1}`;
-  const totalTopics = learnings.length;
+  const totalLearningsCount = learnings.length;
 
-  // XP progress to next level (out of 500)
-  const xpCurrentInLevel = totalXp % 500;
-  const xpFillPercent = Math.min(100, Math.round((xpCurrentInLevel / 500) * 100));
-
-  // Category distribution
-  const catCounts = {
-    'System Design': 0,
-    'Algorithms / DSA': 0,
-    'Web Dev': 0,
-    'Cloud & Core': 0,
-  };
-  learnings.forEach(l => {
-    const c = (l.category || '').toLowerCase();
-    const t = (l.title || '').toLowerCase();
-    if (c.includes('system') || t.includes('system') || t.includes('design')) catCounts['System Design']++;
-    else if (c.includes('dsa') || c.includes('algo') || t.includes('tree') || t.includes('dp')) catCounts['Algorithms / DSA']++;
-    else if (c.includes('cs') || c.includes('cloud') || c.includes('database')) catCounts['Cloud & Core']++;
-    else catCounts['Web Dev']++;
+  // Aggregate user's dynamic topics
+  const topicStatsMap: Record<string, { count: number; minutes: number }> = {};
+  learnings.forEach((l) => {
+    const rawTopic = (l.topic && l.topic.trim()) || (l.category && l.category.trim()) || 'General';
+    const topicKey = rawTopic.trim();
+    if (!topicKey) return;
+    if (!topicStatsMap[topicKey]) {
+      topicStatsMap[topicKey] = { count: 0, minutes: 0 };
+    }
+    topicStatsMap[topicKey].count += 1;
+    topicStatsMap[topicKey].minutes += Number(l.duration_minutes) || 0;
   });
 
-  const catPct = (cnt: number) => totalTopics > 0 ? Math.round((cnt / totalTopics) * 100) : 0;
+  const uniqueTopicsCount = Object.keys(topicStatsMap).length;
+
+  // Sorted dynamic topics by frequency and study time
+  const dynamicTopics = Object.entries(topicStatsMap)
+    .map(([name, data]) => ({
+      name,
+      count: data.count,
+      minutes: data.minutes,
+      pct: totalLearningsCount > 0 ? Math.round((data.count / totalLearningsCount) * 100) : 0,
+    }))
+    .sort((a, b) => b.count - a.count || b.minutes - a.minutes);
+
+  const DYNAMIC_TOPIC_COLORS = [
+    'bg-indigo-500',
+    'bg-emerald-500',
+    'bg-amber-500',
+    'bg-cyan-500',
+    'bg-purple-500',
+    'bg-rose-500',
+    'bg-blue-500',
+    'bg-teal-500',
+    'bg-orange-500',
+  ];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 w-full">
@@ -1127,7 +1140,7 @@ export const CareerProfile: React.FC = () => {
               </span>
             </div>
 
-            {/* 4 Metric Boxes */}
+            {/* 4 Metric Boxes (Real Learning & Study Metrics - No 500XP Gamification) */}
             <div className="grid grid-cols-4 gap-2.5 mb-4">
               <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center">
                 <div className="text-lg sm:text-xl font-extrabold text-orange-600 dark:text-orange-400 tabular-nums">
@@ -1148,116 +1161,85 @@ export const CareerProfile: React.FC = () => {
               </div>
 
               <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center">
-                <div className="text-lg sm:text-xl font-extrabold text-cyan-600 dark:text-cyan-400 tabular-nums">
-                  {totalXp}
+                <div className="text-lg sm:text-xl font-extrabold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                  {totalLearningsCount}
                 </div>
                 <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase mt-0.5">
-                  Total XP
+                  Total Logs
                 </div>
               </div>
 
               <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center">
-                <div className="text-lg sm:text-xl font-extrabold text-blue-600 dark:text-blue-400 tabular-nums">
-                  {currentRank}
+                <div className="text-lg sm:text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  {uniqueTopicsCount}
                 </div>
                 <div className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase mt-0.5">
-                  Current Rank
+                  Topics Covered
                 </div>
               </div>
             </div>
 
-            {/* XP Progress Bar to Next Level */}
-            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-600 dark:text-slate-400">
-                <span>Rank Progress to Next Level</span>
-                <span className="font-bold text-slate-900 dark:text-white tabular-nums">
-                  {xpCurrentInLevel} / 500 XP
-                </span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 transition-all duration-300"
-                  style={{ width: `${xpFillPercent}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Topic Category Breakdown Bars */}
+            {/* Dynamic Topic Breakdown (Reflecting user's logged topics) */}
             <div className="space-y-2 mt-4 pt-3 border-t border-slate-100 dark:border-white/5">
-              <div className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Topic Category Breakdown
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[11.5px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Topic Breakdown
+                </div>
+                {dynamicTopics.length > 0 && (
+                  <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                    {dynamicTopics.length} {dynamicTopics.length === 1 ? 'Topic' : 'Topics'}
+                  </span>
+                )}
               </div>
 
-              {/* System Design */}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="w-32 text-slate-700 dark:text-slate-300 font-semibold truncate">
-                  System Design
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-cyan-500 transition-all duration-300"
-                    style={{ width: `${catPct(catCounts['System Design'])}%` }}
-                  />
+              {dynamicTopics.length === 0 ? (
+                <div className="py-7 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <BookOpen size={16} />
+                  </div>
+                  <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    No Learning Topics Logged Yet
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-[280px] m-0 leading-relaxed">
+                    Log your daily study sessions in Daily Learnings to see your dynamic topic breakdown here.
+                  </p>
                 </div>
-                <span className="w-10 text-right font-mono font-bold text-slate-900 dark:text-white text-[11.5px]">
-                  {catPct(catCounts['System Design'])}%
-                </span>
-              </div>
+              ) : (
+                <>
+                  {dynamicTopics.slice(0, 4).map((topicItem, idx) => {
+                    const colorClass = DYNAMIC_TOPIC_COLORS[idx % DYNAMIC_TOPIC_COLORS.length];
+                    return (
+                      <div key={topicItem.name} className="flex items-center gap-3 text-xs">
+                        <span className="w-32 text-slate-700 dark:text-slate-300 font-semibold truncate" title={topicItem.name}>
+                          {topicItem.name} ({topicItem.count})
+                        </span>
+                        <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${colorClass} transition-all duration-300`}
+                            style={{ width: `${topicItem.pct}%` }}
+                          />
+                        </div>
+                        <span className="w-10 text-right font-mono font-bold text-slate-900 dark:text-white text-[11.5px]">
+                          {topicItem.pct}%
+                        </span>
+                      </div>
+                    );
+                  })}
 
-              {/* Algorithms / DSA */}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="w-32 text-slate-700 dark:text-slate-300 font-semibold truncate">
-                  Algorithms / DSA
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-purple-500 transition-all duration-300"
-                    style={{ width: `${catPct(catCounts['Algorithms / DSA'])}%` }}
-                  />
-                </div>
-                <span className="w-10 text-right font-mono font-bold text-slate-900 dark:text-white text-[11.5px]">
-                  {catPct(catCounts['Algorithms / DSA'])}%
-                </span>
-              </div>
-
-              {/* Web Dev */}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="w-32 text-slate-700 dark:text-slate-300 font-semibold truncate">
-                  Web Dev
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
-                    style={{ width: `${catPct(catCounts['Web Dev'])}%` }}
-                  />
-                </div>
-                <span className="w-10 text-right font-mono font-bold text-slate-900 dark:text-white text-[11.5px]">
-                  {catPct(catCounts['Web Dev'])}%
-                </span>
-              </div>
-
-              {/* Cloud & Core */}
-              <div className="flex items-center gap-3 text-xs">
-                <span className="w-32 text-slate-700 dark:text-slate-300 font-semibold truncate">
-                  Cloud &amp; Core
-                </span>
-                <div className="flex-1 h-2 rounded-full bg-slate-100 dark:bg-white/10 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-orange-500 transition-all duration-300"
-                    style={{ width: `${catPct(catCounts['Cloud & Core'])}%` }}
-                  />
-                </div>
-                <span className="w-10 text-right font-mono font-bold text-slate-900 dark:text-white text-[11.5px]">
-                  {catPct(catCounts['Cloud & Core'])}%
-                </span>
-              </div>
+                  {dynamicTopics.length > 4 && (
+                    <div className="pt-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 text-right">
+                      + {dynamicTopics.length - 4} other {dynamicTopics.length - 4 === 1 ? 'topic' : 'topics'}
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
 
           {/* Sub-footer */}
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span>Total Logs: <strong className="text-slate-900 dark:text-white font-bold">{totalTopics} Topics</strong></span>
-            <span>Mastery Ratio: <strong className="text-slate-900 dark:text-white font-bold">100% Active</strong></span>
+            <span>Total Logs: <strong className="text-slate-900 dark:text-white font-bold">{totalLearningsCount} {totalLearningsCount === 1 ? 'Entry' : 'Entries'}</strong></span>
+            <span>Topics Covered: <strong className="text-slate-900 dark:text-white font-bold">{uniqueTopicsCount} {uniqueTopicsCount === 1 ? 'Topic' : 'Topics'}</strong></span>
           </div>
         </section>
       </div>
