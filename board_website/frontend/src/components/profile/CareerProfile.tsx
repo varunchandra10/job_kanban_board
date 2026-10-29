@@ -23,6 +23,8 @@ import {
   Lock,
   LogIn,
   RotateCcw,
+  Mail,
+  HardDrive,
 } from 'lucide-react';
 
 export const CareerProfile: React.FC = () => {
@@ -369,39 +371,92 @@ export const CareerProfile: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 w-full">
-      {/* 1. Profile Hero Card */}
-      <section
-        className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs transition-all"
-        aria-label="Profile Hero Card"
-      >
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-          {/* User Identity */}
+      {/* 1. Top Hero Section Divided into 2 Cards: Left (User Info) and Right (Storage & Export) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+        {/* Left Section: User Profile Avatar, Name, Email, Streaks */}
+        <section
+          className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between"
+          aria-label="User Profile Details"
+        >
           {(() => {
-            const displayName = profile.full_name?.trim() || currentUser?.name?.trim() || (currentUser?.email ? currentUser.email.split('@')[0] : 'My Profile');
-            const avatarInitials = displayName
-              .split(' ')
+            const userEmail = currentUser?.email || profile?.email || '';
+            const isOAuth = Boolean(
+              currentUser?.is_google ||
+              currentUser?.auth_provider === 'google' ||
+              Boolean(currentUser?.picture) ||
+              Boolean(currentUser?.avatar_url)
+            );
+
+            // If normal email: strictly name before '@'; if OAuth: name from OAuth or profile
+            const emailPrefix = userEmail.includes('@') ? userEmail.split('@')[0] : (userEmail || 'User');
+            const displayName = isOAuth
+              ? (currentUser?.name?.trim() || profile.full_name?.trim() || emailPrefix)
+              : emailPrefix;
+
+            // Only fetch/display profile image if user logged in with OAuth
+            const oauthAvatarUrl = isOAuth
+              ? (currentUser?.picture || currentUser?.avatar_url || currentUser?.photo_url || null)
+              : null;
+
+            const avatarInitials = (displayName || emailPrefix)
+              .split(/[\s._-]+/)
               .filter(Boolean)
-              .map((n: string) => n[0])
+              .map((s: string) => s[0])
               .join('')
               .toUpperCase()
               .slice(0, 2) || 'U';
 
             return (
-              <div className="flex items-center gap-4 sm:gap-5">
-                {/* Avatar Circle */}
-                <div className="flex h-16 w-16 sm:h-18 sm:w-18 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
-                  {avatarInitials}
-                </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
+                {/* User Profile Avatar */}
+                {oauthAvatarUrl ? (
+                  <img
+                    src={oauthAvatarUrl}
+                    alt={displayName}
+                    className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl object-cover shadow-md ring-4 ring-white dark:ring-[#141417] border border-slate-200/60 dark:border-white/10"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
+                    {avatarInitials}
+                  </div>
+                )}
 
-                <div className="min-w-0">
-                  <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0 truncate">
-                    {displayName}
-                  </h1>
+                {/* Details: Name, Email, Streaks */}
+                <div className="min-w-0 flex-1 space-y-2">
+                  {/* Name */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                      Name:
+                    </span>
+                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white m-0 truncate">
+                      {displayName}
+                    </h1>
+                    {isOAuth && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                        OAuth
+                      </span>
+                    )}
+                  </div>
 
-                  {/* Streak badge right below the name */}
-                  <div className="mt-1.5 flex items-center gap-2 flex-wrap">
-                    <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-3 py-1 rounded-full shadow-2xs">
-                      <Flame size={14} className="text-orange-500 animate-pulse" />
+                  {/* Email */}
+                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                    <Mail size={15} className="text-slate-400 shrink-0" />
+                    <span className="font-semibold text-xs text-slate-400 dark:text-slate-500">
+                      Email:
+                    </span>
+                    <span className="font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-200 truncate">
+                      {userEmail || 'Not available'}
+                    </span>
+                  </div>
+
+                  {/* Streaks */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="font-semibold text-xs text-slate-400 dark:text-slate-500">
+                      Streaks:
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full shadow-2xs">
+                      <Flame size={13} className="text-orange-500 animate-pulse" />
                       <span>{streak}-Day Focus Streak</span>
                     </span>
                   </div>
@@ -409,72 +464,90 @@ export const CareerProfile: React.FC = () => {
               </div>
             );
           })()}
+        </section>
 
-          {/* Action Buttons: Storage Mode Toggle | G-Drive | Download as CSV | Download DB as ZIP */}
-          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto shrink-0">
-            {/* Storage Mode Toggle Button matching screenshot aesthetic */}
-            <button
-              type="button"
-              onClick={() => requestStorageModeChange(storageMode === 'local_storage' ? 'g_drive' : 'local_storage')}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-slate-700/70 dark:border-white/15 bg-slate-900/90 dark:bg-[#18181b] hover:border-slate-500 shadow-sm transition-all cursor-pointer group select-none"
-              title={`Active Storage: ${storageMode === 'local_storage' ? 'Local Storage (Click to switch to Google Drive)' : 'Google Drive (Click to switch to Local Storage)'}`}
-            >
-              <span
-                className={`text-[11px] font-black tracking-wider transition-colors duration-200 ${
+        {/* Right Section: Storage Mode Toggle | G-Drive | Sync | Download as CSV */}
+        <section
+          className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4"
+          aria-label="Storage Mode and Export Controls"
+        >
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                <HardDrive size={13} className="text-indigo-500" />
+                <span>Storage Engine</span>
+              </span>
+              <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400">
+                {storageMode === 'local_storage' ? 'Local Storage Active' : 'Google Drive Active'}
+              </span>
+            </div>
+
+            {/* Enhanced UI for LOCAL_STORAGE / G_DRIVE Toggle */}
+            <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 dark:bg-[#1a1a1e] border border-slate-200 dark:border-white/10 relative">
+              {/* Local Storage Pill */}
+              <button
+                type="button"
+                onClick={() => storageMode !== 'local_storage' && requestStorageModeChange('local_storage')}
+                className={`relative flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   storageMode === 'local_storage'
-                    ? 'text-[#a78bfa] drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]'
-                    : 'text-slate-400 group-hover:text-slate-300'
+                    ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-300 shadow-sm border border-slate-200/80 dark:border-white/10 ring-1 ring-indigo-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                LOCAL_STORAGE
-              </span>
+                <HardDrive size={14} className={storageMode === 'local_storage' ? 'text-indigo-500' : 'text-slate-400'} />
+                <span>LOCAL_STORAGE</span>
+                {storageMode === 'local_storage' && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                )}
+              </button>
 
-              {/* Pill track and thumb */}
-              <div className="w-10 h-5 rounded-full bg-[#27272a] border border-[#3f3f46] p-0.5 flex items-center relative transition-colors">
-                <div
-                  className={`w-4 h-4 rounded-full transition-transform duration-200 ease-out shadow-md ${
-                    storageMode === 'local_storage'
-                      ? 'translate-x-0 bg-[#8b5cf6]'
-                      : 'translate-x-5 bg-[#8b5cf6]'
-                  }`}
-                />
-              </div>
-
-              <span
-                className={`text-[11px] font-black tracking-wider transition-colors duration-200 ${
+              {/* Google Drive Pill */}
+              <button
+                type="button"
+                onClick={() => storageMode !== 'g_drive' && requestStorageModeChange('g_drive')}
+                className={`relative flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   storageMode === 'g_drive'
-                    ? 'text-[#a78bfa] drop-shadow-[0_0_8px_rgba(167,139,250,0.6)]'
-                    : 'text-slate-400 group-hover:text-slate-300'
+                    ? 'bg-white dark:bg-[#27272a] text-blue-600 dark:text-blue-300 shadow-sm border border-slate-200/80 dark:border-white/10 ring-1 ring-blue-500/20'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
-                G_DRIVE
-              </span>
-            </button>
+                <svg viewBox="0 0 87.3 78" width="14" height="12.5" className="shrink-0">
+                  <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA" />
+                  <path d="M43.65 25.15L29.05 0c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.35.6-.55 1.2-.7 1.85h29z" fill="#00AC47" />
+                  <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L73.55 76.8z" fill="#EA4335" />
+                  <path d="M43.65 25.15L58.25 0H29.05l14.6 25.15z" fill="#00832D" />
+                  <path d="M58.3 52.2H29L13.75 76.8c1.35.8 2.85 1.2 4.45 1.2H69.1c1.6 0 3.1-.45 4.45-1.2z" fill="#2684FC" />
+                  <path d="M73.4 26.5L58.25 0c-1.35.8-2.5 1.9-3.3 3.3L43.65 25.15 58.3 52.2h29c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00" />
+                </svg>
+                <span>G_DRIVE</span>
+                {storageMode === 'g_drive' && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                )}
+              </button>
+            </div>
+          </div>
 
-            {/* Storage Settings Button (dynamically switches between G-Drive and Local Storage) */}
+          {/* Action Buttons: G-Drive/Local Storage Settings | Mirror & Sync | Download as CSV */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             {storageMode === 'local_storage' ? (
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50/70 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-indigo-200 dark:border-indigo-500/20 bg-indigo-50/70 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 text-xs font-semibold transition-all shadow-xs cursor-pointer"
                 onClick={() => setIsDriveModalOpen(true)}
-                title="View & Change Local Storage Folder Path"
+                title="View & Configure Local Storage Path"
               >
-                <Folder size={15} className="text-indigo-600 dark:text-indigo-400" />
+                <Folder size={14} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <span>Local Storage</span>
-                <span
-                  className="h-2 w-2 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20"
-                  title="Local System Storage Active"
-                />
+                <span className="h-1.5 w-1.5 rounded-full bg-indigo-500 ring-2 ring-indigo-500/20" />
               </button>
             ) : (
               <button
                 type="button"
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
                 onClick={() => setIsDriveModalOpen(true)}
                 title="Manage Your Google Drive Storage & Setup"
               >
-                {/* Google Drive Tri-Color Icon */}
-                <svg viewBox="0 0 87.3 78" width="16" height="14.3" className="shrink-0">
+                <svg viewBox="0 0 87.3 78" width="14" height="12.5" className="shrink-0">
                   <path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3L29 52.2H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA" />
                   <path d="M43.65 25.15L29.05 0c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.35.6-.55 1.2-.7 1.85h29z" fill="#00AC47" />
                   <path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75L86.1 57.7c.8-1.4 1.2-2.95 1.2-4.5H58.3L73.55 76.8z" fill="#EA4335" />
@@ -484,7 +557,7 @@ export const CareerProfile: React.FC = () => {
                 </svg>
                 <span>G-Drive</span>
                 <span
-                  className={`h-2 w-2 rounded-full ${
+                  className={`h-1.5 w-1.5 rounded-full ${
                     gdriveStatus.connected ? 'bg-emerald-500 ring-2 ring-emerald-500/20' : 'bg-amber-500'
                   }`}
                   title={gdriveStatus.connected ? 'Google Drive Connected' : 'Google Drive Disconnected'}
@@ -495,38 +568,27 @@ export const CareerProfile: React.FC = () => {
             {/* 1-Click Document Mirror & Sync Button */}
             <button
               type="button"
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
               onClick={() => openDriveModal('sync')}
               title="Mirror & Sync Documents across Local Storage and Google Drive"
             >
-              <RotateCcw size={14} className="text-blue-600 dark:text-blue-400" />
+              <RotateCcw size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Mirror &amp; Sync</span>
             </button>
 
             {/* Download as CSV Button */}
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs cursor-pointer"
               onClick={exportToCSV}
-              title="Export all Job Applications to CSV"
+              title="Export all Job Applications to CSV for Excel / Spreadsheets"
             >
-              <Download size={14} className="text-emerald-500" />
+              <Download size={13} className="text-emerald-500 shrink-0" />
               <span>Download as CSV</span>
             </button>
-
-            {/* Download Backup as ZIP Button */}
-            <a
-              href={`${getApiEndpoint('/api/backup/export')}${localStorage.getItem('auth_token') ? `?token=${encodeURIComponent(localStorage.getItem('auth_token') || '')}` : ''}`}
-              download
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold transition-all shadow-xs no-underline"
-              title="Download Complete Account Data & Attached Documents as ZIP"
-            >
-              <Database size={14} />
-              <span>Download Backup (ZIP)</span>
-            </a>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* 2. 2-Card Row: Left = Quick Links & Profiles | Right = Activity & Momentum Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
