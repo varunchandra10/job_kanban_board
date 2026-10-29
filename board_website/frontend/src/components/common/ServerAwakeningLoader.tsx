@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Server, RefreshCw, Sparkles, CheckCircle2, Clock, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { getApiEndpoint } from '../../services/api';
+import { getApiEndpoint, isTauri } from '../../services/api';
 
 export const ServerAwakeningLoader: React.FC = () => {
+  // Never show cloud server awakening modal in the native desktop app (runs on offline local SQLite)
+  if (isTauri) return null;
+
   const { showToast } = useApp();
 
   // Has the server responded in this browser session?
