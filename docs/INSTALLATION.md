@@ -17,30 +17,33 @@ Welcome to the **Job Tracker** installation manual. Choose your preferred instal
 
 ## 1. Windows Desktop App Installation
 
-The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database.
+The desktop edition is a lightweight, privacy-focused native application for Windows 10 & 11 with an embedded local SQLite database and dual storage engine.
 
-### Step 1: Download the Package
+### Choose Your Edition
 
 <p align="left">
-  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip">
-    <img src="https://img.shields.io/badge/📦_DOWNLOAD_JOB_TRACKER_FOR_WINDOWS-Job--Tracker--Windows.zip-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Windows.zip" height="42" />
+  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
+    <img src="https://img.shields.io/badge/🚀_DOWNLOAD_INSTALLER-Job--Tracker--Setup.exe_(RECOMMENDED)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="42" />
+  </a>
+  &nbsp;
+  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe">
+    <img src="https://img.shields.io/badge/⚡_DOWNLOAD_PORTABLE-JobTracker.exe_(ZERO_INSTALL)-2EA44F?style=for-the-badge&logo=windows&logoColor=white" alt="Download JobTracker.exe" height="42" />
   </a>
 </p>
 
-* **Package Archive**: [`install_apps/Job-Tracker-Windows.zip`](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip) *(Contains `JobTracker.exe`, `Uninstall-Job-Tracker.bat`, and `README.txt`)*.
+* **Option A: 1-Click Installer (`Job-Tracker-Setup.exe`)**:
+  - Run the setup executable. Job Tracker installs immediately, adds Start Menu and Desktop shortcuts, and registers file/protocol associations.
+* **Option B: Portable ZIP Package ([`Job-Tracker-Windows.zip`](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip))**:
+  - Extract the ZIP and run `JobTracker.exe` directly without installation.
+  - Contains `Job-Tracker-Setup.exe`, `JobTracker.exe`, `README.txt`, and `Uninstall-Job-Tracker.bat`.
 
-### Step 2: Extract & Run
-1. Right-click **`Job-Tracker-Windows.zip`** and choose **Extract All**.
-2. Double-click **`JobTracker.exe`**.
-3. **If Windows SmartScreen appears** (*"Windows protected your PC"*):
-   - Click **More info**.
-   - Click **Run anyway** *(standard notification for newly compiled independent software without an enterprise certificate)*.
+### Windows SmartScreen Note
+If Windows SmartScreen displays *"Windows protected your PC"*:
+1. Click **More info**.
+2. Click **Run anyway** *(standard notification for newly compiled independent software without an enterprise certificate)*.
 
-### Step 3: Launch & Uninstall Anytime
-* The application runs immediately with your interactive Kanban board, offline SQLite, and local document storage!
-* To uninstall or clean up cached shortcuts anytime, double-click **`Uninstall-Job-Tracker.bat`**.
-
-> 🔒 **Privacy Guarantee**: All your applications, compensation data, notes, and uploaded resumes are stored privately on your computer in a local SQLite database (`%APPDATA%\JobTracker\tracker.db`). Zero cloud accounts or external databases required.
+> 🔒 **Privacy Guarantee & Secondary Drive Storage**:
+> All applications and database records are kept privately on your computer. You can also customize your document storage path to any secondary drive (e.g. `D:\JobTracker` or `E:\`) via the **"Change / Browse"** button in any application modal to protect against system drive issues. Seamless 1-Click Two-Way Sync to your personal Google Drive is also available whenever needed!
 
 ---
 

@@ -14,6 +14,8 @@ import {
   Calendar,
   Lock,
   Database,
+  Download,
+  Monitor,
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
@@ -54,6 +56,9 @@ export const LandingPage: React.FC = () => {
         <nav className="hidden md:flex items-center gap-7 text-[15px] font-semibold text-slate-500 dark:text-slate-400" aria-label="Main Navigation">
           <a href="#features" className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline">
             Features
+          </a>
+          <a href="#desktop" className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline">
+            Windows App
           </a>
           <a href="#benefits" className="hover:text-blue-600 dark:hover:text-indigo-400 transition-colors no-underline">
             How It Helps
@@ -160,8 +165,8 @@ export const LandingPage: React.FC = () => {
           </h1>
 
           <p className="text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-400 max-w-[720px] leading-relaxed mb-10">
-            A private, streamlined dashboard to track applications across visual stages, 
-            save tailored resumes directly to your own Google Drive, and turn daily interview learnings into an unstoppable career streak.
+            A private, high-performance career platform to track applications across visual Kanban stages, 
+            manage tailored resumes with dual Local PC &amp; Google Drive storage, and turn daily interview prep into an unstoppable streak.
           </p>
 
           <div className="flex items-center justify-center gap-4 flex-wrap mb-9">
@@ -177,33 +182,27 @@ export const LandingPage: React.FC = () => {
               <span>{isAuthenticated ? 'Open Job Board' : 'Get Started'}</span>
               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (!isAuthenticated) {
-                  openAuthModal();
-                } else {
-                  navigate('/profile');
-                }
-              }}
-              className="inline-flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 hover:border-slate-400 dark:hover:border-slate-500 text-slate-900 dark:text-slate-100 font-semibold text-base px-7 py-3.5 rounded-xl border border-slate-200 dark:border-white/10 hover:-translate-y-0.5 transition-all shadow-sm cursor-pointer"
+            <a
+              href="#desktop"
+              className="inline-flex items-center gap-2 bg-white/90 dark:bg-slate-900/80 hover:border-slate-400 dark:hover:border-slate-500 text-slate-900 dark:text-slate-100 font-semibold text-base px-7 py-3.5 rounded-xl border border-slate-200 dark:border-white/10 hover:-translate-y-0.5 transition-all shadow-sm cursor-pointer no-underline"
             >
-              <span>Career Hub &amp; Heatmap</span>
-            </button>
+              <Monitor size={17} className="text-blue-600 dark:text-blue-400" />
+              <span>Windows Desktop App</span>
+            </a>
           </div>
 
           <div className="flex items-center justify-center gap-6 sm:gap-8 text-sm text-slate-600 dark:text-slate-400 flex-wrap">
             <div className="inline-flex items-center gap-2 font-medium">
               <CheckCircle2 size={16} className="text-emerald-500" strokeWidth={2.5} />
-              <span>100% User-Owned Google Drive</span>
+              <span>Dual Storage: Local PC &amp; Google Drive</span>
             </div>
             <div className="inline-flex items-center gap-2 font-medium">
               <CheckCircle2 size={16} className="text-emerald-500" strokeWidth={2.5} />
-              <span>Strict Multi-Tenant Isolation</span>
+              <span>Offline SQLite &amp; Custom Folders</span>
             </div>
             <div className="inline-flex items-center gap-2 font-medium">
               <CheckCircle2 size={16} className="text-emerald-500" strokeWidth={2.5} />
-              <span>1-Click CSV &amp; SQLite Backup</span>
+              <span>1-Click Two-Way Document Sync</span>
             </div>
           </div>
         </section>
@@ -230,32 +229,32 @@ export const LandingPage: React.FC = () => {
                   <LayoutGrid size={24} strokeWidth={2} />
                 </div>
                 <span className="text-[11px] font-bold tracking-wider px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400">
-                  4-STAGE PIPELINE
+                  5-STAGE PIPELINE
                 </span>
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0">
                 Visual Kanban Board
               </h3>
               <p className="text-slate-600 dark:text-slate-400 text-[15px] leading-relaxed m-0">
-                Organize applications across 4 visual stages: <strong>Applied</strong>, <strong>Interviewing</strong>, <strong>Offer</strong>, and <strong>Rejected</strong>. Drag and drop cards, filter by track (Industry, Government, Research), and search instantly with <code className="text-xs bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono">/</code>.
+                Organize applications across 5 visual stages: <strong>Applied</strong>, <strong>Interviewing</strong>, <strong>Offer</strong>, <strong>Rejected</strong>, and <strong>Wishlist</strong>. Drag and drop cards, filter by track (Industry, Government, Research), and search instantly with <code className="text-xs bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded font-mono">/</code>.
               </p>
             </div>
 
-            {/* Feature 2: Google Drive */}
+            {/* Feature 2: Dual Storage & Mirroring */}
             <div className="bg-white/90 dark:bg-slate-900/75 border border-slate-200 dark:border-white/10 rounded-[18px] p-8 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.4)] hover:border-blue-400 dark:hover:border-indigo-500/50 hover:-translate-y-1 transition-all flex flex-col gap-4 relative">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
                   <ShieldCheck size={24} strokeWidth={2} />
                 </div>
                 <span className="text-[11px] font-bold tracking-wider px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400">
-                  PRIVATE CLOUD
+                  DUAL STORAGE ENGINE
                 </span>
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0">
-                Personal Google Drive Storage
+                Local PC Hard Drive &amp; Google Drive Sync
               </h3>
               <p className="text-slate-600 dark:text-slate-400 text-[15px] leading-relaxed m-0">
-                Uploaded resumes and cover letters stream directly into <strong>your personal Google Drive folder</strong> via official Google Drive API integration. Your files are never stored on shared admin servers.
+                Save resumes directly to custom folders on any drive (C:, D:, E:) for 100% offline privacy, or connect your personal Google Drive with 1-click two-way mirroring to sync files across all your devices seamlessly.
               </p>
             </div>
 
@@ -295,21 +294,21 @@ export const LandingPage: React.FC = () => {
               </p>
             </div>
 
-            {/* Feature 5: Multi-Tenant OAuth */}
+            {/* Feature 5: Native Desktop & Security */}
             <div className="bg-white/90 dark:bg-slate-900/75 border border-slate-200 dark:border-white/10 rounded-[18px] p-8 backdrop-blur-md shadow-[0_4px_16px_rgba(0,0,0,0.03)] hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.08)] dark:hover:shadow-[0_16px_36px_-8px_rgba(0,0,0,0.4)] hover:border-blue-400 dark:hover:border-indigo-500/50 hover:-translate-y-1 transition-all flex flex-col gap-4 relative">
               <div className="flex items-center justify-between">
                 <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-pink-500/10 text-pink-600 dark:text-pink-400">
                   <Lock size={24} strokeWidth={2} />
                 </div>
                 <span className="text-[11px] font-bold tracking-wider px-2.5 py-1 rounded-full bg-slate-500/10 text-slate-500 dark:text-slate-400">
-                  STRICT ISOLATION
+                  CROSS-PLATFORM PRIVACY
                 </span>
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-slate-900 dark:text-white m-0">
-                Google OAuth &amp; Privacy
+                Native Windows App &amp; Security
               </h3>
               <p className="text-slate-600 dark:text-slate-400 text-[15px] leading-relaxed m-0">
-                Sign in securely using Google OAuth or custom email. Multi-tenant database queries strictly isolate data by user ID so you never see another user&apos;s records.
+                Run natively on Windows with offline SQLite or access anywhere via the web app. Google OAuth, session persistence, and strict tenant isolation protect your privacy everywhere.
               </p>
             </div>
 
@@ -392,8 +391,74 @@ export const LandingPage: React.FC = () => {
                 You Own Your Storage
               </h4>
               <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed m-0">
-                Files stay in your Google Drive and database records can be exported to CSV or SQLite whenever you want.
+                Files stay in your Google Drive or local PC folders and database records can be exported to CSV or SQLite whenever you want.
               </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Windows Desktop App Showcase */}
+        <section id="desktop" className="pb-24">
+          <div className="bg-white/95 dark:bg-slate-900/90 border border-slate-200 dark:border-white/10 rounded-3xl p-8 sm:p-12 backdrop-blur-md shadow-[0_12px_36px_rgba(0,0,0,0.06)] dark:shadow-[0_12px_36px_rgba(0,0,0,0.4)]">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+              <div className="max-w-[560px]">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider mb-3">
+                  <Monitor size={14} />
+                  <span>Windows 10 &amp; 11 Native App</span>
+                </div>
+                <h2 className="font-['Outfit',sans-serif] text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mb-3">
+                  Prefer a Dedicated Desktop App?
+                </h2>
+                <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed mb-6">
+                  Job Tracker runs as a lightweight Windows application powered by Tauri v2 with embedded local SQLite. You can choose any folder on secondary drives (D:\, E:\) for complete storage safety, plus mirror your documents to Google Drive in 1 click.
+                </p>
+                <div className="flex flex-wrap items-center gap-4">
+                  <a
+                    href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe"
+                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm px-6 py-3 rounded-xl shadow-[0_4px_14px_rgba(37,99,235,0.35)] hover:-translate-y-0.5 transition-all no-underline"
+                  >
+                    <Download size={16} />
+                    <span>Download Installer (.exe)</span>
+                  </a>
+                  <a
+                    href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe"
+                    className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold text-sm px-5 py-3 rounded-xl border border-slate-200 dark:border-white/10 hover:-translate-y-0.5 transition-all no-underline"
+                  >
+                    <Download size={16} />
+                    <span>Portable App (Zero Install)</span>
+                  </a>
+                  <a
+                    href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip"
+                    className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:underline"
+                  >
+                    Download Full ZIP Bundle (.zip)
+                  </a>
+                </div>
+              </div>
+
+              <div className="w-full lg:w-auto flex flex-col gap-3 min-w-[280px]">
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900 dark:text-white block">Offline SQLite Engine</span>
+                    <span className="text-slate-500 dark:text-slate-400">Zero cloud dependencies required</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900 dark:text-white block">Secondary Drive Folders</span>
+                    <span className="text-slate-500 dark:text-slate-400">Save resumes safely to D:\ or E:\</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-900 dark:text-white block">1-Click Drive Mirroring</span>
+                    <span className="text-slate-500 dark:text-slate-400">Two-way sync anytime you choose</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -505,22 +570,22 @@ export const LandingPage: React.FC = () => {
               <ul className="list-none p-0 m-0 flex flex-col gap-2.5">
                 <li>
                   <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
-                    4-Stage Kanban Pipeline
+                    5-Stage Kanban Pipeline
                   </a>
                 </li>
                 <li>
                   <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
-                    Personal Google Drive Sync
+                    Dual Storage &amp; 1-Click Sync
+                  </a>
+                </li>
+                <li>
+                  <a href="#desktop" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
+                    Windows Desktop Edition (.exe)
                   </a>
                 </li>
                 <li>
                   <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
-                    Daily Learning Streak
-                  </a>
-                </li>
-                <li>
-                  <a href="#features" className="text-slate-400 hover:text-indigo-400 transition-colors no-underline">
-                    Category Track Filters
+                    Daily Learnings &amp; Streak
                   </a>
                 </li>
               </ul>

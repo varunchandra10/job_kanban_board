@@ -4,17 +4,23 @@ This guide covers features, options, and data management for the native Windows 
 
 ---
 
-## 1. Installation
+## 1. Installation & Editions
+
+Choose between the recommended installer or zero-install portable edition:
 
 <p align="left">
   <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
     <img src="https://img.shields.io/badge/🚀_DOWNLOAD_INSTALLER-Job--Tracker--Setup.exe-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="42" />
   </a>
+  &nbsp;
+  <a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe">
+    <img src="https://img.shields.io/badge/⚡_DOWNLOAD_PORTABLE-JobTracker.exe-2EA44F?style=for-the-badge&logo=windows&logoColor=white" alt="Download JobTracker.exe" height="42" />
+  </a>
 </p>
 
-1. Download **`Job-Tracker-Setup.exe`** from the button above (or from [`install_apps/Job-Tracker-Setup.exe`](../install_apps/Job-Tracker-Setup.exe)).
-2. Double-click `Job-Tracker-Setup.exe` to run the 1-click installer.
-3. Open **Job Tracker** anytime from your Desktop or Start Menu.
+- **Installer (`Job-Tracker-Setup.exe`)**: 1-click installer that sets up Desktop and Start Menu shortcuts, protocol associations, and clean uninstaller support.
+- **Portable App (`JobTracker.exe`)**: Standalone executable. Run directly from any folder or USB drive with zero installation.
+- **ZIP Bundle (`Job-Tracker-Windows.zip`)**: Contains both executable options, uninstaller, and documentation.
 
 ---
 
@@ -25,21 +31,30 @@ The desktop app runs in **100% Offline / Local Privacy Mode**:
 ```plaintext
 User Data Directory: %APPDATA%\JobTracker\
 ├── tracker.db          # SQLite database storing your job records & learning logs
-├── documents\          # Local storage for your uploaded resumes & cover letters
+├── documents\          # Default documents directory for resumes & cover letters
 └── backups\            # Automatic local snapshots
 ```
 
 - **Default Storage Engine**: On the desktop app, storage defaults to **`LOCAL_STORAGE`** (saved directly to your local PC hard drive).
+- **User-Defined Storage Path (Secondary Drives)**:
+  - By default, documents are stored in `%APPDATA%\JobTracker\documents\`.
+  - To protect your system `C:` drive from clutter or reinstall risks, you can **customize the documents storage location to any drive or folder** (e.g. `D:\JobTracker\Documents` or `E:\CareerFiles`).
+  - Open any application modal, scroll to **Documents**, and click **"Change / Browse"** to set your preferred storage directory.
 - **Zero Cloud Requirement**: You don't need Google Drive or external database servers to use the desktop version. All job data, notes, and uploaded files are saved locally on your computer.
-- **Data Portability**: You can easily back up your data anytime by copying the `%APPDATA%\JobTracker` folder or using the **"Download DB as ZIP"** button in your profile.
+- **Data Portability**: You can easily back up your data anytime by copying your documents folder or using the **"Download DB as ZIP"** button in your profile.
 
 ---
 
-## 3. Real-Time Cloud Sync (Optional)
+## 3. Real-Time Cloud Sync & 1-Click Mirroring
 
 If you log in with your email account (via email/password or Google OAuth), the desktop app automatically connects to the cloud backend:
 - Any job application or study note added on the web or your mobile phone synchronizes to your desktop app in real time.
 - You can switch between **`LOCAL_STORAGE`** and **`G_DRIVE`** anytime via the toggle in your Profile card (protected by a confirmation modal).
+
+### 🔄 1-Click Two-Way Document Mirroring & Sync:
+- **Mirror Local to Drive**: Upload all your locally stored resumes and cover letters to your Google Drive folder in a single click.
+- **Mirror Drive to Local**: Download all documents from Google Drive to your local documents folder for offline viewing.
+- **Accessing Mirror & Sync**: Open your Profile or click the Drive icon to access the **Mirror & Sync** tab, or check *"Sync existing documents"* whenever you switch storage engines.
 
 ---
 

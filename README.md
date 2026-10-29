@@ -15,34 +15,41 @@ A high-performance, privacy-focused **Job Application Tracker & Career Managemen
 
 ## 📥 Get Job Tracker for Windows
 
-<div align="center">
+Choose the edition that best fits your workflow:
 
-<a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip">
-  <img src="https://img.shields.io/badge/📦_DOWNLOAD_JOB_TRACKER_FOR_WINDOWS-ZIP_PACKAGE_(APP_+_UNINSTALLER)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job Tracker Windows ZIP" height="52" />
+<br/>
+
+<a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe">
+  <img src="https://img.shields.io/badge/🚀_DOWNLOAD_INSTALLER-Job--Tracker--Setup.exe_(RECOMMENDED)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download Job-Tracker-Setup.exe" height="48" />
+</a>
+&nbsp;&nbsp;
+<a href="https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe">
+  <img src="https://img.shields.io/badge/⚡_DOWNLOAD_PORTABLE-JobTracker.exe_(ZERO_INSTALL)-2EA44F?style=for-the-badge&logo=windows&logoColor=white" alt="Download JobTracker.exe Portable" height="48" />
 </a>
 
 <br/><br/>
 
-[![Download Windows ZIP](https://img.shields.io/badge/Windows_Package-Job--Tracker--Windows.zip-0078D4?style=flat-square&logo=archive&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip)
-[![GitHub Releases](https://img.shields.io/badge/Releases-Latest_Build-8A2BE2?style=flat-square&logo=github&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/releases)
+[![Download Full ZIP Bundle](https://img.shields.io/badge/Full_ZIP_Bundle-Job--Tracker--Windows.zip-8A2BE2?style=flat-square&logo=archive&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip)
+[![GitHub Releases](https://img.shields.io/badge/Releases-Latest_Builds-0078D4?style=flat-square&logo=github&logoColor=white)](https://github.com/varunchandra10/job_kanban_board/releases)
 [![Installation Guide](https://img.shields.io/badge/Docs-Installation_Guide-2EA44F?style=flat-square&logo=gitbook&logoColor=white)](docs/INSTALLATION.md)
+[![Desktop Guide](https://img.shields.io/badge/Docs-Desktop_Guide-FFA500?style=flat-square&logo=gitbook&logoColor=white)](docs/DESKTOP_GUIDE.md)
 
 </div>
 
 ---
 
-## ⚡ Quick Start: How to Run on Windows (30 Seconds)
+## ⚡ Quick Start: Choose Your Windows Setup
 
-1. **Download the Package**:
-   Download [**`Job-Tracker-Windows.zip`**](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip) from the button above (saved in [`install_apps/`](install_apps/)).
-2. **Extract**:
-   Right-click `Job-Tracker-Windows.zip` and choose **Extract All**.
-3. **Launch**:
-   Double-click **`JobTracker.exe`** to start using the app immediately with local system storage and offline SQLite!
-4. **Clean Uninstall Anytime**:
-   Inside the ZIP, double-click **`Uninstall-Job-Tracker.bat`** to completely clean up any shortcuts, registry entries, or cached files in 1 click.
+### Option A: 1-Click Installer (Recommended)
+1. Download [**`Job-Tracker-Setup.exe`**](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Setup.exe).
+2. Double-click `Job-Tracker-Setup.exe` to install.
+3. Automatically sets up Desktop and Start Menu shortcuts, protocol handlers, and launches instantly.
 
-> **Note on Windows SmartScreen**: If Windows displays *"Windows protected your PC"*, click **More info** &rarr; **Run anyway**. *(Standard for newly built independent software without an enterprise code-signing certificate).*
+### Option B: Standalone Portable App
+1. Download [**`JobTracker.exe`**](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/JobTracker.exe) or download [**`Job-Tracker-Windows.zip`**](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip).
+2. Extract and run `JobTracker.exe` directly from any folder or USB drive — zero installation required!
+
+> **Note on Windows SmartScreen**: If Windows displays *"Windows protected your PC"*, click **More info** &rarr; **Run anyway**. *(Standard notification for newly built independent software without an enterprise code-signing certificate).*
 
 ---
 
@@ -61,10 +68,23 @@ Job Tracker includes an intelligent dual-engine document manager with an interac
 | :--- | :--- | :--- |
 | **Best For** | Windows Desktop App & Offline Use | Multi-Device Web & Cloud Backup |
 | **Default Setting** | **Default for Desktop `.exe`** | **Default for Web Browsers** |
+| **Custom Path Support** | **Yes** (Save to any drive: `D:\`, `E:\`, custom folder) | Managed securely in user's Google Drive |
 | **Google Account Required?** | **No** (0 credentials needed) | **Yes** (1-Click OAuth to your Drive) |
-| **Where Files Are Stored** | Local Database & PC Hard Drive | Your Personal 15 GB Google Drive |
+| **Where Files Are Stored** | Local Database & User-Defined Hard Drive Path | Your Personal 15 GB Google Drive |
 | **Mobile Flow (iOS / Android)** | Saves to phone's *Files / Downloads* | Opens in Google Drive app / web |
 | **Confirmation Guard** | Interactive modal confirms switch | Interactive modal confirms switch |
+
+### 🛡️ User-Defined Storage Directory (Safe Across Drives)
+By default, documents save locally to protect your privacy. To protect your Windows `C:` drive from clutter or system reinstall risks, you can **customize your storage directory to any drive or folder** (e.g., `D:\MyResumes` or `E:\JobTracker`):
+- Click **"Change / Browse"** in the Documents section of any job application.
+- Select or enter your preferred folder path on any drive.
+- All subsequent resumes and cover letters are organized directly in your chosen location!
+
+### 🔄 1-Click Two-Way Document Mirroring & Sync
+Switching between Local Storage and Google Drive? Job Tracker keeps your files completely in sync:
+- **Mirror Local &rarr; Google Drive**: Upload all your locally stored resumes and cover letters to your Google Drive folder in 1 click.
+- **Mirror Google Drive &rarr; Local**: Download all your cloud-stored documents to your local PC hard drive for offline access.
+- **Automatic Sync Prompt**: When switching storage engines via your Profile, simply check *"Sync existing documents"* to migrate your files automatically!
 
 ---
 
