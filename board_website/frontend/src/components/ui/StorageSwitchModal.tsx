@@ -24,6 +24,7 @@ export const StorageSwitchModal: React.FC = () => {
     confirmStorageModeChange,
     cancelStorageModeChange,
     showToast,
+    applications,
   } = useApp();
 
   const isDesktop = isDesktopApp();
@@ -32,6 +33,7 @@ export const StorageSwitchModal: React.FC = () => {
   const [customPathInput, setCustomPathInput] = useState<string>('');
   const [isEditingPath, setIsEditingPath] = useState<boolean>(false);
   const [isSavingPath, setIsSavingPath] = useState<boolean>(false);
+  const [shouldSyncAfterSwitch, setShouldSyncAfterSwitch] = useState<boolean>(true);
 
   useEffect(() => {
     if (!isStorageConfirmModalOpen) return;
@@ -119,6 +121,15 @@ export const StorageSwitchModal: React.FC = () => {
       }
     }
     confirmStorageModeChange();
+
+    if (shouldSyncAfterSwitch) {
+      showToast('Started background document sync between Local & Drive...');
+      api.syncDocuments(applications).then((res) => {
+        showToast(`Sync complete! ${res.uploadedToDrive} uploaded to Drive, ${res.downloadedToLocal} saved locally.`);
+      }).catch((e) => {
+        console.warn('Sync notice:', e);
+      });
+    }
   };
 
   return (
@@ -333,10 +344,24 @@ export const StorageSwitchModal: React.FC = () => {
             )}
           </div>
 
+          <label className="flex items-center gap-3 p-3.5 rounded-2xl bg-blue-50/80 dark:bg-blue-500/10 border border-blue-200/80 dark:border-blue-500/20 text-xs font-semibold text-blue-900 dark:text-blue-200 cursor-pointer transition hover:bg-blue-100/80 dark:hover:bg-blue-500/15">
+            <input
+              type="checkbox"
+              checked={shouldSyncAfterSwitch}
+              onChange={(e) => setShouldSyncAfterSwitch(e.target.checked)}
+              className="rounded text-blue-600 focus:ring-blue-500 h-4 w-4 shrink-0"
+            />
+            <span>
+              {isSwitchingToLocal
+                ? 'Also download Google Drive documents to local folder for offline access'
+                : 'Also mirror existing local documents to Google Drive'}
+            </span>
+          </label>
+
           <div className="flex items-start gap-2 text-[11.5px] text-slate-500 dark:text-slate-400 bg-amber-500/10 border border-amber-500/20 rounded-xl p-3">
             <AlertCircle size={15} className="text-amber-500 shrink-0 mt-0.5" />
             <span>
-              Previously attached documents will remain accessible where they were uploaded. This toggle only controls future uploads.
+              Previously attached documents will remain accessible where they were uploaded. This toggle sets your default for new uploads.
             </span>
           </div>
         </div>

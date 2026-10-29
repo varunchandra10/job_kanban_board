@@ -45,7 +45,9 @@ jobs:
           workspaces: desktop_app/src-tauri
 
       - name: Install Node dependencies
-        run: npm ci || npm install
+        run: |
+          npm ci || npm install
+          npm --prefix desktop_app install
 
       - name: Build Web Assets
         run: npm run build:web

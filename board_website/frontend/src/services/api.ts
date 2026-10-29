@@ -514,7 +514,18 @@ export const api = {
     customDir: string | null;
     canOpenFolder: boolean;
   }> {
-    const cached = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : null;
+    let cached = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : null;
+
+    if (!cached && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+      try {
+        const tauriCustom = await (window as any).__TAURI__.core.invoke('get_custom_storage_dir');
+        if (tauriCustom) {
+          cached = tauriCustom;
+          localStorage.setItem('job_tracker_custom_local_dir', tauriCustom);
+        }
+      } catch (_) {}
+    }
+
     try {
       const res = await fetch(`${API_BASE}/storage/local-info`, {
         headers: getAuthHeaders(),
@@ -596,9 +607,9 @@ export const api = {
 
     if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
       try {
-        await (window as any).__TAURI__.core.invoke('ensure_storage_dirs', { folderPath: trimmed });
+        await (window as any).__TAURI__.core.invoke('set_custom_storage_dir', { path: trimmed });
       } catch (err) {
-        console.warn('Tauri ensure_storage_dirs note:', err);
+        console.warn('Tauri set_custom_storage_dir note:', err);
       }
     }
 
@@ -616,6 +627,105 @@ export const api = {
     } catch (_) {}
 
     return { ok: 1, folderPath: trimmed, message: 'Local storage folder updated successfully' };
+  },
+
+  async syncDocuments(
+    applications: Array<{ id: number; company: string; resume_path?: string | null; cover_letter_path?: string | null }>,
+    onProgress?: (progress: { current: number; total: number; message: string }) => void
+  ): Promise<{ uploadedToDrive: number; downloadedToLocal: number; errors: string[] }> {
+    const isDriveLink = (p?: string | null) => !!p && (/drive\.google\.com|docs\.google\.com/i.test(p));
+    const isLocalPath = (p?: string | null) => !!p && !isDriveLink(p) && p.trim().toUpperCase() !== 'NA';
+
+    const errors: string[] = [];
+    let uploadedToDrive = 0;
+    let downloadedToLocal = 0;
+
+    const toUploadToDrive: Array<{ appId: number; docType: 'resume' | 'cover_letter'; path: string; company: string }> = [];
+    const toDownloadToLocal: Array<{ appId: number; docType: 'resume' | 'cover_letter'; path: string; company: string }> = [];
+
+    for (const app of applications) {
+      if (isLocalPath(app.resume_path)) {
+        toUploadToDrive.push({ appId: app.id, docType: 'resume', path: app.resume_path!, company: app.company });
+      } else if (isDriveLink(app.resume_path) && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+        toDownloadToLocal.push({ appId: app.id, docType: 'resume', path: app.resume_path!, company: app.company });
+      }
+
+      if (isLocalPath(app.cover_letter_path)) {
+        toUploadToDrive.push({ appId: app.id, docType: 'cover_letter', path: app.cover_letter_path!, company: app.company });
+      } else if (isDriveLink(app.cover_letter_path) && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+        toDownloadToLocal.push({ appId: app.id, docType: 'cover_letter', path: app.cover_letter_path!, company: app.company });
+      }
+    }
+
+    const totalTasks = toUploadToDrive.length + toDownloadToLocal.length;
+    let completed = 0;
+
+    // 1. Upload local files to Google Drive
+    for (const task of toUploadToDrive) {
+      completed++;
+      onProgress?.({
+        current: completed,
+        total: totalTasks,
+        message: `Uploading ${task.company} ${task.docType} to Google Drive...`,
+      });
+
+      try {
+        let file: File | null = null;
+        if (typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+          const res = await (window as any).__TAURI__.core.invoke('read_local_document', { path: task.path });
+          if (res && res.bytes) {
+            const blob = new Blob([new Uint8Array(res.bytes)], { type: 'application/pdf' });
+            file = new File([blob], res.filename || 'document.pdf', { type: 'application/pdf' });
+          }
+        }
+
+        if (file) {
+          const driveRes = await this.uploadDocument(file, task.docType, task.appId, 'g_drive');
+          if (driveRes && (driveRes.fullPath || driveRes.path)) {
+            const updatedPath = driveRes.fullPath || driveRes.path;
+            await this.updateApplication(task.appId, {
+              [task.docType === 'resume' ? 'resume_path' : 'cover_letter_path']: updatedPath,
+            });
+            uploadedToDrive++;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[Sync] Failed to mirror ${task.path} to Drive:`, err);
+        errors.push(`${task.company}: ${err.message || 'Upload failed'}`);
+      }
+    }
+
+    // 2. Download Drive files to Local Storage (if in Tauri)
+    const customLocalDir = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_custom_local_dir') : null;
+    for (const task of toDownloadToLocal) {
+      completed++;
+      onProgress?.({
+        current: completed,
+        total: totalTasks,
+        message: `Downloading ${task.company} ${task.docType} to Local PC...`,
+      });
+
+      try {
+        const blob = await this.fetchDocumentBlob(task.path);
+        const buffer = await blob.arrayBuffer();
+        const bytes = Array.from(new Uint8Array(buffer));
+        const rawName = `${task.company.replace(/[^a-zA-Z0-9_-]/g, '_')}_${task.docType}.pdf`;
+        const tauriRes = await (window as any).__TAURI__.core.invoke('save_uploaded_document', {
+          folderPath: customLocalDir || null,
+          docType: task.docType,
+          fileName: rawName,
+          bytes,
+        });
+        if (tauriRes && tauriRes.path) {
+          downloadedToLocal++;
+        }
+      } catch (err: any) {
+        console.warn(`[Sync] Failed to download ${task.path} locally:`, err);
+        errors.push(`${task.company}: ${err.message || 'Download failed'}`);
+      }
+    }
+
+    return { uploadedToDrive, downloadedToLocal, errors };
   },
 };
 

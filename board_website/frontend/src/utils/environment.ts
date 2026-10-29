@@ -18,6 +18,6 @@ export const getInitialStorageMode = (): StorageMode => {
   if (saved === 'local_storage' || saved === 'g_drive') {
     return saved;
   }
-  // Default to Google Drive for all environments so users can easily sync and access files
-  return 'g_drive';
+  // Desktop app defaults to local_storage; Web app defaults to g_drive
+  return isDesktopApp() ? 'local_storage' : 'g_drive';
 };

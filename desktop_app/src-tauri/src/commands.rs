@@ -83,6 +83,56 @@ fn get_default_documents_dir(app: &AppHandle) -> Result<PathBuf, String> {
         .map_err(|e| format!("Failed to resolve app data dir: {}", e))
 }
 
+fn get_storage_config_path(app: &AppHandle) -> Result<PathBuf, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let appdata = std::env::var("APPDATA").unwrap_or_default();
+        if !appdata.is_empty() {
+            return Ok(PathBuf::from(appdata).join("JobTracker").join("storage_config.json"));
+        }
+    }
+    app.path()
+        .app_data_dir()
+        .map(|p| p.join("storage_config.json"))
+        .map_err(|e| format!("Failed to resolve storage config dir: {}", e))
+}
+
+/// Retrieves the user-defined custom documents storage directory from persisted config.
+#[tauri::command]
+pub async fn get_custom_storage_dir(app: AppHandle) -> Result<Option<String>, String> {
+    if let Ok(cfg_file) = get_storage_config_path(&app) {
+        if cfg_file.exists() {
+            if let Ok(content) = fs::read_to_string(&cfg_file) {
+                let val: serde_json::Value = serde_json::from_str(&content).unwrap_or_default();
+                if let Some(dir) = val.get("custom_dir").and_then(|v| v.as_str()) {
+                    let trimmed = dir.trim();
+                    if !trimmed.is_empty() {
+                        return Ok(Some(trimmed.to_string()));
+                    }
+                }
+            }
+        }
+    }
+    Ok(None)
+}
+
+/// Persists the user-defined custom documents storage directory (e.g. on D:\ drive).
+#[tauri::command]
+pub async fn set_custom_storage_dir(app: AppHandle, path: String) -> Result<String, String> {
+    let trimmed = path.trim().to_string();
+    let cfg_file = get_storage_config_path(&app)?;
+    if let Some(parent) = cfg_file.parent() {
+        let _ = fs::create_dir_all(parent);
+    }
+    let data = serde_json::json!({ "custom_dir": trimmed });
+    fs::write(&cfg_file, serde_json::to_string_pretty(&data).unwrap_or_default())
+        .map_err(|e| format!("Failed to save storage config: {}", e))?;
+
+    // Also ensure resumes and cover_letter subfolders exist in user's directory
+    ensure_storage_dirs(app, Some(trimmed.clone())).await?;
+    Ok(trimmed)
+}
+
 #[derive(serde::Serialize)]
 pub struct SavedDocumentResult {
     pub success: bool,
@@ -104,9 +154,13 @@ pub async fn save_uploaded_document(
         let trimmed = fp.trim();
         if !trimmed.is_empty() {
             PathBuf::from(trimmed)
+        } else if let Ok(Some(saved_custom)) = get_custom_storage_dir(app.clone()).await {
+            PathBuf::from(saved_custom)
         } else {
             get_default_documents_dir(&app)?
         }
+    } else if let Ok(Some(saved_custom)) = get_custom_storage_dir(app.clone()).await {
+        PathBuf::from(saved_custom)
     } else {
         get_default_documents_dir(&app)?
     };
@@ -169,6 +223,67 @@ pub async fn save_uploaded_document(
         path: path_str,
         filename: sanitized_name,
         size: bytes.len(),
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct ReadFileResult {
+    pub success: bool,
+    pub filename: String,
+    pub bytes: Vec<u8>,
+    pub size: usize,
+}
+
+/// Reads a local document from disk to allow mirroring/uploading to Google Drive.
+#[tauri::command]
+pub async fn read_local_document(app: AppHandle, path: String) -> Result<ReadFileResult, String> {
+    let mut target = std::path::PathBuf::from(&path);
+    if !target.exists() {
+        if let Ok(Some(custom_dir_str)) = get_custom_storage_dir(app.clone()).await {
+            let custom_dir = std::path::PathBuf::from(custom_dir_str);
+            let direct = custom_dir.join(&path);
+            let in_resumes = custom_dir.join("resumes").join(&path);
+            let in_cover = custom_dir.join("cover_letter").join(&path);
+            if direct.exists() {
+                target = direct;
+            } else if in_resumes.exists() {
+                target = in_resumes;
+            } else if in_cover.exists() {
+                target = in_cover;
+            }
+        }
+    }
+    if !target.exists() {
+        if let Ok(default_dir) = get_default_documents_dir(&app) {
+            let direct = default_dir.join(&path);
+            let in_resumes = default_dir.join("resumes").join(&path);
+            let in_cover = default_dir.join("cover_letter").join(&path);
+            if direct.exists() {
+                target = direct;
+            } else if in_resumes.exists() {
+                target = in_resumes;
+            } else if in_cover.exists() {
+                target = in_cover;
+            }
+        }
+    }
+
+    if !target.exists() {
+        return Err(format!("File does not exist: {}", path));
+    }
+
+    let bytes = fs::read(&target).map_err(|e| format!("Failed to read file: {}", e))?;
+    let filename = target
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "document.pdf".to_string());
+    let size = bytes.len();
+
+    Ok(ReadFileResult {
+        success: true,
+        filename,
+        bytes,
+        size,
     })
 }
 
@@ -329,6 +444,24 @@ pub async fn open_file(app: AppHandle, path: String) -> Result<(), String> {
 
     let mut target = std::path::PathBuf::from(&path);
     if !target.exists() {
+        // 1. Check user's custom storage folder first (e.g. on D:\ drive)
+        if let Ok(Some(custom_dir_str)) = get_custom_storage_dir(app.clone()).await {
+            let custom_dir = std::path::PathBuf::from(custom_dir_str);
+            let direct = custom_dir.join(&path);
+            let in_resumes = custom_dir.join("resumes").join(&path);
+            let in_cover = custom_dir.join("cover_letter").join(&path);
+            if direct.exists() {
+                target = direct;
+            } else if in_resumes.exists() {
+                target = in_resumes;
+            } else if in_cover.exists() {
+                target = in_cover;
+            }
+        }
+    }
+
+    if !target.exists() {
+        // 2. Fallback to default documents dir
         if let Ok(default_dir) = get_default_documents_dir(&app) {
             let direct = default_dir.join(&path);
             let in_resumes = default_dir.join("resumes").join(&path);

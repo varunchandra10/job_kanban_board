@@ -2,6 +2,7 @@
   "name": "job-tracker-desktop",
   "version": "0.2.0",
   "scripts": {
+    "tauri": "tauri",
     "start": "node scripts/desktop-runner.js",
     "dev": "node scripts/desktop-runner.js",
     "build": "node scripts/desktop-build.js"

@@ -31,13 +31,63 @@ export const DriveModal: React.FC = () => {
     showToast,
     storageMode,
     requestStorageModeChange,
+    applications,
   } = useApp();
 
   const isDesktop = isDesktopApp();
-  const [activeTab, setActiveTab] = useState<'g_drive' | 'local_storage'>('g_drive');
+  const [activeTab, setActiveTab] = useState<'g_drive' | 'local_storage' | 'sync'>('local_storage');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [hasOAuth, setHasOAuth] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgressMsg, setSyncProgressMsg] = useState('');
+  const [syncResult, setSyncResult] = useState<{ uploaded: number; downloaded: number } | null>(null);
+
+  const isDriveLink = (p?: string | null) => !!p && (/drive\.google\.com|docs\.google\.com/i.test(p));
+  const isLocalPath = (p?: string | null) => !!p && !isDriveLink(p) && p.trim().toUpperCase() !== 'NA';
+
+  const localDocsCount = applications.reduce((acc, app) => {
+    let count = 0;
+    if (isLocalPath(app.resume_path)) count++;
+    if (isLocalPath(app.cover_letter_path)) count++;
+    return acc + count;
+  }, 0);
+
+  const driveDocsCount = applications.reduce((acc, app) => {
+    let count = 0;
+    if (isDriveLink(app.resume_path)) count++;
+    if (isDriveLink(app.cover_letter_path)) count++;
+    return acc + count;
+  }, 0);
+
+  const handleSyncNow = async () => {
+    if (!hasOAuth && !localStorage.getItem('google_drive_access_token')) {
+      showToast('Please authorize Google Drive first to mirror files');
+      setActiveTab('g_drive');
+      return;
+    }
+
+    setIsSyncing(true);
+    setSyncProgressMsg('Analyzing files for synchronization...');
+    setSyncResult(null);
+    try {
+      const res = await api.syncDocuments(applications, (p) => {
+        setSyncProgressMsg(`${p.message} (${p.current}/${p.total})`);
+      });
+
+      setSyncResult({ uploaded: res.uploadedToDrive, downloaded: res.downloadedToLocal });
+      if (res.errors.length > 0) {
+        showToast(`Sync completed with ${res.errors.length} notice(s). ${res.uploadedToDrive} uploaded to Drive, ${res.downloadedToLocal} saved locally.`);
+      } else {
+        showToast(`Documents synced successfully! ${res.uploadedToDrive} uploaded to Drive, ${res.downloadedToLocal} saved locally.`);
+      }
+    } catch (err: any) {
+      showToast('Sync error: ' + (err.message || 'Unknown error'));
+    } finally {
+      setIsSyncing(false);
+      setSyncProgressMsg('');
+    }
+  };
 
   // Local storage management state
   const [localInfo, setLocalInfo] = useState<{
@@ -131,6 +181,10 @@ export const DriveModal: React.FC = () => {
         const selected = await (window as any).__TAURI__.core.invoke('select_folder');
         if (selected) {
           setCustomPathInput(selected);
+          await api.setLocalFolder(selected);
+          showToast('Custom storage folder set to: ' + selected);
+          setIsEditingCustomPath(false);
+          fetchLocalInfo();
         }
       } else if (typeof (window as any).showDirectoryPicker === 'function') {
         const dirHandle = await (window as any).showDirectoryPicker();
@@ -226,17 +280,17 @@ export const DriveModal: React.FC = () => {
           </div>
 
           {/* Mode Switch Tabs */}
-          <div className="mt-4 grid grid-cols-2 gap-2 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
+          <div className="mt-4 grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/10">
             <button
               type="button"
               onClick={() => setActiveTab('local_storage')}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'local_storage'
                   ? 'bg-white dark:bg-[#202024] text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/60 dark:border-white/10'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Database size={14} />
+              <Database size={13} />
               <span>Local Storage</span>
               {storageMode === 'local_storage' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
@@ -246,16 +300,34 @@ export const DriveModal: React.FC = () => {
             <button
               type="button"
               onClick={() => setActiveTab('g_drive')}
-              className={`flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeTab === 'g_drive'
                   ? 'bg-white dark:bg-[#202024] text-purple-600 dark:text-purple-400 shadow-sm border border-slate-200/60 dark:border-white/10'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Cloud size={14} />
+              <Cloud size={13} />
               <span>Google Drive</span>
               {storageMode === 'g_drive' && (
                 <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('sync')}
+              className={`flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === 'sync'
+                  ? 'bg-white dark:bg-[#202024] text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/60 dark:border-white/10'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <RotateCcw size={13} className={isSyncing ? 'animate-spin' : ''} />
+              <span>Mirror &amp; Sync</span>
+              {(localDocsCount > 0 || driveDocsCount > 0) && (
+                <span className="px-1.5 py-0.2 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 rounded-full text-[9px] font-bold">
+                  {localDocsCount + driveDocsCount}
+                </span>
               )}
             </button>
           </div>
@@ -377,15 +449,37 @@ export const DriveModal: React.FC = () => {
                 </div>
               </div>
 
+              {/* Quick Mirror & Sync Shortcut */}
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-500/10 dark:to-indigo-500/10 border border-blue-200/80 dark:border-blue-500/20 text-xs">
+                <div className="flex items-center gap-2.5 text-blue-900 dark:text-blue-200">
+                  <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-300">
+                    <RotateCcw size={14} />
+                  </div>
+                  <div>
+                    <strong className="block text-xs">Cloud Mirror &amp; Sync</strong>
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Mirror {localDocsCount} local file(s) to your Google Drive backup.
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('sync')}
+                  className="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition cursor-pointer shadow-xs shrink-0"
+                >
+                  Open Sync
+                </button>
+              </div>
+
               {/* Informative Intimation Box */}
               <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 text-xs text-slate-600 dark:text-slate-400">
                 <CheckCircle2 size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                 <span>
-                  <strong>Automatic Organization:</strong> Resumes and cover letters uploaded in Local Storage mode are automatically organized into <code>resumes/</code> and <code>cover_letter/</code> subfolders (created automatically if missing).
+                  <strong>Automatic Organization:</strong> Resumes and cover letters uploaded in Local Storage mode are automatically organized into <code>resumes/</code> and <code>cover_letter/</code> subfolders in your chosen directory.
                 </span>
               </div>
             </div>
-          ) : (
+          ) : activeTab === 'g_drive' ? (
             /* Google Drive Cloud Settings Tab */
             <div className="space-y-4">
               <div className={`rounded-2xl border p-5 transition-all ${
@@ -454,6 +548,107 @@ export const DriveModal: React.FC = () => {
                 <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
                 <span>
                   Your Google Drive tokens remain strictly in your browser. The app only creates and accesses files inside your dedicated Job Tracker folder.
+                </span>
+              </div>
+            </div>
+          ) : (
+            /* Mirror & Sync Tab */
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-blue-500/25 bg-blue-50/40 dark:bg-blue-500/5 p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white m-0 flex items-center gap-2">
+                      <Sparkles size={16} className="text-blue-500" />
+                      Two-Way Document Synchronization
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 m-0">
+                      Keep your resumes &amp; cover letters backed up in Google Drive while retaining offline access on your PC.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Visual Sync Bridge */}
+                <div className="grid grid-cols-2 gap-3 p-3.5 rounded-2xl bg-white dark:bg-black/40 border border-blue-100 dark:border-blue-500/20">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-700 dark:text-indigo-400">
+                      <Database size={13} />
+                      <span>Local Documents</span>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white">
+                      {localDocsCount} <span className="text-xs font-normal text-slate-500">files</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate" title={localInfo?.activeDir}>
+                      {localInfo?.activeDir || 'On this PC'}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 border-l border-slate-200 dark:border-white/10 pl-3">
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-400">
+                      <Cloud size={13} />
+                      <span>Google Drive</span>
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 dark:text-white">
+                      {driveDocsCount} <span className="text-xs font-normal text-slate-500">files</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      {hasOAuth ? 'Connected to Drive' : 'Drive not authorized'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Indicator */}
+                {isSyncing && (
+                  <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/30 space-y-2 animate-in fade-in">
+                    <div className="flex items-center justify-between text-xs text-blue-700 dark:text-blue-300 font-semibold">
+                      <span className="flex items-center gap-1.5">
+                        <LoaderCircle size={13} className="animate-spin" />
+                        {syncProgressMsg || 'Synchronizing documents...'}
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200/60 dark:bg-blue-950 rounded-full h-1.5 overflow-hidden">
+                      <div className="bg-blue-600 h-1.5 rounded-full animate-pulse w-full" />
+                    </div>
+                  </div>
+                )}
+
+                {/* Result Summary */}
+                {syncResult && !isSyncing && (
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-xs text-emerald-800 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <span>
+                      Sync finished: <strong>{syncResult.uploaded}</strong> uploaded to Google Drive, <strong>{syncResult.downloaded}</strong> downloaded locally.
+                    </span>
+                  </div>
+                )}
+
+                {/* Action Button */}
+                <div className="pt-1 flex items-center justify-between gap-3">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {!hasOAuth
+                      ? '⚠️ Connect Google Drive first to start mirroring.'
+                      : 'Files will be mirrored across your PC and personal Drive.'}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSyncNow}
+                    disabled={isSyncing}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-blue-500/25 transition cursor-pointer disabled:opacity-50"
+                  >
+                    {isSyncing ? (
+                      <LoaderCircle size={14} className="animate-spin" />
+                    ) : (
+                      <RotateCcw size={14} />
+                    )}
+                    <span>{isSyncing ? 'Syncing...' : 'Sync Documents Now'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Informative Note */}
+              <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 text-xs text-slate-600 dark:text-slate-400">
+                <ShieldCheck size={16} className="text-emerald-500 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Full Offline &amp; Cloud Freedom:</strong> Mirroring ensures your local documents folder and Google Drive always match, protecting you against hard drive failure or accidental file loss.
                 </span>
               </div>
             </div>

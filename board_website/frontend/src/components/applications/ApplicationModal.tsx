@@ -26,6 +26,7 @@ import {
   Loader2,
   Database,
   FolderOpen,
+  RotateCcw,
 } from 'lucide-react';
 
 const getDisplayFileName = (pathStr: string, fallback: string = 'Document') => {
@@ -89,12 +90,44 @@ export const ApplicationModal: React.FC = () => {
   const [coverLetterPath, setCoverLetterPath] = useState('');
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [localDocumentsDir, setLocalDocumentsDir] = useState<string>(() => {
+    return typeof window !== 'undefined' ? (localStorage.getItem('job_tracker_custom_local_dir') || '') : '';
+  });
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
 
   const prevOpenRef = useRef(false);
   const prevEditingAppIdRef = useRef<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (isAddAppOpen) {
+      api.getLocalStorageInfo().then((info) => {
+        if (info.customDir) {
+          setLocalDocumentsDir(info.customDir);
+        } else if (info.activeDir && info.activeDir !== 'AppData\\Roaming\\JobTracker\\documents') {
+          setLocalDocumentsDir(info.activeDir);
+        }
+      }).catch(() => {});
+    }
+  }, [isAddAppOpen]);
+
+  const handlePickFolder = async () => {
+    try {
+      if ((window as any).__TAURI__?.core?.invoke) {
+        const picked = await (window as any).__TAURI__.core.invoke('select_folder');
+        if (picked) {
+          await api.setLocalFolder(picked);
+          setLocalDocumentsDir(picked);
+          showToast('Storage folder set to: ' + picked);
+        }
+      } else {
+        setIsDriveModalOpen(true);
+      }
+    } catch (err: any) {
+      showToast('Could not select folder: ' + (err.message || 'Unknown error'));
+    }
+  };
 
   // Prefill or reset ONLY when modal transitions from closed to open, or when editingApp changes
   useEffect(() => {
@@ -176,6 +209,33 @@ export const ApplicationModal: React.FC = () => {
           }
         }
       }
+
+      if (storageMode === 'local_storage' && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+        let currentCustom = localDocumentsDir || localStorage.getItem('job_tracker_custom_local_dir');
+        if (!currentCustom) {
+          try {
+            const savedTauri = await (window as any).__TAURI__.core.invoke('get_custom_storage_dir');
+            if (savedTauri) {
+              currentCustom = savedTauri;
+              localStorage.setItem('job_tracker_custom_local_dir', savedTauri);
+              setLocalDocumentsDir(savedTauri);
+            }
+          } catch (_) {}
+        }
+        if (!currentCustom) {
+          showToast('Please select a storage folder on your PC for your documents');
+          const picked = await (window as any).__TAURI__.core.invoke('select_folder');
+          if (!picked) {
+            showToast('Upload cancelled: No storage folder selected.');
+            setIsUploadingResume(false);
+            if (e.target) e.target.value = '';
+            return;
+          }
+          await api.setLocalFolder(picked);
+          setLocalDocumentsDir(picked);
+        }
+      }
+
       const res = await api.uploadDocument(file, 'resume', editingApp?.id, storageMode);
       setResumePath(res.fullPath || res.path || file.name);
       showToast(
@@ -213,6 +273,33 @@ export const ApplicationModal: React.FC = () => {
           }
         }
       }
+
+      if (storageMode === 'local_storage' && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
+        let currentCustom = localDocumentsDir || localStorage.getItem('job_tracker_custom_local_dir');
+        if (!currentCustom) {
+          try {
+            const savedTauri = await (window as any).__TAURI__.core.invoke('get_custom_storage_dir');
+            if (savedTauri) {
+              currentCustom = savedTauri;
+              localStorage.setItem('job_tracker_custom_local_dir', savedTauri);
+              setLocalDocumentsDir(savedTauri);
+            }
+          } catch (_) {}
+        }
+        if (!currentCustom) {
+          showToast('Please select a storage folder on your PC for your documents');
+          const picked = await (window as any).__TAURI__.core.invoke('select_folder');
+          if (!picked) {
+            showToast('Upload cancelled: No storage folder selected.');
+            setIsUploadingCover(false);
+            if (e.target) e.target.value = '';
+            return;
+          }
+          await api.setLocalFolder(picked);
+          setLocalDocumentsDir(picked);
+        }
+      }
+
       const res = await api.uploadDocument(file, 'cover_letter', editingApp?.id, storageMode);
       setCoverLetterPath(res.fullPath || res.path || file.name);
       showToast(
@@ -662,18 +749,48 @@ export const ApplicationModal: React.FC = () => {
               </div>
 
               {storageMode === 'local_storage' && (
-                <div className="mb-3 px-3 py-1.5 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 truncate">
-                    <Database size={12} className="shrink-0" />
-                    <span>Saving locally: documents are organized in your local documents folder</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setIsDriveModalOpen(true)}
-                    className="underline hover:text-indigo-950 dark:hover:text-white font-bold shrink-0 ml-2 cursor-pointer"
-                  >
-                    Change / Browse
-                  </button>
+                <div className="mb-3 px-3 py-2 rounded-xl bg-indigo-50/70 dark:bg-indigo-500/10 border border-indigo-200/60 dark:border-indigo-500/20 text-[11px] text-indigo-700 dark:text-indigo-300 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 truncate">
+                    <Database size={13} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+                    {localDocumentsDir ? (
+                      <span className="truncate">
+                        Storage folder: <strong className="font-mono text-indigo-950 dark:text-indigo-200">{localDocumentsDir}</strong>
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 dark:text-amber-300 font-medium">
+                        No custom folder selected yet. Choose where to save your documents:
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={handlePickFolder}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] transition cursor-pointer shadow-xs"
+                      title="Choose folder on your PC (e.g. D:\ drive)"
+                    >
+                      {localDocumentsDir ? 'Change Folder' : 'Select Folder...'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsDriveModalOpen(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition cursor-pointer shadow-xs"
+                      title="Sync & Mirror documents with Google Drive"
+                    >
+                      <RotateCcw size={11} />
+                      <span>Sync</span>
+                    </button>
+                    {localDocumentsDir && (
+                      <button
+                        type="button"
+                        onClick={() => api.openLocalFolder(localDocumentsDir)}
+                        className="p-1 text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-300 transition cursor-pointer"
+                        title="Open folder in File Explorer"
+                      >
+                        <FolderOpen size={14} />
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 
