@@ -86,6 +86,9 @@ interface AppContextType {
   showToast: (message: string, undoAction?: () => void) => void;
   setIsShutdownOpen: (open: boolean) => void;
   setIsDriveModalOpen: (open: boolean) => void;
+  driveModalTab: 'local_storage' | 'g_drive' | 'sync';
+  setDriveModalTab: (tab: 'local_storage' | 'g_drive' | 'sync') => void;
+  openDriveModal: (tab?: 'local_storage' | 'g_drive' | 'sync') => void;
   setGdriveStatus: React.Dispatch<React.SetStateAction<{ connected: boolean; folderId: string | null }>>;
   openAuthModal: () => void;
   closeAuthModal: () => void;
@@ -164,6 +167,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isShutdownOpen, setIsShutdownOpen] = useState<boolean>(false);
   const [isDriveModalOpen, setIsDriveModalOpen] = useState<boolean>(false);
+  const [driveModalTab, setDriveModalTab] = useState<'local_storage' | 'g_drive' | 'sync'>('local_storage');
+
+  const openDriveModal = (tab?: 'local_storage' | 'g_drive' | 'sync') => {
+    if (tab) setDriveModalTab(tab);
+    setIsDriveModalOpen(true);
+  };
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isFollowUpOpen, setIsFollowUpOpen] = useState<boolean>(false);
   const [followUpApp, setFollowUpApp] = useState<Application | null>(null);
@@ -1045,6 +1054,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         showToast,
         setIsShutdownOpen,
         setIsDriveModalOpen,
+        driveModalTab,
+        setDriveModalTab,
+        openDriveModal,
         setGdriveStatus,
         openAuthModal,
         closeAuthModal,

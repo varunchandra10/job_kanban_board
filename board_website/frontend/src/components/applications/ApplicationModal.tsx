@@ -61,6 +61,7 @@ export const ApplicationModal: React.FC = () => {
     versions,
     gdriveStatus,
     setIsDriveModalOpen,
+    openDriveModal,
     showToast,
     storageMode,
   } = useApp();
@@ -773,7 +774,7 @@ export const ApplicationModal: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => setIsDriveModalOpen(true)}
+                      onClick={() => openDriveModal('sync')}
                       className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-indigo-200 dark:border-indigo-500/30 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 font-bold text-[10px] hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition cursor-pointer shadow-xs"
                       title="Sync & Mirror documents with Google Drive"
                     >

@@ -12,6 +12,7 @@ import {
   LogIn,
   LogOut,
   ChevronDown,
+  RotateCcw,
 } from 'lucide-react';
 
 export const AppHeader: React.FC = () => {
@@ -27,6 +28,7 @@ export const AppHeader: React.FC = () => {
     learnings,
     isAuthenticated,
     openAuthModal,
+    openDriveModal,
     logout,
     openQuickList,
   } = useApp();
@@ -229,6 +231,20 @@ export const AppHeader: React.FC = () => {
           isProfileActive ? 'ml-auto' : 'ml-auto lg:ml-0'
         }`}
       >
+        {/* Quick Sync Button */}
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={() => openDriveModal('sync')}
+            className="inline-flex h-9 items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer text-xs font-semibold"
+            title="Mirror & Sync Documents (Local Storage <-> Google Drive)"
+            aria-label="Mirror & Sync Documents"
+          >
+            <RotateCcw size={14} className="text-blue-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">Sync</span>
+          </button>
+        )}
+
         {/* Profile Button */}
         <button
           type="button"

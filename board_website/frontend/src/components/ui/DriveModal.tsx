@@ -26,6 +26,8 @@ export const DriveModal: React.FC = () => {
   const {
     isDriveModalOpen,
     setIsDriveModalOpen,
+    driveModalTab,
+    setDriveModalTab,
     gdriveStatus,
     setGdriveStatus,
     showToast,
@@ -116,10 +118,10 @@ export const DriveModal: React.FC = () => {
     if (isDriveModalOpen) {
       setErrorMsg('');
       setHasOAuth(!!localStorage.getItem('google_drive_access_token'));
-      setActiveTab(storageMode === 'local_storage' ? 'local_storage' : 'g_drive');
+      setActiveTab(driveModalTab || (storageMode === 'local_storage' ? 'local_storage' : 'g_drive'));
       fetchLocalInfo();
     }
-  }, [isDriveModalOpen, storageMode]);
+  }, [isDriveModalOpen, storageMode, driveModalTab]);
 
   useEffect(() => {
     if (!isDriveModalOpen) return;
