@@ -22,7 +22,6 @@ import {
   Calendar,
   Lock,
   LogIn,
-  RotateCcw,
   Mail,
   HardDrive,
 } from 'lucide-react';
@@ -37,7 +36,6 @@ export const CareerProfile: React.FC = () => {
     applications,
     learnings,
     setIsDriveModalOpen,
-    openDriveModal,
     gdriveStatus,
     showToast,
     isAuthenticated,
@@ -564,17 +562,6 @@ export const CareerProfile: React.FC = () => {
                 />
               </button>
             )}
-
-            {/* 1-Click Document Mirror & Sync Button */}
-            <button
-              type="button"
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-bold transition-all shadow-xs cursor-pointer"
-              onClick={() => openDriveModal('sync')}
-              title="Mirror & Sync Documents across Local Storage and Google Drive"
-            >
-              <RotateCcw size={13} className="text-blue-600 dark:text-blue-400 shrink-0" />
-              <span>Mirror &amp; Sync</span>
-            </button>
 
             {/* Download as CSV Button */}
             <button
