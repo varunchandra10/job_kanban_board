@@ -69,6 +69,7 @@ interface AppContextType {
   isDataLoading: boolean;
   refreshState: () => Promise<void>;
   storageMode: StorageMode;
+  setStorageMode: (mode: StorageMode) => void;
   pendingStorageMode: StorageMode | null;
   isStorageConfirmModalOpen: boolean;
   requestStorageModeChange: (targetMode: StorageMode) => void;
@@ -1098,6 +1099,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addQuickLink,
         removeQuickLink,
         storageMode,
+        setStorageMode,
         pendingStorageMode,
         isStorageConfirmModalOpen,
         requestStorageModeChange,

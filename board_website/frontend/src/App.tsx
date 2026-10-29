@@ -10,6 +10,7 @@ import { PrivacyPage } from './components/legal/PrivacyPage';
 import { TermsPage } from './components/legal/TermsPage';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
 import { AuthModal } from './components/ui/AuthModal';
+import { DriveConsentModal } from './components/ui/DriveConsentModal';
 import { Toast } from './components/ui/Toast';
 
 export const App: React.FC = () => {
@@ -19,6 +20,7 @@ export const App: React.FC = () => {
     <>
       <ServerAwakeningLoader />
       <AuthModal />
+      <DriveConsentModal />
       <Toast />
       <Routes>
         {/* Route 1: '/' -> Redirect to /job-applications if logged in, otherwise Landing Page */}
