@@ -103,8 +103,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const countryCode = app.country === 'GB' ? 'UK' : app.country || '';
-  const locationString = [app.city, countryCode].filter(Boolean).join(', ');
+  const countryCode = app.country === 'GB' ? 'UK' : app.country === 'REMOTE' ? 'Remote' : app.country || '';
+  const locationString = app.country === 'REMOTE' ? (app.city ? `${app.city} (Remote)` : 'Remote') : [app.city, countryCode].filter(Boolean).join(', ');
 
   const customTagsList = (app.custom_tags || '')
     .split(',')

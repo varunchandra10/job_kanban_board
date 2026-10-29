@@ -53,6 +53,7 @@ backups/
 DB/
 *.zip
 !install_apps/*.zip
+FUTURE_PLAN.md
 
 # IMPORTANT PRIVACY NOTE:
 tracker.db
