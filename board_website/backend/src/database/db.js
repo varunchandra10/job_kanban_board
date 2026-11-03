@@ -305,7 +305,7 @@ if (db && typeof db.prepare === 'function') {
 }
 
 const COLS = {
-  applications: 'company role country city date_applied jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
+  applications: 'company role country city date_applied stage position jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
   resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience'.split(' '),
   resume_versions: 'label region text pdf_name pdf_data'.split(' '),
 };
@@ -349,16 +349,30 @@ function patch(table, id, body, userId = null) {
 }
 
 function runInTransaction(fn) {
-  if (typeof db.transaction === 'function') {
-    return db.transaction(fn)();
+  // Remote Turso over Hrana executes individual queries in autocommit mode.
+  // Calling BEGIN/COMMIT over stateless HTTP causes "cannot commit/rollback - no transaction is active".
+  if (db && (db.isRemoteTurso || config.tursoDatabaseUrl)) {
+    return fn();
   }
-  db.exec('BEGIN TRANSACTION;');
+  if (typeof db.transaction === 'function') {
+    try {
+      return db.transaction(fn)();
+    } catch (txErr) {
+      console.warn('[Database Engine] db.transaction fallback to direct execution:', txErr.message);
+      return fn();
+    }
+  }
   try {
+    db.exec('BEGIN TRANSACTION;');
     const result = fn();
     db.exec('COMMIT;');
     return result;
   } catch (err) {
     try { db.exec('ROLLBACK;'); } catch (_) {}
+    if (err && /cannot (commit|rollback)/i.test(err.message)) {
+      console.warn('[Database Engine] Transaction command note, executing directly:', err.message);
+      return fn();
+    }
     throw err;
   }
 }

@@ -30,6 +30,7 @@ import {
   flushMutationQueue,
   hasPendingMutations,
   resolveId,
+  recordIdMapping,
 } from '../services/offlineSync';
 
 interface ToastState {
@@ -667,6 +668,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       const serverApp = await api.createApplication(newApp);
       if (serverApp?.id) {
+        recordIdMapping(newApp.id, serverApp.id);
         setApplications(prev => prev.map(a => (a.id === newApp.id ? serverApp : a)));
       }
     } catch (err) {
@@ -761,6 +763,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     try {
       const serverLearning = await api.createLearning(newLearning);
       if (serverLearning?.id) {
+        recordIdMapping(newLearning.id, serverLearning.id);
         setLearnings(prev => prev.map(l => (l.id === newLearning.id ? serverLearning : l)));
       }
     } catch (err) {

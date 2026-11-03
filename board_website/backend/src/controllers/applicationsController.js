@@ -1,4 +1,4 @@
-const { db, patch, move, getState, encryptCredential, decryptCredential } = require('../database/db');
+const { db, patch, move, getState, encryptCredential, decryptCredential, runInTransaction } = require('../database/db');
 const { storageService } = require('../services/storageService');
 const config = require('../config');
 
@@ -71,18 +71,19 @@ exports.createApplication = (req, res, next) => {
     delete b.user_id;
     delete b.id;
 
-    const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage='Applied' and user_id=?").get(userId);
+    const targetStage = b.stage || 'Applied';
+    const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage=? and user_id=?").get(targetStage, userId);
     const min = minRow ? minRow.p : 0;
     const cat = b.category || 'Industry';
     const portalPass = b.portal_pass ? encryptCredential(b.portal_pass) : '';
 
-    const r = db.prepare("insert into applications(company,role,country,city,date_applied,stage,position,category,portal_url,portal_user,portal_pass,portal_notes,custom_tags,user_id) values(?,?,?,?,?,'Applied',?,?,?,?,?,?,?,?)")
-      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', min, cat, b.portal_url || '', b.portal_user || '', portalPass, b.portal_notes || '', b.custom_tags || '', userId);
+    const r = db.prepare("insert into applications(company,role,country,city,date_applied,stage,position,category,portal_url,portal_user,portal_pass,portal_notes,custom_tags,user_id) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
+      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', targetStage, min, cat, b.portal_url || '', b.portal_user || '', portalPass, b.portal_notes || '', b.custom_tags || '', userId);
 
     const id = Number(r.lastInsertRowid);
     patch('applications', id, b, userId);
 
-    if (b.stage && b.stage !== 'Applied') {
+    if (b.stage && b.stage !== targetStage) {
       move(id, b.stage, null, userId);
     }
     if (b.role) {
@@ -112,6 +113,9 @@ exports.updateApplication = (req, res, next) => {
     const b = { ...(req.body || {}) };
     delete b.user_id;
     delete b.id;
+    if (b.stage) {
+      move(id, b.stage, null, userId);
+    }
     patch('applications', id, b, userId);
     res.json({ ok: 1 });
   } catch (err) {
@@ -145,13 +149,12 @@ exports.deleteApplication = async (req, res, next) => {
 
     // Atomically cascade delete all related database records
     try {
-      db.exec('BEGIN TRANSACTION;');
-      db.prepare(`DELETE FROM document_files WHERE app_id = ? AND ${userCondition}`).run(id, userId);
-      db.prepare(`DELETE FROM activity_log WHERE app_id = ? AND ${userCondition}`).run(id, userId);
-      db.prepare(`DELETE FROM applications WHERE id = ? AND ${userCondition}`).run(id, userId);
-      db.exec('COMMIT;');
+      runInTransaction(() => {
+        db.prepare(`DELETE FROM document_files WHERE app_id = ? AND ${userCondition}`).run(id, userId);
+        db.prepare(`DELETE FROM activity_log WHERE app_id = ? AND ${userCondition}`).run(id, userId);
+        db.prepare(`DELETE FROM applications WHERE id = ? AND ${userCondition}`).run(id, userId);
+      });
     } catch (dbErr) {
-      try { db.exec('ROLLBACK;'); } catch (_) {}
       console.error(`[Application Cleanup] Database transaction error for app ${id}:`, dbErr.message);
       throw dbErr;
     }

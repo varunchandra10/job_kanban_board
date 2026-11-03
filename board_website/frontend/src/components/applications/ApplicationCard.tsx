@@ -115,7 +115,9 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
 
   return (
     <div
-      className="group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-3.5 shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
+      className={`group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-3.5 shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+        isMenuOpen ? 'z-30' : 'z-auto'
+      }`}
       draggable
       onDragStart={handleDragStart}
       onClick={() => openEditAppModal(app)}
@@ -247,27 +249,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         )}
       </div>
 
-      {/* Deadline pulsing dot top-right */}
-      {deadlineStatus && deadlineStatus !== 'normal' && (
-        <span
-          className="absolute top-3.5 right-10 flex h-2.5 w-2.5 items-center justify-center"
-          title={deadlineLabel}
-        >
-          <span
-            className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-              deadlineStatus === 'overdue' ? 'bg-red-400' : 'bg-amber-400'
-            }`}
-          />
-          <span
-            className={`relative inline-flex rounded-full h-2 w-2 ${
-              deadlineStatus === 'overdue' ? 'bg-red-500' : 'bg-amber-500'
-            }`}
-          />
-        </span>
-      )}
-
       {/* Company Logo and Role Title */}
-      <div className="flex items-start gap-3 pr-10">
+      <div className="flex items-start gap-3 pr-24">
         <CompanyLogo company={app.company} size={34} />
 
         <div className="min-w-0 flex-1 pt-0.5">
@@ -300,8 +283,22 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           <span className="truncate">
             {formatDate(app.date_applied) || 'Date not set'}
             {app.deadline && (
-              <span className="ml-1 text-slate-400 dark:text-slate-500">
+              <span className="ml-1 inline-flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
                 &middot; Due {formatDate(app.deadline)}
+                {deadlineStatus && deadlineStatus !== 'normal' && (
+                  <span className="relative inline-flex h-2 w-2 items-center justify-center" title={deadlineLabel}>
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        deadlineStatus === 'overdue' ? 'bg-red-400' : 'bg-amber-400'
+                      }`}
+                    />
+                    <span
+                      className={`relative inline-flex rounded-full h-1.5 w-1.5 ${
+                        deadlineStatus === 'overdue' ? 'bg-red-500' : 'bg-amber-500'
+                      }`}
+                    />
+                  </span>
+                )}
               </span>
             )}
           </span>
