@@ -112,10 +112,13 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     .filter(Boolean);
 
   const closeMenu = () => setIsMenuOpen(false);
+  const isBookmarked = app.stage === 'Bookmarked';
 
   return (
     <div
-      className={`group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-3.5 shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+      className={`group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] ${
+        isBookmarked ? 'p-2.5 sm:p-3' : 'p-3.5'
+      } shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
         isMenuOpen ? 'z-30' : 'z-auto'
       }`}
       draggable
@@ -141,19 +144,21 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Quick Follow-Up Email Button (appears on hover) */}
-        <button
-          type="button"
-          className="hidden group-hover:flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/20 transition-all cursor-pointer"
-          title="Draft follow-up email"
-          aria-label="Draft follow-up email"
-          onClick={(e) => {
-            e.stopPropagation();
-            openFollowUpModal(app);
-          }}
-        >
-          <Mail size={12} strokeWidth={2.2} />
-        </button>
+        {/* Quick Follow-Up Email Button (appears on hover, non-bookmarked only) */}
+        {!isBookmarked && (
+          <button
+            type="button"
+            className="hidden group-hover:flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/20 transition-all cursor-pointer"
+            title="Draft follow-up email"
+            aria-label="Draft follow-up email"
+            onClick={(e) => {
+              e.stopPropagation();
+              openFollowUpModal(app);
+            }}
+          >
+            <Mail size={12} strokeWidth={2.2} />
+          </button>
+        )}
 
         {/* Quick Delete '✕' Button (appears on hover) */}
         <button
@@ -249,23 +254,28 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         )}
       </div>
 
-      {/* Company Logo and Role Title */}
-      <div className="flex items-start gap-3 pr-24">
-        <CompanyLogo company={app.company} size={34} />
+      {/* Company Logo and Name (For Bookmarked: compact tile with only company icon & its name) */}
+      <div className={`flex items-center gap-2.5 ${isBookmarked ? 'pr-16 py-0.5' : 'items-start pr-24'}`}>
+        <CompanyLogo company={app.company} size={isBookmarked ? 32 : 34} />
 
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="m-0 truncate text-sm font-bold leading-tight text-slate-900 dark:text-slate-100">
             {app.company}
           </h3>
 
-          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-            {app.role || 'Software Engineer'}
-          </p>
+          {!isBookmarked && (
+            <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+              {app.role || 'Software Engineer'}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Metadata (Location & Dates) */}
-      <div className="mt-3 space-y-1.5 border-t border-slate-100 dark:border-white/5 pt-2.5">
+      {/* Non-Bookmarked Details: Metadata, Dates, Badges & Tags */}
+      {!isBookmarked && (
+        <>
+          {/* Metadata (Location & Dates) */}
+          <div className="mt-3 space-y-1.5 border-t border-slate-100 dark:border-white/5 pt-2.5">
         {locationString && (
           <div className="flex min-w-0 items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <MapPin size={13} className="shrink-0 text-slate-400 dark:text-slate-500" />
@@ -425,6 +435,8 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
           </span>
         ))}
       </div>
-    </div>
+    </>
+  )}
+</div>
   );
 };

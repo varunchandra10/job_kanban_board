@@ -14,7 +14,6 @@ import {
   BookOpen,
   X,
   ChevronDown,
-  Search,
 } from 'lucide-react';
 
 export const LearningsToolbar: React.FC = () => {
@@ -136,32 +135,8 @@ export const LearningsToolbar: React.FC = () => {
         })}
       </div>
 
-      {/* Middle: Integrated Search Bar for smaller screens (<lg), placed between Calendar and + icon */}
-      <div className="lg:hidden flex-1 min-w-[95px] max-w-[260px] flex items-center h-8 bg-slate-100/90 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-2 sm:px-2.5 mx-1 sm:mx-1.5 focus-within:border-orange-500 dark:focus-within:border-orange-500 focus-within:bg-white dark:focus-within:bg-[#18181b] focus-within:shadow-xs transition-all">
-        <Search size={13} className="text-slate-400 shrink-0 mr-1.5" />
-        <input
-          type="text"
-          className="w-full h-full bg-transparent text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none min-w-0"
-          placeholder="Search notes..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          autoComplete="off"
-          aria-label="Search learnings"
-        />
-        {searchQuery && (
-          <button
-            type="button"
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer ml-1 shrink-0 p-0.5"
-            onClick={() => setSearchQuery('')}
-            aria-label="Clear search"
-          >
-            <X size={12} />
-          </button>
-        )}
-      </div>
-
       {/* Right: Fixed Add Note Button */}
-      <div className="flex items-center shrink-0 pl-1 sm:pl-2 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-md z-10">
+      <div className="flex items-center shrink-0 pl-1.5 sm:pl-2 bg-white/95 dark:bg-[#121214]/95 backdrop-blur-md z-10">
         <button
           type="button"
           className="inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 shadow-sm shadow-orange-500/25 transition-all cursor-pointer whitespace-nowrap shrink-0"

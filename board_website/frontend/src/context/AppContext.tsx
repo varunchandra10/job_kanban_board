@@ -495,19 +495,20 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
   }, [isAuthenticated]);
 
-  // Attempt backend initial fetch on mount (ONLY if authenticated)
+  // Attempt backend initial fetch on mount in parallel (ONLY if authenticated)
   useEffect(() => {
     if (!isAuthenticated) {
       setIsDataLoading(false);
       return;
     }
     let mounted = true;
+
     const fetchInitialData = async () => {
-      setIsDataLoading(true);
-      try {
-        const stateData = await api.getState();
+      // Fire all independent initial requests in parallel to avoid serial network waterfall
+      const statePromise = api.getState().then(stateData => {
         if (mounted && stateData?.apps) {
           setApplications(stateData.apps);
+          localStorage.setItem('job_tracker_apps', JSON.stringify(stateData.apps));
           if (stateData.profile) setProfile(stateData.profile);
           if (stateData.versions) setVersions(stateData.versions);
           if (stateData.settings?.dsa_track_enabled !== undefined) {
@@ -516,21 +517,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             localStorage.setItem('job_tracker_dsa_enabled', isEnabled ? '1' : '0');
           }
         }
-      } catch (err) {
-        // Fallback to local data gracefully
-      }
+      }).catch(() => {});
 
-      try {
-        const learnData = await api.getLearnings();
+      const learningsPromise = api.getLearnings().then(learnData => {
         if (mounted && learnData) {
           setLearnings(learnData);
+          localStorage.setItem('job_tracker_learnings', JSON.stringify(learnData));
         }
-      } catch (err) {
-        // Fallback to local data
-      }
+      }).catch(() => {});
 
-      try {
-        const dsaProg = await api.getDsaProgress();
+      const dsaPromise = api.getDsaProgress().then(dsaProg => {
         if (mounted && Array.isArray(dsaProg)) {
           const map: Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }> = {};
           dsaProg.forEach(item => {
@@ -539,19 +535,15 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setDsaProgress(map);
           localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(map));
         }
-      } catch (_) {}
+      }).catch(() => {});
 
-      try {
-        const gamifyData = await api.getGamification();
+      const gamifyPromise = api.getGamification().then(gamifyData => {
         if (mounted && gamifyData) {
           setGamification(gamifyData);
         }
-      } catch (err) {
-        // Fallback to local data
-      }
+      }).catch(() => {});
 
-      try {
-        const storageData = await api.getStorageStatus();
+      const storagePromise = api.getStorageStatus().then(storageData => {
         if (mounted && storageData) {
           const isConn = !!(storageData.connected || storageData.folderId);
           const fId = storageData.folderId || localStorage.getItem('gdrive_folder_id');
@@ -561,8 +553,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
             folderId: fId,
           });
         }
-      } catch (err) {
-        // Fallback to local storage if API call fails
+      }).catch(() => {});
+
+      try {
+        await Promise.allSettled([
+          statePromise,
+          learningsPromise,
+          dsaPromise,
+          gamifyPromise,
+          storagePromise,
+        ]);
       } finally {
         if (mounted) {
           setIsDataLoading(false);

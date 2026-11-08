@@ -133,7 +133,7 @@ export const LearningsBoard: React.FC = () => {
       {/* 2. Track Columns - Kanban Lanes Container */}
       <main
         id="learningsView"
-        className="w-full flex-1 min-h-0 flex gap-4 overflow-x-auto overflow-y-hidden pb-1 custom-scrollbar items-stretch"
+        className="w-full flex-1 min-h-0 flex gap-4 overflow-x-auto overflow-y-hidden pb-1 no-scrollbar items-stretch"
       >
         {tracksToDisplay.map(track => {
           const isAptitude =
@@ -260,7 +260,7 @@ export const LearningsBoard: React.FC = () => {
                   )}
 
                   {/* Column Cards Container - Scrollable Vertically Inside Each Lane */}
-                  <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar flex flex-col gap-2.5 pr-1">
+                  <div className="flex-1 min-h-0 overflow-y-auto no-scrollbar flex flex-col gap-2.5">
                     {isDataLoading && trackLearnings.length === 0 ? (
                       <div className="flex flex-col gap-2.5">
                         <SkeletonLearningCard />

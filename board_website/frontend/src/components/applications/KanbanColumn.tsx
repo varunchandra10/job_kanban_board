@@ -100,7 +100,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
       {/* Collapsible Column Body / Droppable Cards Container */}
       {isOpen && (
         <div
-          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto custom-scrollbar pr-1 pt-2.5 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto no-scrollbar pt-2.5 animate-in fade-in slide-in-from-top-2 duration-200"
           data-stage={stage}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -109,10 +109,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
           {isDataLoading && applications.length === 0 ? (
             <SkeletonColumn count={2} />
           ) : applications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-6 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
-              <Inbox size={26} className="opacity-40 mb-2" />
+            <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
+              <Inbox size={22} className="opacity-40 mb-1.5" />
               <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">
-                No applications in {stage}
+                {stage === 'Bookmarked' ? 'No bookmarked jobs' : `No applications in ${stage}`}
               </div>
               <div className="text-[11px] opacity-75 mt-0.5">
                 Drag cards here or click + Add

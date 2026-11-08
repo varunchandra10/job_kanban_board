@@ -321,7 +321,7 @@ export const AllItemsListModal: React.FC = () => {
         </div>
 
         {/* Scrollable Items List */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-2.5 custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-2.5 no-scrollbar">
           {!isLearnings ? (
             // Render Applications
             filteredApplications.length === 0 ? (
