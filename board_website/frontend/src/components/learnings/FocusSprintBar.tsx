@@ -7,13 +7,9 @@ import {
   RotateCcw,
   Bell,
   BellOff,
-  CheckCircle2,
-  ChevronDown,
   Trophy,
   Clock,
   BookMarked,
-  Briefcase,
-  Code2,
 } from 'lucide-react';
 
 // Web Audio API Crystal Bell Chime
@@ -64,9 +60,6 @@ export const FocusSprintBar: React.FC = () => {
   const [isMuted, setIsMuted] = useState<boolean>(() => {
     return localStorage.getItem('focus_timer_muted') === '1';
   });
-
-  // Expandable stats drawer
-  const [isStatsOpen, setIsStatsOpen] = useState<boolean>(false);
 
   // Interval ref - using ReturnType<typeof setInterval>
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -161,21 +154,16 @@ export const FocusSprintBar: React.FC = () => {
   const totalSeconds = selectedMinutes * 60;
   const progressPercent = totalSeconds > 0 ? Math.max(0, Math.min(100, Math.round(((totalSeconds - timeLeft) / totalSeconds) * 100))) : 0;
 
-  // Metrics & Quest calculations
+  // Metrics calculations
   const totalHours = (gamification.totalMinutes / 60).toFixed(1);
-  const todayApps = gamification.todayAppCount ?? 0;
-  const todayMins = gamification.todayMinutes ?? 0;
-  const todayDsa = gamification.todayDsaCount ?? 0;
-  const hasAppGoal = todayApps >= 1;
-  const hasStudyGoal = todayMins >= 45 || todayDsa >= 1;
 
   return (
-    <div className="shrink-0 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#121316]/95 shadow-sm hover:shadow-md backdrop-blur-xl transition-all overflow-hidden">
-      {/* 1. Main Ultra-Slim Focus Sprint Bar */}
-      <div className="relative px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-1.5 sm:gap-3 flex-nowrap">
+    <div className="shrink-0 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#121316]/95 shadow-xs hover:shadow-md backdrop-blur-xl transition-all overflow-hidden">
+      {/* Main Single Ultra-Clean Bar */}
+      <div className="relative px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 sm:gap-3 flex-wrap sm:flex-nowrap">
         {/* Subtle Bottom Progress Track for Active Timer */}
         {isRunning && (
-          <div className="absolute inset-x-0 bottom-0 h-[2.5px] bg-slate-100 dark:bg-white/5 overflow-hidden pointer-events-none">
+          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-slate-100 dark:bg-white/5 overflow-hidden pointer-events-none">
             <div
               className="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 shadow-[0_0_8px_rgba(249,115,22,0.4)] transition-all duration-1000 ease-linear"
               style={{ width: `${progressPercent}%` }}
@@ -183,143 +171,133 @@ export const FocusSprintBar: React.FC = () => {
           </div>
         )}
 
-        {/* LEFT: Compact Streak Pill Badge (Levels moved to Profile) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsStatsOpen(prev => !prev)}
-            className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all cursor-pointer shadow-xs group"
-            title="Click to toggle daily quest & study stats"
-            aria-expanded={isStatsOpen}
-          >
-            <div className="relative flex items-center justify-center">
-              <Flame size={15} className="text-orange-500 fill-orange-500/30 animate-pulse shrink-0" />
-            </div>
-            <span className="tabular-nums font-black text-slate-900 dark:text-white">
-              {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
-              <span className="text-slate-600 dark:text-slate-300 font-bold ml-1 hidden sm:inline">Streak</span>
-            </span>
-            <ChevronDown
-              size={13}
-              className={`transition-transform duration-300 text-slate-400 group-hover:text-orange-500 shrink-0 ${
-                isStatsOpen ? 'rotate-180 text-orange-600' : ''
-              }`}
-            />
-          </button>
-
-          {/* Today's Streak Status Indicator */}
-          {gamification.todayCompleted ? (
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
-              <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500" />
-              <span>Streak Secured</span>
-            </span>
-          ) : gamification.todayNeedsStudy ? (
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl shadow-2xs" title="1 job applied! Study 45 min or solve 1 DSA problem to secure streak">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
-              <span>Study / DSA Needed</span>
-            </span>
-          ) : gamification.todayNeedsApp ? (
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-xl shadow-2xs" title="Study complete! Submit 1 job application to secure streak">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping shrink-0" />
-              <span>Apply to 1 Role</span>
-            </span>
-          ) : (
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping shrink-0" />
-              <span>Daily Goals Pending</span>
-            </span>
-          )}
+        {/* 1. [fire emoji 0d] */}
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-orange-500/10 border border-orange-500/25 text-orange-600 dark:text-orange-400 text-xs font-black shadow-2xs shrink-0"
+          title="Current Streak"
+        >
+          <Flame size={14} className="text-orange-500 fill-orange-500/30 animate-pulse shrink-0" />
+          <span className="tabular-nums font-black text-slate-900 dark:text-white">
+            {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
+          </span>
         </div>
 
-        {/* CENTER: User Numeric Input & Live Countdown in Segmented Pod */}
-        <div className="flex items-center justify-center gap-1.5 sm:gap-2 flex-1 min-w-0">
-          <div className="flex items-center bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/10 rounded-xl p-0.5 sm:p-1 shadow-inner">
-            {/* Target Duration input */}
-            <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5">
-              <Clock size={12} className="text-slate-400 dark:text-slate-500 sm:hidden shrink-0" />
-              <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider hidden sm:inline">
-                Timer
-              </span>
-              <div className="flex items-center">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={inputMinutes}
-                  disabled={isRunning}
-                  onChange={handleInputChange}
-                  title="Enter timer duration in minutes (numbers only, e.g. 45 or 50)"
-                  placeholder="45"
-                  className="w-8 sm:w-11 h-6 text-center font-black text-xs bg-white dark:bg-[#1a1b1f] border border-slate-200 dark:border-white/10 rounded-md text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60 shadow-2xs"
-                />
-                <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-400 dark:text-slate-500 ml-0.5 sm:ml-1">min</span>
-              </div>
+        {/* 2. timer: subsection */}
+        <div className="flex items-center bg-slate-100/90 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/10 rounded-xl p-0.5 sm:p-1 shadow-inner shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-2 py-0.5">
+            <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+              Timer
+            </span>
+            <div className="flex items-center">
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                value={inputMinutes}
+                disabled={isRunning}
+                onChange={handleInputChange}
+                title="Enter timer duration in minutes (numbers only, e.g. 45 or 50)"
+                placeholder="45"
+                className="w-8 sm:w-10 h-6 text-center font-black text-xs bg-white dark:bg-[#1a1b1f] border border-slate-200 dark:border-white/10 rounded-md text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-orange-500 disabled:opacity-60 shadow-2xs"
+              />
+              <span className="text-[10px] sm:text-[10.5px] font-bold text-slate-400 dark:text-slate-500 ml-0.5 sm:ml-1">min</span>
             </div>
+          </div>
 
-            {/* Hairline Divider */}
-            <div className="w-px h-5 bg-slate-200 dark:bg-white/10 mx-0.5" />
+          <div className="w-px h-5 bg-slate-200 dark:bg-white/10 mx-0.5" />
 
-            {/* Live Countdown Display */}
-            <div
-              className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg font-mono text-xs sm:text-base font-black tabular-nums tracking-wider transition-all ${
-                isFinished
-                  ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse'
-                  : isRunning
-                  ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.18)]'
-                  : 'text-slate-700 dark:text-slate-200'
-              }`}
-            >
-              <span>{timeFormatted}</span>
-              {isRunning && (
-                <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.8)] shrink-0" />
-              )}
-            </div>
+          <div
+            className={`flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1 rounded-lg font-mono text-xs sm:text-sm font-black tabular-nums tracking-wider transition-all ${
+              isFinished
+                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 animate-pulse'
+                : isRunning
+                ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.18)]'
+                : 'text-slate-700 dark:text-slate-200'
+            }`}
+          >
+            <span>{timeFormatted}</span>
+            {isRunning && (
+              <span className="w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full bg-orange-500 animate-pulse shadow-[0_0_6px_rgba(249,115,22,0.8)] shrink-0" />
+            )}
           </div>
         </div>
 
-        {/* RIGHT: Actions (Start, Stop, Reset, Bell) */}
+        {/* 3. [trophy emoji: days] */}
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs shrink-0"
+          title="Best Streak Record"
+        >
+          <Trophy size={13} className="text-amber-500 shrink-0" />
+          <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
+            {gamification.longestStreak ?? gamification.streak ?? 0}d
+          </span>
+        </div>
+
+        {/* 4. [timer emoji: hours] */}
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs shrink-0"
+          title="Total Study Hours Logged"
+        >
+          <Clock size={13} className="text-blue-500 shrink-0" />
+          <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
+            {totalHours}h
+          </span>
+        </div>
+
+        {/* 5. [note emoji: no.of notes] */}
+        <div
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs shrink-0"
+          title="Total Logged Learning Notes"
+        >
+          <BookMarked size={13} className="text-purple-500 shrink-0" />
+          <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
+            {learnings.length}
+          </span>
+        </div>
+
+        {/* Controls Container: [start emoji] [reset emoji] [bell emoji] */}
         <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          {/* Start and Stop Buttons */}
+          {/* 6. [start emoji] */}
           {isRunning ? (
             <button
               type="button"
               onClick={handleStopTimer}
-              className="flex items-center justify-center gap-1.5 px-2.5 sm:px-3.5 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-500/25 active:scale-95"
+              className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white shadow-rose-500/25 active:scale-95 shrink-0"
               title="Stop timer countdown"
             >
               <Square size={11} className="fill-current shrink-0" />
-              <span className="hidden sm:inline">Stop</span>
+              <span>Stop</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={handleStartTimer}
-              className="flex items-center justify-center gap-1.5 px-2.5 sm:px-4 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 text-white shadow-orange-500/25 active:scale-95"
+              className="flex items-center justify-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-sm bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 text-white shadow-orange-500/25 active:scale-95 shrink-0"
               title="Start timer countdown"
             >
               <Play size={11} className="fill-current shrink-0" />
-              <span className="hidden sm:inline">
+              <span>
                 {isFinished ? 'Restart' : timeLeft < (parseInt(inputMinutes, 10) || 45) * 60 && timeLeft > 0 ? 'Resume' : 'Start'}
               </span>
             </button>
           )}
 
-          {/* Reset Button */}
+          {/* 7. [reset emoji] */}
           <button
             type="button"
             onClick={handleResetTimer}
-            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-2xs"
+            className="p-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
             title="Reset timer to entered minutes"
             aria-label="Reset timer"
           >
             <RotateCcw size={13} strokeWidth={2.4} />
           </button>
 
-          {/* Audio Chime Mute/Unmute */}
+          {/* 8. [bell emoji] */}
           <button
             type="button"
             onClick={handleToggleMute}
-            className={`p-1.5 rounded-xl border active:scale-95 transition-all cursor-pointer shadow-2xs ${
+            className={`p-1.5 rounded-xl border active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0 ${
               isMuted
                 ? 'border-slate-200 dark:border-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
                 : 'border-orange-500/30 text-orange-600 dark:text-orange-400 bg-orange-500/10 hover:bg-orange-500/20 shadow-[0_0_8px_rgba(249,115,22,0.15)]'
@@ -331,114 +309,6 @@ export const FocusSprintBar: React.FC = () => {
           </button>
         </div>
       </div>
-
-      {/* 2. Seamless Expandable Study Stats & Gamification Drawer */}
-      {isStatsOpen && (
-        <div className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-3.5 sm:p-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Today's Streak Quest Checklist */}
-            <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-center md:justify-start flex-wrap">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hidden sm:inline">
-                Today's Quest:
-              </span>
-
-              {/* Requirement 1: Apply to 1+ Role */}
-              <div
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
-                  hasAppGoal
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-white dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                {hasAppGoal ? (
-                  <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500 shrink-0" />
-                ) : (
-                  <Briefcase size={13} className="text-slate-400 shrink-0" />
-                )}
-                <span>1+ Role Applied</span>
-                <span className="text-[10px] opacity-75 font-mono">({todayApps})</span>
-              </div>
-
-              {/* Requirement 2: 45m Study OR 1 DSA Solved */}
-              <div
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
-                  hasStudyGoal
-                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-white dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400'
-                }`}
-              >
-                {hasStudyGoal ? (
-                  <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500 shrink-0" />
-                ) : (
-                  <Code2 size={13} className="text-slate-400 shrink-0" />
-                )}
-                <span>45m Study / 1 DSA</span>
-                <span className="text-[10px] opacity-75 font-mono">
-                  ({todayMins}m{todayDsa > 0 ? ` + ${todayDsa} DSA` : ''})
-                </span>
-              </div>
-            </div>
-
-            {/* Metric Badges (Best, Hours, Notes) - CENTER ALIGNED */}
-            <div className="flex items-center justify-center gap-2 flex-wrap w-full md:w-auto">
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
-                <Trophy size={13} className="text-amber-500 shrink-0" />
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Best:</span>
-                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
-                  {gamification.longestStreak}d
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
-                <Clock size={13} className="text-blue-500 shrink-0" />
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Hours:</span>
-                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
-                  {totalHours}h
-                </span>
-              </div>
-
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs">
-                <BookMarked size={13} className="text-purple-500 shrink-0" />
-                <span className="text-slate-400 dark:text-slate-500 text-[11px] font-medium">Notes:</span>
-                <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
-                  {learnings.length}
-                </span>
-              </div>
-            </div>
-
-            {/* 7-Day Mini Punchcard Day Boxes - CENTER ALIGNED */}
-            <div className="flex items-center justify-center gap-1.5 shrink-0 w-full md:w-auto">
-              {gamification.weekPunchcard?.map((day, idx) => (
-                <div
-                  key={idx}
-                  title={`${day.date} (${day.day}): ${
-                    day.active
-                      ? 'Streak Secured (1+ App & 45m/DSA)'
-                      : day.appOnly
-                      ? 'Applied Only (Needs Study/DSA)'
-                      : day.frozen
-                      ? 'Studied Only (Needs 1 Job Application)'
-                      : 'Pending'
-                  }`}
-                  className={`flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-extrabold border transition-all cursor-default ${
-                    day.active
-                      ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs shadow-emerald-500/20'
-                      : day.isToday
-                      ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500 ring-2 ring-orange-500/30 font-black'
-                      : day.active === false && (day.appCount || 0) > 0
-                      ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
-                      : day.active === false && ((day.studyMinutes || 0) > 0 || (day.dsaCount || 0) > 0)
-                      ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
-                      : 'bg-white dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/10'
-                  }`}
-                >
-                  {day.day[0]}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

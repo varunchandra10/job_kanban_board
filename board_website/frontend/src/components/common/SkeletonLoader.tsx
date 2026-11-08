@@ -242,8 +242,8 @@ export const SkeletonProfilePage: React.FC = () => {
         <div className="h-64 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/70 dark:bg-[#141417] p-6" />
       </div>
 
-      {/* Bottom Trophy Road Skeleton */}
-      <div className="h-56 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/70 dark:bg-[#141417] p-6" />
+      {/* Bottom Trophy Road Skeleton (Collapsed by default) */}
+      <div className="h-20 rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/70 dark:bg-[#141417] p-4 sm:p-5" />
     </div>
   );
 };

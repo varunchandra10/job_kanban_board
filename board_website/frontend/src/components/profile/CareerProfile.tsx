@@ -17,6 +17,7 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   BookOpen,
   X,
   Sparkles,
@@ -539,6 +540,7 @@ export const CareerProfile: React.FC = () => {
   const [linkTitle, setLinkTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
+  const [isTrophyRoadOpen, setIsTrophyRoadOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -1967,235 +1969,263 @@ export const CareerProfile: React.FC = () => {
         </section>
       </div>
 
-      {/* 5. Career Mastery & Trophy Road Section */}
+      {/* 5. Career Mastery & Trophy Road Section (Collapsible Accordion) */}
       <section
-        className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-7 shadow-xs space-y-6"
+        className={`relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-4 sm:p-6 shadow-xs transition-all duration-300 ${
+          isTrophyRoadOpen ? 'space-y-6' : 'space-y-0'
+        }`}
         aria-label="Career Mastery & Trophy Road"
       >
-        {/* Section Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-white/5">
+        {/* Section Header with Dropdown Menu Button */}
+        <div
+          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
+            isTrophyRoadOpen ? 'pb-4 border-b border-slate-100 dark:border-white/5' : ''
+          }`}
+        >
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/20 border border-amber-500/30 text-amber-500 shadow-inner">
-              <Trophy size={20} className="animate-pulse" />
+            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/20 border border-amber-500/30 text-amber-500 shadow-inner">
+              <Trophy size={19} className="animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white m-0">
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
                   Career Mastery & Trophy Road
                 </h2>
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                   Ranks & Badges
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-                Level up your job search through daily consistency. Earn XP from applications, focus sessions, and algorithm challenges to ascend the 7 ranks.
+              <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 line-clamp-1">
+                Ascend the 7 ranks by submitting jobs, logging focus study, and solving DSA.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
             <span
-              className={`inline-flex items-center gap-1.5 font-black text-xs px-3 py-1 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
+              className={`inline-flex items-center gap-1.5 font-black text-xs px-2.5 sm:px-3 py-1 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
             >
-              <RankIcon size={14} className="shrink-0" />
-              <span>Current: Level {userLevel} ({userLevelTitle})</span>
+              <RankIcon size={13} className="shrink-0" />
+              <span>Level {userLevel}: {userLevelTitle}</span>
             </span>
+
+            {/* Dropdown Menu Button */}
+            <button
+              type="button"
+              onClick={() => setIsTrophyRoadOpen(prev => !prev)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
+              aria-expanded={isTrophyRoadOpen}
+              title={isTrophyRoadOpen ? 'Collapse Trophy Road' : 'Expand Trophy Road & Rules'}
+            >
+              <span>{isTrophyRoadOpen ? 'Hide' : 'View'}</span>
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-300 text-slate-400 ${
+                  isTrophyRoadOpen ? 'rotate-180 text-amber-500' : ''
+                }`}
+              />
+            </button>
           </div>
         </div>
 
-        {/* 7-Tier Trophy Grid Road */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-          {[1, 2, 3, 4, 5, 6, 7].map((lvl) => {
-            const cfg = TROPHY_TIER_CONFIG[lvl];
-            const TierIcon = cfg.icon;
-            const isUnlocked = lvl <= userLevel;
-            const isCurrent = lvl === userLevel;
+        {/* Expandable Content: 7 Tiers and Guide Cards */}
+        {isTrophyRoadOpen && (
+          <div className="space-y-6 pt-1 animate-in fade-in duration-200">
+            {/* 7-Tier Trophy Grid Road */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+              {[1, 2, 3, 4, 5, 6, 7].map((lvl) => {
+                const cfg = TROPHY_TIER_CONFIG[lvl];
+                const TierIcon = cfg.icon;
+                const isUnlocked = lvl <= userLevel;
+                const isCurrent = lvl === userLevel;
 
-            return (
-              <div
-                key={lvl}
-                className={`relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-300 ${
-                  isCurrent
-                    ? `${cfg.bg} ${cfg.border} ring-2 ring-indigo-500/40 shadow-md ${cfg.glow} scale-[1.02]`
-                    : isUnlocked
-                    ? 'bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
-                    : 'bg-slate-50/40 dark:bg-white/[0.01] border-slate-200/60 dark:border-white/5 opacity-70'
-                }`}
-              >
-                {/* Card Top: Level pill & Status Icon */}
-                <div className="flex items-center justify-between gap-1 mb-2.5">
-                  <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
-                    isCurrent
-                      ? `${cfg.text} bg-white dark:bg-black/40 font-mono`
-                      : isUnlocked
-                      ? 'text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-white/10 font-mono'
-                      : 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 font-mono'
-                  }`}>
-                    L{lvl}
-                  </span>
-
-                  {isCurrent ? (
-                    <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-1.5 py-0.5 rounded-full border border-indigo-500/30">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
-                      Current
-                    </span>
-                  ) : isUnlocked ? (
-                    <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-                      <Check size={10} strokeWidth={3} />
-                      Unlocked
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded-full">
-                      <Lock size={9} />
-                      Locked
-                    </span>
-                  )}
-                </div>
-
-                {/* Card Center: Icon & Title */}
-                <div className="flex flex-col items-center text-center my-1">
+                return (
                   <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 mb-2 ${
+                    key={lvl}
+                    className={`relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-300 ${
                       isCurrent
-                        ? `${cfg.bg} ${cfg.border} shadow-md ${cfg.glow} scale-105`
+                        ? `${cfg.bg} ${cfg.border} ring-2 ring-indigo-500/40 shadow-md ${cfg.glow} scale-[1.02]`
                         : isUnlocked
-                        ? `${cfg.bg} ${cfg.border}`
-                        : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5'
+                        ? 'bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
+                        : 'bg-slate-50/40 dark:bg-white/[0.01] border-slate-200/60 dark:border-white/5 opacity-70'
                     }`}
                   >
-                    <Tier3DIcon
-                      tier={lvl}
-                      size={28}
-                      className={isUnlocked ? 'transition-transform duration-300 hover:scale-110 drop-shadow-sm' : 'opacity-35 grayscale'}
-                    />
+                    {/* Card Top: Level pill & Status Icon */}
+                    <div className="flex items-center justify-between gap-1 mb-2.5">
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-md ${
+                        isCurrent
+                          ? `${cfg.text} bg-white dark:bg-black/40 font-mono`
+                          : isUnlocked
+                          ? 'text-slate-700 dark:text-slate-300 bg-slate-200/60 dark:bg-white/10 font-mono'
+                          : 'text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 font-mono'
+                      }`}>
+                        L{lvl}
+                      </span>
+
+                      {isCurrent ? (
+                        <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-1.5 py-0.5 rounded-full border border-indigo-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-ping" />
+                          Current
+                        </span>
+                      ) : isUnlocked ? (
+                        <span className="flex items-center gap-1 text-[9px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                          <Check size={10} strokeWidth={3} />
+                          Unlocked
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1 text-[9px] font-bold text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-white/5 px-1.5 py-0.5 rounded-full">
+                          <Lock size={9} />
+                          Locked
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Card Center: Icon & Title */}
+                    <div className="flex flex-col items-center text-center my-1">
+                      <div
+                        className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 mb-2 ${
+                          isCurrent
+                            ? `${cfg.bg} ${cfg.border} shadow-md ${cfg.glow} scale-105`
+                            : isUnlocked
+                            ? `${cfg.bg} ${cfg.border}`
+                            : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5'
+                        }`}
+                      >
+                        <Tier3DIcon
+                          tier={lvl}
+                          size={28}
+                          className={isUnlocked ? 'transition-transform duration-300 hover:scale-110 drop-shadow-sm' : 'opacity-35 grayscale'}
+                        />
+                      </div>
+
+                      <h3 className={`text-xs font-black truncate max-w-full m-0 ${
+                        isCurrent ? 'text-slate-900 dark:text-white' : isUnlocked ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-500'
+                      }`}>
+                        {cfg.title}
+                      </h3>
+
+                      <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
+                        {cfg.min.toLocaleString()} {lvl === 7 ? '+ XP' : `– ${cfg.max.toLocaleString()} XP`}
+                      </span>
+                    </div>
+
+                    {/* Card Bottom: Description */}
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed mt-2 pt-2 border-t border-slate-100 dark:border-white/5 line-clamp-3 m-0">
+                      {cfg.description}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Explainer Cards: 1. How to Earn XP & 2. Daily Streak Quest Rules */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+              {/* Card 1: How to Earn XP */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
+                    <Sparkles size={14} />
+                  </div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white m-0">
+                    How to Earn XP & Level Up
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <Briefcase size={14} className="text-blue-500 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">+20 XP per Job Application</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Track and submit roles to companies</div>
+                    </div>
                   </div>
 
-                  <h3 className={`text-xs font-black truncate max-w-full m-0 ${
-                    isCurrent ? 'text-slate-900 dark:text-white' : isUnlocked ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500 dark:text-slate-500'
-                  }`}>
-                    {cfg.title}
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <Clock size={14} className="text-emerald-500 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">+1 XP per 1 Study Minute</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Log deep focus sprints (45m = +45 XP)</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <Code2 size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">+25 XP per DSA Problem</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Solve curated LeetCode challenges</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <Flame size={14} className="text-orange-500 mt-0.5 shrink-0" />
+                    <div>
+                      <div className="font-bold text-slate-800 dark:text-slate-200">+50 XP per Streak Day</div>
+                      <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Compounding bonus for every streak day</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Daily Streak Quest Rules */}
+              <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-4 sm:p-5 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
+                    <Flame size={14} />
+                  </div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white m-0">
+                    Daily Streak Quest Requirements
                   </h3>
-
-                  <span className="text-[10px] font-extrabold text-slate-400 dark:text-slate-500 mt-0.5 font-mono">
-                    {cfg.min.toLocaleString()} {lvl === 7 ? '+ XP' : `– ${cfg.max.toLocaleString()} XP`}
-                  </span>
                 </div>
 
-                {/* Card Bottom: Description */}
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-relaxed mt-2 pt-2 border-t border-slate-100 dark:border-white/5 line-clamp-3 m-0">
-                  {cfg.description}
+                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed m-0">
+                  To keep your streak alive and add <strong>+1 day</strong>, you must satisfy <strong>both</strong> requirements before midnight in your local timezone:
                 </p>
-              </div>
-            );
-          })}
-        </div>
 
-        {/* Explainer Cards: 1. How to Earn XP & 2. Daily Streak Quest Rules */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-          {/* Card 1: How to Earn XP */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-4 sm:p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-500">
-                <Sparkles size={14} />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white m-0">
-                How to Earn XP & Level Up
-              </h3>
-            </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 font-bold text-[10px]">
+                        1
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        Apply to at least 1 job role
+                      </span>
+                    </div>
+                    {(gamification.todayAppCount || 0) >= 1 ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done ({gamification.todayAppCount})
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        Pending
+                      </span>
+                    )}
+                  </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <Briefcase size={14} className="text-blue-500 mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">+20 XP per Job Application</div>
-                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Track and submit roles to companies</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <Clock size={14} className="text-emerald-500 mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">+1 XP per 1 Study Minute</div>
-                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Log deep focus sprints (45m = +45 XP)</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <Code2 size={14} className="text-purple-500 mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">+25 XP per DSA Problem</div>
-                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Solve curated LeetCode challenges</div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2 p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <Flame size={14} className="text-orange-500 mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-bold text-slate-800 dark:text-slate-200">+50 XP per Streak Day</div>
-                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400">Compounding bonus for every streak day</div>
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-500/10 text-purple-500 font-bold text-[10px]">
+                        2
+                      </span>
+                      <span className="font-bold text-slate-800 dark:text-slate-200">
+                        Learn for ≥45 mins OR solve ≥1 DSA problem
+                      </span>
+                    </div>
+                    {(gamification.todayMinutes || 0) >= 45 || (gamification.todayDsaCount || 0) >= 1 ? (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        Pending ({gamification.todayMinutes || 0}/45m)
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-
-          {/* Card 2: Daily Streak Quest Rules */}
-          <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-4 sm:p-5 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500">
-                <Flame size={14} />
-              </div>
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white m-0">
-                Daily Streak Quest Requirements
-              </h3>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed m-0">
-              To keep your streak alive and add <strong>+1 day</strong>, you must satisfy <strong>both</strong> requirements before midnight in your local timezone:
-            </p>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500/10 text-blue-500 font-bold text-[10px]">
-                    1
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    Apply to at least 1 job role
-                  </span>
-                </div>
-                {(gamification.todayAppCount || 0) >= 1 ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 size={12} strokeWidth={2.5} /> Done ({gamification.todayAppCount})
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                    Pending
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200/70 dark:border-white/5">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-500/10 text-purple-500 font-bold text-[10px]">
-                    2
-                  </span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
-                    Learn for ≥45 mins OR solve ≥1 DSA problem
-                  </span>
-                </div>
-                {(gamification.todayMinutes || 0) >= 45 || (gamification.todayDsaCount || 0) >= 1 ? (
-                  <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    <CheckCircle2 size={12} strokeWidth={2.5} /> Done
-                  </span>
-                ) : (
-                  <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                    Pending ({gamification.todayMinutes || 0}/45m)
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        )}
       </section>
 
       {/* Add / Edit Quick Link Modal (Matching linkModal in profile.html) */}
