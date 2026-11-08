@@ -367,6 +367,11 @@ exports.getGamification = (req, res, next) => {
   try {
     const userId = getEffectiveUserId(req);
     const tz = req.query.tz || req.query.timezone || null;
+    if (userId && tz) {
+      try {
+        db.prepare('UPDATE users SET timezone=? WHERE id=? AND (timezone IS NULL OR timezone != ?)').run(tz, userId, tz);
+      } catch (_) {}
+    }
     const data = calculateGamification(userId, tz);
     res.json(data);
   } catch (err) {

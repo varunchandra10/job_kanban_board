@@ -168,6 +168,16 @@ app.use('/api', learningsRoutes);
 app.use('/api', dsaRoutes);
 app.use('/api/backup', backupRoutes);
 
+// Background Schedulers (Evening Streak Safeguard Reminders)
+if (!process.env.VERCEL) {
+  try {
+    const { startStreakScheduler } = require('./services/streakReminderService');
+    startStreakScheduler();
+  } catch (err) {
+    console.warn('[Streak Scheduler Init Warning]:', err.message);
+  }
+}
+
 // Catch-all for API 404 and SPA fallback
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {

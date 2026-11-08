@@ -34,7 +34,31 @@ function runMigrations(db) {
       UNIQUE(user_id, problem_id)
     );
     CREATE INDEX IF NOT EXISTS idx_dsa_user ON dsa_progress(user_id);
+
+    CREATE TABLE IF NOT EXISTS streak_reminders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      type TEXT NOT NULL,
+      sent_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, date, type)
+    );
+    CREATE INDEX IF NOT EXISTS idx_streak_reminders_user ON streak_reminders(user_id, date);
   `);
+
+  try {
+    const userCols = db.prepare('pragma table_info(users)').all().map(c => c.name);
+    if (userCols.length && !userCols.includes('timezone')) {
+      db.prepare("alter table users add column timezone text default 'Asia/Kolkata'").run();
+      console.log('[Migrator] Added timezone column to users');
+    }
+    if (userCols.length && !userCols.includes('streak_reminders_enabled')) {
+      db.prepare('alter table users add column streak_reminders_enabled integer default 1').run();
+      console.log('[Migrator] Added streak_reminders_enabled column to users');
+    }
+  } catch (err) {
+    console.warn('[Migrator] Note ensuring users timezone/streak_reminders_enabled:', err.message);
+  }
 
   try {
     const resetCols = db.prepare('pragma table_info(password_resets)').all().map(c => c.name);
