@@ -25,7 +25,115 @@ import {
   Mail,
   HardDrive,
   Code2,
+  Sprout,
+  Zap,
+  GraduationCap,
+  Gem,
+  Crown,
+  Trophy,
+  LucideIcon,
 } from 'lucide-react';
+
+export const TROPHY_TIER_CONFIG: Record<
+  number,
+  {
+    icon: LucideIcon;
+    gradient: string;
+    border: string;
+    text: string;
+    bg: string;
+    glow: string;
+    title: string;
+    min: number;
+    max: number;
+    description: string;
+  }
+> = {
+  1: {
+    icon: Sprout,
+    gradient: 'from-emerald-500 to-teal-600',
+    border: 'border-emerald-500/30',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-500/10',
+    glow: 'shadow-emerald-500/20',
+    title: 'Novice Scout',
+    min: 0,
+    max: 200,
+    description: 'First steps into the job market. Laying daily foundation habits.'
+  },
+  2: {
+    icon: Zap,
+    gradient: 'from-blue-500 to-cyan-600',
+    border: 'border-blue-500/30',
+    text: 'text-blue-600 dark:text-blue-400',
+    bg: 'bg-blue-500/10',
+    glow: 'shadow-blue-500/20',
+    title: 'Apprentice',
+    min: 200,
+    max: 600,
+    description: 'Building momentum. Consistent daily job outreach and problem solving.'
+  },
+  3: {
+    icon: GraduationCap,
+    gradient: 'from-indigo-500 to-violet-600',
+    border: 'border-indigo-500/30',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    bg: 'bg-indigo-500/10',
+    glow: 'shadow-indigo-500/20',
+    title: 'Scholar',
+    min: 600,
+    max: 1200,
+    description: 'Mastering core DSA algorithms and role-specific technical concepts.'
+  },
+  4: {
+    icon: Code2,
+    gradient: 'from-fuchsia-500 to-purple-600',
+    border: 'border-fuchsia-500/30',
+    text: 'text-fuchsia-600 dark:text-fuchsia-400',
+    bg: 'bg-fuchsia-500/10',
+    glow: 'shadow-fuchsia-500/20',
+    title: 'Practitioner',
+    min: 1200,
+    max: 2000,
+    description: 'Interview velocity. Converting job leads and tackling tough coding rounds.'
+  },
+  5: {
+    icon: Gem,
+    gradient: 'from-amber-500 to-orange-600',
+    border: 'border-amber-500/30',
+    text: 'text-amber-600 dark:text-amber-400',
+    bg: 'bg-amber-500/10',
+    glow: 'shadow-amber-500/20',
+    title: 'Expert',
+    min: 2000,
+    max: 3200,
+    description: 'High-yield precision. Seasoned problem-solving speed & polished brand.'
+  },
+  6: {
+    icon: Crown,
+    gradient: 'from-rose-500 to-pink-600',
+    border: 'border-rose-500/30',
+    text: 'text-rose-600 dark:text-rose-400',
+    bg: 'bg-rose-500/10',
+    glow: 'shadow-rose-500/20',
+    title: 'Master',
+    min: 3200,
+    max: 5000,
+    description: 'Elite dedication. System design command and multiple offer candidate.'
+  },
+  7: {
+    icon: Trophy,
+    gradient: 'from-amber-400 via-yellow-500 to-orange-500',
+    border: 'border-amber-400/50',
+    text: 'text-amber-500 dark:text-amber-300',
+    bg: 'bg-amber-500/15',
+    glow: 'shadow-amber-500/30',
+    title: 'Grandmaster',
+    min: 5000,
+    max: 999999,
+    description: 'Pinnacle candidate. Legendary discipline and industry-leading performance.'
+  }
+};
 
 export const CareerProfile: React.FC = () => {
   const {
@@ -332,6 +440,13 @@ export const CareerProfile: React.FC = () => {
   const streak = gamification.streak || 0;
   const studyHours = (gamification.totalMinutes / 60).toFixed(1);
   const totalLearningsCount = learnings.length;
+  const userLevel = gamification.level || 1;
+  const userLevelTitle = gamification.levelTitle || 'Novice Scout';
+  const totalXP = gamification.totalXP || 0;
+  const progressPercent = gamification.progressPercent || 0;
+  const currentTierConfig = TROPHY_TIER_CONFIG[userLevel] || TROPHY_TIER_CONFIG[1];
+  const RankIcon = currentTierConfig.icon;
+  const nextTierConfig = TROPHY_TIER_CONFIG[userLevel + 1];
 
   // Aggregate user's dynamic topics
   const topicStatsMap: Record<string, { count: number; minutes: number }> = {};
@@ -451,15 +566,50 @@ export const CareerProfile: React.FC = () => {
                     </span>
                   </div>
 
-                  {/* Streaks */}
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <span className="font-semibold text-xs text-slate-400 dark:text-slate-500">
-                      Streaks:
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full shadow-2xs">
-                      <Flame size={13} className="text-orange-500 animate-pulse" />
-                      <span>{streak}-Day Focus Streak</span>
-                    </span>
+                  {/* Streaks, Rank Tier & XP Progress */}
+                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
+                    {/* Streaks Badge */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
+                        Streaks:
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full shadow-2xs">
+                        <Flame size={13} className="text-orange-500 animate-pulse" />
+                        <span>{streak}-Day Focus Streak</span>
+                      </span>
+                    </div>
+
+                    {/* Rank Trophy Badge */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-semibold text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
+                        Rank:
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1.5 font-extrabold text-xs px-2.5 py-0.5 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
+                        title={`Level ${userLevel}: ${userLevelTitle} (${totalXP.toLocaleString()} XP)`}
+                      >
+                        <RankIcon size={13} className="shrink-0" />
+                        <span>Level {userLevel}: {userLevelTitle}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* XP Level Progress Bar */}
+                  <div className="pt-1 max-w-xs sm:max-w-sm">
+                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
+                      <span className="tabular-nums">
+                        <strong className="text-slate-800 dark:text-slate-200">{totalXP.toLocaleString()}</strong> XP Total
+                      </span>
+                      <span className="tabular-nums font-mono text-[10.5px]">
+                        {progressPercent}% to {nextTierConfig ? `Level ${userLevel + 1} ${nextTierConfig.title}` : 'Grandmaster Max'}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full bg-gradient-to-r ${currentTierConfig.gradient} rounded-full transition-all duration-700 shadow-2xs`}
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
