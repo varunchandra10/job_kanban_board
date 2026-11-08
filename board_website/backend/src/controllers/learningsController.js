@@ -24,6 +24,34 @@ function getTodayInTimezone(tz) {
   return `${yr}-${mo}-${da}`;
 }
 
+function getDateInTimezone(dateInput, tz) {
+  if (!dateInput) return null;
+  try {
+    const rawStr = String(dateInput).trim();
+    // Append Z if missing timezone offset (e.g. SQLite datetime('now') is UTC: "2026-11-08 17:00:00")
+    const isoStr = (!rawStr.endsWith('Z') && !rawStr.includes('+') && !rawStr.includes('-')) || rawStr.includes(' ')
+      ? rawStr.replace(' ', 'T') + 'Z'
+      : rawStr;
+    const dt = new Date(isoStr);
+    if (isNaN(dt.getTime())) return rawStr.slice(0, 10);
+    if (tz) {
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      return formatter.format(dt);
+    }
+    const yr = dt.getFullYear();
+    const mo = String(dt.getMonth() + 1).padStart(2, '0');
+    const da = String(dt.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+  } catch (_) {
+    return String(dateInput).slice(0, 10);
+  }
+}
+
 function shiftDays(dateStr, daysOffset) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
@@ -110,7 +138,6 @@ function calculateGamification(userId = null, tz = null) {
     "SELECT date_logged, duration_minutes, topic FROM learnings WHERE user_id=?"
   ).all(userId);
 
-  const learningCount = logs.length;
   let totalMinutes = 0;
   const studyMinutesByDate = {};
   for (const l of logs) {
@@ -123,31 +150,32 @@ function calculateGamification(userId = null, tz = null) {
   }
 
   // 3. Fetch user's solved DSA problems grouped by date & total solved
-  let dsaRows = [];
   let totalDsaSolved = 0;
+  const dsaSolvedByDate = {};
   try {
-    dsaRows = db.prepare(
-      "SELECT substr(updated_at, 1, 10) as d, count(*) as count FROM dsa_progress WHERE user_id=? AND status='solved' AND updated_at IS NOT NULL GROUP BY substr(updated_at, 1, 10)"
+    const allSolvedRows = db.prepare(
+      "SELECT updated_at FROM dsa_progress WHERE user_id=? AND status='solved' AND updated_at IS NOT NULL"
     ).all(userId);
-    const dsaSolvedRow = db.prepare(
-      "SELECT count(*) as total FROM dsa_progress WHERE user_id=? AND status='solved'"
-    ).get(userId);
-    totalDsaSolved = dsaSolvedRow?.total || 0;
+    totalDsaSolved = allSolvedRows.length;
+    for (const r of allSolvedRows) {
+      const d = getDateInTimezone(r.updated_at, tz) || (r.updated_at ? r.updated_at.slice(0, 10) : null);
+      if (d) {
+        dsaSolvedByDate[d] = (dsaSolvedByDate[d] || 0) + 1;
+      }
+    }
   } catch (_) {}
 
-  const dsaSolvedByDate = {};
-  for (const r of dsaRows) {
-    if (r.d) dsaSolvedByDate[r.d] = r.count;
-  }
+  // DSA counts under total learnings
+  const learningCount = logs.length + totalDsaSolved;
 
-  // Helper: A date is complete if user applied to >= 1 job AND (studied >= 45 min OR solved >= 1 DSA problem)
+  // Helper: A date is complete if user applied to >= 1 job AND/OR studied >= 45 min OR solved >= 1 DSA problem
   function isDayComplete(dStr) {
     const appCount = appsByDate[dStr] || 0;
     const mins = studyMinutesByDate[dStr] || 0;
     const dsaCount = dsaSolvedByDate[dStr] || 0;
     const hasApp = appCount >= 1;
     const hasStudy = mins >= 45 || dsaCount >= 1;
-    return hasApp && hasStudy;
+    return hasApp || hasStudy;
   }
 
   // 4. Compute Today's Status
@@ -158,11 +186,12 @@ function calculateGamification(userId = null, tz = null) {
   const todayHasApp = todayAppCount >= 1;
   const todayHasStudy = todayMinutes >= 45 || todayDsaCount >= 1;
 
-  const todayCompleted = todayHasApp && todayHasStudy;
-  const todayNeedsStudy = todayHasApp && !todayHasStudy;
-  const todayNeedsApp = !todayHasApp && todayHasStudy;
-  const todayAppOnly = todayNeedsStudy;
-  const todayFrozen = todayNeedsApp;
+  const todayCompleted = todayHasApp || todayHasStudy;
+  const todayAllQuestsDone = todayHasApp && todayHasStudy;
+  const todayNeedsStudy = !todayHasStudy;
+  const todayNeedsApp = !todayHasApp;
+  const todayAppOnly = todayHasApp && !todayHasStudy;
+  const todayFrozen = false;
 
   // 5. Compute Current Streak (Walking backwards day-by-day)
   let streak = 0;

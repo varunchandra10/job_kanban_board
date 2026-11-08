@@ -182,11 +182,12 @@ export const api = {
     }
   },
 
-  async saveDsaProgress(problem_id: string, status: string, notes?: string): Promise<{ ok: number }> {
+  async saveDsaProgress(problem_id: string, status: string, notes?: string, tz?: string): Promise<{ ok: number; gamification?: GamificationStats }> {
+    const userTz = tz || Intl.DateTimeFormat().resolvedOptions().timeZone || '';
     const res = await fetch(`${API_BASE}/dsa/progress`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ problem_id, status, notes }),
+      body: JSON.stringify({ problem_id, status, notes, tz: userTz }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();

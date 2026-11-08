@@ -47,7 +47,11 @@ export const FocusSprintBar: React.FC = () => {
   const {
     gamification,
     learnings,
+    dsaProgress,
   } = useApp();
+
+  const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
+  const totalLearningsCount = learnings.length + solvedDsaCount;
 
   // User input minutes (only numbers allowed, default: 45)
   const [inputMinutes, setInputMinutes] = useState<string>('45');
@@ -209,11 +213,11 @@ export const FocusSprintBar: React.FC = () => {
           {/* 4. [note emoji: no.of notes] */}
           <div
             className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 text-xs shadow-2xs shrink-0"
-            title="Total Logged Learning Notes"
+            title={`Total Logged Learnings (${learnings.length} Notes + ${solvedDsaCount} DSA Solved)`}
           >
             <BookMarked size={13} className="text-purple-500 shrink-0" />
             <span className="font-black text-slate-800 dark:text-slate-100 tabular-nums">
-              {learnings.length}
+              {totalLearningsCount}
             </span>
           </div>
         </div>

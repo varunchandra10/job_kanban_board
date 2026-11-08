@@ -1020,6 +1020,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const current = dsaProgress[problemId]?.status;
     const nextStatus: 'solved' | 'todo' = current === 'solved' ? 'todo' : 'solved';
     const notes = dsaProgress[problemId]?.notes || '';
+    const isSolving = nextStatus === 'solved';
 
     setDsaProgress(prev => {
       const updated = { ...prev, [problemId]: { status: nextStatus, notes } };
@@ -1027,7 +1028,37 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return updated;
     });
 
-    if (nextStatus === 'solved') {
+    // DSA counts under learnings & directly affects streak & XP immediately
+    setGamification(prev => {
+      const deltaSolved = isSolving ? 1 : -1;
+      const newDsaSolved = Math.max(0, (prev.totalDsaSolved || 0) + deltaSolved);
+      const newTodayDsa = Math.max(0, (prev.todayDsaCount || 0) + deltaSolved);
+      const newLearningCount = Math.max(0, (prev.learningCount || 0) + deltaSolved);
+      const newXP = Math.max(0, (prev.totalXP || 0) + (isSolving ? 25 : -25));
+
+      const wasCompletedToday = prev.todayCompleted;
+      const isNowCompleted = wasCompletedToday || (isSolving && newTodayDsa >= 1);
+      const streakDelta = (!wasCompletedToday && isSolving) ? 1 : 0;
+      const newStreak = (prev.streak || 0) + streakDelta;
+      const newLongest = Math.max(prev.longestStreak || 0, newStreak);
+
+      const updated: GamificationStats = {
+        ...prev,
+        totalDsaSolved: newDsaSolved,
+        todayDsaCount: newTodayDsa,
+        learningCount: newLearningCount,
+        totalXP: newXP,
+        todayCompleted: isNowCompleted,
+        todayNeedsStudy: !isNowCompleted,
+        streak: newStreak,
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+      };
+      localStorage.setItem('job_tracker_gamify', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (isSolving) {
       try {
         import('canvas-confetti').then(confetti => {
           confetti.default({
@@ -1037,12 +1068,17 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           });
         });
       } catch (_) {}
-      showToast('Problem marked as Solved! 🎉');
+      showToast('Problem marked as Solved! Streak & XP updated! 🎉');
     }
 
     if (isAuthenticated) {
       try {
-        await api.saveDsaProgress(problemId, nextStatus, notes);
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const res = await api.saveDsaProgress(problemId, nextStatus, notes, tz);
+        if (res && res.gamification) {
+          setGamification(res.gamification);
+          localStorage.setItem('job_tracker_gamify', JSON.stringify(res.gamification));
+        }
       } catch (err) {
         console.warn('Failed saving DSA progress:', err);
       }

@@ -521,6 +521,7 @@ export const CareerProfile: React.FC = () => {
     currentUser,
     isDsaEnabled,
     toggleDsaTrack,
+    dsaProgress,
     isDataLoading,
   } = useApp();
 
@@ -693,6 +694,12 @@ export const CareerProfile: React.FC = () => {
     const d = (l.date_logged || '').slice(0, 10);
     if (d) learningsByDate[d] = (learningsByDate[d] || 0) + 1;
   });
+  // Also count solved DSA problems under daily learnings
+  (gamification.weekPunchcard || []).forEach(w => {
+    if (w.date && (w.dsaCount || 0) > 0) {
+      learningsByDate[w.date] = (learningsByDate[w.date] || 0) + (w.dsaCount || 0);
+    }
+  });
 
   // Calculate month activities & active days
   let monthAppsTotal = 0;
@@ -808,7 +815,9 @@ export const CareerProfile: React.FC = () => {
   // -------------------------------------------------------------
   const streak = gamification.streak || 0;
   const studyHours = (gamification.totalMinutes / 60).toFixed(1);
-  const totalLearningsCount = learnings.length;
+  const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
+  // Total learnings count includes both study notes and solved DSA problems
+  const totalLearningsCount = learnings.length + solvedDsaCount;
   const userLevel = gamification.level || 1;
   const userLevelTitle = gamification.levelTitle || 'Novice Scout';
   const totalXP = gamification.totalXP || 0;
@@ -829,6 +838,11 @@ export const CareerProfile: React.FC = () => {
     topicStatsMap[topicKey].count += 1;
     topicStatsMap[topicKey].minutes += Number(l.duration_minutes) || 0;
   });
+
+  // Count solved DSA problems under topics
+  if (solvedDsaCount > 0) {
+    topicStatsMap['DSA Practice'] = { count: solvedDsaCount, minutes: solvedDsaCount * 25 };
+  }
 
   const uniqueTopicsCount = Object.keys(topicStatsMap).length;
 
@@ -1982,7 +1996,7 @@ export const CareerProfile: React.FC = () => {
 
           {/* Sub-footer */}
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
-            <span>Total Logs: <strong className="text-slate-900 dark:text-white font-bold">{totalLearningsCount} {totalLearningsCount === 1 ? 'Entry' : 'Entries'}</strong></span>
+            <span>Total Logs: <strong className="text-slate-900 dark:text-white font-bold">{totalLearningsCount} {totalLearningsCount === 1 ? 'Entry' : 'Entries'}</strong> {solvedDsaCount > 0 && <span className="text-slate-400 text-[11px] font-normal">({learnings.length} notes + {solvedDsaCount} DSA)</span>}</span>
             <span>Topics Covered: <strong className="text-slate-900 dark:text-white font-bold">{uniqueTopicsCount} {uniqueTopicsCount === 1 ? 'Topic' : 'Topics'}</strong></span>
           </div>
         </section>
@@ -2230,9 +2244,9 @@ export const CareerProfile: React.FC = () => {
                         Learn for ≥45 mins OR solve ≥1 DSA problem
                       </span>
                     </div>
-                    {(gamification.todayMinutes || 0) >= 45 || (gamification.todayDsaCount || 0) >= 1 ? (
+                    {(gamification.todayMinutes || 0) >= 45 || (gamification.todayDsaCount || 0) >= 1 || (gamification.todayCompleted && !gamification.todayNeedsStudy) ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done {(gamification.todayDsaCount || 0) >= 1 ? `(${gamification.todayDsaCount} DSA)` : ''}
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
