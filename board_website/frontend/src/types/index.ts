@@ -53,20 +53,38 @@ export interface Learning {
   user_id?: string;
 }
 
+export interface TrophyTier {
+  level: number;
+  title: string;
+  min: number;
+  max: number;
+  icon: string;
+}
+
 export interface GamificationStats {
   streak: number;
   currentStreak?: number;
   longestStreak: number;
   learningCount: number;
   totalMinutes: number;
+  totalDsaSolved?: number;
   totalXP: number;
   level: number;
   title?: string;
   levelTitle?: string;
+  levelIcon?: string;
+  currentLevelMin?: number;
+  progressPercent?: number;
+  nextLevelXP?: number;
   isFrozen?: boolean;
   todayFrozen?: boolean;
   todayCompleted?: boolean;
   todayAppOnly?: boolean;
+  todayNeedsStudy?: boolean;
+  todayNeedsApp?: boolean;
+  todayMinutes?: number;
+  todayDsaCount?: number;
+  todayAppCount?: number;
   weekPunchcard: Array<{
     date: string;
     day: string;
@@ -74,7 +92,11 @@ export interface GamificationStats {
     frozen: boolean;
     appOnly: boolean;
     isToday: boolean;
+    appCount?: number;
+    studyMinutes?: number;
+    dsaCount?: number;
   }>;
+  tiers?: TrophyTier[];
 }
 
 export interface UserProfile {

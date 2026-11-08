@@ -34,6 +34,16 @@ function shiftDays(dateStr, daysOffset) {
   return `${yr}-${mo}-${da}`;
 }
 
+const XP_THRESHOLDS = [
+  { level: 1, title: 'Novice Scout', min: 0, max: 200, icon: 'Sprout' },
+  { level: 2, title: 'Apprentice', min: 200, max: 600, icon: 'Zap' },
+  { level: 3, title: 'Scholar', min: 600, max: 1200, icon: 'GraduationCap' },
+  { level: 4, title: 'Practitioner', min: 1200, max: 2000, icon: 'Code2' },
+  { level: 5, title: 'Expert', min: 2000, max: 3200, icon: 'Gem' },
+  { level: 6, title: 'Master', min: 3200, max: 5000, icon: 'Crown' },
+  { level: 7, title: 'Grandmaster', min: 5000, max: 999999, icon: 'Trophy' }
+];
+
 function calculateGamification(userId = null, tz = null) {
   const todayStr = getTodayInTimezone(tz);
 
@@ -51,7 +61,10 @@ function calculateGamification(userId = null, tz = null) {
         active: false,
         frozen: false,
         appOnly: false,
-        isToday: i === 0
+        isToday: i === 0,
+        appCount: 0,
+        studyMinutes: 0,
+        dsaCount: 0
       });
     }
     return {
@@ -60,10 +73,12 @@ function calculateGamification(userId = null, tz = null) {
       longestStreak: 0,
       learningCount: 0,
       totalMinutes: 0,
+      totalDsaSolved: 0,
       totalXP: 0,
       level: 1,
-      title: 'Novice',
-      levelTitle: 'Novice',
+      title: 'Novice Scout',
+      levelTitle: 'Novice Scout',
+      levelIcon: 'Sprout',
       currentLevelMin: 0,
       progressPercent: 0,
       nextLevelXP: 200,
@@ -71,108 +86,153 @@ function calculateGamification(userId = null, tz = null) {
       todayFrozen: false,
       todayCompleted: false,
       todayAppOnly: false,
-      weekPunchcard
+      todayNeedsStudy: false,
+      todayNeedsApp: false,
+      todayMinutes: 0,
+      todayDsaCount: 0,
+      todayAppCount: 0,
+      weekPunchcard,
+      tiers: XP_THRESHOLDS
     };
   }
 
-  // 1. Fetch user's distinct activity dates
-  const learningRows = db.prepare(
-    "SELECT distinct date_logged as d FROM learnings WHERE user_id=? AND date_logged IS NOT NULL AND date_logged != ''"
-  ).all(userId);
-  const learningDates = learningRows.map(r => r.d.slice(0, 10));
-  const learningSet = new Set(learningDates);
-
+  // 1. Fetch user's applications grouped by date
   const appRows = db.prepare(
-    "SELECT distinct substr(date_applied, 1, 10) as d FROM applications WHERE user_id=? AND date_applied IS NOT NULL"
+    "SELECT substr(date_applied, 1, 10) as d, count(*) as count FROM applications WHERE user_id=? AND date_applied IS NOT NULL GROUP BY substr(date_applied, 1, 10)"
   ).all(userId);
-  const appDates = appRows.map(r => r.d);
-  const appSet = new Set(appDates);
+  const appsByDate = {};
+  for (const r of appRows) {
+    if (r.d) appsByDate[r.d] = r.count;
+  }
 
-  // 2. Fetch total study minutes & learning count
+  // 2. Fetch user's study logs and total study minutes
   const logs = db.prepare(
     "SELECT date_logged, duration_minutes, topic FROM learnings WHERE user_id=?"
   ).all(userId);
 
   const learningCount = logs.length;
-  const totalMinutes = logs.reduce((acc, l) => acc + (parseInt(l.duration_minutes, 10) || 0), 0);
+  let totalMinutes = 0;
+  const studyMinutesByDate = {};
+  for (const l of logs) {
+    const mins = parseInt(l.duration_minutes, 10) || 0;
+    totalMinutes += mins;
+    if (l.date_logged) {
+      const d = l.date_logged.slice(0, 10);
+      studyMinutesByDate[d] = (studyMinutesByDate[d] || 0) + mins;
+    }
+  }
 
-  // 3. Compute Current Streak
-  const todayCompleted = learningSet.has(todayStr) && appSet.has(todayStr);
-  const todayFrozen = learningSet.has(todayStr) && !appSet.has(todayStr);
-  const todayAppOnly = !learningSet.has(todayStr) && appSet.has(todayStr);
+  // 3. Fetch user's solved DSA problems grouped by date & total solved
+  let dsaRows = [];
+  let totalDsaSolved = 0;
+  try {
+    dsaRows = db.prepare(
+      "SELECT substr(updated_at, 1, 10) as d, count(*) as count FROM dsa_progress WHERE user_id=? AND status='solved' AND updated_at IS NOT NULL GROUP BY substr(updated_at, 1, 10)"
+    ).all(userId);
+    const dsaSolvedRow = db.prepare(
+      "SELECT count(*) as total FROM dsa_progress WHERE user_id=? AND status='solved'"
+    ).get(userId);
+    totalDsaSolved = dsaSolvedRow?.total || 0;
+  } catch (_) {}
 
+  const dsaSolvedByDate = {};
+  for (const r of dsaRows) {
+    if (r.d) dsaSolvedByDate[r.d] = r.count;
+  }
+
+  // Helper: A date is complete if user applied to >= 1 job AND (studied >= 45 min OR solved >= 1 DSA problem)
+  function isDayComplete(dStr) {
+    const appCount = appsByDate[dStr] || 0;
+    const mins = studyMinutesByDate[dStr] || 0;
+    const dsaCount = dsaSolvedByDate[dStr] || 0;
+    const hasApp = appCount >= 1;
+    const hasStudy = mins >= 45 || dsaCount >= 1;
+    return hasApp && hasStudy;
+  }
+
+  // 4. Compute Today's Status
+  const todayAppCount = appsByDate[todayStr] || 0;
+  const todayMinutes = studyMinutesByDate[todayStr] || 0;
+  const todayDsaCount = dsaSolvedByDate[todayStr] || 0;
+
+  const todayHasApp = todayAppCount >= 1;
+  const todayHasStudy = todayMinutes >= 45 || todayDsaCount >= 1;
+
+  const todayCompleted = todayHasApp && todayHasStudy;
+  const todayNeedsStudy = todayHasApp && !todayHasStudy;
+  const todayNeedsApp = !todayHasApp && todayHasStudy;
+  const todayAppOnly = todayNeedsStudy;
+  const todayFrozen = todayNeedsApp;
+
+  // 5. Compute Current Streak (Walking backwards day-by-day)
   let streak = 0;
   let checkDateStr = todayCompleted ? todayStr : shiftDays(todayStr, -1);
 
   while (true) {
-    const hasLearning = learningSet.has(checkDateStr);
-    const hasApp = appSet.has(checkDateStr);
-
-    if (hasLearning && hasApp) {
+    if (isDayComplete(checkDateStr)) {
       streak += 1;
-      checkDateStr = shiftDays(checkDateStr, -1);
-    } else if (hasLearning && !hasApp) {
       checkDateStr = shiftDays(checkDateStr, -1);
     } else {
       break;
     }
   }
 
-  // 4. Compute Longest Streak
-  const allDates = Array.from(new Set([...learningDates, ...appDates])).sort();
+  // 6. Compute Longest Streak
+  const allActivityDates = Array.from(new Set([
+    ...Object.keys(appsByDate),
+    ...Object.keys(studyMinutesByDate),
+    ...Object.keys(dsaSolvedByDate)
+  ])).sort();
+
   let longestStreak = streak;
   let tempStreak = 0;
-  for (let i = 0; i < allDates.length; i++) {
-    const dStr = allDates[i];
-    const prevDate = i > 0 ? allDates[i - 1] : null;
-    const isConsecutive = prevDate && shiftDays(prevDate, 1) === dStr;
+  let lastDate = null;
 
-    if (learningSet.has(dStr) && appSet.has(dStr)) {
-      tempStreak = isConsecutive ? tempStreak + 1 : 1;
+  for (const dStr of allActivityDates) {
+    if (isDayComplete(dStr)) {
+      if (lastDate && shiftDays(lastDate, 1) === dStr) {
+        tempStreak += 1;
+      } else {
+        tempStreak = 1;
+      }
+      lastDate = dStr;
       if (tempStreak > longestStreak) longestStreak = tempStreak;
-    } else if (learningSet.has(dStr) && !appSet.has(dStr)) {
-      // Frozen day maintains streak
-      tempStreak = isConsecutive ? tempStreak : 0;
     } else {
       tempStreak = 0;
+      lastDate = null;
     }
   }
 
-  // 5. Generate Week Punchcard (last 7 days ending today)
+  // 7. Generate Week Punchcard (last 7 days ending today)
   const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const weekPunchcard = [];
   for (let i = 6; i >= 0; i--) {
     const dStr = shiftDays(todayStr, -i);
     const [y, m, d] = dStr.split('-').map(Number);
     const dayOfWeek = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-    const hasLearning = learningSet.has(dStr);
-    const hasApp = appSet.has(dStr);
+    const dayApp = (appsByDate[dStr] || 0) >= 1;
+    const dayStudy = (studyMinutesByDate[dStr] || 0) >= 45 || (dsaSolvedByDate[dStr] || 0) >= 1;
+    const dayActive = dayApp && dayStudy;
 
     weekPunchcard.push({
       date: dStr,
       day: DAY_NAMES[dayOfWeek],
-      active: hasLearning && hasApp,
-      frozen: hasLearning && !hasApp,
-      appOnly: !hasLearning && hasApp,
-      isToday: dStr === todayStr
+      active: dayActive,
+      frozen: !dayApp && dayStudy,
+      appOnly: dayApp && !dayStudy,
+      isToday: dStr === todayStr,
+      appCount: appsByDate[dStr] || 0,
+      studyMinutes: studyMinutesByDate[dStr] || 0,
+      dsaCount: dsaSolvedByDate[dStr] || 0
     });
   }
 
-  // 6. Calculate XP & Levels
+  // 8. Calculate XP & Levels
   const baseLogXP = logs.length * 20;
   const timeXP = Math.floor(totalMinutes / 5) * 5;
+  const dsaXP = totalDsaSolved * 25;
   const streakBonusXP = streak * 50;
-  const totalXP = baseLogXP + timeXP + streakBonusXP;
-
-  const XP_THRESHOLDS = [
-    { level: 1, title: 'Novice', min: 0, max: 200 },
-    { level: 2, title: 'Apprentice', min: 200, max: 600 },
-    { level: 3, title: 'Scholar', min: 600, max: 1200 },
-    { level: 4, title: 'Practitioner', min: 1200, max: 2000 },
-    { level: 5, title: 'Expert', min: 2000, max: 3200 },
-    { level: 6, title: 'Master', min: 3200, max: 5000 },
-    { level: 7, title: 'Grandmaster', min: 5000, max: 999999 }
-  ];
+  const totalXP = baseLogXP + timeXP + dsaXP + streakBonusXP;
 
   let currentTier = XP_THRESHOLDS[0];
   for (const t of XP_THRESHOLDS) {
@@ -189,10 +249,12 @@ function calculateGamification(userId = null, tz = null) {
     longestStreak,
     learningCount,
     totalMinutes,
+    totalDsaSolved,
     totalXP,
     level: currentTier.level,
     title: currentTier.title,
     levelTitle: currentTier.title,
+    levelIcon: currentTier.icon,
     currentLevelMin: currentTier.min,
     progressPercent,
     nextLevelXP: currentTier.max,
@@ -200,7 +262,13 @@ function calculateGamification(userId = null, tz = null) {
     todayFrozen,
     todayCompleted,
     todayAppOnly,
-    weekPunchcard
+    todayNeedsStudy,
+    todayNeedsApp,
+    todayMinutes,
+    todayDsaCount,
+    todayAppCount,
+    weekPunchcard,
+    tiers: XP_THRESHOLDS
   };
 }
 
@@ -299,27 +367,6 @@ exports.getGamification = (req, res, next) => {
   try {
     const userId = getEffectiveUserId(req);
     const tz = req.query.tz || req.query.timezone || null;
-    if (!userId) {
-      return res.json({
-        streak: 0,
-        currentStreak: 0,
-        longestStreak: 0,
-        learningCount: 0,
-        totalMinutes: 0,
-        totalXP: 0,
-        level: 1,
-        title: 'Novice',
-        levelTitle: 'Novice',
-        currentLevelMin: 0,
-        progressPercent: 0,
-        nextLevelXP: 200,
-        isFrozen: false,
-        todayFrozen: false,
-        todayCompleted: false,
-        todayAppOnly: false,
-        weekPunchcard: []
-      });
-    }
     const data = calculateGamification(userId, tz);
     res.json(data);
   } catch (err) {
