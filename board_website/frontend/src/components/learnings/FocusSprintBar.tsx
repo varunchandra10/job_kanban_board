@@ -12,6 +12,8 @@ import {
   Trophy,
   Clock,
   BookMarked,
+  Briefcase,
+  Code2,
 } from 'lucide-react';
 
 // Web Audio API Crystal Bell Chime
@@ -159,10 +161,13 @@ export const FocusSprintBar: React.FC = () => {
   const totalSeconds = selectedMinutes * 60;
   const progressPercent = totalSeconds > 0 ? Math.max(0, Math.min(100, Math.round(((totalSeconds - timeLeft) / totalSeconds) * 100))) : 0;
 
-  // Level & XP calculations
+  // Metrics & Quest calculations
   const totalHours = (gamification.totalMinutes / 60).toFixed(1);
-  const currentLevelXP = gamification.totalXP % 1000;
-  const levelProgressPercent = Math.min(100, Math.round((currentLevelXP / 1000) * 100));
+  const todayApps = gamification.todayAppCount ?? 0;
+  const todayMins = gamification.todayMinutes ?? 0;
+  const todayDsa = gamification.todayDsaCount ?? 0;
+  const hasAppGoal = todayApps >= 1;
+  const hasStudyGoal = todayMins >= 45 || todayDsa >= 1;
 
   return (
     <div className="shrink-0 w-full rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#121316]/95 shadow-sm hover:shadow-md backdrop-blur-xl transition-all overflow-hidden">
@@ -178,13 +183,13 @@ export const FocusSprintBar: React.FC = () => {
           </div>
         )}
 
-        {/* LEFT: Compact Streak & Level Pill Badge */}
+        {/* LEFT: Compact Streak Pill Badge (Levels moved to Profile) */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={() => setIsStatsOpen(prev => !prev)}
             className="inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-orange-500/5 hover:from-orange-500/20 hover:to-amber-500/20 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all cursor-pointer shadow-xs group"
-            title="Click to toggle study stats & weekly punchcard"
+            title="Click to toggle daily quest & study stats"
             aria-expanded={isStatsOpen}
           >
             <div className="relative flex items-center justify-center">
@@ -193,10 +198,6 @@ export const FocusSprintBar: React.FC = () => {
             <span className="tabular-nums font-black text-slate-900 dark:text-white">
               {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
               <span className="text-slate-600 dark:text-slate-300 font-bold ml-1 hidden sm:inline">Streak</span>
-            </span>
-            <span className="w-1 h-1 rounded-full bg-orange-400/50 hidden sm:inline" />
-            <span className="text-[11px] font-extrabold px-1.5 py-0.5 rounded-md bg-orange-500/15 text-orange-600 dark:text-orange-300 border border-orange-500/20 hidden md:inline">
-              Lvl {gamification.level}
             </span>
             <ChevronDown
               size={13}
@@ -210,12 +211,22 @@ export const FocusSprintBar: React.FC = () => {
           {gamification.todayCompleted ? (
             <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
               <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500" />
-              <span>Done Today</span>
+              <span>Streak Secured</span>
+            </span>
+          ) : gamification.todayNeedsStudy ? (
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl shadow-2xs" title="1 job applied! Study 45 min or solve 1 DSA problem to secure streak">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+              <span>Study / DSA Needed</span>
+            </span>
+          ) : gamification.todayNeedsApp ? (
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1 rounded-xl shadow-2xs" title="Study complete! Submit 1 job application to secure streak">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping shrink-0" />
+              <span>Apply to 1 Role</span>
             </span>
           ) : (
-            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping shrink-0" />
-              <span>Study Today</span>
+            <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-slate-500/10 border border-slate-500/20 px-2.5 py-1 rounded-xl shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping shrink-0" />
+              <span>Daily Goals Pending</span>
             </span>
           )}
         </div>
@@ -325,32 +336,46 @@ export const FocusSprintBar: React.FC = () => {
       {isStatsOpen && (
         <div className="border-t border-slate-100 dark:border-white/5 bg-slate-50/60 dark:bg-white/[0.02] p-3.5 sm:p-4 backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            {/* Level & XP Bar */}
-            <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30 text-orange-500 font-black text-sm shadow-inner">
-                L{gamification.level}
+            {/* Today's Streak Quest Checklist */}
+            <div className="flex items-center gap-2 sm:gap-3 w-full md:w-auto justify-center md:justify-start flex-wrap">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 hidden sm:inline">
+                Today's Quest:
+              </span>
+
+              {/* Requirement 1: Apply to 1+ Role */}
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+                  hasAppGoal
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-white dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                {hasAppGoal ? (
+                  <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500 shrink-0" />
+                ) : (
+                  <Briefcase size={13} className="text-slate-400 shrink-0" />
+                )}
+                <span>1+ Role Applied</span>
+                <span className="text-[10px] opacity-75 font-mono">({todayApps})</span>
               </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 justify-center md:justify-start">
-                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white m-0 truncate">
-                    {gamification.levelTitle || 'Code Virtuoso'}
-                  </h4>
-                  <span className="text-[11px] font-extrabold px-1.5 py-0.5 rounded-md bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                    {gamification.totalXP.toLocaleString()} XP
-                  </span>
-                </div>
-                {/* XP Bar */}
-                <div className="mt-1.5 flex items-center gap-2 w-48 sm:w-60">
-                  <div className="h-1.5 flex-1 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-gradient-to-r from-orange-500 via-amber-400 to-orange-400 transition-all duration-500 shadow-[0_0_6px_rgba(249,115,22,0.4)]"
-                      style={{ width: `${levelProgressPercent}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 tabular-nums">
-                    {levelProgressPercent}%
-                  </span>
-                </div>
+
+              {/* Requirement 2: 45m Study OR 1 DSA Solved */}
+              <div
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-2xs ${
+                  hasStudyGoal
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400'
+                    : 'bg-white dark:bg-white/[0.04] border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                {hasStudyGoal ? (
+                  <CheckCircle2 size={13} strokeWidth={2.5} className="text-emerald-500 shrink-0" />
+                ) : (
+                  <Code2 size={13} className="text-slate-400 shrink-0" />
+                )}
+                <span>45m Study / 1 DSA</span>
+                <span className="text-[10px] opacity-75 font-mono">
+                  ({todayMins}m{todayDsa > 0 ? ` + ${todayDsa} DSA` : ''})
+                </span>
               </div>
             </div>
 
@@ -386,14 +411,24 @@ export const FocusSprintBar: React.FC = () => {
               {gamification.weekPunchcard?.map((day, idx) => (
                 <div
                   key={idx}
-                  title={`${day.date} (${day.day}): ${day.active ? 'Completed' : day.frozen ? 'Frozen' : 'Pending'}`}
+                  title={`${day.date} (${day.day}): ${
+                    day.active
+                      ? 'Streak Secured (1+ App & 45m/DSA)'
+                      : day.appOnly
+                      ? 'Applied Only (Needs Study/DSA)'
+                      : day.frozen
+                      ? 'Studied Only (Needs 1 Job Application)'
+                      : 'Pending'
+                  }`}
                   className={`flex h-7 w-7 items-center justify-center rounded-xl text-[10px] font-extrabold border transition-all cursor-default ${
                     day.active
                       ? 'bg-emerald-500 text-white border-emerald-600 shadow-xs shadow-emerald-500/20'
-                      : day.frozen
-                      ? 'bg-cyan-500 text-white border-cyan-600 shadow-xs'
                       : day.isToday
                       ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500 ring-2 ring-orange-500/30 font-black'
+                      : day.active === false && (day.appCount || 0) > 0
+                      ? 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border-blue-500/30'
+                      : day.active === false && ((day.studyMinutes || 0) > 0 || (day.dsaCount || 0) > 0)
+                      ? 'bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border-cyan-500/30'
                       : 'bg-white dark:bg-white/5 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/10'
                   }`}
                 >
