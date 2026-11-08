@@ -16,6 +16,7 @@ const rolesRoutes = require('./routes/roles');
 const settingsRoutes = require('./routes/settings');
 const backupRoutes = require('./routes/backup');
 const learningsRoutes = require('./routes/learnings');
+const dsaRoutes = require('./routes/dsa');
 
 // ---------------------------------------------------------------------
 // HTTP Security Headers & CORS Configuration
@@ -164,6 +165,7 @@ app.use('/api', documentsRoutes);
 app.use('/api', rolesRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api', learningsRoutes);
+app.use('/api', dsaRoutes);
 app.use('/api/backup', backupRoutes);
 
 // Catch-all for API 404 and SPA fallback

@@ -110,4 +110,26 @@ export interface QuickLink {
   type: string;
 }
 
-export type ViewMode = 'apps' | 'learnings' | 'profile';
+export type ViewMode = 'apps' | 'learnings' | 'profile' | 'dsa';
+
+export interface DsaProblem {
+  id: string;
+  title: string;
+  url: string;
+  difficulty: 'Easy' | 'Medium' | 'Hard';
+}
+
+export interface DsaCategory {
+  id: string;
+  name: string;
+  iconName: string;
+  subtopics: string[];
+  problems: DsaProblem[];
+}
+
+export interface DsaProblemProgress {
+  problem_id: string;
+  status: 'solved' | 'attempted' | 'todo';
+  notes?: string;
+  updated_at?: string;
+}

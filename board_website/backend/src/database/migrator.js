@@ -24,6 +24,16 @@ function runMigrations(db) {
       created_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_pending_auth_sess ON pending_desktop_auth(session_id);
+    CREATE TABLE IF NOT EXISTS dsa_progress (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      problem_id TEXT NOT NULL,
+      status TEXT DEFAULT 'solved',
+      notes TEXT DEFAULT '',
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, problem_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_dsa_user ON dsa_progress(user_id);
   `);
 
   try {

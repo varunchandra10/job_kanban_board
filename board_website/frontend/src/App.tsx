@@ -6,6 +6,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { ApplicationsPage } from './components/applications/ApplicationsPage';
 import { LearningsPage } from './components/learnings/LearningsPage';
 import { CareerProfile } from './components/profile/CareerProfile';
+import { DsaPracticePage } from './components/dsa/DsaPracticePage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { TermsPage } from './components/legal/TermsPage';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
@@ -14,7 +15,7 @@ import { DriveConsentModal } from './components/ui/DriveConsentModal';
 import { Toast } from './components/ui/Toast';
 
 export const App: React.FC = () => {
-  const { isAuthenticated } = useApp();
+  const { isAuthenticated, isDsaEnabled } = useApp();
 
   return (
     <>
@@ -37,6 +38,7 @@ export const App: React.FC = () => {
             <Route path="/applications" element={<Navigate to="/job-applications" replace />} />
             <Route path="/learnings" element={<LearningsPage />} />
             <Route path="/profile" element={<CareerProfile />} />
+            {isDsaEnabled && <Route path="/dsa" element={<DsaPracticePage />} />}
           </Route>
         )}
 

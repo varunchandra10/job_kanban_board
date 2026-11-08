@@ -139,6 +139,13 @@ interface AppContextType {
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
   addQuickLink: (link: Omit<QuickLink, 'id'>) => void;
   removeQuickLink: (id: string) => void;
+
+  // DSA Practice Track
+  isDsaEnabled: boolean;
+  toggleDsaTrack: (enabled: boolean) => Promise<void>;
+  dsaProgress: Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }>;
+  toggleDsaProblem: (problemId: string) => Promise<void>;
+  updateDsaNotes: (problemId: string, notes: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -191,6 +198,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return u ? JSON.parse(u) : null;
     } catch {
       return null;
+    }
+  });
+  // DSA Practice Track State
+  const [isDsaEnabled, setIsDsaEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('job_tracker_dsa_enabled') === '1';
+  });
+  const [dsaProgress, setDsaProgress] = useState<Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }>>(() => {
+    try {
+      const saved = localStorage.getItem('job_tracker_dsa_progress');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
     }
   });
   const [gdriveStatus, setGdriveStatus] = useState<{ connected: boolean; folderId: string | null }>(() => {
@@ -418,6 +437,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setApplications(stateRes.value.apps);
         if (stateRes.value.profile) setProfile(stateRes.value.profile);
         if (stateRes.value.versions) setVersions(stateRes.value.versions);
+        if (stateRes.value.settings?.dsa_track_enabled !== undefined) {
+          const isEnabled = stateRes.value.settings.dsa_track_enabled === '1';
+          setIsDsaEnabled(isEnabled);
+          localStorage.setItem('job_tracker_dsa_enabled', isEnabled ? '1' : '0');
+        }
       }
       if (learnRes.status === 'fulfilled' && learnRes.value) {
         setLearnings(learnRes.value);
@@ -487,6 +511,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
           setApplications(stateData.apps);
           if (stateData.profile) setProfile(stateData.profile);
           if (stateData.versions) setVersions(stateData.versions);
+          if (stateData.settings?.dsa_track_enabled !== undefined) {
+            const isEnabled = stateData.settings.dsa_track_enabled === '1';
+            setIsDsaEnabled(isEnabled);
+            localStorage.setItem('job_tracker_dsa_enabled', isEnabled ? '1' : '0');
+          }
         }
       } catch (err) {
         // Fallback to local data gracefully
@@ -500,6 +529,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       } catch (err) {
         // Fallback to local data
       }
+
+      try {
+        const dsaProg = await api.getDsaProgress();
+        if (mounted && Array.isArray(dsaProg)) {
+          const map: Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }> = {};
+          dsaProg.forEach(item => {
+            map[item.problem_id] = { status: item.status, notes: item.notes };
+          });
+          setDsaProgress(map);
+          localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(map));
+        }
+      } catch (_) {}
 
       try {
         const gamifyData = await api.getGamification();
@@ -895,6 +936,73 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     showToast('Quick link removed');
   };
 
+  // DSA Practice Track Actions
+  const toggleDsaTrack = async (enabled: boolean) => {
+    setIsDsaEnabled(enabled);
+    localStorage.setItem('job_tracker_dsa_enabled', enabled ? '1' : '0');
+    if (!enabled && viewMode === 'dsa') {
+      setViewMode('apps');
+    }
+    showToast(enabled ? 'DSA Practice Path enabled' : 'DSA Practice Path disabled');
+    if (isAuthenticated) {
+      try {
+        await api.updateSetting('dsa_track_enabled', enabled ? '1' : '0');
+      } catch (err) {
+        console.warn('Failed saving DSA setting:', err);
+      }
+    }
+  };
+
+  const toggleDsaProblem = async (problemId: string) => {
+    const current = dsaProgress[problemId]?.status;
+    const nextStatus: 'solved' | 'todo' = current === 'solved' ? 'todo' : 'solved';
+    const notes = dsaProgress[problemId]?.notes || '';
+
+    setDsaProgress(prev => {
+      const updated = { ...prev, [problemId]: { status: nextStatus, notes } };
+      localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (nextStatus === 'solved') {
+      try {
+        import('canvas-confetti').then(confetti => {
+          confetti.default({
+            particleCount: 40,
+            spread: 55,
+            origin: { y: 0.8 }
+          });
+        });
+      } catch (_) {}
+      showToast('Problem marked as Solved! 🎉');
+    }
+
+    if (isAuthenticated) {
+      try {
+        await api.saveDsaProgress(problemId, nextStatus, notes);
+      } catch (err) {
+        console.warn('Failed saving DSA progress:', err);
+      }
+    }
+  };
+
+  const updateDsaNotes = async (problemId: string, notes: string) => {
+    const status = dsaProgress[problemId]?.status || 'todo';
+    setDsaProgress(prev => {
+      const updated = { ...prev, [problemId]: { status, notes } };
+      localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (isAuthenticated) {
+      try {
+        await api.saveDsaProgress(problemId, status, notes);
+      } catch (err) {
+        console.warn('Failed saving DSA notes:', err);
+      }
+    }
+  };
+
   const openAuthModal = () => setIsAuthModalOpen(true);
   const closeAuthModal = () => setIsAuthModalOpen(false);
 
@@ -1110,6 +1218,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         updateProfile,
         addQuickLink,
         removeQuickLink,
+        isDsaEnabled,
+        toggleDsaTrack,
+        dsaProgress,
+        toggleDsaProblem,
+        updateDsaNotes,
         storageMode,
         setStorageMode,
         pendingStorageMode,

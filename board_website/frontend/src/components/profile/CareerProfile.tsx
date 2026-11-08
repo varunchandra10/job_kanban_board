@@ -24,6 +24,7 @@ import {
   LogIn,
   Mail,
   HardDrive,
+  Code2,
 } from 'lucide-react';
 
 export const CareerProfile: React.FC = () => {
@@ -43,6 +44,8 @@ export const CareerProfile: React.FC = () => {
     storageMode,
     requestStorageModeChange,
     currentUser,
+    isDsaEnabled,
+    toggleDsaTrack,
   } = useApp();
 
   // Momentum Activity Matrix Date controls
@@ -576,6 +579,57 @@ export const CareerProfile: React.FC = () => {
           </div>
         </section>
       </div>
+
+      {/* Workflow Modules: DSA & Coding Interview Practice Path */}
+      <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs transition-all hover:border-purple-300 dark:hover:border-purple-500/30">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Code2 size={20} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  DSA &amp; Coding Interview Practice Path
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">
+                  12 Categories &bull; 78 Problems
+                </span>
+                {isDsaEnabled && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                    Active in Navigation
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                Activate your structured coding interview roadmap covering 12 curated topics (Arrays, Strings, Linked Lists, Trees, Graphs, DP, Heaps, and more). Includes problem checklists, personal approach notes, and direct LeetCode links. Stored persistently in your account.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
+            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 hidden sm:inline">
+              {isDsaEnabled ? 'Enabled' : 'Disabled'}
+            </span>
+            <button
+              type="button"
+              onClick={() => toggleDsaTrack(!isDsaEnabled)}
+              role="switch"
+              aria-checked={isDsaEnabled}
+              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 ${
+                isDsaEnabled ? 'bg-purple-600 dark:bg-purple-500' : 'bg-slate-300 dark:bg-white/20'
+              }`}
+              title={isDsaEnabled ? 'Disable DSA Practice Track' : 'Enable DSA Practice Track'}
+            >
+              <span
+                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                  isDsaEnabled ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* 2. 2-Card Row: Left = Quick Links & Profiles | Right = Activity & Momentum Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">

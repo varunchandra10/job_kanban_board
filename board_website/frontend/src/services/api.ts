@@ -162,6 +162,36 @@ export const api = {
     return res.json();
   },
 
+  async updateSetting(key: string, value: string): Promise<{ ok: number }> {
+    const res = await fetch(`${API_BASE}/settings/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ value }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async getDsaProgress(): Promise<Array<{ problem_id: string; status: 'solved' | 'attempted' | 'todo'; notes?: string; updated_at?: string }>> {
+    try {
+      const res = await fetch(`${API_BASE}/dsa/progress`, { headers: getAuthHeaders() });
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  },
+
+  async saveDsaProgress(problem_id: string, status: string, notes?: string): Promise<{ ok: number }> {
+    const res = await fetch(`${API_BASE}/dsa/progress`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ problem_id, status, notes }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
   async getStorageStatus(): Promise<{
     ok: number;
     connected: boolean;

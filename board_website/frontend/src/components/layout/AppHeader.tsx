@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronDown,
   RotateCcw,
+  Code2,
 } from 'lucide-react';
 
 export const AppHeader: React.FC = () => {
@@ -31,11 +32,16 @@ export const AppHeader: React.FC = () => {
     openDriveModal,
     logout,
     openQuickList,
+    isDsaEnabled,
+    dsaProgress,
   } = useApp();
 
   const isBoardActive = location.pathname === '/job-applications' || location.pathname === '/board' || location.pathname === '/applications';
   const isLearningsActive = location.pathname === '/learnings';
+  const isDsaActive = location.pathname === '/dsa';
   const isProfileActive = location.pathname === '/profile';
+
+  const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -169,6 +175,34 @@ export const AppHeader: React.FC = () => {
             {learnings.length}
           </span>
         </button>
+
+        {isDsaEnabled && (
+          <button
+            type="button"
+            onClick={() => navigate('/dsa')}
+            className={`group relative inline-flex min-h-9 items-center justify-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all duration-150 sm:px-4 cursor-pointer border ${
+              isDsaActive
+                ? 'bg-white dark:bg-[#1e1e24] text-purple-600 dark:text-purple-400 shadow-sm border-slate-200/80 dark:border-white/10 font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-white/5 border-transparent'
+            }`}
+            title="DSA & Coding Interview Practice"
+          >
+            <Code2
+              size={14}
+              className={isDsaActive ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'}
+            />
+            <span className="whitespace-nowrap">DSA Practice</span>
+            <span
+              className={`inline-flex min-w-5 items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                isDsaActive
+                  ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400'
+                  : 'bg-slate-200 dark:bg-white/10 text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              {solvedDsaCount > 0 ? `${solvedDsaCount}/78` : '12'}
+            </span>
+          </button>
+        )}
       </nav>
 
       {/* 3. Search Bar on Board/Learnings, or Flexible Spacer on Profile */}
