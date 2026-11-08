@@ -212,6 +212,14 @@ export const SkeletonProfilePage: React.FC = () => {
             <div className="h-24 rounded-2xl bg-slate-200/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/5" />
             <div className="h-24 rounded-2xl bg-slate-200/60 dark:bg-white/5 border border-slate-200/60 dark:border-white/5" />
           </div>
+          {/* Level Progress Bar Skeleton */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex justify-between">
+              <div className="h-3 w-20 rounded bg-slate-200/60 dark:bg-white/5" />
+              <div className="h-3 w-24 rounded bg-slate-200/60 dark:bg-white/5" />
+            </div>
+            <div className="h-2 w-full rounded-full bg-slate-200/60 dark:bg-white/5" />
+          </div>
         </div>
 
         {/* Right Hero Card: Storage Engine */}

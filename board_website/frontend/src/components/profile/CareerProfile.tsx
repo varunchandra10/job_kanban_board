@@ -1051,6 +1051,24 @@ export const CareerProfile: React.FC = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Level XP Progress Bar below the 2 subsections */}
+                <div className="pt-1.5 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="tabular-nums">
+                      <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{totalXP.toLocaleString()}</strong> XP Total
+                    </span>
+                    <span className="tabular-nums font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                      {progressPercent}% to {nextTierConfig ? `Level ${userLevel + 1} (${nextTierConfig.title})` : 'Grandmaster Max'}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-white/5">
+                    <div
+                      className={`h-full bg-gradient-to-r ${currentTierConfig.gradient} rounded-full transition-all duration-700 shadow-2xs`}
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
               </div>
             );
           })()}
