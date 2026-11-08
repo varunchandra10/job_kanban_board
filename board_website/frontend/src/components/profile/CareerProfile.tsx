@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getApiEndpoint } from '../../services/api';
 import { SkeletonProfilePage } from '../common/SkeletonLoader';
-import { FocusSprintBar } from '../learnings/FocusSprintBar';
 import {
   Flame,
   Download,
@@ -1090,11 +1089,6 @@ export const CareerProfile: React.FC = () => {
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
-                </div>
-
-                {/* Focus Sprint Timer integrated below subsections */}
-                <div className="pt-1.5">
-                  <FocusSprintBar />
                 </div>
               </div>
             );
