@@ -305,7 +305,7 @@ if (db && typeof db.prepare === 'function') {
 }
 
 const COLS = {
-  applications: 'company role country city date_applied stage position jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path'.split(' '),
+  applications: 'company role country city date_applied stage position jd jd_url looking_for resume_version_id recruiter_name recruiter_email recruiter_notes visa deadline salary currency category portal_url portal_user portal_pass portal_notes custom_tags resume_path cover_letter_path is_bookmarked'.split(' '),
   resume_profile: 'full_name email phone linkedin github school degree grad_date gpa skills projects experience'.split(' '),
   resume_versions: 'label region text pdf_name pdf_data'.split(' '),
 };

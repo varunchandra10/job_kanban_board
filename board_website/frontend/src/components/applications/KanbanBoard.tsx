@@ -1,5 +1,5 @@
 import React from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, isApplicationBookmarked } from '../../context/AppContext';
 import { STAGES } from '../../utils/constants';
 import { KanbanColumn } from './KanbanColumn';
 import { SkeletonBoard } from '../common/SkeletonLoader';
@@ -50,12 +50,19 @@ export const KanbanBoard: React.FC = () => {
   return (
     <main
       id="board"
-      className="flex-1 w-full h-full min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-stretch overflow-hidden"
+      className="flex-1 w-full h-full min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[180px_1fr_1fr_1fr_1fr] xl:grid-cols-[200px_1fr_1fr_1fr_1fr] gap-3.5 items-stretch overflow-hidden"
       data-active-stage={activeMobileStage}
     >
       {STAGES.map(stage => {
         const stageApps = filteredApps
-          .filter(a => a.stage === stage)
+          .filter(a => {
+            if (stage === 'Bookmarked') {
+              // Quick-access bookmarks dock: displays all bookmarked jobs without removing them from their primary workflow column!
+              return isApplicationBookmarked(a);
+            }
+            // Primary workflow columns (Applied, Interviewing, Offer, Rejected): keep card intact even when bookmarked!
+            return a.stage === stage;
+          })
           .sort((a, b) => {
             const posA = a.position ?? 0;
             const posB = b.position ?? 0;

@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Application, ApplicationStage } from '../../types';
-import { useApp } from '../../context/AppContext';
+import { useApp, isApplicationBookmarked } from '../../context/AppContext';
 import { api } from '../../services/api';
-import { STAGES } from '../../utils/constants';
+import { STAGES, STAGE_CONFIG } from '../../utils/constants';
 import { CompanyLogo } from '../common/CompanyLogo';
 import {
   MapPin,
@@ -20,25 +20,30 @@ import {
   X,
   Mail,
   Send,
+  Bookmark,
 } from 'lucide-react';
 
 interface ApplicationCardProps {
   application: Application;
+  inBookmarkColumn?: boolean;
 }
 
 export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   application: app,
+  inBookmarkColumn = false,
 }) => {
   const {
     openEditAppModal,
     deleteApplication,
     moveApplication,
+    toggleBookmark,
     openFollowUpModal,
     showToast,
   } = useApp();
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const isItemBookmarked = isApplicationBookmarked(app);
 
   // Close the action menu when clicking outside
   useEffect(() => {
@@ -112,13 +117,71 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     .filter(Boolean);
 
   const closeMenu = () => setIsMenuOpen(false);
-  const isBookmarked = app.stage === 'Bookmarked';
+
+  // Dedicated Compact Quick-Access Tile for the Narrow Bookmark Column
+  if (inBookmarkColumn) {
+    return (
+      <div
+        className="group relative cursor-pointer rounded-xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#18181b] p-2 sm:p-2.5 shadow-2xs hover:shadow-md hover:border-purple-400/60 dark:hover:border-purple-500/50 hover:-translate-y-0.5 transition-all duration-150 select-none"
+        draggable
+        onDragStart={handleDragStart}
+        onClick={() => openEditAppModal(app)}
+        onKeyDown={(e) => {
+          if ((e.key === 'Enter' || e.key === ' ') && e.target === e.currentTarget) {
+            e.preventDefault();
+            openEditAppModal(app);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`Open bookmarked ${app.company} application`}
+        data-id={app.id}
+      >
+        {/* Top subtle purple hover accent */}
+        <div className="pointer-events-none absolute inset-x-3 top-0 h-[2px] bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-0 transition-opacity group-hover:opacity-100 rounded-t-full" />
+
+        {/* Quick Unbookmark '✕' Button (removes from bookmark dock without deleting the application) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleBookmark(app.id, false);
+          }}
+          className="absolute right-1 top-1 opacity-0 group-hover:opacity-100 p-1 rounded-md text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all cursor-pointer z-10"
+          title="Remove from bookmarks"
+          aria-label="Remove from bookmarks"
+        >
+          <X size={11} strokeWidth={2.5} />
+        </button>
+
+        <div className="flex items-center gap-2 pr-4">
+          <CompanyLogo company={app.company} size={28} />
+
+          <div className="min-w-0 flex-1">
+            <h3 className="m-0 truncate text-xs font-bold leading-tight text-slate-900 dark:text-slate-100">
+              {app.company}
+            </h3>
+
+            <div className="flex items-center gap-1 mt-0.5">
+              <span
+                className="text-[9px] font-bold px-1.5 py-0.2 rounded uppercase tracking-wider"
+                style={{
+                  color: STAGE_CONFIG[app.stage]?.color || '#8b5cf6',
+                  backgroundColor: STAGE_CONFIG[app.stage]?.bg || '#f5f3ff',
+                }}
+              >
+                {app.stage}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
-      className={`group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] ${
-        isBookmarked ? 'p-2.5 sm:p-3' : 'p-3.5'
-      } shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
+      className={`group relative cursor-pointer rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-3.5 shadow-xs hover:shadow-md hover:border-blue-400/60 dark:hover:border-indigo-500/50 hover:-translate-y-0.5 transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 ${
         isMenuOpen ? 'z-30' : 'z-auto'
       }`}
       draggable
@@ -144,21 +207,37 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Quick Follow-Up Email Button (appears on hover, non-bookmarked only) */}
-        {!isBookmarked && (
-          <button
-            type="button"
-            className="hidden group-hover:flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/20 transition-all cursor-pointer"
-            title="Draft follow-up email"
-            aria-label="Draft follow-up email"
-            onClick={(e) => {
-              e.stopPropagation();
-              openFollowUpModal(app);
-            }}
-          >
-            <Mail size={12} strokeWidth={2.2} />
-          </button>
-        )}
+        {/* Quick Bookmark Toggle Button */}
+        <button
+          type="button"
+          className={`flex h-6 w-6 items-center justify-center rounded-md border transition-all cursor-pointer ${
+            isItemBookmarked
+              ? 'border-purple-300 dark:border-purple-500/30 bg-purple-50 dark:bg-purple-500/15 text-purple-600 dark:text-purple-400'
+              : 'border-transparent hover:border-slate-200 dark:hover:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-purple-600'
+          }`}
+          title={isItemBookmarked ? 'Bookmarked for quick access (click to remove)' : 'Bookmark for quick access'}
+          aria-label="Toggle bookmark"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleBookmark(app.id);
+          }}
+        >
+          <Bookmark size={12} className={isItemBookmarked ? 'fill-current stroke-[2.2]' : 'stroke-[2]'} />
+        </button>
+
+        {/* Quick Follow-Up Email Button (appears on hover) */}
+        <button
+          type="button"
+          className="hidden group-hover:flex h-6 w-6 items-center justify-center rounded-md border border-slate-200 dark:border-white/10 bg-slate-100 dark:bg-white/10 text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 hover:border-blue-200 dark:hover:border-blue-500/20 transition-all cursor-pointer"
+          title="Draft follow-up email"
+          aria-label="Draft follow-up email"
+          onClick={(e) => {
+            e.stopPropagation();
+            openFollowUpModal(app);
+          }}
+        >
+          <Mail size={12} strokeWidth={2.2} />
+        </button>
 
         {/* Quick Delete '✕' Button (appears on hover) */}
         <button
@@ -228,6 +307,19 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
             <button
               type="button"
               role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 transition-colors hover:bg-purple-50 dark:hover:bg-purple-500/10 cursor-pointer"
+              onClick={() => {
+                closeMenu();
+                toggleBookmark(app.id);
+              }}
+            >
+              <Bookmark size={13} className={isItemBookmarked ? 'fill-current' : ''} />
+              <span>{isItemBookmarked ? 'Remove bookmark' : 'Bookmark for quick access'}</span>
+            </button>
+
+            <button
+              type="button"
+              role="menuitem"
               className="flex w-full items-center gap-2 px-3 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 transition-colors hover:bg-blue-50 dark:hover:bg-blue-500/10 cursor-pointer"
               onClick={() => {
                 closeMenu();
@@ -254,26 +346,23 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         )}
       </div>
 
-      {/* Company Logo and Name (For Bookmarked: compact tile with only company icon & its name) */}
-      <div className={`flex items-center gap-2.5 ${isBookmarked ? 'pr-16 py-0.5' : 'items-start pr-24'}`}>
-        <CompanyLogo company={app.company} size={isBookmarked ? 32 : 34} />
+      {/* Company Logo and Role Title */}
+      <div className="flex items-start gap-3 pr-28">
+        <CompanyLogo company={app.company} size={34} />
 
         <div className="min-w-0 flex-1 pt-0.5">
           <h3 className="m-0 truncate text-sm font-bold leading-tight text-slate-900 dark:text-slate-100">
             {app.company}
           </h3>
 
-          {!isBookmarked && (
-            <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
-              {app.role || 'Software Engineer'}
-            </p>
-          )}
+          <p className="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">
+            {app.role || 'Software Engineer'}
+          </p>
         </div>
       </div>
 
-      {/* Non-Bookmarked Details: Metadata, Dates, Badges & Tags */}
-      {!isBookmarked && (
-        <>
+      {/* Card Details: Metadata, Dates, Badges & Tags */}
+      <>
           {/* Metadata (Location & Dates) */}
           <div className="mt-3 space-y-1.5 border-t border-slate-100 dark:border-white/5 pt-2.5">
         {locationString && (
@@ -436,7 +525,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
         ))}
       </div>
     </>
-  )}
-</div>
+  </div>
   );
 };

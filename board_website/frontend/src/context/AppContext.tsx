@@ -126,6 +126,7 @@ interface AppContextType {
   updateApplication: (id: number, data: Partial<Application>) => Promise<void>;
   deleteApplication: (id: number) => Promise<void>;
   moveApplication: (id: number, stage: ApplicationStage) => Promise<void>;
+  toggleBookmark: (id: number, forceState?: boolean) => Promise<void>;
 
   // Learning CRUD
   addLearning: (data: Partial<Learning>) => Promise<void>;
@@ -755,12 +756,75 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
+  const toggleBookmark = async (id: number, forceState?: boolean) => {
+    const targetApp = applications.find(a => a.id === id);
+    if (!targetApp) return;
+
+    const currentBookmarked = Boolean(
+      targetApp.is_bookmarked ||
+      (targetApp.custom_tags && targetApp.custom_tags.split(',').map(t => t.trim().toLowerCase()).includes('bookmarked')) ||
+      targetApp.stage === 'Bookmarked'
+    );
+
+    const newBookmarked = forceState !== undefined ? forceState : !currentBookmarked;
+    if (newBookmarked === currentBookmarked) return;
+
+    const existingTags = (targetApp.custom_tags || '')
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t && t.toLowerCase() !== 'bookmarked');
+
+    if (newBookmarked) {
+      existingTags.push('bookmarked');
+    }
+
+    const updatedTags = existingTags.join(', ');
+
+    // If an app's stage was originally 'Bookmarked', and user unbookmarks, let it be in 'Applied'
+    const newStage = targetApp.stage === 'Bookmarked' && !newBookmarked ? 'Applied' : targetApp.stage;
+
+    setApplications(prev =>
+      prev.map(app =>
+        app.id === id
+          ? { ...app, is_bookmarked: newBookmarked ? 1 : 0, custom_tags: updatedTags, stage: newStage }
+          : app
+      )
+    );
+
+    showToast(
+      newBookmarked
+        ? `⭐ Bookmarked ${targetApp.company} for quick access`
+        : `Removed ${targetApp.company} from bookmarks`
+    );
+
+    try {
+      const effectiveId = resolveId(id);
+      await api.updateApplication(effectiveId, {
+        custom_tags: updatedTags,
+        is_bookmarked: newBookmarked ? 1 : 0,
+        ...(targetApp.stage === 'Bookmarked' && !newBookmarked ? { stage: 'Applied' } : {}),
+      });
+    } catch (err) {
+      enqueueMutation('update_application', {
+        custom_tags: updatedTags,
+        is_bookmarked: newBookmarked ? 1 : 0
+      }, undefined, id);
+    }
+  };
+
   const moveApplication = async (id: number, stage: ApplicationStage) => {
     if (!isAuthenticated) {
       showToast('Please sign in to update application stages');
       setIsAuthModalOpen(true);
       return;
     }
+
+    // If dropping on 'Bookmarked', bookmark for quick access WITHOUT removing from its current workflow column!
+    if (stage === 'Bookmarked') {
+      await toggleBookmark(id, true);
+      return;
+    }
+
     const prevApps = [...applications];
     setApplications(prev => {
       const target = prev.find(a => a.id === id);
@@ -1208,6 +1272,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         updateApplication,
         deleteApplication,
         moveApplication,
+        toggleBookmark,
         addLearning,
         updateLearning,
         deleteLearning,
@@ -1233,6 +1298,14 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     >
       {children}
     </AppContext.Provider>
+  );
+};
+
+export const isApplicationBookmarked = (app: Application): boolean => {
+  return Boolean(
+    app.is_bookmarked ||
+    (app.custom_tags && app.custom_tags.split(',').map(t => t.trim().toLowerCase()).includes('bookmarked')) ||
+    app.stage === 'Bookmarked'
   );
 };
 

@@ -56,6 +56,12 @@ function runMigrations(db) {
       db.prepare('alter table users add column streak_reminders_enabled integer default 1').run();
       console.log('[Migrator] Added streak_reminders_enabled column to users');
     }
+
+    const appCols = db.prepare('pragma table_info(applications)').all().map(c => c.name);
+    if (appCols.length && !appCols.includes('is_bookmarked')) {
+      db.prepare('alter table applications add column is_bookmarked integer default 0').run();
+      console.log('[Migrator] Added is_bookmarked column to applications');
+    }
   } catch (err) {
     console.warn('[Migrator] Note ensuring users timezone/streak_reminders_enabled:', err.message);
   }

@@ -28,6 +28,7 @@ export interface Application {
   resume_version_id?: number | null;
   position?: number;
   user_id?: string;
+  is_bookmarked?: boolean | number;
 }
 
 export interface LearningTrack {
@@ -51,6 +52,7 @@ export interface Learning {
   notes?: string;
   tags?: string;
   user_id?: string;
+  is_bookmarked?: boolean | number;
 }
 
 export interface TrophyTier {

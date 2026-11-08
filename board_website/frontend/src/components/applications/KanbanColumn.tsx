@@ -12,9 +12,10 @@ interface KanbanColumnProps {
 }
 
 export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications }) => {
-  const { moveApplication, searchQuery, isDataLoading } = useApp();
+  const { moveApplication, toggleBookmark, searchQuery, isDataLoading } = useApp();
   const [isDragOver, setIsDragOver] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
+  const isBookmarkColumn = stage === 'Bookmarked';
 
   // Auto-expand when user types a search query with matching cards
   useEffect(() => {
@@ -24,7 +25,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
   }, [searchQuery, applications.length]);
 
   const stageIcons: Record<ApplicationStage, React.ReactNode> = {
-    Bookmarked: <Bookmark size={13} />,
+    Bookmarked: <Bookmark size={13} className="fill-purple-500/30 text-purple-500" />,
     Applied: <Send size={13} />,
     Interviewing: <Users size={13} />,
     Offer: <Trophy size={13} />,
@@ -48,17 +49,25 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
     if (!idStr) return;
     const appId = Number(idStr);
     if (appId) {
-      moveApplication(appId, stage);
+      if (isBookmarkColumn) {
+        toggleBookmark(appId, true);
+      } else {
+        moveApplication(appId, stage);
+      }
     }
   };
 
   return (
     <section
-      className={`flex flex-col min-w-0 bg-slate-100/70 dark:bg-[#121215] border rounded-2xl p-2.5 transition-all duration-200 ${
+      className={`flex flex-col min-w-0 bg-slate-100/70 dark:bg-[#121215] border rounded-2xl ${
+        isBookmarkColumn ? 'p-2' : 'p-2.5'
+      } transition-all duration-200 ${
         isOpen ? 'h-full min-h-0' : 'h-fit self-start'
       } ${
         isDragOver
-          ? 'border-blue-500/60 ring-2 ring-blue-500/20 bg-blue-50/50 dark:bg-indigo-500/10'
+          ? isBookmarkColumn
+            ? 'border-purple-500/60 ring-2 ring-purple-500/20 bg-purple-50/50 dark:bg-purple-500/10'
+            : 'border-blue-500/60 ring-2 ring-blue-500/20 bg-blue-50/50 dark:bg-indigo-500/10'
           : 'border-slate-200/90 dark:border-white/10'
       }`}
       data-stage={stage}
@@ -71,7 +80,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
         <div className="flex items-center min-w-0">
           <h2 className="flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-slate-700 dark:text-slate-300 m-0 truncate">
             <span style={{ color: STAGE_CONFIG[stage].color }}>{stageIcons[stage]}</span>
-            <span className="truncate">{stage}</span>
+            <span className="truncate">{isBookmarkColumn ? 'Bookmarks' : stage}</span>
           </h2>
         </div>
 
@@ -100,7 +109,7 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
       {/* Collapsible Column Body / Droppable Cards Container */}
       {isOpen && (
         <div
-          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto no-scrollbar pt-2.5 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto no-scrollbar pt-2 animate-in fade-in slide-in-from-top-2 duration-200"
           data-stage={stage}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -109,18 +118,34 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
           {isDataLoading && applications.length === 0 ? (
             <SkeletonColumn count={2} />
           ) : applications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
-              <Inbox size={22} className="opacity-40 mb-1.5" />
-              <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">
-                {stage === 'Bookmarked' ? 'No bookmarked jobs' : `No applications in ${stage}`}
+            isBookmarkColumn ? (
+              <div className="flex flex-col items-center justify-center p-3 text-center rounded-xl border border-dashed border-purple-300/60 dark:border-purple-500/20 bg-purple-50/30 dark:bg-purple-500/[0.02] text-slate-400 dark:text-slate-500 my-1">
+                <Bookmark size={18} className="opacity-50 mb-1 text-purple-500 fill-purple-500/20" />
+                <div className="font-semibold text-[11px] text-slate-700 dark:text-slate-300">
+                  No Bookmarks
+                </div>
+                <div className="text-[10px] opacity-75 mt-0.5 leading-tight">
+                  Drop cards or click ⭐ on cards
+                </div>
               </div>
-              <div className="text-[11px] opacity-75 mt-0.5">
-                Drag cards here or click + Add
+            ) : (
+              <div className="flex flex-col items-center justify-center p-4 text-center rounded-xl border border-dashed border-slate-300/80 dark:border-white/10 bg-white/40 dark:bg-white/[0.02] text-slate-400 dark:text-slate-500 my-1">
+                <Inbox size={22} className="opacity-40 mb-1.5" />
+                <div className="font-semibold text-xs text-slate-600 dark:text-slate-400">
+                  No applications in {stage}
+                </div>
+                <div className="text-[11px] opacity-75 mt-0.5">
+                  Drag cards here or click + Add
+                </div>
               </div>
-            </div>
+            )
           ) : (
             applications.map(app => (
-              <ApplicationCard key={app.id} application={app} />
+              <ApplicationCard
+                key={app.id}
+                application={app}
+                inBookmarkColumn={isBookmarkColumn}
+              />
             ))
           )}
         </div>
