@@ -199,7 +199,7 @@ export const SkeletonProfilePage: React.FC = () => {
       {/* 2 Top Hero Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
         {/* Left Hero Card */}
-        <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/70 dark:bg-[#141417] p-6 space-y-4 flex flex-col justify-between">
+        <div className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/70 dark:bg-[#141417] p-6 flex flex-col justify-start gap-4">
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-2xl bg-slate-200/80 dark:bg-white/10 shrink-0" />
             <div className="space-y-2 flex-1">

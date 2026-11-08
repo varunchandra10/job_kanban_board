@@ -499,7 +499,7 @@ export const CareerProfile: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
         {/* Left Section: User Profile Avatar, Name, Email, Streaks */}
         <section
-          className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between"
+          className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-start gap-4"
           aria-label="User Profile Details"
         >
           {(() => {
@@ -531,7 +531,7 @@ export const CareerProfile: React.FC = () => {
               .slice(0, 2) || 'U';
 
             return (
-              <div className="flex flex-col justify-between h-full space-y-4">
+              <div className="flex flex-col gap-4">
                 {/* User Profile Avatar, Name, Email */}
                 <div className="flex items-center gap-4 sm:gap-5">
                   {oauthAvatarUrl ? (
@@ -578,163 +578,203 @@ export const CareerProfile: React.FC = () => {
                 </div>
 
                 {/* 2 Small Side-by-Side Subsections: 3D Fire Streak & 3D Trophy */}
-                <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="grid grid-cols-2 gap-3.5 pt-1">
                   {/* Subsection 1: 3D Realistic Fire Streak */}
-                  <div className="relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-slate-900/5 dark:to-white/[0.02] p-3 sm:p-3.5 flex flex-col items-center justify-center text-center shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all group">
-                    {/* Ambient 3D Glow Backlight */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gradient-to-t from-red-600/40 via-orange-500/40 to-yellow-400/50 blur-lg pointer-events-none group-hover:scale-125 transition-transform duration-500" />
-
-                    {/* 3D Realistic Fire Icon Pod */}
-                    <div className="relative mb-2">
+                  <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 dark:border-orange-500/25 bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.03] to-transparent dark:from-orange-500/10 dark:via-amber-500/5 dark:to-transparent p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-xs hover:border-orange-500/45 hover:shadow-md hover:shadow-orange-500/10 transition-all duration-200 group">
+                    {/* 3D Realistic Fire Icon */}
+                    <div className="relative mb-2 flex items-center justify-center">
                       <svg
                         width="46"
                         height="46"
-                        viewBox="0 0 48 48"
-                        className="filter drop-shadow-[0_4px_12px_rgba(234,88,12,0.75)] group-hover:scale-110 transition-transform duration-300"
+                        viewBox="0 0 64 64"
+                        fill="none"
+                        className="transition-transform duration-300 group-hover:scale-105"
                       >
                         <defs>
-                          <linearGradient id="fireOuter" x1="0%" y1="100%" x2="0%" y2="0%">
-                            <stop offset="0%" stopColor="#7f1d1d" />
-                            <stop offset="25%" stopColor="#dc2626" />
-                            <stop offset="60%" stopColor="#ea580c" />
-                            <stop offset="100%" stopColor="#f97316" />
+                          <radialGradient id="fireFloorGlow" cx="50%" cy="85%" r="50%">
+                            <stop offset="0%" stopColor="#f97316" stopOpacity="0.4" />
+                            <stop offset="100%" stopColor="#f97316" stopOpacity="0" />
+                          </radialGradient>
+                          <linearGradient id="flameOuterGrad" x1="16" y1="56" x2="48" y2="8" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#991b1b" />
+                            <stop offset="20%" stopColor="#c2410c" />
+                            <stop offset="55%" stopColor="#ea580c" />
+                            <stop offset="85%" stopColor="#f97316" />
+                            <stop offset="100%" stopColor="#fb923c" />
                           </linearGradient>
-
-                          <linearGradient id="fireMid" x1="0%" y1="100%" x2="0%" y2="0%">
+                          <linearGradient id="flameMidGrad" x1="22" y1="54" x2="42" y2="16" gradientUnits="userSpaceOnUse">
                             <stop offset="0%" stopColor="#ea580c" />
-                            <stop offset="40%" stopColor="#f59e0b" />
+                            <stop offset="35%" stopColor="#f59e0b" />
+                            <stop offset="75%" stopColor="#fbbf24" />
                             <stop offset="100%" stopColor="#fde047" />
                           </linearGradient>
-
-                          <linearGradient id="fireCore" x1="0%" y1="100%" x2="0%" y2="0%">
+                          <linearGradient id="flameCoreGrad" x1="26" y1="52" x2="38" y2="28" gradientUnits="userSpaceOnUse">
                             <stop offset="0%" stopColor="#f59e0b" />
-                            <stop offset="50%" stopColor="#fef08a" />
+                            <stop offset="40%" stopColor="#fef08a" />
                             <stop offset="100%" stopColor="#ffffff" />
                           </linearGradient>
-
-                          <filter id="fire3DDepth" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.4" />
-                            <feDropShadow dx="0" dy="-1" stdDeviation="1" floodColor="#ffe4b5" floodOpacity="0.6" />
+                          <linearGradient id="flameSheen" x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.75" />
+                            <stop offset="50%" stopColor="#ffffff" stopOpacity="0.15" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                          </linearGradient>
+                          <filter id="flameShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="3.5" stdDeviation="3" floodColor="#7c2d12" floodOpacity="0.4" />
+                            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.25" />
                           </filter>
                         </defs>
 
-                        {/* Layer 1: Base Heavy Flame */}
+                        {/* Ambient base glow */}
+                        <ellipse cx="32" cy="52" rx="20" ry="6" fill="url(#fireFloorGlow)" />
+
+                        {/* Volumetric outer flame */}
+                        <g filter="url(#flameShadow)">
+                          <path
+                            d="M32 6C32 6 38 14 38 22C38 25 36.8 27.5 35 29C42 26 48 33 48 41C48 50.5 40.5 58 32 58C23.5 58 16 50.5 16 41C16 31 23 24 29 17C32 13 32 6 32 6Z"
+                            fill="url(#flameOuterGrad)"
+                          />
+                          <path
+                            d="M32 8C32 8 29.5 14 27 18C21.5 25 18 31.5 18 41C18 45.5 20 49.5 23 52.5C20 48.5 19.5 43.5 20 39C20.5 33 24 27 28 21C30.5 16.5 32 8 32 8Z"
+                            fill="url(#flameSheen)"
+                            opacity="0.6"
+                          />
+                        </g>
+
+                        {/* Dynamic mid flame tongue */}
                         <path
-                          d="M24 3C24 3 28 8 28 13C28 15 27 17 26 18C31 16 35 21 35 27C35 36 29 43 24 45C19 43 13 36 13 27C13 20 18 15 22 10C24 7 24 3 24 3Z"
-                          fill="url(#fireOuter)"
+                          d="M32 20C32 20 36.5 26 36.5 31C36.5 33.5 35.5 35 34 36C38 35 41.5 39 41.5 44C41.5 49.5 37 54 32 54C27 54 22.5 49.5 22.5 44C22.5 37.5 27 32 30 27C32 23.5 32 20 32 20Z"
+                          fill="url(#flameMidGrad)"
                         />
 
-                        {/* Layer 2: Mid Dynamic Flame Tongue */}
+                        {/* White-hot concentrated core */}
                         <path
-                          d="M24 14C24 14 27 18 27 22C27 24 26 25 25 26C28 25 31 28 31 32C31 38 27 42 24 43C21 42 17 38 17 32C17 27 20 23 23 19C24 17 24 14 24 14Z"
-                          fill="url(#fireMid)"
-                          filter="url(#fire3DDepth)"
+                          d="M32 33C32 33 34.5 37 34.5 40C34.5 41.5 33.8 42.5 33 43C35.5 42.5 37 45 37 47.5C37 51 34.8 52.5 32 52.5C29.2 52.5 27 51 27 47.5C27 43.5 29.5 39.5 31 36.5C32 34.5 32 33 32 33Z"
+                          fill="url(#flameCoreGrad)"
                         />
 
-                        {/* Layer 3: White-Hot Concentrated Core */}
-                        <path
-                          d="M24 25C24 25 26 28 26 31C26 32 25.5 33 25 33.5C26.5 33 28 35 28 37C28 40.5 25.5 42 24 42C22.5 42 20 40.5 20 37C20 34 22 31 23.5 29C24 27.5 24 25 24 25Z"
-                          fill="url(#fireCore)"
-                        />
+                        <ellipse cx="32" cy="46" rx="2" ry="3.5" fill="#ffffff" opacity="0.9" />
+                        <circle cx="44" cy="22" r="1.5" fill="#fde047" opacity="0.8" />
+                        <circle cx="20" cy="26" r="1.2" fill="#fb923c" opacity="0.75" />
+                        <circle cx="36" cy="12" r="1" fill="#fef08a" opacity="0.85" />
                       </svg>
                     </div>
 
                     {/* streak: [number] */}
-                    <div className="space-y-0.5">
-                      <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Streak
-                      </div>
-                      <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tabular-nums">
-                        streak: <span className="text-orange-500 font-extrabold">{streak}</span>
-                      </div>
+                    <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
+                      streak:{' '}
+                      <span className="font-black text-orange-500 dark:text-orange-400 text-sm sm:text-base tabular-nums">
+                        {streak}
+                      </span>
                     </div>
                   </div>
 
                   {/* Subsection 2: 3D Trophy & Name */}
-                  <div className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-slate-900/5 dark:to-white/[0.02] p-3 sm:p-3.5 flex flex-col items-center justify-center text-center shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all group">
-                    {/* Ambient 3D Glow Backlight */}
-                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gradient-to-tr ${currentTierConfig.gradient} blur-lg opacity-40 pointer-events-none group-hover:scale-125 transition-transform duration-500`} />
-
-                    {/* 3D Realistic Trophy Icon Pod */}
-                    <div className="relative mb-2">
+                  <div className="relative overflow-hidden rounded-2xl border border-amber-500/25 dark:border-amber-500/25 bg-gradient-to-b from-amber-500/[0.08] via-yellow-500/[0.03] to-transparent dark:from-amber-500/10 dark:via-yellow-500/5 dark:to-transparent p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-xs hover:border-amber-500/45 hover:shadow-md hover:shadow-amber-500/10 transition-all duration-200 group">
+                    {/* 3D Realistic Trophy Icon */}
+                    <div className="relative mb-2 flex items-center justify-center">
                       <svg
                         width="46"
                         height="46"
-                        viewBox="0 0 48 48"
-                        className="filter drop-shadow-[0_4px_12px_rgba(234,179,8,0.55)] group-hover:scale-110 transition-transform duration-300"
+                        viewBox="0 0 64 64"
+                        fill="none"
+                        className="transition-transform duration-300 group-hover:scale-105"
                       >
                         <defs>
-                          <linearGradient id="gold3DBase" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <radialGradient id="trophyFloorGlow" cx="50%" cy="85%" r="50%">
+                            <stop offset="0%" stopColor="#eab308" stopOpacity="0.35" />
+                            <stop offset="100%" stopColor="#eab308" stopOpacity="0" />
+                          </radialGradient>
+                          <linearGradient id="goldCup3D" x1="16" y1="12" x2="48" y2="40" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#fffbeb" />
+                            <stop offset="15%" stopColor="#fde047" />
+                            <stop offset="40%" stopColor="#eab308" />
+                            <stop offset="70%" stopColor="#ca8a04" />
+                            <stop offset="90%" stopColor="#854d0e" />
+                            <stop offset="100%" stopColor="#713f12" />
+                          </linearGradient>
+                          <linearGradient id="cupSpecHighlight" x1="26" y1="12" x2="33" y2="40" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
+                            <stop offset="40%" stopColor="#ffffff" stopOpacity="0.3" />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+                          </linearGradient>
+                          <linearGradient id="goldHandleGrad" x1="8" y1="14" x2="56" y2="34" gradientUnits="userSpaceOnUse">
                             <stop offset="0%" stopColor="#fef08a" />
                             <stop offset="35%" stopColor="#eab308" />
-                            <stop offset="70%" stopColor="#ca8a04" />
-                            <stop offset="100%" stopColor="#854d0e" />
+                            <stop offset="75%" stopColor="#a16207" />
+                            <stop offset="100%" stopColor="#713f12" />
                           </linearGradient>
-
-                          <linearGradient id="goldCupShine" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#854d0e" />
-                            <stop offset="25%" stopColor="#fde047" />
+                          <linearGradient id="pedestalMetal" x1="20" y1="46" x2="44" y2="58" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#334155" />
+                            <stop offset="30%" stopColor="#1e293b" />
+                            <stop offset="70%" stopColor="#0f172a" />
+                            <stop offset="100%" stopColor="#020617" />
+                          </linearGradient>
+                          <linearGradient id="goldRimGrad" x1="18" y1="10" x2="46" y2="14" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stopColor="#fef9c3" />
                             <stop offset="50%" stopColor="#ffffff" />
-                            <stop offset="75%" stopColor="#fde047" />
-                            <stop offset="100%" stopColor="#a16207" />
+                            <stop offset="100%" stopColor="#eab308" />
                           </linearGradient>
-
-                          <linearGradient id="pedestal3D" x1="0%" y1="0%" x2="0%" y2="100%">
-                            <stop offset="0%" stopColor="#475569" />
-                            <stop offset="50%" stopColor="#1e293b" />
-                            <stop offset="100%" stopColor="#0f172a" />
-                          </linearGradient>
+                          <filter id="trophyShadow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="3.5" stdDeviation="3" floodColor="#713f12" floodOpacity="0.35" />
+                            <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000000" floodOpacity="0.25" />
+                          </filter>
                         </defs>
 
-                        {/* Trophy Handles */}
-                        <path
-                          d="M14 14C9 14 8 20 8 24C8 28 12 30 16 30"
-                          fill="none"
-                          stroke="url(#gold3DBase)"
-                          strokeWidth="3.2"
-                          strokeLinecap="round"
-                        />
-                        <path
-                          d="M34 14C39 14 40 20 40 24C40 28 36 30 32 30"
-                          fill="none"
-                          stroke="url(#gold3DBase)"
-                          strokeWidth="3.2"
-                          strokeLinecap="round"
-                        />
+                        {/* Ambient floor glow */}
+                        <ellipse cx="32" cy="56" rx="20" ry="5" fill="url(#trophyFloorGlow)" />
 
-                        {/* Trophy Cup Body */}
-                        <path
-                          d="M13 10H35V22C35 28.5 30 33 24 33C18 33 13 28.5 13 22V10Z"
-                          fill="url(#goldCupShine)"
-                        />
+                        <g filter="url(#trophyShadow)">
+                          {/* Handles */}
+                          <path
+                            d="M20 18C12 18 9 24 9 29C9 34 13 37 19 37L20 33C15.5 33 13 30.5 13 28C13 24.5 15.5 22 20 22V18Z"
+                            fill="url(#goldHandleGrad)"
+                          />
+                          <path
+                            d="M44 18C52 18 55 24 55 29C55 34 51 37 45 37L44 33C48.5 33 51 30.5 51 28C51 24.5 48.5 22 44 22V18Z"
+                            fill="url(#goldHandleGrad)"
+                          />
 
-                        {/* Cup Rim Top */}
-                        <ellipse cx="24" cy="10" rx="11" ry="2.2" fill="#fef08a" />
+                          {/* Cup Body */}
+                          <path
+                            d="M18 12H46V28C46 36 39.5 42 32 42C24.5 42 18 36 18 28V12Z"
+                            fill="url(#goldCup3D)"
+                          />
+                          <path
+                            d="M22 13H27V28C27 33 25.5 37 23 39C21 36 20 31.5 20 28V13H22Z"
+                            fill="url(#cupSpecHighlight)"
+                          />
 
-                        {/* Trophy Stem */}
-                        <path d="M22 33H26V39H22Z" fill="url(#gold3DBase)" />
+                          {/* Top Cup Rim */}
+                          <ellipse cx="32" cy="12" rx="14" ry="3.5" fill="url(#goldRimGrad)" />
+                          <ellipse cx="32" cy="12" rx="12" ry="2.2" fill="#854d0e" opacity="0.6" />
 
-                        {/* Base Pedestal Platform */}
-                        <path
-                          d="M16 39H32L34 44H14L16 39Z"
-                          fill="url(#pedestal3D)"
-                          stroke="url(#gold3DBase)"
-                          strokeWidth="1.2"
-                        />
+                          {/* Stem */}
+                          <path d="M28 42H36V47H28V42Z" fill="url(#goldCup3D)" />
+                          <ellipse cx="32" cy="47" rx="6" ry="1.8" fill="#ca8a04" />
+
+                          {/* Pedestal Base */}
+                          <path d="M24 48H40L42 53H22L24 48Z" fill="url(#pedestalMetal)" />
+                          <rect x="20" y="53" width="24" height="5" rx="1.5" fill="url(#pedestalMetal)" stroke="#ca8a04" strokeWidth="0.75" />
+                          <rect x="25" y="54" width="14" height="2.5" rx="0.5" fill="url(#goldCup3D)" />
+                        </g>
+
+                        {/* 4-point Sparkle */}
+                        <g transform="translate(42, 9) scale(0.9)">
+                          <path
+                            d="M5 0L6.2 3.8L10 5L6.2 6.2L5 10L3.8 6.2L0 5L3.8 3.8L5 0Z"
+                            fill="#ffffff"
+                          />
+                          <circle cx="5" cy="5" r="1.2" fill="#fef08a" />
+                        </g>
                       </svg>
                     </div>
 
                     {/* Name of trophy */}
-                    <div className="space-y-0.5">
-                      <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                        Trophy
-                      </div>
-                      <div
-                        className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate max-w-full"
-                        title={userLevelTitle}
-                      >
-                        {userLevelTitle}
-                      </div>
+                    <div
+                      className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate max-w-full tracking-tight"
+                      title={userLevelTitle}
+                    >
+                      {userLevelTitle}
                     </div>
                   </div>
                 </div>
