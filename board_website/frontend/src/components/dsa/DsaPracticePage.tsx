@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { SkeletonDsaPage } from '../common/SkeletonLoader';
 import { DSA_CATEGORIES } from '../../data/dsaTopics';
 import { DsaCategory, DsaProblem } from '../../types';
 import {
@@ -46,7 +47,7 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 };
 
 export const DsaPracticePage: React.FC = () => {
-  const { dsaProgress, toggleDsaProblem, updateDsaNotes } = useApp();
+  const { dsaProgress, toggleDsaProblem, updateDsaNotes, isDataLoading } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -140,6 +141,10 @@ export const DsaPracticePage: React.FC = () => {
       };
     }).filter(Boolean) as DsaCategory[];
   }, [searchQuery, selectedCategory]);
+
+  if (isDataLoading) {
+    return <SkeletonDsaPage />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20 w-full animate-in fade-in duration-200">

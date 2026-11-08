@@ -2,6 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { STAGES } from '../../utils/constants';
 import { KanbanColumn } from './KanbanColumn';
+import { SkeletonBoard } from '../common/SkeletonLoader';
 
 export const KanbanBoard: React.FC = () => {
   const {
@@ -10,7 +11,12 @@ export const KanbanBoard: React.FC = () => {
     activeCountry,
     activeMobileStage,
     searchQuery,
+    isDataLoading,
   } = useApp();
+
+  if (isDataLoading) {
+    return <SkeletonBoard />;
+  }
 
   // Filter application pipeline
   const filteredApps = applications.filter(app => {

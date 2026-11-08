@@ -249,9 +249,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
   const [isDataLoading, setIsDataLoading] = useState<boolean>(() => {
     const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
-    if (isLoggedOut) return false;
-    const saved = localStorage.getItem('job_tracker_apps');
-    return !saved || saved === '[]';
+    return !isLoggedOut;
   });
 
   // Core Data loaded from localStorage or initialized with defaults (ONLY if authenticated)
@@ -499,12 +497,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
   // Attempt backend initial fetch on mount (ONLY if authenticated)
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated) {
+      setIsDataLoading(false);
+      return;
+    }
     let mounted = true;
     const fetchInitialData = async () => {
-      if (applications.length === 0) {
-        setIsDataLoading(true);
-      }
+      setIsDataLoading(true);
       try {
         const stateData = await api.getState();
         if (mounted && stateData?.apps) {

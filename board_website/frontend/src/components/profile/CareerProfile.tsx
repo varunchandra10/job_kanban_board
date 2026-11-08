@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getApiEndpoint } from '../../services/api';
+import { SkeletonProfilePage } from '../common/SkeletonLoader';
 import {
   Flame,
   Download,
@@ -156,6 +157,7 @@ export const CareerProfile: React.FC = () => {
     currentUser,
     isDsaEnabled,
     toggleDsaTrack,
+    isDataLoading,
   } = useApp();
 
   // Momentum Activity Matrix Date controls
@@ -487,6 +489,10 @@ export const CareerProfile: React.FC = () => {
     'bg-orange-500',
   ];
 
+  if (isDataLoading) {
+    return <SkeletonProfilePage />;
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 w-full">
       {/* 1. Top Hero Section Divided into 2 Cards: Left (User Info) and Right (Storage & Export) */}
@@ -525,92 +531,210 @@ export const CareerProfile: React.FC = () => {
               .slice(0, 2) || 'U';
 
             return (
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-5">
-                {/* User Profile Avatar */}
-                {oauthAvatarUrl ? (
-                  <img
-                    src={oauthAvatarUrl}
-                    alt={displayName}
-                    className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl object-cover shadow-md ring-4 ring-white dark:ring-[#141417] border border-slate-200/60 dark:border-white/10"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
-                    {avatarInitials}
-                  </div>
-                )}
+              <div className="flex flex-col justify-between h-full space-y-4">
+                {/* User Profile Avatar, Name, Email */}
+                <div className="flex items-center gap-4 sm:gap-5">
+                  {oauthAvatarUrl ? (
+                    <img
+                      src={oauthAvatarUrl}
+                      alt={displayName}
+                      className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl object-cover shadow-md ring-4 ring-white dark:ring-[#141417] border border-slate-200/60 dark:border-white/10"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
+                      {avatarInitials}
+                    </div>
+                  )}
 
-                {/* Details: Name, Email, Streaks */}
-                <div className="min-w-0 flex-1 space-y-2">
-                  {/* Name */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-                      Name:
-                    </span>
-                    <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white m-0 truncate">
-                      {displayName}
-                    </h1>
-                    {isOAuth && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                        OAuth
+                  {/* Details: Name & Email */}
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    {/* Name */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Name:
                       </span>
-                    )}
-                  </div>
-
-                  {/* Email */}
-                  <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
-                    <Mail size={15} className="text-slate-400 shrink-0" />
-                    <span className="font-semibold text-xs text-slate-400 dark:text-slate-500">
-                      Email:
-                    </span>
-                    <span className="font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-200 truncate">
-                      {userEmail || 'Not available'}
-                    </span>
-                  </div>
-
-                  {/* Streaks, Rank Tier & XP Progress */}
-                  <div className="flex items-center gap-2 flex-wrap pt-0.5">
-                    {/* Streaks Badge */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
-                        Streaks:
-                      </span>
-                      <span className="inline-flex items-center gap-1.5 font-bold text-xs text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/25 px-2.5 py-0.5 rounded-full shadow-2xs">
-                        <Flame size={13} className="text-orange-500 animate-pulse" />
-                        <span>{streak}-Day Focus Streak</span>
-                      </span>
+                      <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white m-0 truncate">
+                        {displayName}
+                      </h1>
+                      {isOAuth && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                          OAuth
+                        </span>
+                      )}
                     </div>
 
-                    {/* Rank Trophy Badge */}
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-semibold text-xs text-slate-400 dark:text-slate-500 hidden sm:inline">
-                        Rank:
+                    {/* Email */}
+                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                      <Mail size={15} className="text-slate-400 shrink-0" />
+                      <span className="font-semibold text-xs text-slate-400 dark:text-slate-500">
+                        Email:
                       </span>
-                      <span
-                        className={`inline-flex items-center gap-1.5 font-extrabold text-xs px-2.5 py-0.5 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
-                        title={`Level ${userLevel}: ${userLevelTitle} (${totalXP.toLocaleString()} XP)`}
+                      <span className="font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-200 truncate">
+                        {userEmail || 'Not available'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2 Small Side-by-Side Subsections: 3D Fire Streak & 3D Trophy */}
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  {/* Subsection 1: 3D Realistic Fire Streak */}
+                  <div className="relative overflow-hidden rounded-2xl border border-orange-500/30 bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-slate-900/5 dark:to-white/[0.02] p-3 sm:p-3.5 flex flex-col items-center justify-center text-center shadow-md shadow-orange-500/10 hover:shadow-orange-500/20 transition-all group">
+                    {/* Ambient 3D Glow Backlight */}
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gradient-to-t from-red-600/40 via-orange-500/40 to-yellow-400/50 blur-lg pointer-events-none group-hover:scale-125 transition-transform duration-500" />
+
+                    {/* 3D Realistic Fire Icon Pod */}
+                    <div className="relative mb-2">
+                      <svg
+                        width="46"
+                        height="46"
+                        viewBox="0 0 48 48"
+                        className="filter drop-shadow-[0_4px_12px_rgba(234,88,12,0.75)] group-hover:scale-110 transition-transform duration-300"
                       >
-                        <RankIcon size={13} className="shrink-0" />
-                        <span>Level {userLevel}: {userLevelTitle}</span>
-                      </span>
+                        <defs>
+                          <linearGradient id="fireOuter" x1="0%" y1="100%" x2="0%" y2="0%">
+                            <stop offset="0%" stopColor="#7f1d1d" />
+                            <stop offset="25%" stopColor="#dc2626" />
+                            <stop offset="60%" stopColor="#ea580c" />
+                            <stop offset="100%" stopColor="#f97316" />
+                          </linearGradient>
+
+                          <linearGradient id="fireMid" x1="0%" y1="100%" x2="0%" y2="0%">
+                            <stop offset="0%" stopColor="#ea580c" />
+                            <stop offset="40%" stopColor="#f59e0b" />
+                            <stop offset="100%" stopColor="#fde047" />
+                          </linearGradient>
+
+                          <linearGradient id="fireCore" x1="0%" y1="100%" x2="0%" y2="0%">
+                            <stop offset="0%" stopColor="#f59e0b" />
+                            <stop offset="50%" stopColor="#fef08a" />
+                            <stop offset="100%" stopColor="#ffffff" />
+                          </linearGradient>
+
+                          <filter id="fire3DDepth" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#000000" floodOpacity="0.4" />
+                            <feDropShadow dx="0" dy="-1" stdDeviation="1" floodColor="#ffe4b5" floodOpacity="0.6" />
+                          </filter>
+                        </defs>
+
+                        {/* Layer 1: Base Heavy Flame */}
+                        <path
+                          d="M24 3C24 3 28 8 28 13C28 15 27 17 26 18C31 16 35 21 35 27C35 36 29 43 24 45C19 43 13 36 13 27C13 20 18 15 22 10C24 7 24 3 24 3Z"
+                          fill="url(#fireOuter)"
+                        />
+
+                        {/* Layer 2: Mid Dynamic Flame Tongue */}
+                        <path
+                          d="M24 14C24 14 27 18 27 22C27 24 26 25 25 26C28 25 31 28 31 32C31 38 27 42 24 43C21 42 17 38 17 32C17 27 20 23 23 19C24 17 24 14 24 14Z"
+                          fill="url(#fireMid)"
+                          filter="url(#fire3DDepth)"
+                        />
+
+                        {/* Layer 3: White-Hot Concentrated Core */}
+                        <path
+                          d="M24 25C24 25 26 28 26 31C26 32 25.5 33 25 33.5C26.5 33 28 35 28 37C28 40.5 25.5 42 24 42C22.5 42 20 40.5 20 37C20 34 22 31 23.5 29C24 27.5 24 25 24 25Z"
+                          fill="url(#fireCore)"
+                        />
+                      </svg>
+                    </div>
+
+                    {/* streak: [number] */}
+                    <div className="space-y-0.5">
+                      <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Streak
+                      </div>
+                      <div className="text-sm sm:text-base font-black text-slate-900 dark:text-white tabular-nums">
+                        streak: <span className="text-orange-500 font-extrabold">{streak}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* XP Level Progress Bar */}
-                  <div className="pt-1 max-w-xs sm:max-w-sm">
-                    <div className="flex items-center justify-between text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                      <span className="tabular-nums">
-                        <strong className="text-slate-800 dark:text-slate-200">{totalXP.toLocaleString()}</strong> XP Total
-                      </span>
-                      <span className="tabular-nums font-mono text-[10.5px]">
-                        {progressPercent}% to {nextTierConfig ? `Level ${userLevel + 1} ${nextTierConfig.title}` : 'Grandmaster Max'}
-                      </span>
+                  {/* Subsection 2: 3D Trophy & Name */}
+                  <div className="relative overflow-hidden rounded-2xl border border-indigo-500/30 bg-gradient-to-b from-indigo-500/10 via-purple-500/5 to-slate-900/5 dark:to-white/[0.02] p-3 sm:p-3.5 flex flex-col items-center justify-center text-center shadow-md shadow-indigo-500/10 hover:shadow-indigo-500/20 transition-all group">
+                    {/* Ambient 3D Glow Backlight */}
+                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-gradient-to-tr ${currentTierConfig.gradient} blur-lg opacity-40 pointer-events-none group-hover:scale-125 transition-transform duration-500`} />
+
+                    {/* 3D Realistic Trophy Icon Pod */}
+                    <div className="relative mb-2">
+                      <svg
+                        width="46"
+                        height="46"
+                        viewBox="0 0 48 48"
+                        className="filter drop-shadow-[0_4px_12px_rgba(234,179,8,0.55)] group-hover:scale-110 transition-transform duration-300"
+                      >
+                        <defs>
+                          <linearGradient id="gold3DBase" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#fef08a" />
+                            <stop offset="35%" stopColor="#eab308" />
+                            <stop offset="70%" stopColor="#ca8a04" />
+                            <stop offset="100%" stopColor="#854d0e" />
+                          </linearGradient>
+
+                          <linearGradient id="goldCupShine" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#854d0e" />
+                            <stop offset="25%" stopColor="#fde047" />
+                            <stop offset="50%" stopColor="#ffffff" />
+                            <stop offset="75%" stopColor="#fde047" />
+                            <stop offset="100%" stopColor="#a16207" />
+                          </linearGradient>
+
+                          <linearGradient id="pedestal3D" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" stopColor="#475569" />
+                            <stop offset="50%" stopColor="#1e293b" />
+                            <stop offset="100%" stopColor="#0f172a" />
+                          </linearGradient>
+                        </defs>
+
+                        {/* Trophy Handles */}
+                        <path
+                          d="M14 14C9 14 8 20 8 24C8 28 12 30 16 30"
+                          fill="none"
+                          stroke="url(#gold3DBase)"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                        />
+                        <path
+                          d="M34 14C39 14 40 20 40 24C40 28 36 30 32 30"
+                          fill="none"
+                          stroke="url(#gold3DBase)"
+                          strokeWidth="3.2"
+                          strokeLinecap="round"
+                        />
+
+                        {/* Trophy Cup Body */}
+                        <path
+                          d="M13 10H35V22C35 28.5 30 33 24 33C18 33 13 28.5 13 22V10Z"
+                          fill="url(#goldCupShine)"
+                        />
+
+                        {/* Cup Rim Top */}
+                        <ellipse cx="24" cy="10" rx="11" ry="2.2" fill="#fef08a" />
+
+                        {/* Trophy Stem */}
+                        <path d="M22 33H26V39H22Z" fill="url(#gold3DBase)" />
+
+                        {/* Base Pedestal Platform */}
+                        <path
+                          d="M16 39H32L34 44H14L16 39Z"
+                          fill="url(#pedestal3D)"
+                          stroke="url(#gold3DBase)"
+                          strokeWidth="1.2"
+                        />
+                      </svg>
                     </div>
-                    <div className="h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+
+                    {/* Name of trophy */}
+                    <div className="space-y-0.5">
+                      <div className="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                        Trophy
+                      </div>
                       <div
-                        className={`h-full bg-gradient-to-r ${currentTierConfig.gradient} rounded-full transition-all duration-700 shadow-2xs`}
-                        style={{ width: `${progressPercent}%` }}
-                      />
+                        className="text-xs sm:text-sm font-black text-slate-900 dark:text-white truncate max-w-full"
+                        title={userLevelTitle}
+                      >
+                        {userLevelTitle}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -729,59 +853,59 @@ export const CareerProfile: React.FC = () => {
               <span>Download as CSV</span>
             </button>
           </div>
+
+          {/* DSA Subsection (Progressive DSA Practice Roadmap) */}
+          <div className="pt-3 border-t border-slate-100 dark:border-white/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                <Code2 size={13} className="text-purple-500" />
+                <span>DSA Track</span>
+              </span>
+              <span
+                className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
+                  isDsaEnabled
+                    ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20'
+                    : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-white/10'
+                }`}
+              >
+                {isDsaEnabled ? 'Active in Navbar' : 'Disabled'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/5">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                  <span>Want to be progressive in DSA?</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-purple-600 dark:text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded-md">
+                    <Sparkles size={10} /> 78 Curated Challenges
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 mt-0.5 leading-relaxed">
+                  Toggle on to access structured LeetCode sheets and count algorithm solves toward your daily streak quest (+25 XP).
+                </p>
+              </div>
+
+              {/* Toggle switch */}
+              <button
+                type="button"
+                onClick={() => toggleDsaTrack(!isDsaEnabled)}
+                role="switch"
+                aria-checked={isDsaEnabled}
+                className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500/30 ${
+                  isDsaEnabled ? 'bg-purple-600 dark:bg-purple-500' : 'bg-slate-300 dark:bg-white/20'
+                }`}
+                title={isDsaEnabled ? 'Disable DSA Track' : 'Enable DSA Track'}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isDsaEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
         </section>
       </div>
-
-      {/* Workflow Modules: DSA & Coding Interview Practice Path */}
-      <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs transition-all hover:border-purple-300 dark:hover:border-purple-500/30">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">
-              <Code2 size={20} />
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  DSA &amp; Coding Interview Practice Path
-                </h3>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-500/20">
-                  12 Categories &bull; 78 Problems
-                </span>
-                {isDsaEnabled && (
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                    Active in Navigation
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-                Activate your structured coding interview roadmap covering 12 curated topics (Arrays, Strings, Linked Lists, Trees, Graphs, DP, Heaps, and more). Includes problem checklists, personal approach notes, and direct LeetCode links. Stored persistently in your account.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 self-end sm:self-center shrink-0">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 hidden sm:inline">
-              {isDsaEnabled ? 'Enabled' : 'Disabled'}
-            </span>
-            <button
-              type="button"
-              onClick={() => toggleDsaTrack(!isDsaEnabled)}
-              role="switch"
-              aria-checked={isDsaEnabled}
-              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/50 ${
-                isDsaEnabled ? 'bg-purple-600 dark:bg-purple-500' : 'bg-slate-300 dark:bg-white/20'
-              }`}
-              title={isDsaEnabled ? 'Disable DSA Practice Track' : 'Enable DSA Practice Track'}
-            >
-              <span
-                className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
-                  isDsaEnabled ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </section>
 
       {/* 2. 2-Card Row: Left = Quick Links & Profiles | Right = Activity & Momentum Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">

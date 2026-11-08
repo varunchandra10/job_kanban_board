@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LEARNING_TRACKS, APTITUDE_TOPICS } from '../../utils/constants';
 import { LearningCard } from './LearningCard';
-import { SkeletonLearningCard } from '../common/SkeletonLoader';
+import { SkeletonLearningCard, SkeletonLearningsBoard } from '../common/SkeletonLoader';
 import { FocusSprintBar } from './FocusSprintBar';
 import {
   Inbox,
@@ -120,6 +120,10 @@ export const LearningsBoard: React.FC = () => {
     if (n.includes('finance') || n.includes('business') || n.includes('econ') || n.includes('market')) return <Briefcase size={13} />;
     return <BookOpen size={13} />;
   };
+
+  if (isDataLoading) {
+    return <SkeletonLearningsBoard />;
+  }
 
   return (
     <div className="flex-1 min-h-0 flex flex-col gap-2.5">
