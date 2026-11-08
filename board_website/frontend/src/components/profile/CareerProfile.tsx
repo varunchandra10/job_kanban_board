@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { getApiEndpoint } from '../../services/api';
 import { SkeletonProfilePage } from '../common/SkeletonLoader';
+import { FocusSprintBar } from '../learnings/FocusSprintBar';
 import {
   Flame,
   Download,
@@ -942,18 +943,18 @@ export const CareerProfile: React.FC = () => {
                   </div>
                 </div>
 
-                {/* 2 Small Side-by-Side Subsections: 3D Fire Streak & 3D Trophy */}
-                <div className="grid grid-cols-2 gap-3.5 pt-1">
+                {/* 2 Small Side-by-Side Subsections: 3D Fire Streak & 3D Career Rank */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-0.5">
                   {/* Subsection 1: 3D Realistic Fire Streak */}
-                  <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 dark:border-orange-500/25 bg-gradient-to-b from-orange-500/[0.08] via-amber-500/[0.03] to-transparent dark:from-orange-500/10 dark:via-amber-500/5 dark:to-transparent p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-xs hover:border-orange-500/45 hover:shadow-md hover:shadow-orange-500/10 transition-all duration-200 group">
+                  <div className="relative overflow-hidden rounded-2xl border border-orange-500/25 dark:border-orange-500/30 bg-gradient-to-br from-orange-500/[0.08] via-amber-500/[0.03] to-transparent dark:from-orange-500/10 dark:via-amber-500/5 dark:to-transparent p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:border-orange-500/40 hover:shadow-md hover:shadow-orange-500/10 transition-all duration-200 group">
                     {/* 3D Realistic Fire Icon */}
-                    <div className="relative mb-2 flex items-center justify-center">
+                    <div className="relative shrink-0 flex items-center justify-center">
                       <svg
-                        width="46"
-                        height="46"
+                        width="44"
+                        height="44"
                         viewBox="0 0 64 64"
                         fill="none"
-                        className="transition-transform duration-300 group-hover:scale-105"
+                        className="transition-transform duration-300 group-hover:scale-105 drop-shadow-sm"
                       >
                         <defs>
                           <radialGradient id="fireFloorGlow" cx="50%" cy="85%" r="50%">
@@ -1024,38 +1025,57 @@ export const CareerProfile: React.FC = () => {
                       </svg>
                     </div>
 
-                    {/* streak: [number] */}
-                    <div className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300">
-                      streak:{' '}
-                      <span className="font-black text-orange-500 dark:text-orange-400 text-sm sm:text-base tabular-nums">
-                        {streak}
-                      </span>
+                    {/* Streak Info */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-orange-600 dark:text-orange-400">
+                        <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                        <span>Streak</span>
+                      </div>
+                      <div className="flex items-baseline gap-1 mt-0.5">
+                        <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tabular-nums tracking-tight">
+                          {streak}
+                        </span>
+                        <span className="text-xs font-bold text-orange-600 dark:text-orange-400">
+                          {streak === 1 ? 'day' : 'days'}
+                        </span>
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                        Best: <strong className="text-slate-700 dark:text-slate-300 font-bold">{gamification.longestStreak ?? streak}d</strong>
+                      </div>
                     </div>
                   </div>
 
                   {/* Subsection 2: 3D Rank Icon & Name (Dynamic by current unlocked tier) */}
-                  <div className={`relative overflow-hidden rounded-2xl border ${currentTierConfig.border} bg-gradient-to-b ${currentTierConfig.bg} via-transparent to-transparent p-3.5 sm:p-4 flex flex-col items-center justify-center text-center shadow-xs hover:shadow-md transition-all duration-200 group`}>
+                  <div className={`relative overflow-hidden rounded-2xl border ${currentTierConfig.border} bg-gradient-to-br ${currentTierConfig.bg} via-transparent to-transparent p-3 sm:p-3.5 flex items-center gap-3 shadow-xs hover:shadow-md transition-all duration-200 group`}>
                     {/* 3D Tier Icon Pod (Sprout, Zap, Scholar Cap, Code, Gem, Crown, Trophy) */}
-                    <div className="relative mb-2 flex items-center justify-center">
+                    <div className="relative shrink-0 flex items-center justify-center">
                       <Tier3DIcon
                         tier={userLevel}
-                        size={46}
+                        size={44}
                         className="transition-transform duration-300 group-hover:scale-105 drop-shadow-md"
                       />
                     </div>
 
-                    {/* Name of trophy / rank */}
-                    <div
-                      className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate max-w-full tracking-tight"
-                      title={userLevelTitle}
-                    >
-                      {userLevelTitle}
+                    {/* Rank Info */}
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[10px] font-black uppercase tracking-wider ${currentTierConfig.text}`}>
+                        Level {userLevel} Rank
+                      </div>
+                      <div
+                        className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate tracking-tight mt-0.5"
+                        title={userLevelTitle}
+                      >
+                        {userLevelTitle}
+                      </div>
+                      <div className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 truncate mt-0.5 font-mono">
+                        {totalXP.toLocaleString()} XP
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Level XP Progress Bar below the 2 subsections */}
-                <div className="pt-1.5 space-y-1.5">
+                <div className="pt-0.5 space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <span className="tabular-nums">
                       <strong className="text-slate-800 dark:text-slate-200 font-extrabold">{totalXP.toLocaleString()}</strong> XP Total
@@ -1070,6 +1090,11 @@ export const CareerProfile: React.FC = () => {
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
+                </div>
+
+                {/* Focus Sprint Timer integrated below subsections */}
+                <div className="pt-1.5">
+                  <FocusSprintBar />
                 </div>
               </div>
             );
@@ -2005,7 +2030,7 @@ export const CareerProfile: React.FC = () => {
             <span
               className={`inline-flex items-center gap-1.5 font-black text-xs px-2.5 sm:px-3 py-1 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
             >
-              <RankIcon size={13} className="shrink-0" />
+              <Tier3DIcon tier={userLevel} size={16} className="shrink-0 drop-shadow-xs" />
               <span>Level {userLevel}: {userLevelTitle}</span>
             </span>
 
@@ -2083,18 +2108,18 @@ export const CareerProfile: React.FC = () => {
                     {/* Card Center: Icon & Title */}
                     <div className="flex flex-col items-center text-center my-1">
                       <div
-                        className={`flex h-12 w-12 items-center justify-center rounded-2xl border transition-transform duration-300 mb-2 ${
+                        className={`flex h-14 w-14 items-center justify-center rounded-2xl border transition-transform duration-300 mb-2 ${
                           isCurrent
-                            ? `${cfg.bg} ${cfg.border} shadow-md ${cfg.glow} scale-105`
+                            ? `${cfg.bg} ${cfg.border} shadow-md ${cfg.glow} scale-105 ring-2 ring-indigo-500/30`
                             : isUnlocked
-                            ? `${cfg.bg} ${cfg.border}`
+                            ? `${cfg.bg} ${cfg.border} shadow-2xs`
                             : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/5'
                         }`}
                       >
                         <Tier3DIcon
                           tier={lvl}
-                          size={28}
-                          className={isUnlocked ? 'transition-transform duration-300 hover:scale-110 drop-shadow-sm' : 'opacity-35 grayscale'}
+                          size={40}
+                          className={isUnlocked ? 'transition-transform duration-300 hover:scale-110 drop-shadow-md' : 'opacity-35 grayscale'}
                         />
                       </div>
 

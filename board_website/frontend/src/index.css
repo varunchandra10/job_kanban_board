@@ -11,7 +11,7 @@
 }
 
 /* Hide visible scrollbars globally while preserving full native scroll functionality */
-* {
+html, body, #root, * {
   scrollbar-width: none !important;
   -ms-overflow-style: none !important;
 }
@@ -19,10 +19,14 @@
 *::-webkit-scrollbar,
 *::-webkit-scrollbar-thumb,
 *::-webkit-scrollbar-track,
-*::-webkit-scrollbar-button {
+*::-webkit-scrollbar-corner,
+*::-webkit-scrollbar-button,
+::-webkit-scrollbar {
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
+  -webkit-appearance: none !important;
 }
 
 .no-scrollbar,
@@ -42,6 +46,7 @@
   display: none !important;
   width: 0 !important;
   height: 0 !important;
+  background: transparent !important;
 }
 
 @keyframes shimmer {

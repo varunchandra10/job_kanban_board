@@ -109,7 +109,8 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
       {/* Collapsible Column Body / Droppable Cards Container */}
       {isOpen && (
         <div
-          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto no-scrollbar pt-2 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="flex-1 min-h-0 flex flex-col gap-2.5 overflow-y-auto no-scrollbar pt-2 animate-in fade-in slide-in-from-top-2 duration-200 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           data-stage={stage}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
