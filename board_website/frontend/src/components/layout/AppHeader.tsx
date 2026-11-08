@@ -138,7 +138,7 @@ export const AppHeader: React.FC = () => {
             size={14}
             className={isBoardActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}
           />
-          <span className="whitespace-nowrap">Job Applications</span>
+          <span className="whitespace-nowrap">Jobs</span>
           <span
             className={`inline-flex min-w-5 items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
               isBoardActive
@@ -191,7 +191,7 @@ export const AppHeader: React.FC = () => {
               size={14}
               className={isDsaActive ? 'text-purple-600 dark:text-purple-400' : 'text-slate-400 dark:text-slate-500'}
             />
-            <span className="whitespace-nowrap">DSA Practice</span>
+            <span className="whitespace-nowrap">DSA</span>
             <span
               className={`inline-flex min-w-5 items-center justify-center rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
                 isDsaActive
