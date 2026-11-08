@@ -659,10 +659,13 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       recruiter_notes: data.recruiter_notes || '',
       resume_path: data.resume_path || '',
       cover_letter_path: data.cover_letter_path || '',
-      position: applications.length,
+      position: 0,
     };
 
-    setApplications(prev => [newApp, ...prev]);
+    setApplications(prev => [
+      newApp,
+      ...prev.map(a => (a.stage === newApp.stage ? { ...a, position: (a.position ?? 0) + 1 } : a))
+    ]);
     showToast(`Added application for ${newApp.company}`);
 
     try {
@@ -718,12 +721,18 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsAuthModalOpen(true);
       return;
     }
-    const prevStage = applications.find(a => a.id === id)?.stage;
-    setApplications(prev => prev.map(a => (a.id === id ? { ...a, stage } : a)));
+    const prevApps = [...applications];
+    setApplications(prev => {
+      const target = prev.find(a => a.id === id);
+      if (!target) return prev;
+      const updated = { ...target, stage, position: 0 };
+      const others = prev
+        .filter(a => a.id !== id)
+        .map(a => (a.stage === stage ? { ...a, position: (a.position ?? 0) + 1 } : a));
+      return [updated, ...others];
+    });
     showToast(`Moved to ${stage}`, () => {
-      if (prevStage) {
-        setApplications(prev => prev.map(a => (a.id === id ? { ...a, stage: prevStage } : a)));
-      }
+      setApplications(prevApps);
     });
 
     try {

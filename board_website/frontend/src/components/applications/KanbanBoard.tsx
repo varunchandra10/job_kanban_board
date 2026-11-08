@@ -48,7 +48,14 @@ export const KanbanBoard: React.FC = () => {
       data-active-stage={activeMobileStage}
     >
       {STAGES.map(stage => {
-        const stageApps = filteredApps.filter(a => a.stage === stage);
+        const stageApps = filteredApps
+          .filter(a => a.stage === stage)
+          .sort((a, b) => {
+            const posA = a.position ?? 0;
+            const posB = b.position ?? 0;
+            if (posA !== posB) return posA - posB;
+            return (b.id ?? 0) - (a.id ?? 0);
+          });
         return (
           <KanbanColumn
             key={stage}

@@ -384,9 +384,9 @@ function move(id, stage, before, userId = null) {
   const cur = db.prepare(`select stage from applications where id=?${userClause}`).get(id, ...userParam)?.stage;
   if (!cur) return;
 
-  const ids = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position`).all(stage, id, ...userParam).map(r => r.id);
+  const ids = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(stage, id, ...userParam).map(r => r.id);
   let i = before ? ids.indexOf(+before) : -1;
-  if (i < 0) i = ids.length;
+  if (i < 0) i = 0;
   ids.splice(i, 0, id);
 
   const updateStmt = db.prepare(`update applications set stage=?, position=? where id=?${userClause}`);
@@ -439,7 +439,7 @@ const getState = (userId = null) => {
     }
   } catch (_) {}
 
-  const rawApps = db.prepare('select * from applications where user_id=? order by position, id').all(userId);
+  const rawApps = db.prepare('select * from applications where user_id=? order by position asc, id desc').all(userId);
   const decryptedApps = rawApps.map(app => {
     if (app.portal_pass) {
       return { ...app, portal_pass: decryptCredential(app.portal_pass) };

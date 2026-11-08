@@ -70,15 +70,19 @@ exports.createApplication = (req, res, next) => {
     const b = { ...(req.body || {}) };
     delete b.user_id;
     delete b.id;
+    delete b.position;
 
     const targetStage = b.stage || 'Applied';
-    const minRow = db.prepare("select coalesce(min(position),0)-1 as p from applications where stage=? and user_id=?").get(targetStage, userId);
-    const min = minRow ? minRow.p : 0;
     const cat = b.category || 'Industry';
     const portalPass = b.portal_pass ? encryptCredential(b.portal_pass) : '';
 
-    const r = db.prepare("insert into applications(company,role,country,city,date_applied,stage,position,category,portal_url,portal_user,portal_pass,portal_notes,custom_tags,user_id) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?)")
-      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', targetStage, min, cat, b.portal_url || '', b.portal_user || '', portalPass, b.portal_notes || '', b.custom_tags || '', userId);
+    // Shift existing cards in targetStage down by 1 so the newly applied card is placed at position 0 (top of the stack)
+    runInTransaction(() => {
+      db.prepare("update applications set position = position + 1 where stage=? and user_id=?").run(targetStage, userId);
+    });
+
+    const r = db.prepare("insert into applications(company,role,country,city,date_applied,stage,position,category,portal_url,portal_user,portal_pass,portal_notes,custom_tags,user_id) values(?,?,?,?,?,?,0,?,?,?,?,?,?,?)")
+      .run(b.company, b.role || '', b.country || '', b.city || '', b.date_applied || '', targetStage, cat, b.portal_url || '', b.portal_user || '', portalPass, b.portal_notes || '', b.custom_tags || '', userId);
 
     const id = Number(r.lastInsertRowid);
     patch('applications', id, b, userId);
