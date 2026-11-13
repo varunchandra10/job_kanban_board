@@ -11,9 +11,12 @@ import { AllItemsListModal } from '../common/AllItemsListModal';
 import { ShutdownModal } from '../ui/ShutdownModal';
 import { DriveModal } from '../ui/DriveModal';
 import { StorageSwitchModal } from '../ui/StorageSwitchModal';
+import { JobClipperModal } from '../common/JobClipperModal';
+import { useApp } from '../../context/AppContext';
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
+  const { isClipperModalOpen, setIsClipperModalOpen } = useApp();
 
   const isBoard = location.pathname === '/job-applications' || location.pathname === '/board' || location.pathname === '/applications';
   const isLearnings = location.pathname === '/learnings';
@@ -51,6 +54,10 @@ export const AppLayout: React.FC = () => {
       <ShutdownModal />
       <DriveModal />
       <StorageSwitchModal />
+      <JobClipperModal
+        isOpen={isClipperModalOpen}
+        onClose={() => setIsClipperModalOpen(false)}
+      />
     </div>
   );
 };

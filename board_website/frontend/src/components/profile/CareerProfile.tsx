@@ -531,6 +531,7 @@ export const CareerProfile: React.FC = () => {
     toggleDsaTrack,
     dsaProgress,
     isDataLoading,
+    setIsClipperModalOpen,
   } = useApp();
 
   // Momentum Activity Matrix Date controls
@@ -1268,6 +1269,17 @@ export const CareerProfile: React.FC = () => {
             >
               <Download size={13} className="text-emerald-500 shrink-0" />
               <span>Download as CSV</span>
+            </button>
+
+            {/* 1-Click Job Clipper Setup Button */}
+            <button
+              type="button"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all shadow-xs cursor-pointer"
+              onClick={() => setIsClipperModalOpen(true)}
+              title="Setup 1-Click Universal Job Clipper Bookmarklet"
+            >
+              <Zap size={13} className="fill-orange-500/20 shrink-0" />
+              <span>Job Clipper</span>
             </button>
           </div>
 

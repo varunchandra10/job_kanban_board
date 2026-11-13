@@ -17,6 +17,7 @@ const settingsRoutes = require('./routes/settings');
 const backupRoutes = require('./routes/backup');
 const learningsRoutes = require('./routes/learnings');
 const dsaRoutes = require('./routes/dsa');
+const clipperRoutes = require('./routes/clipper');
 
 // ---------------------------------------------------------------------
 // HTTP Security Headers & CORS Configuration
@@ -67,6 +68,14 @@ const corsOptions = {
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token', 'x-storage-mode', 'x-custom-storage-dir']
 };
+
+// Universal CORS for Job Clipper endpoints (callable by bookmarklet from any external job board)
+app.use('/api/clipper', cors({
+  origin: true,
+  credentials: true,
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token']
+}));
 
 app.use(cors(corsOptions));
 app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 500 }));
@@ -166,6 +175,8 @@ app.use('/api', rolesRoutes);
 app.use('/api', settingsRoutes);
 app.use('/api', learningsRoutes);
 app.use('/api', dsaRoutes);
+app.use('/api', clipperRoutes);
+app.use('/api/clipper', clipperRoutes);
 app.use('/api/backup', backupRoutes);
 
 // Background Schedulers (Evening Streak Safeguard Reminders)

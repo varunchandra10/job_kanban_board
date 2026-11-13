@@ -15,6 +15,11 @@ function authMiddleware(req, res, next) {
     }
   }
 
+  // Always allow CORS pre-flight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const fullPath = (req.originalUrl || req.url || req.path || '').split('?')[0];
   const reqPath = req.path || fullPath;
 

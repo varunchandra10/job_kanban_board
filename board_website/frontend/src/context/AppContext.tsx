@@ -61,6 +61,8 @@ interface AppContextType {
   toast: ToastState | null;
   isShutdownOpen: boolean;
   isDriveModalOpen: boolean;
+  isClipperModalOpen: boolean;
+  setIsClipperModalOpen: (open: boolean) => void;
   gdriveStatus: { connected: boolean; folderId: string | null };
   isAuthenticated: boolean;
   currentUser: any;
@@ -177,6 +179,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [toast, setToast] = useState<ToastState | null>(null);
   const [isShutdownOpen, setIsShutdownOpen] = useState<boolean>(false);
   const [isDriveModalOpen, setIsDriveModalOpen] = useState<boolean>(false);
+  const [isClipperModalOpen, setIsClipperModalOpen] = useState<boolean>(false);
   const [driveModalTab, setDriveModalTab] = useState<'local_storage' | 'g_drive' | 'sync'>('local_storage');
 
   const openDriveModal = (tab?: 'local_storage' | 'g_drive' | 'sync') => {
@@ -433,6 +436,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         api.getGamification(),
       ]);
       if (stateRes.status === 'fulfilled' && stateRes.value?.apps) {
+        sessionStorage.setItem('job_tracker_server_warmed', 'true');
         setApplications(stateRes.value.apps);
         if (stateRes.value.profile) setProfile(stateRes.value.profile);
         if (stateRes.value.versions) setVersions(stateRes.value.versions);
@@ -508,6 +512,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       // Fire all independent initial requests in parallel to avoid serial network waterfall
       const statePromise = api.getState().then(stateData => {
         if (mounted && stateData?.apps) {
+          sessionStorage.setItem('job_tracker_server_warmed', 'true');
           setApplications(stateData.apps);
           localStorage.setItem('job_tracker_apps', JSON.stringify(stateData.apps));
           if (stateData.profile) setProfile(stateData.profile);
@@ -1164,6 +1169,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCurrentUser(res.user);
       }
       localStorage.removeItem('logged_out');
+      sessionStorage.setItem('job_tracker_server_warmed', 'true');
       setIsAuthenticated(true);
       closeAuthModal();
       showToast('Logged in successfully');
@@ -1190,6 +1196,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCurrentUser(res.user);
       }
       localStorage.removeItem('logged_out');
+      sessionStorage.setItem('job_tracker_server_warmed', 'true');
       setIsAuthenticated(true);
       closeAuthModal();
       showToast(`Welcome, ${res.user?.name || res.user?.email || 'User'}! Signed in with Google`);
@@ -1244,6 +1251,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCurrentUser(res.user);
       }
       localStorage.removeItem('logged_out');
+      sessionStorage.setItem('job_tracker_server_warmed', 'true');
       setIsAuthenticated(true);
       closeAuthModal();
       showToast('Password reset successfully! Signed in.');
@@ -1308,6 +1316,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         toast,
         isShutdownOpen,
         isDriveModalOpen,
+        isClipperModalOpen,
+        setIsClipperModalOpen,
         gdriveStatus,
         isAuthenticated,
         currentUser,

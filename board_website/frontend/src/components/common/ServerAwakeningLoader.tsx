@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Server, RefreshCw, Sparkles, CheckCircle2, Clock, ArrowRight, Cloud } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { RefreshCw, Sparkles, CheckCircle2, ArrowRight, Cloud, X } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { getApiEndpoint, isTauri } from '../../services/api';
 
@@ -7,7 +7,10 @@ export const ServerAwakeningLoader: React.FC = () => {
   // Never show cloud server awakening modal in the native desktop app (runs on offline local SQLite)
   if (isTauri) return null;
 
-  const { showToast } = useApp();
+  const { showToast, isAuthenticated, isDataLoading, applications } = useApp();
+
+  // If user is not authenticated (e.g. browsing landing page), do not block them with cloud wakeup screen
+  if (!isAuthenticated) return null;
 
   // Has the server responded in this browser session?
   const [isWarmed, setIsWarmed] = useState<boolean>(() => {
@@ -18,91 +21,128 @@ export const ServerAwakeningLoader: React.FC = () => {
   const [isReady, setIsReady] = useState<boolean>(false);
   const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
   const [hasTimeoutError, setHasTimeoutError] = useState<boolean>(false);
-  const [retryCount, setRetryCount] = useState<number>(0);
+  const isReadyRef = useRef<boolean>(false);
+  const isMountedRef = useRef<boolean>(true);
+
+  // If applications data is already loaded in memory or cache, mark server warmed immediately
+  useEffect(() => {
+    if (!isDataLoading && applications.length > 0 && !isWarmed) {
+      sessionStorage.setItem('job_tracker_server_warmed', 'true');
+      setIsWarmed(true);
+      setIsVisible(false);
+    }
+  }, [isDataLoading, applications.length, isWarmed]);
 
   useEffect(() => {
     if (isWarmed) return;
 
-    let isMounted = true;
-    let timerInterval: ReturnType<typeof setInterval>;
-    let showDelayTimer: ReturnType<typeof setTimeout>;
+    isMountedRef.current = true;
+    isReadyRef.current = false;
 
-    // Only show loader if server takes more than 700ms to respond (prevent flashing on fast/local servers)
-    showDelayTimer = setTimeout(() => {
-      if (isMounted && !isReady) {
+    // Only show loader if server takes more than 2.5s to respond (prevents flashing on fast/local servers)
+    const showDelayTimer = setTimeout(() => {
+      if (isMountedRef.current && !isReadyRef.current) {
         setIsVisible(true);
       }
-    }, 700);
+    }, 2500);
 
     const startTime = Date.now();
-    timerInterval = setInterval(() => {
+    const timerInterval = setInterval(() => {
+      if (!isMountedRef.current) return;
       const sec = Math.floor((Date.now() - startTime) / 1000);
       setElapsedSeconds(sec);
-      if (sec >= 14) {
+
+      // Offer retry button if taking longer than 6s
+      if (sec >= 6) {
         setHasTimeoutError(true);
+      }
+
+      // Auto-dismiss safeguard: After 8s, never freeze the user's screen; auto-dismiss into cached/offline mode
+      if (sec >= 8 && !isReadyRef.current) {
+        sessionStorage.setItem('job_tracker_server_warmed', 'true');
+        setIsVisible(false);
+        setIsWarmed(true);
+        showToast('Continuing in cached mode. Cloud server instance is finishing startup in background.');
       }
     }, 500);
 
-    // Ping health check endpoint
-    const checkServerHealth = async () => {
+    // Continuous resilient polling (polls every 2.5s until ready or unmounted)
+    let pollTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const pollServerHealth = async () => {
+      if (!isMountedRef.current || isReadyRef.current) return;
+
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        const fetchTimeout = setTimeout(() => controller.abort(), 3500);
 
         const res = await fetch(getApiEndpoint('/api/health'), {
           signal: controller.signal,
           headers: { 'Cache-Control': 'no-cache' }
         });
-        clearTimeout(timeoutId);
+        clearTimeout(fetchTimeout);
 
         if (res.ok) {
-          if (!isMounted) return;
+          if (!isMountedRef.current) return;
+          isReadyRef.current = true;
           setIsReady(true);
           sessionStorage.setItem('job_tracker_server_warmed', 'true');
 
-          // Smooth dissolve
+          // Smooth fade-out
           setTimeout(() => {
-            if (isMounted) {
+            if (isMountedRef.current) {
               setIsVisible(false);
               setIsWarmed(true);
             }
-          }, 600);
-        } else {
-          throw new Error(`Server returned ${res.status}`);
+          }, 500);
+          return;
         }
-      } catch (err: any) {
-        // Retry once after 2 seconds if not mounted/ready
-        if (isMounted && !isReady && retryCount < 2) {
-          setTimeout(() => {
-            if (isMounted && !isReady) {
-              setRetryCount(prev => prev + 1);
-            }
-          }, 2000);
-        }
+      } catch (_) {
+        // Polling failed this tick; continue next tick below
+      }
+
+      // Schedule next poll tick if still mounted and not ready
+      if (isMountedRef.current && !isReadyRef.current) {
+        pollTimeout = setTimeout(pollServerHealth, 2500);
       }
     };
 
-    checkServerHealth();
+    pollServerHealth();
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       clearTimeout(showDelayTimer);
       clearInterval(timerInterval);
+      if (pollTimeout) clearTimeout(pollTimeout);
     };
-  }, [isWarmed, isReady, retryCount]);
+  }, [isWarmed, showToast]);
 
   if (isWarmed || !isVisible) return null;
 
   const handleDismiss = () => {
+    sessionStorage.setItem('job_tracker_server_warmed', 'true');
     setIsVisible(false);
     setIsWarmed(true);
-    showToast('Continuing in Guest/Offline mode. Server is continuing to wake up in background.');
+    showToast('Continuing in offline mode. Cloud server is finishing startup in background.');
   };
 
   const handleRetry = () => {
     setHasTimeoutError(false);
     setElapsedSeconds(0);
-    setRetryCount(prev => prev + 1);
+    // Ping immediately
+    fetch(getApiEndpoint('/api/health'), { headers: { 'Cache-Control': 'no-cache' } })
+      .then(res => {
+        if (res.ok) {
+          isReadyRef.current = true;
+          setIsReady(true);
+          sessionStorage.setItem('job_tracker_server_warmed', 'true');
+          setTimeout(() => {
+            setIsVisible(false);
+            setIsWarmed(true);
+          }, 400);
+        }
+      })
+      .catch(() => {});
   };
 
   return (
@@ -113,6 +153,17 @@ export const ServerAwakeningLoader: React.FC = () => {
     >
       <div className="relative w-full max-w-[480px] rounded-3xl border border-slate-200/80 dark:border-white/10 bg-white/95 dark:bg-[#121216]/95 p-6 sm:p-8 text-center shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 overflow-hidden">
         
+        {/* Close Button */}
+        <button
+          type="button"
+          onClick={handleDismiss}
+          className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+          title="Dismiss and view board"
+          aria-label="Dismiss and explore board"
+        >
+          <X size={18} />
+        </button>
+
         {/* Glow ambient background accent */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-28 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 blur-3xl rounded-full pointer-events-none" />
 
@@ -176,7 +227,7 @@ export const ServerAwakeningLoader: React.FC = () => {
           <div className="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden mb-6 p-0.5">
             <div
               className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-full transition-all duration-300 shadow-xs"
-              style={{ width: `${Math.min(95, elapsedSeconds * 8 + 15)}%` }}
+              style={{ width: `${Math.min(95, elapsedSeconds * 12 + 15)}%` }}
             />
           </div>
         )}
