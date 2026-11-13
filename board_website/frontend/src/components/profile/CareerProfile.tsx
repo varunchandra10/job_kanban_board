@@ -36,7 +36,15 @@ import {
   LucideIcon,
   CheckCircle2,
   Clock,
+  Bell,
+  BellRing,
+  Smartphone,
 } from 'lucide-react';
+import {
+  subscribeToPush,
+  unsubscribeFromPush,
+  checkServerPushStatus
+} from '../../utils/pushNotifications';
 
 export const TROPHY_TIER_CONFIG: Record<
   number,
@@ -542,6 +550,49 @@ export const CareerProfile: React.FC = () => {
   const [linkUrl, setLinkUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState<string | null>(null);
   const [isTrophyRoadOpen, setIsTrophyRoadOpen] = useState<boolean>(false);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [hasPushActive, setHasPushActive] = useState<boolean>(() => {
+    return typeof window !== 'undefined' && localStorage.getItem('job_tracker_push_active') === '1';
+  });
+
+  useEffect(() => {
+    if (currentUser?.id) {
+      checkServerPushStatus(currentUser.id).then(status => {
+        setHasPushActive(status.hasPush);
+        if (status.hasPush) {
+          localStorage.setItem('job_tracker_push_active', '1');
+        } else {
+          localStorage.removeItem('job_tracker_push_active');
+        }
+      });
+    }
+  }, [currentUser?.id]);
+
+  const handleTogglePush = async () => {
+    if (isPushLoading) return;
+    setIsPushLoading(true);
+    try {
+      if (hasPushActive) {
+        const res = await unsubscribeFromPush(currentUser?.id);
+        if (res.success) {
+          setHasPushActive(false);
+          showToast('Mobile push disabled. Email reminders will be used.');
+        } else {
+          showToast(res.error || 'Failed to disable push notifications');
+        }
+      } else {
+        const res = await subscribeToPush(currentUser?.id);
+        if (res.success) {
+          setHasPushActive(true);
+          showToast('🔔 Casual Mobile Push active! Email reminders are now muted.');
+        } else {
+          showToast(res.error || 'Failed to enable push notifications');
+        }
+      }
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -1267,6 +1318,69 @@ export const CareerProfile: React.FC = () => {
                     isDsaEnabled ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
+              </button>
+            </div>
+          </div>
+
+          {/* Streak Reminders & Mobile Push Channel */}
+          <div className="pt-3 border-t border-slate-100 dark:border-white/5 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                <Bell size={13} className="text-orange-500" />
+                <span>Streak Reminders (12:30 PM &amp; 7:30 PM)</span>
+              </span>
+              <span
+                className={`text-[10.5px] font-bold px-2 py-0.5 rounded-full ${
+                  hasPushActive
+                    ? 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20'
+                    : 'bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10'
+                }`}
+              >
+                {hasPushActive ? 'Mobile Push Active (Mail Muted)' : 'Email Reminders Active'}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/80 dark:bg-white/[0.03] border border-slate-200/70 dark:border-white/5">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5 flex-wrap">
+                  <Smartphone size={14} className={hasPushActive ? 'text-orange-500' : 'text-slate-400'} />
+                  <span>Casual Mobile Notifications</span>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded-md">
+                    Lock Screen Alert
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 mt-0.5 leading-relaxed">
+                  {hasPushActive
+                    ? 'Your phone receives casual lock-screen alert banners before lunch and before dinner. Email notifications are automatically muted.'
+                    : 'Enable on your phone to receive casual lock-screen alert banners before lunch & dinner instead of email reminders.'}
+                </p>
+              </div>
+
+              {/* Toggle / Action Button */}
+              <button
+                type="button"
+                onClick={handleTogglePush}
+                disabled={isPushLoading}
+                className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                  hasPushActive
+                    ? 'border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-rose-50 dark:hover:bg-rose-500/10 hover:text-rose-600 text-slate-700 dark:text-slate-300'
+                    : 'bg-gradient-to-r from-orange-500 to-amber-500 hover:brightness-105 text-white shadow-orange-500/25'
+                }`}
+                title={hasPushActive ? 'Click to disable push and switch back to email' : 'Click to enable casual mobile push alerts'}
+              >
+                {isPushLoading ? (
+                  <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : hasPushActive ? (
+                  <>
+                    <Check size={12} strokeWidth={3} className="text-emerald-500" />
+                    <span>Active</span>
+                  </>
+                ) : (
+                  <>
+                    <BellRing size={12} />
+                    <span>Enable</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -2241,16 +2355,16 @@ export const CareerProfile: React.FC = () => {
                         2
                       </span>
                       <span className="font-bold text-slate-800 dark:text-slate-200">
-                        Learn for ≥45 mins OR solve ≥1 DSA problem
+                        Study ≥1 topic OR solve ≥1 DSA problem
                       </span>
                     </div>
-                    {(gamification.todayMinutes || 0) >= 45 || (gamification.todayDsaCount || 0) >= 1 || (gamification.todayCompleted && !gamification.todayNeedsStudy) ? (
+                    {(gamification.todayStudyCount || 0) >= 1 || (gamification.todayDsaCount || 0) >= 1 || (gamification.todayMinutes || 0) >= 45 || (gamification.todayCompleted && !gamification.todayNeedsStudy) ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done {(gamification.todayDsaCount || 0) >= 1 ? `(${gamification.todayDsaCount} DSA)` : ''}
+                        <CheckCircle2 size={12} strokeWidth={2.5} /> Done {(gamification.todayDsaCount || 0) >= 1 ? `(${gamification.todayDsaCount} DSA)` : (gamification.todayStudyCount || 0) >= 1 ? `(${gamification.todayStudyCount} Topic)` : ''}
                       </span>
                     ) : (
                       <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                        Pending ({gamification.todayMinutes || 0}/45m)
+                        Pending (0/1 topic or DSA)
                       </span>
                     )}
                   </div>

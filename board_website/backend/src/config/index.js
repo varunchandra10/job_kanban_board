@@ -154,6 +154,11 @@ const config = {
     pass: (process.env.SMTP_PASS || '').trim(),
     from: (process.env.SMTP_FROM || '"Job Tracker" <varunchandra1009@gmail.com>').trim()
   },
+  vapid: {
+    publicKey: (process.env.VAPID_PUBLIC_KEY || 'BM8RxD8RPZbQwLzyiZElnFzL1Osqf-3x_sKN7JB1vfftDLAKVkyOAakE5kDnxIdWJlh8BqXSLvs2I0WU6wVHcsA').trim(),
+    privateKey: (process.env.VAPID_PRIVATE_KEY || '6x9ng0_GGecwdvJuc1KTGN8WV7rLHBlLPMOGxie5iDY').trim(),
+    email: (process.env.VAPID_EMAIL || 'mailto:kvarunchandra18@gmail.com').trim()
+  },
   rootDir,
   boardWebsiteDir,
   backendDir

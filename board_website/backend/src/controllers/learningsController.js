@@ -140,12 +140,14 @@ function calculateGamification(userId = null, tz = null) {
 
   let totalMinutes = 0;
   const studyMinutesByDate = {};
+  const studyLogsCountByDate = {};
   for (const l of logs) {
     const mins = parseInt(l.duration_minutes, 10) || 0;
     totalMinutes += mins;
     if (l.date_logged) {
       const d = l.date_logged.slice(0, 10);
       studyMinutesByDate[d] = (studyMinutesByDate[d] || 0) + mins;
+      studyLogsCountByDate[d] = (studyLogsCountByDate[d] || 0) + 1;
     }
   }
 
@@ -168,29 +170,34 @@ function calculateGamification(userId = null, tz = null) {
   // DSA counts under total learnings
   const learningCount = logs.length + totalDsaSolved;
 
-  // Helper: A date is complete if user applied to >= 1 job AND/OR studied >= 45 min OR solved >= 1 DSA problem
+  // Helper: A date is complete if user applied to >= 1 job AND studied (>= 1 topic / note OR >= 1 DSA problem OR >= 45m study)
   function isDayComplete(dStr) {
     const appCount = appsByDate[dStr] || 0;
     const mins = studyMinutesByDate[dStr] || 0;
+    const studyCount = studyLogsCountByDate[dStr] || 0;
     const dsaCount = dsaSolvedByDate[dStr] || 0;
+
     const hasApp = appCount >= 1;
-    const hasStudy = mins >= 45 || dsaCount >= 1;
-    return hasApp || hasStudy;
+    const hasStudy = studyCount >= 1 || dsaCount >= 1 || mins >= 45;
+
+    // Both required for proper streak
+    return hasApp && hasStudy;
   }
 
   // 4. Compute Today's Status
   const todayAppCount = appsByDate[todayStr] || 0;
   const todayMinutes = studyMinutesByDate[todayStr] || 0;
+  const todayStudyCount = studyLogsCountByDate[todayStr] || 0;
   const todayDsaCount = dsaSolvedByDate[todayStr] || 0;
 
   const todayHasApp = todayAppCount >= 1;
-  const todayHasStudy = todayMinutes >= 45 || todayDsaCount >= 1;
+  const todayHasStudy = todayStudyCount >= 1 || todayDsaCount >= 1 || todayMinutes >= 45;
 
-  const todayCompleted = todayHasApp || todayHasStudy;
-  const todayAllQuestsDone = todayHasApp && todayHasStudy;
+  const todayCompleted = todayHasApp && todayHasStudy;
   const todayNeedsStudy = !todayHasStudy;
   const todayNeedsApp = !todayHasApp;
   const todayAppOnly = todayHasApp && !todayHasStudy;
+  const todayStudyOnly = !todayHasApp && todayHasStudy;
   const todayFrozen = false;
 
   // 5. Compute Current Streak (Walking backwards day-by-day)
@@ -287,13 +294,17 @@ function calculateGamification(userId = null, tz = null) {
     currentLevelMin: currentTier.min,
     progressPercent,
     nextLevelXP: currentTier.max,
-    isFrozen: todayFrozen && streak > 0,
-    todayFrozen,
+    isFrozen: false,
+    todayFrozen: false,
     todayCompleted,
     todayAppOnly,
+    todayStudyOnly,
     todayNeedsStudy,
     todayNeedsApp,
+    todayHasApp,
+    todayHasStudy,
     todayMinutes,
+    todayStudyCount,
     todayDsaCount,
     todayAppCount,
     weekPunchcard,

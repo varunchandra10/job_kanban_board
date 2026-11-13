@@ -709,6 +709,31 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     ]);
     showToast(`Added application for ${newApp.company}`);
 
+    // Update gamification stats immediately for streak & safeguards
+    setGamification(prev => {
+      const newAppCount = (prev.todayAppCount || 0) + 1;
+      const newHasApp = true;
+      const hasStudy = !!prev.todayHasStudy || (prev.todayStudyCount || 0) > 0 || (prev.todayDsaCount || 0) > 0 || (prev.todayMinutes || 0) >= 45;
+      const wasCompleted = !!prev.todayCompleted;
+      const isNowCompleted = newHasApp && hasStudy;
+      const streakDelta = (!wasCompleted && isNowCompleted) ? 1 : 0;
+      const newStreak = (prev.streak || 0) + streakDelta;
+      const newLongest = Math.max(prev.longestStreak || 0, newStreak);
+      const updated: GamificationStats = {
+        ...prev,
+        todayAppCount: newAppCount,
+        todayHasApp: newHasApp,
+        todayNeedsApp: false,
+        todayCompleted: isNowCompleted,
+        todayNeedsStudy: !hasStudy,
+        streak: newStreak,
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+      };
+      localStorage.setItem('job_tracker_gamify', JSON.stringify(updated));
+      return updated;
+    });
+
     try {
       const serverApp = await api.createApplication(newApp);
       if (serverApp?.id) {
@@ -862,14 +887,33 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     };
 
     setLearnings(prev => [newLearning, ...prev]);
-    // Increment gamification
-    setGamification(prev => ({
-      ...prev,
-      learningCount: prev.learningCount + 1,
-      totalMinutes: prev.totalMinutes + newLearning.duration_minutes,
-      totalXP: prev.totalXP + newLearning.duration_minutes * 10,
-      todayCompleted: true,
-    }));
+    // Increment gamification & check dual streak requirements (1+ job app AND 1+ study/DSA)
+    setGamification(prev => {
+      const newStudyCount = (prev.todayStudyCount || 0) + 1;
+      const newHasStudy = true;
+      const hasApp = !!prev.todayHasApp || (prev.todayAppCount || 0) > 0;
+      const wasCompleted = !!prev.todayCompleted;
+      const isNowCompleted = hasApp && newHasStudy;
+      const streakDelta = (!wasCompleted && isNowCompleted) ? 1 : 0;
+      const newStreak = (prev.streak || 0) + streakDelta;
+      const newLongest = Math.max(prev.longestStreak || 0, newStreak);
+      const updated: GamificationStats = {
+        ...prev,
+        learningCount: prev.learningCount + 1,
+        totalMinutes: prev.totalMinutes + newLearning.duration_minutes,
+        totalXP: prev.totalXP + newLearning.duration_minutes * 10,
+        todayStudyCount: newStudyCount,
+        todayHasStudy: newHasStudy,
+        todayNeedsStudy: false,
+        todayCompleted: isNowCompleted,
+        todayNeedsApp: !hasApp,
+        streak: newStreak,
+        currentStreak: newStreak,
+        longestStreak: newLongest,
+      };
+      localStorage.setItem('job_tracker_gamify', JSON.stringify(updated));
+      return updated;
+    });
 
     showToast(`Logged: ${newLearning.title}`);
 
@@ -1036,10 +1080,12 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const newLearningCount = Math.max(0, (prev.learningCount || 0) + deltaSolved);
       const newXP = Math.max(0, (prev.totalXP || 0) + (isSolving ? 25 : -25));
 
-      const wasCompletedToday = prev.todayCompleted;
-      const isNowCompleted = wasCompletedToday || (isSolving && newTodayDsa >= 1);
-      const streakDelta = (!wasCompletedToday && isSolving) ? 1 : 0;
-      const newStreak = (prev.streak || 0) + streakDelta;
+      const wasCompletedToday = !!prev.todayCompleted;
+      const hasStudy = newTodayDsa > 0 || (prev.todayStudyCount || 0) > 0 || (prev.todayMinutes || 0) >= 45;
+      const hasApp = !!prev.todayHasApp || (prev.todayAppCount || 0) > 0;
+      const isNowCompleted = hasStudy && hasApp;
+      const streakDelta = (!wasCompletedToday && isNowCompleted) ? 1 : (wasCompletedToday && !isNowCompleted) ? -1 : 0;
+      const newStreak = Math.max(0, (prev.streak || 0) + streakDelta);
       const newLongest = Math.max(prev.longestStreak || 0, newStreak);
 
       const updated: GamificationStats = {
@@ -1048,8 +1094,10 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         todayDsaCount: newTodayDsa,
         learningCount: newLearningCount,
         totalXP: newXP,
+        todayHasStudy: hasStudy,
+        todayNeedsStudy: !hasStudy,
         todayCompleted: isNowCompleted,
-        todayNeedsStudy: !isNowCompleted,
+        todayNeedsApp: !hasApp,
         streak: newStreak,
         currentStreak: newStreak,
         longestStreak: newLongest,

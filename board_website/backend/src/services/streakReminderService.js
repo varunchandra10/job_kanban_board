@@ -1,6 +1,7 @@
 const { db } = require('../database/db');
 const { calculateGamification } = require('../controllers/learningsController');
 const { sendStreakReminderEmail } = require('./emailService');
+const pushNotificationService = require('./pushNotificationService');
 
 let schedulerInterval = null;
 
@@ -41,11 +42,11 @@ function getLocalDateParts(tz = 'Asia/Kolkata') {
 }
 
 /**
- * Scan all registered users, assess their daily streak quest, and dispatch evening emails if incomplete.
- * @param {object} options - { forceAll: boolean, targetUserId: string }
+ * Scan all registered users, assess their daily streak quest, and dispatch lunch/dinner emails if incomplete.
+ * @param {object} options - { forceAll: boolean, targetUserId: string, slot: 'lunch' | 'dinner' }
  */
 async function checkAndSendStreakReminders(options = {}) {
-  const { forceAll = false, targetUserId = null } = options;
+  const { forceAll = false, targetUserId = null, slot = null } = options;
 
   let query = "SELECT id, email, name, timezone, streak_reminders_enabled FROM users WHERE email IS NOT NULL AND email != '' AND email NOT LIKE '%@jobtracker.app%'";
   const params = [];
@@ -77,17 +78,26 @@ async function checkAndSendStreakReminders(options = {}) {
       const tz = user.timezone || 'Asia/Kolkata';
       const { dateStr, hour } = getLocalDateParts(tz);
 
-      // 2. Evening time window check (between 19:00 and 23:59 local time)
-      // Gives user 4.5+ hours of ample time before midnight
-      if (!forceAll && (hour < 19 || hour > 23)) {
+      // 2. Determine slot: 'lunch' (before lunch: 11:00 to 15:59) or 'dinner' (before dinner: 18:00 to 23:59)
+      let currentSlot = slot;
+      if (!currentSlot) {
+        if (hour >= 11 && hour < 16) {
+          currentSlot = 'lunch';
+        } else if (hour >= 18 && hour <= 23) {
+          currentSlot = 'dinner';
+        }
+      }
+
+      // If outside both reminder windows and not forcing, skip
+      if (!forceAll && !currentSlot) {
         results.skippedTimeWindow++;
         continue;
       }
 
-      // 3. Anti-spam check: has user already received a streak reminder today?
+      // 3. Anti-spam check: has user already received a reminder for this slot today?
       const existingReminder = db.prepare(
-        "SELECT id, type FROM streak_reminders WHERE user_id = ? AND date = ?"
-      ).get(user.id, dateStr);
+        "SELECT id, type FROM streak_reminders WHERE user_id = ? AND date = ? AND (type LIKE ? OR type = ?)"
+      ).get(user.id, dateStr, `%_${currentSlot}`, currentSlot);
 
       if (existingReminder && !forceAll) {
         results.skippedAlreadySent++;
@@ -103,38 +113,74 @@ async function checkAndSendStreakReminders(options = {}) {
         continue;
       }
 
+      // Determine exact reminder required by streak rules:
+      // - if user didn't apply any job today and studied something -> reminder for job apply
+      // - if user applied something and didn't study -> reminder for study
+      // - if user did not do both -> reminder for both
       let reminderType = null;
-      if (stats.todayNeedsStudy) {
-        // User applied to at least 1 job, but has not completed 45m study or 1 DSA
-        reminderType = 'needs_study';
-      } else if (stats.todayNeedsApp) {
-        // User studied/DSA, but has not submitted a job application
+      if (!stats.todayHasApp && stats.todayHasStudy) {
         reminderType = 'needs_app';
-      } else {
-        // Neither done today. If user has an active streak, remind them to act
-        if (stats.streak > 0 || forceAll) {
-          reminderType = 'needs_study';
-        }
+      } else if (stats.todayHasApp && !stats.todayHasStudy) {
+        reminderType = 'needs_study';
+      } else if (!stats.todayHasApp && !stats.todayHasStudy) {
+        reminderType = 'needs_both';
       }
 
       if (!reminderType) {
         continue;
       }
 
-      // 5. Send Email
-      await sendStreakReminderEmail(user, reminderType, stats.streak, stats);
+      // 5. Mutually exclusive notification delivery:
+      // If user has active mobile web push subscription -> send mobile push ONLY (close mail notification).
+      // If user has not enabled web push -> send mail notification ONLY. Not both!
+      const hasPush = pushNotificationService.hasActivePushSubscription(user.id);
+      let deliveryChannel = 'email';
 
-      // 6. Record in DB to guarantee at most 1 reminder per day
+      if (hasPush) {
+        try {
+          const pushResult = await pushNotificationService.sendStreakPushNotification(
+            user,
+            reminderType,
+            stats.streak,
+            stats,
+            currentSlot
+          );
+          if (pushResult.sentCount > 0) {
+            deliveryChannel = 'push';
+            console.log(`[Streak Reminder] Dispatched MOBILE PUSH (${currentSlot}) to user ${user.id} (${pushResult.sentCount} devices)`);
+          } else {
+            // If all push endpoints failed or expired, gracefully fall back to email
+            await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
+            deliveryChannel = 'email_fallback';
+            console.log(`[Streak Reminder] Fallback to EMAIL (${currentSlot}) for ${user.email} (streak: ${stats.streak})`);
+          }
+        } catch (pushErr) {
+          console.warn(`[Streak Reminder] Push delivery error for user ${user.id}, falling back to email:`, pushErr.message);
+          await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
+          deliveryChannel = 'email_fallback';
+        }
+      } else {
+        // No web push active: send email reminder only
+        await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
+        console.log(`[Streak Reminder] Dispatched EMAIL (${currentSlot}) to ${user.email} (streak: ${stats.streak})`);
+      }
+
+      // 6. Record in DB to guarantee at most 1 reminder per slot per day
+      const recordType = `${reminderType}_${currentSlot}`;
       try {
         db.prepare(
-          "INSERT INTO streak_reminders (user_id, date, type, sent_at) VALUES (?, ?, ?, datetime('now'))"
-        ).run(user.id, dateStr, reminderType);
+          "INSERT INTO streak_reminders (user_id, date, type, slot, sent_at) VALUES (?, ?, ?, ?, datetime('now'))"
+        ).run(user.id, dateStr, recordType, currentSlot);
       } catch (err) {
-        // Unique constraint ignore
+        try {
+          db.prepare(
+            "INSERT INTO streak_reminders (user_id, date, type, sent_at) VALUES (?, ?, ?, datetime('now'))"
+          ).run(user.id, dateStr, recordType);
+        } catch (_) {}
       }
 
       results.sent++;
-      console.log(`[Streak Reminder] Dispatched ${reminderType} reminder to ${user.email} (${dateStr}, streak: ${stats.streak})`);
+      console.log(`[Streak Reminder] Dispatched ${reminderType} (${currentSlot}) to ${user.email} (${dateStr}, streak: ${stats.streak})`);
     } catch (err) {
       console.error(`[Streak Reminder Error for user ${user.id}]:`, err.message);
       results.errors.push({ userId: user.id, error: err.message });

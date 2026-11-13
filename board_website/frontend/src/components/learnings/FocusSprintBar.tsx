@@ -10,6 +10,7 @@ import {
   Trophy,
   Clock,
   BookMarked,
+  Check,
 } from 'lucide-react';
 
 // Web Audio API Crystal Bell Chime
@@ -18,6 +19,9 @@ const playChimeSound = () => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
     const ctx = new AudioContextClass();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
 
     // Harmonics for a soothing Tibetan singing bowl chime (C5, E5, G5, C6)
     const frequencies = [523.25, 659.25, 783.99, 1046.5];
@@ -67,32 +71,46 @@ export const FocusSprintBar: React.FC = () => {
 
   // Interval ref - using ReturnType<typeof setInterval>
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const endTimeRef = useRef<number | null>(null);
 
-  // Tick timer
+  // Tick timer with timestamp synchronization (prevents background tab clock drift)
   useEffect(() => {
     if (isRunning) {
+      if (!endTimeRef.current) {
+        endTimeRef.current = Date.now() + timeLeft * 1000;
+      }
+
       timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            setIsRunning(false);
-            setIsFinished(true);
-            if (!isMuted) {
-              playChimeSound();
-            }
-            return 0;
+        if (!endTimeRef.current) return;
+        const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
+        setTimeLeft(remaining);
+
+        if (remaining <= 0) {
+          clearInterval(timerRef.current!);
+          endTimeRef.current = null;
+          setIsRunning(false);
+          setIsFinished(true);
+          if (!isMuted) {
+            playChimeSound();
           }
-          return prev - 1;
-        });
-      }, 1000);
+          if ('Notification' in window && Notification.permission === 'granted') {
+            try {
+              new Notification('🔔 Focus Sprint Completed!', {
+                body: `Great job! Your ${selectedMinutes}-minute focus session is complete.`,
+              });
+            } catch (_) {}
+          }
+        }
+      }, 500);
     } else {
+      endTimeRef.current = null;
       if (timerRef.current) clearInterval(timerRef.current);
     }
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isRunning, isMuted]);
+  }, [isRunning, isMuted, selectedMinutes]);
 
   // Handle user typing minutes (only numbers allowed)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -113,33 +131,41 @@ export const FocusSprintBar: React.FC = () => {
   // Start timer
   const handleStartTimer = () => {
     const parsed = parseInt(inputMinutes, 10) || selectedMinutes || 45;
+    let initialSecs = timeLeft;
     if (isFinished || timeLeft <= 0) {
-      setTimeLeft(parsed * 60);
+      initialSecs = parsed * 60;
+      setTimeLeft(initialSecs);
       setIsFinished(false);
     }
+    endTimeRef.current = Date.now() + initialSecs * 1000;
     setIsRunning(true);
   };
 
   // Stop timer
   const handleStopTimer = () => {
+    endTimeRef.current = null;
     setIsRunning(false);
   };
 
   // Reset timer
   const handleResetTimer = () => {
+    endTimeRef.current = null;
     setIsRunning(false);
     setIsFinished(false);
     const parsed = parseInt(inputMinutes, 10) || selectedMinutes || 45;
     setTimeLeft(parsed * 60);
   };
 
-  // Toggle sound
+  // Toggle sound & request notification permission
   const handleToggleMute = () => {
     setIsMuted(prev => {
       const next = !prev;
       localStorage.setItem('focus_timer_muted', next ? '1' : '0');
       if (!next) {
         playChimeSound();
+        if ('Notification' in window && Notification.permission === 'default') {
+          Notification.requestPermission().catch(() => {});
+        }
       }
       return next;
     });
@@ -187,6 +213,41 @@ export const FocusSprintBar: React.FC = () => {
               {gamification.streak}<span className="text-orange-600 dark:text-orange-400 font-extrabold ml-0.5">d</span>
             </span>
           </div>
+
+          {/* Streak Quest Safeguard Pill */}
+          {gamification.todayCompleted ? (
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 text-[11px] font-bold shadow-2xs shrink-0 select-none"
+              title="Today's streak goals complete: 1+ job application & 1+ study topic logged!"
+            >
+              <Check size={11} strokeWidth={3} />
+              <span className="hidden sm:inline">Streak Safe</span>
+            </div>
+          ) : !gamification.todayHasApp && gamification.todayHasStudy ? (
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-[11px] font-bold shadow-2xs shrink-0 select-none"
+              title="Studied today! Apply to at least 1 job before midnight to keep your streak."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>1 Job Needed</span>
+            </div>
+          ) : gamification.todayHasApp && !gamification.todayHasStudy ? (
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-600 dark:text-amber-400 text-[11px] font-bold shadow-2xs shrink-0 select-none"
+              title="Applied today! Study at least 1 topic or solve 1 DSA before midnight to keep your streak."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>1 Topic Needed</span>
+            </div>
+          ) : (
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-600 dark:text-rose-400 text-[11px] font-bold shadow-2xs shrink-0 select-none"
+              title="Both goals needed today! Apply to 1+ job and study 1+ topic/DSA before midnight."
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
+              <span>Job &amp; Topic Needed</span>
+            </div>
+          )}
 
           {/* 2. [trophy emoji: days] */}
           <div

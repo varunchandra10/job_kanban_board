@@ -82,9 +82,13 @@ export interface GamificationStats {
   todayFrozen?: boolean;
   todayCompleted?: boolean;
   todayAppOnly?: boolean;
+  todayStudyOnly?: boolean;
   todayNeedsStudy?: boolean;
   todayNeedsApp?: boolean;
+  todayHasApp?: boolean;
+  todayHasStudy?: boolean;
   todayMinutes?: number;
+  todayStudyCount?: number;
   todayDsaCount?: number;
   todayAppCount?: number;
   weekPunchcard: Array<{

@@ -187,24 +187,80 @@ The Job Tracker Team
 /**
  * Send smart evening streak reminder email
  * @param {object} user - { email, name }
- * @param {string} reminderType - 'needs_study' | 'needs_app'
+ * @param {string} reminderType - 'needs_study' | 'needs_app' | 'needs_both'
  * @param {number} streak - current active streak days
- * @param {object} stats - { todayAppCount, todayMinutes, todayDsaCount }
+ * @param {object} stats - { todayAppCount, todayMinutes, todayStudyCount, todayDsaCount }
+ * @param {string} slot - 'lunch' | 'dinner'
  */
-async function sendStreakReminderEmail(user, reminderType, streak, stats = {}) {
+async function sendStreakReminderEmail(user, reminderType, streak, stats = {}, slot = 'dinner') {
   const mailer = getTransporter();
   const toEmail = user.email;
   const userName = user.name || 'Champion';
   const fromAddress = config.smtp.from || `"Job Tracker" <${config.smtp.user}>`;
 
+  const isLunch = slot === 'lunch';
+  const isNeedsApp = reminderType === 'needs_app';
   const isNeedsStudy = reminderType === 'needs_study';
-  const subject = isNeedsStudy
-    ? `🔥 Protect your ${streak}-day streak! 45-min study or 1 DSA problem needed`
-    : `🔥 Protect your ${streak}-day streak! 1 job application needed`;
+
+  const subject = isLunch
+    ? isNeedsApp
+      ? `🍱 Midday Streak Check: 1 job application needed before lunch!`
+      : isNeedsStudy
+      ? `🍱 Midday Streak Check: 1 study topic or DSA problem needed before lunch!`
+      : `🍱 Midday Streak Check: Protect your ${streak}-day streak before lunch!`
+    : isNeedsApp
+    ? `🔥 Protect your ${streak}-day streak! 1 job application needed`
+    : isNeedsStudy
+    ? `🔥 Protect your ${streak}-day streak! 1 study topic or DSA problem needed`
+    : `🔥 Action needed tonight! 1 job application + 1 study topic needed for your streak`;
+
+  const headerTitle = isLunch
+    ? isNeedsApp
+      ? '1 Job Application Needed Today'
+      : isNeedsStudy
+      ? 'Study Session / DSA Needed Today'
+      : 'Midday Streak Check-in'
+    : isNeedsApp
+    ? '1 Job Application Needed Tonight'
+    : isNeedsStudy
+    ? 'Study Session / DSA Needed Tonight'
+    : 'Job Application & Study Topic Needed Tonight';
+
+  const headerSubtitle = isLunch
+    ? isNeedsApp
+      ? 'You logged study time today—knock out 1 quick job application before lunch!'
+      : isNeedsStudy
+      ? 'You applied to jobs today—squeeze in 1 quick study topic or DSA problem!'
+      : 'Midday reminder to log your daily goals and keep your streak safe!'
+    : isNeedsApp
+    ? 'You studied today, but need 1 job application to maintain your streak!'
+    : isNeedsStudy
+    ? 'You applied to jobs today, but need 1 study topic to maintain your streak!'
+    : 'Neither goal logged yet today—keep your daily momentum burning strong!';
 
   const appCount = stats.todayAppCount || 0;
   const minsCount = stats.todayMinutes || 0;
   const dsaCount = stats.todayDsaCount || 0;
+  const studyCount = stats.todayStudyCount || 0;
+  const hasStudyDone = studyCount >= 1 || dsaCount >= 1 || minsCount >= 45;
+
+  const bodyParagraph = isLunch
+    ? isNeedsApp
+      ? `You got an early start on your study session today (${studyCount > 0 ? `${studyCount} topic(s)` : ''}${dsaCount > 0 ? ` + ${dsaCount} DSA solved` : ''}${minsCount > 0 ? ` (${minsCount}m)` : ''})! To secure your <strong>${streak}-day streak</strong>, take 5 minutes to submit at least <strong>1 job application</strong> before lunch.`
+      : isNeedsStudy
+      ? `You applied to <strong>${appCount} ${appCount === 1 ? 'role' : 'roles'}</strong> today—great job! To keep your <strong>${streak}-day streak</strong> active, plan to log at least <strong>1 study topic</strong> or solve <strong>1 DSA problem</strong>.`
+      : `Midday check-in! You haven't logged any job applications or study topics yet today. Remember: for a proper streak, both goals are required—at least <strong>1 job application</strong> AND at least <strong>1 study topic (or 1 DSA problem)</strong>.`
+    : isNeedsApp
+    ? `You conquered your study session today (${studyCount > 0 ? `${studyCount} topic(s)` : ''}${dsaCount > 0 ? ` + ${dsaCount} DSA solved` : ''}${minsCount > 0 ? ` (${minsCount}m)` : ''})! To secure your <strong>${streak}-day streak</strong>, you just need to submit at least <strong>1 job application</strong> before midnight.`
+    : isNeedsStudy
+    ? `You applied to <strong>${appCount} ${appCount === 1 ? 'role' : 'roles'}</strong> today—solid work! To keep your <strong>${streak}-day streak</strong> active, you also need to log at least <strong>1 study topic</strong> or solve <strong>1 DSA problem</strong> before midnight.`
+    : `You haven't logged any job applications or study topics yet today. Remember: for a proper streak, both goals are required—at least <strong>1 job application</strong> AND at least <strong>1 study topic (or 1 DSA problem)</strong> before midnight!`;
+
+  const ctaText = isNeedsApp
+    ? 'Submit 1 Job Application →'
+    : isNeedsStudy
+    ? 'Log 1 Study Topic / Solve DSA →'
+    : 'Open Job Tracker & Protect Streak →';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -335,23 +391,19 @@ async function sendStreakReminderEmail(user, reminderType, streak, stats = {}) {
 <body>
   <div class="email-container">
     <div class="header">
-      <div class="streak-pill">🔥 ${streak}-DAY STREAK ON THE LINE</div>
-      <h1>${isNeedsStudy ? 'Focus Session Needed Tonight' : '1 Job Application Needed'}</h1>
-      <p>Keep your daily momentum burning strong</p>
+      <div class="streak-pill">${isLunch ? `🍱 ${streak}-DAY STREAK &bull; MIDDAY CHECK-IN` : `🔥 ${streak}-DAY STREAK ON THE LINE`}</div>
+      <h1>${headerTitle}</h1>
+      <p>${headerSubtitle}</p>
     </div>
     <div class="content">
       <h2>Hey ${userName},</h2>
       <p>
-        ${
-          isNeedsStudy
-            ? `You applied to <strong>${appCount} ${appCount === 1 ? 'role' : 'roles'}</strong> today—solid work! To keep your <strong>${streak}-day streak</strong> active, you also need to complete <strong>45 minutes of learning</strong> or solve <strong>1 DSA problem</strong> before midnight.`
-            : `You've conquered your study session today (${minsCount}m logged${dsaCount > 0 ? ` + ${dsaCount} DSA solved` : ''})! To secure your <strong>${streak}-day streak</strong>, you just need to submit at least <strong>1 job application</strong> before midnight.`
-        }
+        ${bodyParagraph}
       </p>
 
       <div class="status-card">
         <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 8px;">
-          Today's Streak Quest
+          Today's Streak Quest (Both Required)
         </div>
 
         <div class="status-item">
@@ -364,26 +416,26 @@ async function sendStreakReminderEmail(user, reminderType, streak, stats = {}) {
         </div>
 
         <div class="status-item">
-          <span style="color: #e2e8f0;">2. 45m Study OR 1 DSA Solved</span>
+          <span style="color: #e2e8f0;">2. 1+ Study Topic OR 1+ DSA Solved</span>
           ${
-            minsCount >= 45 || dsaCount >= 1
+            hasStudyDone
               ? `<span class="badge-done">✓ Done</span>`
-              : `<span class="badge-pending">⏳ Pending (${minsCount}/45m)</span>`
+              : `<span class="badge-pending">⏳ Pending</span>`
           }
         </div>
       </div>
 
       <p style="font-size: 13px; color: #94a3b8;">
-        You have ample evening time before midnight. Hop on for a quick focus session to protect your streak and earn extra XP!
+        ${isLunch ? 'You have the afternoon and evening ahead. Knock out a quick task before or during lunch to stay ahead!' : 'You have ample evening time before midnight. Hop on for a quick session to protect your streak and earn extra XP!'}
       </p>
 
       <a href="https://kanban-board-job.vercel.app/" class="cta-btn">
-        ${isNeedsStudy ? 'Start 45m Study / DSA Session →' : 'Submit 1 Job Application →'}
+        ${ctaText}
       </a>
     </div>
 
     <div class="footer">
-      Sent by Job Tracker &bull; Streak Safeguard Reminder &bull; Local Time: Evening
+      Sent by Job Tracker &bull; ${isLunch ? 'Midday Streak Check-in &bull; Local Time: Lunchtime' : 'Streak Safeguard Reminder &bull; Local Time: Evening'}
     </div>
   </div>
 </body>
@@ -391,21 +443,29 @@ async function sendStreakReminderEmail(user, reminderType, streak, stats = {}) {
   `;
 
   const textContent = `
-Job Tracker - Streak Safeguard Reminder
+Job Tracker - ${isLunch ? 'Midday Streak Check-in' : 'Streak Safeguard Reminder'}
 
 Hey ${userName},
 
-Your ${streak}-day streak is on the line!
+${isLunch ? `Keep your ${streak}-day streak going before lunch!` : `Your ${streak}-day streak is on the line!`}
 
 ${
-  isNeedsStudy
-    ? `You applied to ${appCount} roles today, but still need 45 minutes of study OR 1 solved DSA problem before midnight.`
-    : `You studied today (${minsCount}m), but still need to submit at least 1 job application before midnight.`
+  isNeedsApp
+    ? isLunch
+      ? `You got an early start on study today! Don't forget to submit at least 1 job application today before lunch or this evening.`
+      : `You studied today, but still need to submit at least 1 job application before midnight.`
+    : isNeedsStudy
+    ? isLunch
+      ? `You applied to ${appCount} role(s) today! Make time for 1 study topic or DSA problem before lunch or this evening.`
+      : `You applied to ${appCount} role(s) today, but still need at least 1 study topic OR 1 solved DSA problem before midnight.`
+    : isLunch
+    ? `Midday check-in: You haven't logged any job applications or study topics yet today. Both are required to keep your streak burning!`
+    : `You haven't logged any job applications or study topics yet today. Both are required before midnight to maintain your streak!`
 }
 
 Today's Status:
 - 1+ Job Application: ${appCount >= 1 ? 'Done' : 'Pending'}
-- 45m Study / DSA: ${minsCount >= 45 || dsaCount >= 1 ? 'Done' : `Pending (${minsCount}/45m)`}
+- 1+ Study Topic / DSA: ${hasStudyDone ? 'Done' : 'Pending'}
 
 Open Job Tracker: https://kanban-board-job.vercel.app/
 

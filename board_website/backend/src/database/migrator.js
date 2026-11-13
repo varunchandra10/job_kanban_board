@@ -40,11 +40,35 @@ function runMigrations(db) {
       user_id TEXT NOT NULL,
       date TEXT NOT NULL,
       type TEXT NOT NULL,
+      slot TEXT DEFAULT 'dinner',
       sent_at TEXT DEFAULT (datetime('now')),
       UNIQUE(user_id, date, type)
     );
     CREATE INDEX IF NOT EXISTS idx_streak_reminders_user ON streak_reminders(user_id, date);
+
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      endpoint TEXT NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      user_agent TEXT,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, endpoint)
+    );
+    CREATE INDEX IF NOT EXISTS idx_push_sub_user ON push_subscriptions(user_id);
   `);
+
+  try {
+    const reminderCols = db.prepare('pragma table_info(streak_reminders)').all().map(c => c.name);
+    if (reminderCols.length && !reminderCols.includes('slot')) {
+      db.prepare("alter table streak_reminders add column slot text default 'dinner'").run();
+      console.log('[Migrator] Added slot column to streak_reminders');
+    }
+  } catch (err) {
+    console.warn('[Migrator] Note ensuring streak_reminders slot:', err.message);
+  }
 
   try {
     const userCols = db.prepare('pragma table_info(users)').all().map(c => c.name);

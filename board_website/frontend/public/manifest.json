@@ -1,0 +1,24 @@
+{
+  "name": "Job Tracker - Career Workflow",
+  "short_name": "Job Tracker",
+  "description": "Smart Kanban job search tracker with daily streak safeguard reminders & DSA practice.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0c0e",
+  "theme_color": "#ea580c",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

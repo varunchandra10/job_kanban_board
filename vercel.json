@@ -10,6 +10,16 @@
       "framework": "vite"
     }
   },
+  "crons": [
+    {
+      "path": "/api/learnings/streak-reminder-check?slot=lunch",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/learnings/streak-reminder-check?slot=dinner",
+      "schedule": "0 14 * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
