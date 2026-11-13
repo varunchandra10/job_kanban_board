@@ -7,6 +7,7 @@ import { ApplicationsPage } from './components/applications/ApplicationsPage';
 import { LearningsPage } from './components/learnings/LearningsPage';
 import { CareerProfile } from './components/profile/CareerProfile';
 import { DsaPracticePage } from './components/dsa/DsaPracticePage';
+import { StandaloneClipperPage } from './components/clipper/StandaloneClipperPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { TermsPage } from './components/legal/TermsPage';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
@@ -41,6 +42,9 @@ export const App: React.FC = () => {
             {isDsaEnabled && <Route path="/dsa" element={<DsaPracticePage />} />}
           </Route>
         )}
+
+        {/* Dedicated 1-Click Top-Right Clipper Window Route */}
+        <Route path="/clipper" element={<StandaloneClipperPage />} />
 
         {/* Public Legal / OAuth Verification Pages */}
         <Route path="/privacy" element={<PrivacyPage />} />

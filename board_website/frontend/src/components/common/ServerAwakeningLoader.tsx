@@ -6,6 +6,8 @@ import { getApiEndpoint, isTauri } from '../../services/api';
 export const ServerAwakeningLoader: React.FC = () => {
   // Never show cloud server awakening modal in the native desktop app (runs on offline local SQLite)
   if (isTauri) return null;
+  // Never show server awakening modal inside the standalone clipper popup
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/clipper')) return null;
 
   const { showToast, isAuthenticated, isDataLoading, applications } = useApp();
 
