@@ -1,10 +1,15 @@
-const webpush = require('web-push');
+let webpush = null;
+try {
+  webpush = require('web-push');
+} catch (e) {
+  console.warn('[Push Notification Service] web-push package note:', e.message);
+}
 const config = require('../config');
 const { db } = require('../database/db');
 
 let vapidConfigured = false;
 try {
-  if (config.vapid?.publicKey && config.vapid?.privateKey) {
+  if (webpush && config.vapid?.publicKey && config.vapid?.privateKey) {
     webpush.setVapidDetails(
       config.vapid.email || 'mailto:support@jobtracker.app',
       config.vapid.publicKey,
