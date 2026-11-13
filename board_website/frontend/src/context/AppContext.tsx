@@ -38,6 +38,19 @@ interface ToastState {
   undoAction?: () => void;
 }
 
+export interface AppPrefill {
+  company?: string;
+  role?: string;
+  city?: string;
+  country?: string;
+  salary?: string;
+  currency?: string;
+  jd_url?: string;
+  portal_notes?: string;
+  custom_tags?: string;
+  stage?: ApplicationStage;
+}
+
 interface AppContextType {
   // State
   applications: Application[];
@@ -55,6 +68,8 @@ interface AppContextType {
   theme: 'light' | 'dark';
   isAddAppOpen: boolean;
   editingApp: Application | null;
+  appPrefill: AppPrefill | null;
+  setAppPrefill: (prefill: AppPrefill | null) => void;
   isAddLearningOpen: boolean;
   editingLearning: Learning | null;
   selectedCalDate: string | null;
@@ -104,7 +119,7 @@ interface AppContextType {
   logout: () => Promise<void>;
 
   // Modal Triggers
-  openAddAppModal: (prefillDate?: string) => void;
+  openAddAppModal: (prefillDate?: string, prefillData?: AppPrefill) => void;
   openEditAppModal: (app: Application) => void;
   closeAppModal: () => void;
 
@@ -172,6 +187,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Modals & Panels
   const [isAddAppOpen, setIsAddAppOpen] = useState<boolean>(false);
   const [editingApp, setEditingApp] = useState<Application | null>(null);
+  const [appPrefill, setAppPrefill] = useState<AppPrefill | null>(null);
   const [isAddLearningOpen, setIsAddLearningOpen] = useState<boolean>(false);
   const [editingLearning, setEditingLearning] = useState<Learning | null>(null);
   const [selectedCalDate, setSelectedCalDate] = useState<string | null>(null);
@@ -590,14 +606,40 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, 4500);
   };
 
+  // Check for quickClip query params from 1-Click Clipper bookmarklet
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('quickClip') === '1') {
+        const prefill: AppPrefill = {
+          company: params.get('company') || '',
+          role: params.get('role') || '',
+          city: params.get('location') || '',
+          salary: params.get('salary') || '',
+          jd_url: params.get('url') || '',
+          portal_notes: params.get('notes') ? `Highlights:\n${params.get('notes')}` : 'Clipped via 1-Click Job Clipper',
+          custom_tags: 'Clipped',
+          stage: 'Applied'
+        };
+        setAppPrefill(prefill);
+        setEditingApp(null);
+        setIsAddAppOpen(true);
+        // Clean URL parameters without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    } catch (_) {}
+  }, []);
+
   // Modal Handlers (Require login to add or edit)
-  const openAddAppModal = (prefillDate?: string) => {
+  const openAddAppModal = (prefillDate?: string, prefillData?: AppPrefill) => {
     if (!isAuthenticated) {
       showToast('Please sign in to add a job application');
       setIsAuthModalOpen(true);
       return;
     }
     setEditingApp(null);
+    setAppPrefill(prefillData || null);
     setSelectedCalDate(prefillDate || null);
     setIsAddAppOpen(true);
   };
@@ -609,6 +651,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       return;
     }
     setEditingApp(app);
+    setAppPrefill(null);
     setSelectedCalDate(null);
     setIsAddAppOpen(true);
   };
@@ -616,6 +659,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const closeAppModal = () => {
     setIsAddAppOpen(false);
     setEditingApp(null);
+    setAppPrefill(null);
     setSelectedCalDate(null);
   };
 
@@ -1310,6 +1354,8 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         theme,
         isAddAppOpen,
         editingApp,
+        appPrefill,
+        setAppPrefill,
         isAddLearningOpen,
         editingLearning,
         selectedCalDate,

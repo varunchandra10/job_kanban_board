@@ -53,6 +53,7 @@ export const ApplicationModal: React.FC = () => {
   const {
     isAddAppOpen,
     editingApp,
+    appPrefill,
     selectedCalDate,
     closeAppModal,
     openFollowUpModal,
@@ -165,31 +166,31 @@ export const ApplicationModal: React.FC = () => {
       setResumePath(editingApp.resume_path || '');
       setCoverLetterPath(editingApp.cover_letter_path || '');
     } else {
-      setCompany('');
-      setRole('');
+      setCompany(appPrefill?.company || '');
+      setRole(appPrefill?.role || '');
       setCategory('Industry');
-      setStage('Applied');
+      setStage(appPrefill?.stage || 'Applied');
       setDateApplied(selectedCalDate || new Date().toISOString().slice(0, 10));
       setDeadline('');
-      setCountry('US');
-      setCity('');
-      setSalary('');
-      setCurrency('USD');
+      setCountry(appPrefill?.country || 'US');
+      setCity(appPrefill?.city || '');
+      setSalary(appPrefill?.salary || '');
+      setCurrency(appPrefill?.currency || 'USD');
       setJd('');
-      setJdUrl('');
+      setJdUrl(appPrefill?.jd_url || '');
       setPortalUrl('');
       setPortalUser('');
       setPortalPass('');
-      setPortalNotes('');
+      setPortalNotes(appPrefill?.portal_notes || '');
       setRecruiterName('');
       setRecruiterEmail('');
       setRecruiterNotes('');
-      setCustomTags('');
+      setCustomTags(appPrefill?.custom_tags || '');
       setResumeVersionId(versions[0]?.id || null);
       setResumePath(versions[0]?.pdf_name || '');
       setCoverLetterPath('');
     }
-  }, [isAddAppOpen, editingApp, selectedCalDate]);
+  }, [isAddAppOpen, editingApp, selectedCalDate, appPrefill]);
 
   const handleResumeUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -357,6 +358,12 @@ export const ApplicationModal: React.FC = () => {
       addApplication(appData);
     }
     closeAppModal();
+    if (typeof window !== 'undefined' && (window.name === 'jt_clipper' || window.opener)) {
+      showToast('Clipped & saved to board! Closing popup...');
+      setTimeout(() => {
+        try { window.close(); } catch (_) {}
+      }, 1200);
+    }
   };
 
   return (
