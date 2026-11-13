@@ -23,6 +23,8 @@ exports.quickAdd = async (req, res, next) => {
     const company = (b.company || 'Unknown Company').trim();
     const role = (b.role || 'Software Engineer').trim();
     const stage = (b.stage || 'Applied').trim();
+    const category = (b.category || 'Industry').trim();
+    const deadline = (b.deadline || '').trim();
     const salary = (b.salary || '').trim();
     const currency = (
       b.currency ||
@@ -54,11 +56,11 @@ exports.quickAdd = async (req, res, next) => {
 
     const insertResult = db.prepare(`
       INSERT INTO applications (
-        company, role, stage, position, salary, currency, city, country,
+        company, role, stage, position, category, deadline, salary, currency, city, country,
         date_applied, jd_url, jd, portal_notes, custom_tags, recruiter_name, recruiter_email, user_id
-      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
-      company, role, stage, salary, currency, city, country,
+      company, role, stage, category, deadline, salary, currency, city, country,
       dateApplied, jdUrl, jd, portalNotes, customTags, recruiterName, recruiterEmail, userId
     );
 

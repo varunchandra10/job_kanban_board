@@ -557,3 +557,4 @@ export const StandaloneClipperPage: React.FC = () => {
     </div>
   );
 };
+

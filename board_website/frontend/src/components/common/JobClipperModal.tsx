@@ -12,6 +12,7 @@ import {
   HelpCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import clipperMinRaw from '../../../public/clipper.min.js?raw';
 
 interface JobClipperModalProps {
   isOpen: boolean;
@@ -27,10 +28,10 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
 
   // Retrieve origin and token
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://kanban-board-job.vercel.app';
-  const token = typeof window !== 'undefined' ? localStorage.getItem('job_tracker_token') || '' : '';
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('job_tracker_token') || '') : '';
 
-  // 100% CSP-Immune, Top-Right Corner Clipper Bookmarklet
-  const bookmarkletCode = `javascript:(function(){var r='',c='',l='',s='',n='';try{n=window.getSelection().toString().trim();}catch(e){}try{var sc=document.querySelectorAll('script[type="application/ld+json"]');for(var i=0;i<sc.length;i++){var d=JSON.parse(sc[i].textContent||'{}');if(Array.isArray(d))d=d.find(function(x){return x&&x['@type']==='JobPosting';})||d[0];if(d&&d['@graph'])d=d['@graph'].find(function(x){return x&&x['@type']==='JobPosting';})||d;if(d&&(d['@type']==='JobPosting'||d.title||d.hiringOrganization)){r=d.title||d.name||'';c=(d.hiringOrganization&&(d.hiringOrganization.name||d.hiringOrganization.legalName||d.hiringOrganization))||'';if(d.jobLocationType==='TELECOMMUTE')l='Remote';else if(d.jobLocation&&d.jobLocation.address){var a=d.jobLocation.address;l=[a.addressLocality,a.addressRegion,a.addressCountry].filter(Boolean).join(', ');}if(d.baseSalary&&d.baseSalary.value){var bs=d.baseSalary;s=(bs.currency||'')+' '+(bs.value.value||(bs.value.minValue?bs.value.minValue+'-'+bs.value.maxValue:bs.value));}break;}}}catch(e){}if(!r||!c){var ot=(document.querySelector('meta[property="og:title"]')||{}).content||'';var tt=(document.querySelector('meta[name="twitter:title"]')||{}).content||'';var sn=(document.querySelector('meta[property="og:site_name"]')||{}).content||'';var t=ot||tt||document.title||'';var am=t.match(/^(.+?)\\s+(?:at|@)\\s+([^-|–—·]+)/i);var dm=t.match(/^([^-|–—·]+)\\s*[-|–—·]\\s*(.+)$/);if(am){if(!r)r=am[1].trim();if(!c)c=am[2].trim();}else if(dm){if(!c)c=dm[1].trim();if(!r)r=dm[2].trim();}if(!c&&sn)c=sn.trim();}if(!r){var h=document.querySelector('h1');if(h)r=h.textContent.trim().replace(/\\s+/g,' ');}if(!c){var host=window.location.hostname.replace(/^www\\./,'').split('.')[0];c=host.charAt(0).toUpperCase()+host.slice(1);}var o='${origin}';var q='?company='+encodeURIComponent(c.slice(0,100))+'&role='+encodeURIComponent(r.slice(0,150))+'&location='+encodeURIComponent(l.slice(0,100))+'&salary='+encodeURIComponent(s.slice(0,60))+'&url='+encodeURIComponent(window.location.href)+'&notes='+encodeURIComponent(n.slice(0,500));var w=460,h=740;var x=Math.max(0,(window.screen.availWidth||window.screen.width)-w-20);var y=20;window.open(o+'/clipper'+q,'jt_clipper','toolbar=no,location=no,status=no,menubar=no,scrollbars=yes,resizable=yes,width='+w+',height='+h+',top='+y+',left='+x);})();`;
+  // 100% In-Page Top-Right Popout Bookmarklet (Runs inside the same page in an isolated Shadow DOM, 0 separate windows)
+  const bookmarkletCode = `javascript:(function(){window._JT_ORIGIN='${origin}';window._JT_TOKEN='${token}';${clipperMinRaw}})();`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bookmarkletCode).then(() => {
