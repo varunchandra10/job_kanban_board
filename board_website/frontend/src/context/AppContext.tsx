@@ -11,6 +11,7 @@ import {
   ApplicationCategory,
   LearningCategory,
   LearningTrack,
+  DsaProblemProgress,
 } from '../types';
 import {
   INITIAL_APPLICATIONS,
@@ -166,9 +167,10 @@ interface AppContextType {
   // DSA Practice Track
   isDsaEnabled: boolean;
   toggleDsaTrack: (enabled: boolean) => Promise<void>;
-  dsaProgress: Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }>;
+  dsaProgress: Record<string, DsaProblemProgress>;
   toggleDsaProblem: (problemId: string) => Promise<void>;
   updateDsaNotes: (problemId: string, notes: string) => Promise<void>;
+  advanceDsaReview: (problemId: string, action?: 'advance' | 'reset') => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -229,7 +231,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [isDsaEnabled, setIsDsaEnabled] = useState<boolean>(() => {
     return localStorage.getItem('job_tracker_dsa_enabled') === '1';
   });
-  const [dsaProgress, setDsaProgress] = useState<Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }>>(() => {
+  const [dsaProgress, setDsaProgress] = useState<Record<string, DsaProblemProgress>>(() => {
     try {
       const saved = localStorage.getItem('job_tracker_dsa_progress');
       return saved ? JSON.parse(saved) : {};
@@ -558,9 +560,17 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 
       const dsaPromise = api.getDsaProgress().then(dsaProg => {
         if (mounted && Array.isArray(dsaProg)) {
-          const map: Record<string, { status: 'solved' | 'attempted' | 'todo'; notes?: string }> = {};
+          const map: Record<string, DsaProblemProgress> = {};
           dsaProg.forEach(item => {
-            map[item.problem_id] = { status: item.status, notes: item.notes };
+            map[item.problem_id] = {
+              problem_id: item.problem_id,
+              status: item.status,
+              notes: item.notes,
+              repetition_stage: item.repetition_stage ?? 0,
+              next_review_date: item.next_review_date ?? null,
+              last_reviewed_at: item.last_reviewed_at ?? null,
+              updated_at: item.updated_at
+            };
           });
           setDsaProgress(map);
           localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(map));
@@ -1136,13 +1146,30 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const toggleDsaProblem = async (problemId: string) => {
-    const current = dsaProgress[problemId]?.status;
-    const nextStatus: 'solved' | 'todo' = current === 'solved' ? 'todo' : 'solved';
-    const notes = dsaProgress[problemId]?.notes || '';
+    const current = dsaProgress[problemId];
+    const nextStatus: 'solved' | 'todo' = current?.status === 'solved' ? 'todo' : 'solved';
+    const notes = current?.notes || '';
     const isSolving = nextStatus === 'solved';
 
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().slice(0, 10);
+    const nextStage = isSolving ? (current?.repetition_stage ?? 0) : 0;
+    const nextReview = isSolving ? (current?.next_review_date || tomorrowStr) : null;
+
     setDsaProgress(prev => {
-      const updated = { ...prev, [problemId]: { status: nextStatus, notes } };
+      const updated: Record<string, DsaProblemProgress> = {
+        ...prev,
+        [problemId]: {
+          ...prev[problemId],
+          problem_id: problemId,
+          status: nextStatus,
+          notes,
+          repetition_stage: nextStage,
+          next_review_date: nextReview,
+          updated_at: new Date().toISOString()
+        }
+      };
       localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(updated));
       return updated;
     });
@@ -1209,9 +1236,19 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   };
 
   const updateDsaNotes = async (problemId: string, notes: string) => {
-    const status = dsaProgress[problemId]?.status || 'todo';
+    const current = dsaProgress[problemId];
+    const status = current?.status || 'todo';
     setDsaProgress(prev => {
-      const updated = { ...prev, [problemId]: { status, notes } };
+      const updated: Record<string, DsaProblemProgress> = {
+        ...prev,
+        [problemId]: {
+          ...prev[problemId],
+          problem_id: problemId,
+          status,
+          notes,
+          updated_at: new Date().toISOString()
+        }
+      };
       localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(updated));
       return updated;
     });
@@ -1221,6 +1258,100 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         await api.saveDsaProgress(problemId, status, notes);
       } catch (err) {
         console.warn('Failed saving DSA notes:', err);
+      }
+    }
+  };
+
+  const advanceDsaReview = async (problemId: string, action: 'advance' | 'reset' = 'advance') => {
+    const current = dsaProgress[problemId];
+    if (!current || current.status !== 'solved') return;
+
+    const currentStage = Number(current.repetition_stage || 0);
+    let nextStage = currentStage;
+    let nextReviewDate: string | null = null;
+
+    const shift = (days: number) => {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().slice(0, 10);
+    };
+
+    if (action === 'reset') {
+      nextStage = 0;
+      nextReviewDate = shift(1);
+    } else {
+      if (currentStage === 0) {
+        nextStage = 1;
+        nextReviewDate = shift(3);
+      } else if (currentStage === 1) {
+        nextStage = 2;
+        nextReviewDate = shift(3);
+      } else {
+        nextStage = 4;
+        nextReviewDate = null;
+      }
+    }
+
+    const updatedProg: DsaProblemProgress = {
+      ...current,
+      problem_id: problemId,
+      repetition_stage: nextStage,
+      next_review_date: nextReviewDate,
+      last_reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setDsaProgress(prev => {
+      const updated = { ...prev, [problemId]: updatedProg };
+      localStorage.setItem('job_tracker_dsa_progress', JSON.stringify(updated));
+      return updated;
+    });
+
+    if (action === 'advance') {
+      // Award +15 XP optimistically
+      setGamification(prev => {
+        const nextXP = (prev.totalXP || 0) + 15;
+        const nextStages = (prev.totalRepetitionStagesAdvanced || 0) + 1;
+        const nextRepXP = (prev.spacedRepetitionXP || 0) + 15;
+        const updated = {
+          ...prev,
+          totalXP: nextXP,
+          totalRepetitionStagesAdvanced: nextStages,
+          spacedRepetitionXP: nextRepXP
+        };
+        localStorage.setItem('job_tracker_gamify', JSON.stringify(updated));
+        return updated;
+      });
+
+      try {
+        import('canvas-confetti').then(confetti => {
+          confetti.default({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        });
+      } catch (_) {}
+
+      if (nextStage === 4) {
+        showToast('🏆 Permanently Mastered! +15 XP awarded! Outstanding retention!');
+      } else {
+        showToast(`+15 XP! Advanced to Stage ${nextStage} (Next review: ${nextReviewDate}) 🎉`);
+      }
+    } else {
+      showToast('Review reset to Day 1. Review scheduled for tomorrow.');
+    }
+
+    if (isAuthenticated) {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        const res = await api.reviewDsaProblem(problemId, action, tz);
+        if (res && res.gamification) {
+          setGamification(res.gamification);
+          localStorage.setItem('job_tracker_gamify', JSON.stringify(res.gamification));
+        }
+      } catch (err) {
+        console.warn('Failed advancing DSA review on server:', err);
       }
     }
   };
@@ -1458,6 +1589,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         dsaProgress,
         toggleDsaProblem,
         updateDsaNotes,
+        advanceDsaReview,
         storageMode,
         setStorageMode,
         pendingStorageMode,

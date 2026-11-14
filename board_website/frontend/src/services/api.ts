@@ -1,4 +1,4 @@
-import { Application, Learning, GamificationStats, UserProfile, ResumeVersion } from '../types';
+import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress } from '../types';
 
 export const isTauri = typeof window !== 'undefined' && (
   Boolean((window as any).__TAURI_INTERNALS__) ||
@@ -177,7 +177,7 @@ export const api = {
     return res.json();
   },
 
-  async getDsaProgress(): Promise<Array<{ problem_id: string; status: 'solved' | 'attempted' | 'todo'; notes?: string; updated_at?: string }>> {
+  async getDsaProgress(): Promise<DsaProblemProgress[]> {
     try {
       const res = await fetch(`${API_BASE}/dsa/progress`, { headers: getAuthHeaders() });
       if (!res.ok) return [];
@@ -193,6 +193,29 @@ export const api = {
       method: 'POST',
       headers: getAuthHeaders(),
       body: JSON.stringify({ problem_id, status, notes, tz: userTz }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async reviewDsaProblem(
+    problem_id: string,
+    action: 'advance' | 'reset' = 'advance',
+    tz?: string
+  ): Promise<{
+    ok: number;
+    problem_id: string;
+    repetition_stage: number;
+    next_review_date: string | null;
+    last_reviewed_at: string;
+    gamification?: GamificationStats;
+    earnedXP: number;
+  }> {
+    const userTz = tz || Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const res = await fetch(`${API_BASE}/dsa/review`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ problem_id, action, tz: userTz }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();

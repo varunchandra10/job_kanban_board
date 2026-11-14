@@ -70,6 +70,8 @@ export interface GamificationStats {
   learningCount: number;
   totalMinutes: number;
   totalDsaSolved?: number;
+  totalRepetitionStagesAdvanced?: number;
+  spacedRepetitionXP?: number;
   totalXP: number;
   level: number;
   title?: string;
@@ -160,4 +162,7 @@ export interface DsaProblemProgress {
   status: 'solved' | 'attempted' | 'todo';
   notes?: string;
   updated_at?: string;
+  repetition_stage?: number; // 0: Day 0, 1: Day 1, 2: Day 4, 3: Day 7, 4: Mastered
+  next_review_date?: string | null; // 'YYYY-MM-DD'
+  last_reviewed_at?: string | null;
 }
