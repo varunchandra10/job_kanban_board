@@ -23,10 +23,12 @@ function authMiddleware(req, res, next) {
   const fullPath = (req.originalUrl || req.url || req.path || '').split('?')[0];
   const reqPath = req.path || fullPath;
 
-  // Auth endpoints, health checks, vendor assets do not require prior login
+  // Auth endpoints, health checks, public portfolio, vendor assets do not require prior login
   if (
     fullPath.startsWith('/api/auth/') ||
     reqPath.startsWith('/auth/') ||
+    fullPath.startsWith('/api/portfolio') ||
+    reqPath.startsWith('/portfolio') ||
     fullPath === '/api/health' ||
     reqPath === '/health' ||
     fullPath.startsWith('/vendor/') ||

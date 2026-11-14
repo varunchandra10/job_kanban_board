@@ -197,6 +197,12 @@ function runMigrations(db) {
             try { db.prepare('create index if not exists idx_dsa_review_date on dsa_progress(user_id, next_review_date)').run(); } catch (_) {}
           } else if (file.includes('009')) {
             const userCols = db.prepare('pragma table_info(users)').all().map(c => c.name);
+            if (!userCols.includes('timezone')) {
+              try { db.prepare("alter table users add column timezone text default 'Asia/Kolkata'").run(); } catch (_) {}
+            }
+            if (!userCols.includes('streak_reminders_enabled')) {
+              try { db.prepare("alter table users add column streak_reminders_enabled integer default 1").run(); } catch (_) {}
+            }
             if (!userCols.includes('portfolio_slug')) {
               try { db.prepare('alter table users add column portfolio_slug text').run(); } catch (_) {}
             }

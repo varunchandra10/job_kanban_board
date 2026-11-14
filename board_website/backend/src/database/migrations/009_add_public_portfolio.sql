@@ -14,3 +14,4 @@ ALTER TABLE resume_profile ADD COLUMN is_portfolio_public INTEGER DEFAULT 0;
 ALTER TABLE resume_profile ADD COLUMN portfolio_headline TEXT DEFAULT '';
 ALTER TABLE resume_profile ADD COLUMN portfolio_bio TEXT DEFAULT '';
 CREATE UNIQUE INDEX IF NOT EXISTS idx_resume_profile_portfolio_slug ON resume_profile(portfolio_slug);
+
