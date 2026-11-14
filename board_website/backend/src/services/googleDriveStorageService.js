@@ -490,11 +490,13 @@ class GoogleDriveStorageService extends BaseStorageService {
     };
   }
 
-  async deleteFile(fileIdOrUrl) {
+  async deleteFile(fileIdOrUrl, userAccessToken = null, userRefreshToken = null) {
     const fileId = GoogleDriveStorageService.extractFileId(fileIdOrUrl);
-    if (!this.driveClient || !fileId) return false;
+    if (!fileId) return false;
+    const drive = this.getClient(userAccessToken, userRefreshToken);
+    if (!drive) return false;
     try {
-      await this.driveClient.files.delete({ fileId });
+      await drive.files.delete({ fileId, supportsAllDrives: true });
       return true;
     } catch (err) {
       console.warn('[Google Drive] Delete file warning:', err.message);

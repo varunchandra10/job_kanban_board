@@ -250,3 +250,4 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
     </div>
   );
 };
+

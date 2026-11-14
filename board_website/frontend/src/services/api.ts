@@ -90,9 +90,14 @@ export const api = {
   },
 
   async deleteApplication(id: number): Promise<{ ok: number }> {
+    const headers = getAuthHeaders();
+    const gDriveToken = localStorage.getItem('google_drive_access_token');
+    if (gDriveToken) {
+      headers['x-google-access-token'] = gDriveToken;
+    }
     const res = await fetch(`${API_BASE}/applications/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders(),
+      headers,
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();

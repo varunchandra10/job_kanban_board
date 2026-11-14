@@ -142,6 +142,11 @@ interface AppContextType {
   addApplication: (data: Partial<Application>) => Promise<void>;
   updateApplication: (id: number, data: Partial<Application>) => Promise<void>;
   deleteApplication: (id: number) => Promise<void>;
+  appToDelete: Application | null;
+  isDeleteAppModalOpen: boolean;
+  isDeletingApp: boolean;
+  confirmDeleteApplication: () => Promise<void>;
+  cancelDeleteApplication: () => void;
   moveApplication: (id: number, stage: ApplicationStage) => Promise<void>;
   toggleBookmark: (id: number, forceState?: boolean) => Promise<void>;
 
@@ -242,6 +247,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const [storageMode, setStorageMode] = useState<StorageMode>(() => getInitialStorageMode());
   const [pendingStorageMode, setPendingStorageMode] = useState<StorageMode | null>(null);
   const [isStorageConfirmModalOpen, setIsStorageConfirmModalOpen] = useState<boolean>(false);
+  const [appToDelete, setAppToDelete] = useState<Application | null>(null);
+  const [isDeleteAppModalOpen, setIsDeleteAppModalOpen] = useState<boolean>(false);
+  const [isDeletingApp, setIsDeletingApp] = useState<boolean>(false);
 
   const requestStorageModeChange = (targetMode: StorageMode) => {
     if (targetMode === storageMode) return;
@@ -816,18 +824,36 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     const target = applications.find(a => a.id === id);
     if (!target) return;
 
-    setApplications(prev => prev.filter(a => a.id !== id));
-    showToast(`Removed ${target.company}`, () => {
-      // Undo callback
-      setApplications(prev => [target, ...prev]);
-    });
+    // Pop confirmation modal asking if user is sure, warning that files will be deleted from Google Drive
+    setAppToDelete(target);
+    setIsDeleteAppModalOpen(true);
+  };
 
+  const confirmDeleteApplication = async () => {
+    if (!appToDelete) return;
+    const target = appToDelete;
+    setIsDeletingApp(true);
     try {
-      const effectiveId = resolveId(id);
+      setApplications(prev => prev.filter(a => a.id !== target.id));
+      const effectiveId = resolveId(target.id);
       await api.deleteApplication(effectiveId);
-    } catch (err) {
-      enqueueMutation('delete_application', {}, undefined, id);
+      showToast(`Deleted ${target.company} and removed files from Google Drive.`);
+      setIsDeleteAppModalOpen(false);
+      setAppToDelete(null);
+    } catch (err: any) {
+      showToast('Error deleting application: ' + (err.message || 'Unknown error'));
+      enqueueMutation('delete_application', {}, undefined, target.id);
+      setIsDeleteAppModalOpen(false);
+      setAppToDelete(null);
+    } finally {
+      setIsDeletingApp(false);
     }
+  };
+
+  const cancelDeleteApplication = () => {
+    setIsDeleteAppModalOpen(false);
+    setAppToDelete(null);
+    setIsDeletingApp(false);
   };
 
   const toggleBookmark = async (id: number, forceState?: boolean) => {
@@ -1411,6 +1437,11 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         addApplication,
         updateApplication,
         deleteApplication,
+        appToDelete,
+        isDeleteAppModalOpen,
+        isDeletingApp,
+        confirmDeleteApplication,
+        cancelDeleteApplication,
         moveApplication,
         toggleBookmark,
         addLearning,

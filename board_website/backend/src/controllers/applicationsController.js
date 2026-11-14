@@ -141,11 +141,20 @@ exports.deleteApplication = async (req, res, next) => {
       return res.json({ ok: 1, deleted: false });
     }
 
-    // Clean up physical and/or cloud documents attached to the application
+    // Clean up physical and/or cloud documents attached to the application (including Google Drive)
+    const userAccessToken = req.headers['x-google-access-token'] || (req.headers['authorization']?.startsWith('Bearer ya29.') ? req.headers['authorization'].slice(7) : null);
+    let userRefreshToken = null;
+    if (userId && userId !== 'default_user') {
+      try {
+        const u = db.prepare('SELECT google_refresh_token FROM users WHERE id = ?').get(userId);
+        if (u && u.google_refresh_token) userRefreshToken = u.google_refresh_token.trim();
+      } catch (_) {}
+    }
+
     const filePaths = [app.resume_path, app.cover_letter_path].filter(Boolean);
     for (const filePath of filePaths) {
       try {
-        await storageService.deleteFile(filePath);
+        await storageService.deleteFile(filePath, userAccessToken, userRefreshToken);
       } catch (fileErr) {
         console.warn(`[Application Cleanup] Warning deleting file for app ${id}:`, fileErr.message);
       }

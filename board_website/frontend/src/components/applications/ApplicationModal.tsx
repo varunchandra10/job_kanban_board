@@ -60,6 +60,7 @@ export const ApplicationModal: React.FC = () => {
     openFollowUpModal,
     addApplication,
     updateApplication,
+    deleteApplication,
     versions,
     gdriveStatus,
     setIsDriveModalOpen,
@@ -1153,21 +1154,38 @@ export const ApplicationModal: React.FC = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="pt-2 pb-6 flex items-center justify-end gap-3">
-              <button
-                type="button"
-                onClick={closeAppModal}
-                className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
-              >
-                <Check size={14} strokeWidth={2.5} />
-                <span>{editingApp ? 'Save Changes' : 'Add Application'}</span>
-              </button>
+            <div className="pt-2 pb-6 flex items-center justify-between gap-3">
+              {editingApp ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const id = editingApp.id;
+                    closeAppModal();
+                    deleteApplication(id);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-red-200 dark:border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 font-bold text-xs transition-colors cursor-pointer"
+                  title="Delete this job application"
+                >
+                  <Trash2 size={13} />
+                  <span>Delete</span>
+                </button>
+              ) : <div />}
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={closeAppModal}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+                >
+                  <Check size={14} strokeWidth={2.5} />
+                  <span>{editingApp ? 'Save Changes' : 'Add Application'}</span>
+                </button>
+              </div>
             </div>
           </form>
         </div>
