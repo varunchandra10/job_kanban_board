@@ -128,63 +128,60 @@ export interface UserProfile {
   portfolio_bio?: string;
 }
 
-export interface PublicPortfolioData {
+export interface PublicPortfolioResponse {
+  ok: number;
+  slug: string;
   user: {
-    id: string;
     name: string;
     headline: string;
     bio: string;
-    portfolio_slug: string;
     avatar_url?: string;
+    linkedin?: string;
+    github?: string;
+    email?: string;
+    school?: string;
+    degree?: string;
+    grad_date?: string;
+    skills?: string;
+    projects?: string;
+    experience?: string;
   };
-  contact: {
-    email: string;
-    linkedin: string;
-    github: string;
-    school: string;
-    degree: string;
-    grad_date: string;
-    skills: string;
-    projects: string;
-    experience: string;
-  };
-  gamification: {
+  stats: {
     streak: number;
     longestStreak: number;
+    level: number;
+    levelTitle: string;
+    levelIcon: string;
     totalXP: number;
-    level: {
-      tier: number;
-      title: string;
-      icon: string;
-      color: string;
-    };
-    activePunchcard: boolean[];
-    todayCompleted: boolean;
+    totalDsaSolved: number;
+    masteredDsaCount: number;
+    learningCount: number;
+    weekPunchcard: boolean[];
   };
   dsa: {
-    totalMastered: number;
-    totalSolved: number;
-    totalCatalog: number;
-    categoryProgress: Array<{
+    solvedProblemIds: Array<{
       id: string;
-      name: string;
-      iconName: string;
-      solved: number;
-      total: number;
-      pct: number;
+      repetition_stage: number;
     }>;
+    masteredCount: number;
   };
-  learnings: Array<{
+  recentLearnings: Array<{
+    id: number | string;
+    title?: string;
+    topic?: string;
+    category?: string;
     date: string;
-    tags: string;
+    tags?: string;
     duration_minutes: number;
   }>;
   resume: {
-    available: boolean;
+    hasPdf: boolean;
+    name: string;
     downloadUrl: string;
-    updatedAt: string | null;
-  };
+  } | null;
 }
+
+export type PublicPortfolioData = PublicPortfolioResponse;
 
 export interface ResumeVersion {
   id: number;

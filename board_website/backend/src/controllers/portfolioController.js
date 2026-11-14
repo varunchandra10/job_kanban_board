@@ -186,7 +186,8 @@ exports.downloadPublicResume = (req, res, next) => {
 exports.checkSlugAvailability = (req, res, next) => {
   try {
     const currentUserId = req.user?.id || null;
-    const slug = (req.query.slug || '').trim().toLowerCase();
+    const rawSlug = req.params?.slug || req.query?.slug || '';
+    const slug = String(rawSlug).trim().toLowerCase();
 
     if (!slug) {
       return res.json({ available: false, message: 'Slug cannot be empty' });

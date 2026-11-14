@@ -10,6 +10,7 @@ import { DsaPracticePage } from './components/dsa/DsaPracticePage';
 import { StandaloneClipperPage } from './components/clipper/StandaloneClipperPage';
 import { PrivacyPage } from './components/legal/PrivacyPage';
 import { TermsPage } from './components/legal/TermsPage';
+import { PublicPortfolioPage } from './components/portfolio/PublicPortfolioPage';
 import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader';
 import { AuthModal } from './components/ui/AuthModal';
 import { DriveConsentModal } from './components/ui/DriveConsentModal';
@@ -49,6 +50,9 @@ export const App: React.FC = () => {
         {/* Public Legal / OAuth Verification Pages */}
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+
+        {/* Public Recruiter Proof-of-Work Portfolio Route */}
+        <Route path="/u/:slug" element={<PublicPortfolioPage />} />
 
         {/* Fallback to landing */}
         <Route path="*" element={<Navigate to="/" replace />} />
