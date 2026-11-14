@@ -46,7 +46,11 @@ import {
   EyeOff,
   AlertCircle,
   Loader2,
+  BarChart2,
+  User,
+  Settings,
 } from 'lucide-react';
+import { ProfileOverviewTab } from './tabs/ProfileOverviewTab';
 import {
   subscribeToPush,
   unsubscribeFromPush,
@@ -541,6 +545,9 @@ export const CareerProfile: React.FC = () => {
     setIsClipperModalOpen,
     updateProfile,
   } = useApp();
+
+  // 🌟 3-Tab Division State: overview | career_data | settings
+  const [profileActiveTab, setProfileActiveTab] = useState<'overview' | 'career_data' | 'settings'>('overview');
 
   // Public Recruiter Portfolio state
   const [portfolioSlug, setPortfolioSlug] = useState('');
@@ -1079,9 +1086,66 @@ export const CareerProfile: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 w-full">
-      {/* 1. Top Hero Section Divided into 2 Cards: Left (User Info) and Right (Storage & Export) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
-        {/* Left Section: User Profile Avatar, Name, Email, Streaks */}
+      {/* 🌟 3-Tab Profile Navigation Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200 dark:border-white/10 pb-4">
+        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/10 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setProfileActiveTab('overview')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              profileActiveTab === 'overview'
+                ? 'bg-white dark:bg-[#1f1f23] text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-white/10'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <BarChart2 size={16} />
+            <span>Overview &amp; Momentum</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileActiveTab('career_data')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              profileActiveTab === 'career_data'
+                ? 'bg-white dark:bg-[#1f1f23] text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-white/10'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <User size={16} />
+            <span>Career Data</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setProfileActiveTab('settings')}
+            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+              profileActiveTab === 'settings'
+                ? 'bg-white dark:bg-[#1f1f23] text-indigo-600 dark:text-indigo-400 shadow-sm border border-slate-200/80 dark:border-white/10'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Settings size={16} />
+            <span>Settings</span>
+          </button>
+        </div>
+
+        {/* Quick status pill on right */}
+        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span>Active Discipline Engine</span>
+        </div>
+      </div>
+
+      {/* Tab 1: Overview & Momentum */}
+      {profileActiveTab === 'overview' && (
+        <ProfileOverviewTab />
+      )}
+
+      {/* Legacy/Tab 2 & 3 content when not on overview */}
+      {profileActiveTab !== 'overview' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">
+            {/* Left Section: User Profile Avatar, Name, Email, Streaks */}
         <section
           className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-start gap-4"
           aria-label="User Profile Details"
@@ -2773,6 +2837,8 @@ export const CareerProfile: React.FC = () => {
           </div>
         )}
       </section>
+      </div>
+      )}
 
       {/* Add / Edit Quick Link Modal (Matching linkModal in profile.html) */}
       {isLinkModalOpen && (
