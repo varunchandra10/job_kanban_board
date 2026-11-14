@@ -27,28 +27,35 @@ function getTodayInTimezone(tz) {
 function getDateInTimezone(dateInput, tz) {
   if (!dateInput) return null;
   try {
-    const rawStr = String(dateInput).trim();
-    // Append Z if missing timezone offset (e.g. SQLite datetime('now') is UTC: "2026-11-08 17:00:00")
-    const isoStr = (!rawStr.endsWith('Z') && !rawStr.includes('+') && !rawStr.includes('-')) || rawStr.includes(' ')
-      ? rawStr.replace(' ', 'T') + 'Z'
-      : rawStr;
-    const dt = new Date(isoStr);
-    if (isNaN(dt.getTime())) return rawStr.slice(0, 10);
+    let dt;
+    if (dateInput instanceof Date) {
+      dt = dateInput;
+    } else {
+      const rawStr = String(dateInput).trim();
+      const isoStr = (!rawStr.endsWith('Z') && !rawStr.includes('+') && !rawStr.includes('-')) || rawStr.includes(' ')
+        ? rawStr.replace(' ', 'T') + 'Z'
+        : rawStr;
+      dt = new Date(isoStr);
+      if (isNaN(dt.getTime())) dt = new Date(dateInput);
+    }
+    if (isNaN(dt.getTime())) return new Date().toISOString().slice(0, 10);
     if (tz) {
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: tz,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
-      return formatter.format(dt);
+      try {
+        const formatter = new Intl.DateTimeFormat('en-CA', {
+          timeZone: tz,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit'
+        });
+        return formatter.format(dt);
+      } catch (_) {}
     }
     const yr = dt.getFullYear();
     const mo = String(dt.getMonth() + 1).padStart(2, '0');
     const da = String(dt.getDate()).padStart(2, '0');
     return `${yr}-${mo}-${da}`;
   } catch (_) {
-    return String(dateInput).slice(0, 10);
+    return new Date().toISOString().slice(0, 10);
   }
 }
 
@@ -102,6 +109,8 @@ function calculateGamification(userId = null, tz = null) {
       learningCount: 0,
       totalMinutes: 0,
       totalDsaSolved: 0,
+      totalRepetitionStagesAdvanced: 0,
+      spacedRepetitionXP: 0,
       totalXP: 0,
       level: 1,
       title: 'Novice Scout',
@@ -153,6 +162,7 @@ function calculateGamification(userId = null, tz = null) {
 
   // 3. Fetch user's solved DSA problems grouped by date & total solved
   let totalDsaSolved = 0;
+  let totalRepetitionStagesAdvanced = 0;
   const dsaSolvedByDate = {};
   try {
     const allSolvedRows = db.prepare(
@@ -165,6 +175,17 @@ function calculateGamification(userId = null, tz = null) {
         dsaSolvedByDate[d] = (dsaSolvedByDate[d] || 0) + 1;
       }
     }
+
+    const repRow = db.prepare(`
+      SELECT SUM(CASE 
+        WHEN repetition_stage >= 3 THEN 3 
+        WHEN repetition_stage > 0 THEN repetition_stage 
+        ELSE 0 
+      END) as total_stages
+      FROM dsa_progress 
+      WHERE user_id=? AND status='solved'
+    `).get(userId);
+    totalRepetitionStagesAdvanced = repRow?.total_stages || 0;
   } catch (_) {}
 
   // DSA counts under total learnings
@@ -267,8 +288,9 @@ function calculateGamification(userId = null, tz = null) {
   const baseLogXP = logs.length * 20;
   const timeXP = Math.floor(totalMinutes / 5) * 5;
   const dsaXP = totalDsaSolved * 25;
+  const spacedRepetitionXP = totalRepetitionStagesAdvanced * 15;
   const streakBonusXP = streak * 50;
-  const totalXP = baseLogXP + timeXP + dsaXP + streakBonusXP;
+  const totalXP = baseLogXP + timeXP + dsaXP + spacedRepetitionXP + streakBonusXP;
 
   let currentTier = XP_THRESHOLDS[0];
   for (const t of XP_THRESHOLDS) {
@@ -286,6 +308,8 @@ function calculateGamification(userId = null, tz = null) {
     learningCount,
     totalMinutes,
     totalDsaSolved,
+    totalRepetitionStagesAdvanced,
+    spacedRepetitionXP,
     totalXP,
     level: currentTier.level,
     title: currentTier.title,
@@ -426,5 +450,7 @@ module.exports = {
   updateLearning: exports.updateLearning,
   deleteLearning: exports.deleteLearning,
   getGamification: exports.getGamification,
-  calculateGamification
+  calculateGamification,
+  getDateInTimezone,
+  shiftDays
 };
