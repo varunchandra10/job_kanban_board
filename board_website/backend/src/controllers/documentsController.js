@@ -57,6 +57,129 @@ exports.listDriveFiles = async (req, res, next) => {
   }
 };
 
+/**
+ * Check if a document (e.g. resume) with the same filename already exists in Google Drive.
+ * Returns { exists: true, file: { id, name, webViewLink, size } } if found.
+ */
+exports.checkDriveFile = async (req, res, next) => {
+  try {
+    const userId = req.user?.id || 'default_user';
+    const fileName = (req.body?.fileName || req.query?.fileName || '').trim();
+    const type = (req.body?.type || req.query?.type || 'resume').toLowerCase();
+
+    if (!fileName) {
+      return res.status(400).json({ error: 'fileName is required' });
+    }
+
+    const safeName = path.basename(fileName).replace(/[^a-zA-Z0-9._ -]/g, '_');
+
+    // 1. Resolve user's Google Drive folder & refresh token
+    let userFolderId = req.body?.folderId || req.query?.folderId;
+    let userRefreshToken = null;
+
+    if (userId) {
+      try {
+        const userRow = db.prepare('SELECT gdrive_folder_id, google_refresh_token FROM users WHERE id = ?').get(userId);
+        if (userRow) {
+          if (!userFolderId && userRow.gdrive_folder_id) {
+            userFolderId = userRow.gdrive_folder_id.trim();
+          }
+          if (userRow.google_refresh_token) {
+            userRefreshToken = userRow.google_refresh_token.trim();
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (!userFolderId) {
+      userFolderId = config.googleDriveFolderId || '1XvpikQzEKf2ggiolLcPYLeX_jWjL0_N_';
+    }
+
+    const userAccessToken = req.headers['x-google-access-token'] || req.body?.googleAccessToken || (req.headers['authorization']?.startsWith('Bearer ya29.') ? req.headers['authorization'].slice(7) : null);
+
+    const GoogleDriveStorageService = require('../services/googleDriveStorageService');
+    const driveService = (storageService instanceof GoogleDriveStorageService)
+      ? storageService
+      : new GoogleDriveStorageService({ folderId: userFolderId });
+
+    const drive = driveService.getClient(userAccessToken, userRefreshToken);
+
+    if (drive) {
+      // Resolve upload folder (e.g. resumes subfolder)
+      let uploadFolderId = userFolderId;
+      try {
+        uploadFolderId = await driveService.getOrCreateSubfolder(userFolderId, type, drive);
+      } catch (_) {}
+
+      // Search queries for exact file name match in Google Drive
+      const queries = [];
+      if (uploadFolderId) {
+        queries.push(`'${uploadFolderId}' in parents and name = '${safeName}' and trashed = false`);
+      }
+      if (userFolderId && userFolderId !== uploadFolderId) {
+        queries.push(`'${userFolderId}' in parents and name = '${safeName}' and trashed = false`);
+      }
+
+      for (const q of queries) {
+        try {
+          const searchRes = await drive.files.list({
+            q,
+            supportsAllDrives: true,
+            includeItemsFromAllDrives: true,
+            fields: 'files(id, name, mimeType, webViewLink, webContentLink, size, createdTime)',
+            pageSize: 5
+          });
+
+          const files = searchRes.data.files || [];
+          if (files.length > 0) {
+            const found = files[0];
+            const webViewLink = found.webViewLink || `https://drive.google.com/file/d/${found.id}/view`;
+            return res.json({
+              exists: true,
+              file: {
+                id: found.id,
+                name: found.name,
+                webViewLink,
+                webContentLink: found.webContentLink,
+                size: found.size,
+                createdTime: found.createdTime
+              }
+            });
+          }
+        } catch (searchErr) {
+          console.warn('[Check Drive File Search Note]:', searchErr.message);
+        }
+      }
+    }
+
+    // 2. Also check SQLite database applications table for existing Drive link referencing this filename
+    try {
+      const appRow = db.prepare(`
+        SELECT resume_path, company, role FROM applications 
+        WHERE user_id = ? AND (resume_path LIKE ? OR resume_path LIKE ?)
+        ORDER BY id DESC LIMIT 1
+      `).get(userId, `%${safeName}%`, `%${encodeURIComponent(safeName)}%`);
+
+      if (appRow && appRow.resume_path && (appRow.resume_path.includes('drive.google.com') || /^https?:\/\//i.test(appRow.resume_path))) {
+        return res.json({
+          exists: true,
+          file: {
+            name: safeName,
+            webViewLink: appRow.resume_path,
+            company: appRow.company,
+            role: appRow.role
+          }
+        });
+      }
+    } catch (_) {}
+
+    return res.json({ exists: false });
+  } catch (err) {
+    console.warn('[Check Drive File Error]:', err.message);
+    return res.json({ exists: false, error: err.message });
+  }
+};
+
 exports.uploadDocument = async (req, res, next) => {
   const tempDiskPath = req.file?.path || null;
   try {

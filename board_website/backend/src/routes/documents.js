@@ -11,6 +11,8 @@ const { storageService, isGoogleDriveLink, extractGoogleDriveFileId } = require(
 router.post('/delete-document', documentsController.deleteDocument);
 router.delete('/delete-document', documentsController.deleteDocument);
 router.post('/upload-document', upload.single('file'), documentsController.uploadDocument);
+router.post('/check-drive-file', documentsController.checkDriveFile);
+router.get('/check-drive-file', documentsController.checkDriveFile);
 router.get('/gdrive-files', documentsController.listDriveFiles);
 router.get('/file-content', documentsController.getFileContent);
 router.get('/document-content', documentsController.getFileContent);

@@ -445,6 +445,45 @@ export const api = {
     }
   },
 
+  async checkDriveFile(
+    fileName: string,
+    type: 'resume' | 'cover_letter' = 'resume'
+  ): Promise<{
+    exists: boolean;
+    file?: {
+      id?: string;
+      name: string;
+      webViewLink: string;
+      webContentLink?: string;
+      size?: number;
+      createdTime?: string;
+      company?: string;
+      role?: string;
+    };
+    error?: string;
+  }> {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    const gDriveToken = localStorage.getItem('google_drive_access_token');
+    if (gDriveToken) {
+      headers['x-google-access-token'] = gDriveToken;
+    }
+    const savedFolder = localStorage.getItem('gdrive_folder_id');
+    try {
+      const res = await fetch(`${API_BASE}/check-drive-file`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fileName, type, folderId: savedFolder }),
+      });
+      if (!res.ok) {
+        return { exists: false };
+      }
+      return await res.json();
+    } catch (_) {
+      return { exists: false };
+    }
+  },
+
   async getScopedFileToken(): Promise<string> {
     const now = Date.now();
     if (cachedFileToken && cachedFileToken.expiresAt > now + 60000) {

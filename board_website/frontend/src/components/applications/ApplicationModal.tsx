@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { ensureGoogleDriveToken, getStoredGoogleDriveToken } from '../../utils/googleAuth';
+import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
 import {
   Briefcase,
   Landmark,
@@ -92,6 +93,12 @@ export const ApplicationModal: React.FC = () => {
   const [coverLetterPath, setCoverLetterPath] = useState('');
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateResumeInfo, setDuplicateResumeInfo] = useState<{
+    file: File;
+    fileName: string;
+    existingLink: string;
+  } | null>(null);
   const [localDocumentsDir, setLocalDocumentsDir] = useState<string>(() => {
     return typeof window !== 'undefined' ? (localStorage.getItem('job_tracker_custom_local_dir') || '') : '';
   });
@@ -210,6 +217,24 @@ export const ApplicationModal: React.FC = () => {
             return;
           }
         }
+
+        // Check if file with same resume name already exists in Google Drive
+        try {
+          const checkRes = await api.checkDriveFile(file.name, 'resume');
+          if (checkRes.exists && checkRes.file?.webViewLink) {
+            setDuplicateResumeInfo({
+              file,
+              fileName: checkRes.file.name || file.name,
+              existingLink: checkRes.file.webViewLink,
+            });
+            setIsDuplicateModalOpen(true);
+            setIsUploadingResume(false);
+            if (e.target) e.target.value = '';
+            return;
+          }
+        } catch (checkErr) {
+          console.warn('[Check Drive Resume Duplicate Note]:', checkErr);
+        }
       }
 
       if (storageMode === 'local_storage' && typeof window !== 'undefined' && (window as any).__TAURI__?.core?.invoke) {
@@ -253,6 +278,32 @@ export const ApplicationModal: React.FC = () => {
     } finally {
       setIsUploadingResume(false);
       if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleSelectSameResume = () => {
+    if (!duplicateResumeInfo) return;
+    setResumePath(duplicateResumeInfo.existingLink);
+    showToast(`Linked existing "${duplicateResumeInfo.fileName}" from Google Drive!`);
+    setIsDuplicateModalOpen(false);
+    setDuplicateResumeInfo(null);
+  };
+
+  const handleSelectDifferentResume = async (newFileName: string) => {
+    if (!duplicateResumeInfo) return;
+    const originalFile = duplicateResumeInfo.file;
+    setIsDuplicateModalOpen(false);
+    setIsUploadingResume(true);
+    try {
+      const renamedFile = new File([originalFile], newFileName, { type: originalFile.type });
+      const res = await api.uploadDocument(renamedFile, 'resume', editingApp?.id, storageMode);
+      setResumePath(res.fullPath || res.path || newFileName);
+      showToast(`Uploaded as "${newFileName}" to Google Drive!`);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to upload renamed resume');
+    } finally {
+      setIsUploadingResume(false);
+      setDuplicateResumeInfo(null);
     }
   };
 
@@ -1121,6 +1172,23 @@ export const ApplicationModal: React.FC = () => {
           </form>
         </div>
       </aside>
+
+      {/* Duplicate Resume Prompt Modal for Google Drive */}
+      {duplicateResumeInfo && (
+        <DuplicateResumeModal
+          isOpen={isDuplicateModalOpen}
+          fileName={duplicateResumeInfo.fileName}
+          existingLink={duplicateResumeInfo.existingLink}
+          company={company}
+          role={role}
+          onSelectSame={handleSelectSameResume}
+          onSelectDifferent={handleSelectDifferentResume}
+          onCancel={() => {
+            setIsDuplicateModalOpen(false);
+            setDuplicateResumeInfo(null);
+          }}
+        />
+      )}
     </>
   );
 };

@@ -54,8 +54,10 @@ exports.quickAdd = async (req, res, next) => {
     const crypto = require('crypto');
     const createdDocIds = [];
 
-    // Handle base64 resume upload from clipper
-    if (b.resume_file && b.resume_file.data) {
+    // Handle resume from clipper (existing link or base64 upload)
+    if (b.resume_file && b.resume_file.existingLink) {
+      resumePath = b.resume_file.existingLink;
+    } else if (b.resume_file && b.resume_file.data) {
       try {
         const docId = `doc_${crypto.randomUUID()}`;
         const name = (b.resume_file.name || 'resume.pdf').trim();
@@ -72,8 +74,10 @@ exports.quickAdd = async (req, res, next) => {
       }
     }
 
-    // Handle base64 cover letter upload from clipper
-    if (b.cover_letter_file && b.cover_letter_file.data) {
+    // Handle cover letter from clipper (existing link or base64 upload)
+    if (b.cover_letter_file && b.cover_letter_file.existingLink) {
+      coverLetterPath = b.cover_letter_file.existingLink;
+    } else if (b.cover_letter_file && b.cover_letter_file.data) {
       try {
         const docId = `doc_${crypto.randomUUID()}`;
         const name = (b.cover_letter_file.name || 'cover_letter.pdf').trim();

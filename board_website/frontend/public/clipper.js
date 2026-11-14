@@ -325,14 +325,76 @@
     }
     var reader = new FileReader();
     reader.onload = function (e) {
-      resumeFileData = {
-        name: file.name,
-        data: e.target.result,
-        mimeType: file.type || 'application/pdf'
-      };
-      nameResume.textContent = '📄 ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
-      btnUploadResume.style.display = 'none';
-      pillResume.style.display = 'flex';
+      var base64Data = e.target.result;
+
+      // Check if resume file already exists in Google Drive
+      fetch(origin + '/api/check-drive-file', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ fileName: file.name, type: 'resume' })
+      })
+      .then(function (res) { return res.ok ? res.json() : { exists: false }; })
+      .then(function (check) {
+        if (check && check.exists && check.file && check.file.webViewLink) {
+          var comp = (shadow.getElementById('jt-inp-comp') ? shadow.getElementById('jt-inp-comp').value : '').trim() || 'Company';
+          var rol = (shadow.getElementById('jt-inp-role') ? shadow.getElementById('jt-inp-role').value : '').trim() || 'Role';
+          var dotIdx = file.name.lastIndexOf('.');
+          var base = dotIdx !== -1 ? file.name.slice(0, dotIdx) : file.name;
+          var ext = dotIdx !== -1 ? file.name.slice(dotIdx) : '.pdf';
+          var cleanComp = comp.replace(/[/\\?%*:|"<>]/g, '').replace(/\s+/g, '_');
+          var cleanRol = rol.replace(/[/\\?%*:|"<>]/g, '').replace(/\s+/g, '_');
+          var newName = base + '_' + cleanComp + '_' + cleanRol + ext;
+
+          var isSame = confirm(
+            'A resume named "' + file.name + '" already exists in your Google Drive.\n\n' +
+            '• Click OK if this is the SAME resume (links existing Drive file without uploading duplicates).\n' +
+            '• Click CANCEL if this is a DIFFERENT resume (will rename to "' + newName + '" and upload).'
+          );
+
+          if (isSame) {
+            resumeFileData = {
+              name: check.file.name || file.name,
+              existingLink: check.file.webViewLink
+            };
+            nameResume.textContent = '🔗 ' + (check.file.name || file.name) + ' (Drive Linked)';
+            btnUploadResume.style.display = 'none';
+            pillResume.style.display = 'flex';
+            return;
+          } else {
+            resumeFileData = {
+              name: newName,
+              data: base64Data,
+              mimeType: file.type || 'application/pdf'
+            };
+            nameResume.textContent = '✨ ' + newName + ' (' + Math.round(file.size / 1024) + ' KB)';
+            btnUploadResume.style.display = 'none';
+            pillResume.style.display = 'flex';
+            return;
+          }
+        }
+
+        resumeFileData = {
+          name: file.name,
+          data: base64Data,
+          mimeType: file.type || 'application/pdf'
+        };
+        nameResume.textContent = '📄 ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+        btnUploadResume.style.display = 'none';
+        pillResume.style.display = 'flex';
+      })
+      .catch(function () {
+        resumeFileData = {
+          name: file.name,
+          data: base64Data,
+          mimeType: file.type || 'application/pdf'
+        };
+        nameResume.textContent = '📄 ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+        btnUploadResume.style.display = 'none';
+        pillResume.style.display = 'flex';
+      });
     };
     reader.readAsDataURL(file);
   });

@@ -17,12 +17,14 @@ import {
   ArrowRight,
   Paperclip,
   Upload,
-  Trash2
+  Trash2,
+  ExternalLink
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ApplicationCategory, ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { api } from '../../services/api';
+import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
 
 export const StandaloneClipperPage: React.FC = () => {
   const {
@@ -58,6 +60,14 @@ export const StandaloneClipperPage: React.FC = () => {
   const [resumeVersionId, setResumeVersionId] = useState<number | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [existingDriveResumeLink, setExistingDriveResumeLink] = useState<string | null>(null);
+  const [existingDriveResumeName, setExistingDriveResumeName] = useState<string>('');
+  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+  const [duplicateResumeInfo, setDuplicateResumeInfo] = useState<{
+    file: File;
+    fileName: string;
+    existingLink: string;
+  } | null>(null);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,10 +159,10 @@ export const StandaloneClipperPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const selectedResume = versions.find(v => v.id === resumeVersionId);
-      let resumePathToSave = selectedResume?.pdf_name || '';
+      let resumePathToSave = existingDriveResumeLink || selectedResume?.pdf_name || '';
       let coverPathToSave = '';
 
-      if (resumeFile) {
+      if (resumeFile && !existingDriveResumeLink) {
         try {
           const up = await api.uploadDocument(resumeFile, 'resume', undefined, storageMode);
           resumePathToSave = up.fullPath || up.path || resumeFile.name;
@@ -202,6 +212,26 @@ export const StandaloneClipperPage: React.FC = () => {
       showToast('Failed to save application: ' + (err.message || 'Unknown error'));
       setIsSubmitting(false);
     }
+  };
+
+  const handleSelectSameResume = () => {
+    if (!duplicateResumeInfo) return;
+    setExistingDriveResumeLink(duplicateResumeInfo.existingLink);
+    setExistingDriveResumeName(duplicateResumeInfo.fileName);
+    setResumeFile(null);
+    showToast(`Linked existing "${duplicateResumeInfo.fileName}" from Google Drive!`);
+    setIsDuplicateModalOpen(false);
+    setDuplicateResumeInfo(null);
+  };
+
+  const handleSelectDifferentResume = (newFileName: string) => {
+    if (!duplicateResumeInfo) return;
+    const renamed = new File([duplicateResumeInfo.file], newFileName, { type: duplicateResumeInfo.file.type });
+    setResumeFile(renamed);
+    setExistingDriveResumeLink(null);
+    setIsDuplicateModalOpen(false);
+    setDuplicateResumeInfo(null);
+    showToast(`Renamed to "${newFileName}".`);
   };
 
   // If saved, show celebratory completion card
@@ -559,7 +589,38 @@ export const StandaloneClipperPage: React.FC = () => {
                   <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
                     Resume Document (.pdf, .docx)
                   </label>
-                  {resumeFile ? (
+                  {existingDriveResumeLink ? (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <CheckCircle2 size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="truncate font-semibold text-emerald-700 dark:text-emerald-300">
+                          Drive: {existingDriveResumeName || 'Linked Resume'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <a
+                          href={existingDriveResumeLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
+                        >
+                          <ExternalLink size={10} />
+                          <span>View</span>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setExistingDriveResumeLink(null);
+                            setExistingDriveResumeName('');
+                          }}
+                          className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                          title="Remove linked resume"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : resumeFile ? (
                     <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-xs">
                       <div className="flex items-center gap-2 truncate">
                         <FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
@@ -585,8 +646,29 @@ export const StandaloneClipperPage: React.FC = () => {
                           type="file"
                           accept=".pdf,.doc,.docx"
                           className="hidden"
-                          onChange={e => {
-                            if (e.target.files?.[0]) setResumeFile(e.target.files[0]);
+                          onChange={async e => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            if (storageMode === 'g_drive') {
+                              try {
+                                const checkRes = await api.checkDriveFile(file.name, 'resume');
+                                if (checkRes.exists && checkRes.file?.webViewLink) {
+                                  setDuplicateResumeInfo({
+                                    file,
+                                    fileName: checkRes.file.name || file.name,
+                                    existingLink: checkRes.file.webViewLink,
+                                  });
+                                  setIsDuplicateModalOpen(true);
+                                  if (e.target) e.target.value = '';
+                                  return;
+                                }
+                              } catch (err) {
+                                console.warn('[Clipper Check Drive Duplicate Error]:', err);
+                              }
+                            }
+                            setResumeFile(file);
+                            setExistingDriveResumeLink(null);
+                            if (e.target) e.target.value = '';
                           }}
                         />
                       </label>
@@ -671,6 +753,23 @@ export const StandaloneClipperPage: React.FC = () => {
             </button>
           </footer>
         </form>
+      )}
+
+      {/* Duplicate Resume Modal for Google Drive */}
+      {duplicateResumeInfo && (
+        <DuplicateResumeModal
+          isOpen={isDuplicateModalOpen}
+          fileName={duplicateResumeInfo.fileName}
+          existingLink={duplicateResumeInfo.existingLink}
+          company={company}
+          role={role}
+          onSelectSame={handleSelectSameResume}
+          onSelectDifferent={handleSelectDifferentResume}
+          onCancel={() => {
+            setIsDuplicateModalOpen(false);
+            setDuplicateResumeInfo(null);
+          }}
+        />
       )}
     </div>
   );
