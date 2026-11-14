@@ -30,6 +30,9 @@ function runMigrations(db) {
       problem_id TEXT NOT NULL,
       status TEXT DEFAULT 'solved',
       notes TEXT DEFAULT '',
+      repetition_stage INTEGER DEFAULT 0,
+      next_review_date TEXT,
+      last_reviewed_at TEXT,
       updated_at TEXT DEFAULT (datetime('now')),
       UNIQUE(user_id, problem_id)
     );
@@ -100,6 +103,27 @@ function runMigrations(db) {
     console.warn('[Migrator] Note ensuring password_resets.attempts:', err.message);
   }
 
+  try {
+    const dsaCols = db.prepare('pragma table_info(dsa_progress)').all().map(c => c.name);
+    if (dsaCols.length) {
+      if (!dsaCols.includes('repetition_stage')) {
+        db.prepare('alter table dsa_progress add column repetition_stage integer default 0').run();
+        console.log('[Migrator] Added repetition_stage column to dsa_progress');
+      }
+      if (!dsaCols.includes('next_review_date')) {
+        db.prepare('alter table dsa_progress add column next_review_date text').run();
+        console.log('[Migrator] Added next_review_date column to dsa_progress');
+      }
+      if (!dsaCols.includes('last_reviewed_at')) {
+        db.prepare('alter table dsa_progress add column last_reviewed_at text').run();
+        console.log('[Migrator] Added last_reviewed_at column to dsa_progress');
+      }
+      db.prepare('create index if not exists idx_dsa_review_date on dsa_progress(user_id, next_review_date)').run();
+    }
+  } catch (err) {
+    console.warn('[Migrator] Note ensuring dsa_progress columns:', err.message);
+  }
+
   const appliedRows = db.prepare('SELECT name FROM schema_migrations').all();
   const appliedSet = new Set(appliedRows.map(r => r.name));
 
@@ -119,7 +143,21 @@ function runMigrations(db) {
         const sql = fs.readFileSync(filePath, 'utf8');
         db.exec('BEGIN TRANSACTION;');
         try {
-          db.exec(sql);
+          if (file.includes('008')) {
+            const dsaCols = db.prepare('pragma table_info(dsa_progress)').all().map(c => c.name);
+            if (!dsaCols.includes('repetition_stage')) {
+              try { db.prepare('alter table dsa_progress add column repetition_stage integer default 0').run(); } catch (_) {}
+            }
+            if (!dsaCols.includes('next_review_date')) {
+              try { db.prepare('alter table dsa_progress add column next_review_date text').run(); } catch (_) {}
+            }
+            if (!dsaCols.includes('last_reviewed_at')) {
+              try { db.prepare('alter table dsa_progress add column last_reviewed_at text').run(); } catch (_) {}
+            }
+            try { db.prepare('create index if not exists idx_dsa_review_date on dsa_progress(user_id, next_review_date)').run(); } catch (_) {}
+          } else {
+            db.exec(sql);
+          }
 
           if (file.includes('002')) {
             const appCols = db.prepare('pragma table_info(applications)').all().map(c => c.name);
