@@ -83,6 +83,46 @@ function runMigrations(db) {
       db.prepare('alter table users add column streak_reminders_enabled integer default 1').run();
       console.log('[Migrator] Added streak_reminders_enabled column to users');
     }
+    if (userCols.length) {
+      if (!userCols.includes('portfolio_slug')) {
+        db.prepare('alter table users add column portfolio_slug text').run();
+        console.log('[Migrator] Added portfolio_slug column to users');
+      }
+      if (!userCols.includes('is_portfolio_public')) {
+        db.prepare('alter table users add column is_portfolio_public integer default 0').run();
+        console.log('[Migrator] Added is_portfolio_public column to users');
+      }
+      if (!userCols.includes('portfolio_headline')) {
+        db.prepare("alter table users add column portfolio_headline text default ''").run();
+        console.log('[Migrator] Added portfolio_headline column to users');
+      }
+      if (!userCols.includes('portfolio_bio')) {
+        db.prepare("alter table users add column portfolio_bio text default ''").run();
+        console.log('[Migrator] Added portfolio_bio column to users');
+      }
+      db.prepare('create unique index if not exists idx_users_portfolio_slug on users(portfolio_slug)').run();
+    }
+
+    const profCols = db.prepare('pragma table_info(resume_profile)').all().map(c => c.name);
+    if (profCols.length) {
+      if (!profCols.includes('portfolio_slug')) {
+        db.prepare('alter table resume_profile add column portfolio_slug text').run();
+        console.log('[Migrator] Added portfolio_slug column to resume_profile');
+      }
+      if (!profCols.includes('is_portfolio_public')) {
+        db.prepare('alter table resume_profile add column is_portfolio_public integer default 0').run();
+        console.log('[Migrator] Added is_portfolio_public column to resume_profile');
+      }
+      if (!profCols.includes('portfolio_headline')) {
+        db.prepare("alter table resume_profile add column portfolio_headline text default ''").run();
+        console.log('[Migrator] Added portfolio_headline column to resume_profile');
+      }
+      if (!profCols.includes('portfolio_bio')) {
+        db.prepare("alter table resume_profile add column portfolio_bio text default ''").run();
+        console.log('[Migrator] Added portfolio_bio column to resume_profile');
+      }
+      db.prepare('create unique index if not exists idx_resume_profile_portfolio_slug on resume_profile(portfolio_slug)').run();
+    }
 
     const appCols = db.prepare('pragma table_info(applications)').all().map(c => c.name);
     if (appCols.length && !appCols.includes('is_bookmarked')) {
@@ -90,7 +130,7 @@ function runMigrations(db) {
       console.log('[Migrator] Added is_bookmarked column to applications');
     }
   } catch (err) {
-    console.warn('[Migrator] Note ensuring users timezone/streak_reminders_enabled:', err.message);
+    console.warn('[Migrator] Note ensuring users timezone/streak_reminders_enabled/portfolio:', err.message);
   }
 
   try {
@@ -155,6 +195,36 @@ function runMigrations(db) {
               try { db.prepare('alter table dsa_progress add column last_reviewed_at text').run(); } catch (_) {}
             }
             try { db.prepare('create index if not exists idx_dsa_review_date on dsa_progress(user_id, next_review_date)').run(); } catch (_) {}
+          } else if (file.includes('009')) {
+            const userCols = db.prepare('pragma table_info(users)').all().map(c => c.name);
+            if (!userCols.includes('portfolio_slug')) {
+              try { db.prepare('alter table users add column portfolio_slug text').run(); } catch (_) {}
+            }
+            if (!userCols.includes('is_portfolio_public')) {
+              try { db.prepare('alter table users add column is_portfolio_public integer default 0').run(); } catch (_) {}
+            }
+            if (!userCols.includes('portfolio_headline')) {
+              try { db.prepare("alter table users add column portfolio_headline text default ''").run(); } catch (_) {}
+            }
+            if (!userCols.includes('portfolio_bio')) {
+              try { db.prepare("alter table users add column portfolio_bio text default ''").run(); } catch (_) {}
+            }
+            try { db.prepare('create unique index if not exists idx_users_portfolio_slug on users(portfolio_slug)').run(); } catch (_) {}
+
+            const profCols = db.prepare('pragma table_info(resume_profile)').all().map(c => c.name);
+            if (!profCols.includes('portfolio_slug')) {
+              try { db.prepare('alter table resume_profile add column portfolio_slug text').run(); } catch (_) {}
+            }
+            if (!profCols.includes('is_portfolio_public')) {
+              try { db.prepare('alter table resume_profile add column is_portfolio_public integer default 0').run(); } catch (_) {}
+            }
+            if (!profCols.includes('portfolio_headline')) {
+              try { db.prepare("alter table resume_profile add column portfolio_headline text default ''").run(); } catch (_) {}
+            }
+            if (!profCols.includes('portfolio_bio')) {
+              try { db.prepare("alter table resume_profile add column portfolio_bio text default ''").run(); } catch (_) {}
+            }
+            try { db.prepare('create unique index if not exists idx_resume_profile_portfolio_slug on resume_profile(portfolio_slug)').run(); } catch (_) {}
           } else {
             db.exec(sql);
           }
