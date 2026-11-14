@@ -168,3 +168,4 @@ export const DeleteApplicationModal: React.FC<DeleteApplicationModalProps> = ({
     </div>
   );
 };
+
