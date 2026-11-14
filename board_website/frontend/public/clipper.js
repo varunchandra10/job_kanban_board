@@ -128,7 +128,13 @@
     '.jt-btn-cancel:hover { background: #f8fafc; }',
     '.jt-btn-save { flex: 1; border: none; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; font-weight: 800; font-size: 12px; padding: 8px 16px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(234,88,12,0.3); transition: transform 0.1s, opacity 0.1s; display: flex; align-items: center; justify-content: center; gap: 5px; }',
     '.jt-btn-save:hover { opacity: 0.95; transform: scale(1.01); }',
-    '.jt-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }'
+    '.jt-btn-save:disabled { opacity: 0.5; cursor: not-allowed; }',
+    '.jt-upload-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 7px 10px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 9px; font-size: 11px; font-weight: 600; color: #475569; cursor: pointer; transition: all 0.15s; }',
+    '.jt-upload-btn:hover { background: #f1f5f9; border-color: #94a3b8; color: #0f172a; }',
+    '.jt-file-pill { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 10px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 9px; font-size: 11px; }',
+    '.jt-file-name { color: #1d4ed8; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px; }',
+    '.jt-remove-file { background: none; border: none; color: #ef4444; font-weight: bold; font-size: 13px; cursor: pointer; padding: 2px 5px; line-height: 1; border-radius: 4px; }',
+    '.jt-remove-file:hover { background: #fee2e2; }'
   ].join('\n');
   shadow.appendChild(style);
 
@@ -247,6 +253,29 @@
     '      <textarea class="jt-textarea" id="jt-inp-notes" rows="2" placeholder="Captured notes or requirements...">' + notes.replace(/</g, '&lt;') + '</textarea>',
     '    </div>',
     '  </div>',
+    '',
+    '  <!-- Documents & Attachments -->',
+    '  <div class="jt-section">',
+    '    <div class="jt-sec-title"><span>📎 DOCUMENTS & ATTACHMENTS</span></div>',
+    '    <div class="jt-field">',
+    '      <label class="jt-label">Resume Document (.pdf, .docx)</label>',
+    '      <input type="file" id="jt-file-resume" accept=".pdf,.doc,.docx" style="display:none;" />',
+    '      <button type="button" class="jt-upload-btn" id="jt-btn-upload-resume">📄 Attach Resume (.pdf, .docx)</button>',
+    '      <div class="jt-file-pill" id="jt-pill-resume" style="display:none;">',
+    '        <span class="jt-file-name" id="jt-name-resume"></span>',
+    '        <button type="button" class="jt-remove-file" id="jt-remove-resume">✕</button>',
+    '      </div>',
+    '    </div>',
+    '    <div class="jt-field">',
+    '      <label class="jt-label">Cover Letter (.pdf, .docx, .txt)</label>',
+    '      <input type="file" id="jt-file-cover" accept=".pdf,.doc,.docx,.txt" style="display:none;" />',
+    '      <button type="button" class="jt-upload-btn" id="jt-btn-upload-cover">✉️ Attach Cover Letter (.pdf, .docx, .txt)</button>',
+    '      <div class="jt-file-pill" id="jt-pill-cover" style="display:none;">',
+    '        <span class="jt-file-name" id="jt-name-cover"></span>',
+    '        <button type="button" class="jt-remove-file" id="jt-remove-cover">✕</button>',
+    '      </div>',
+    '    </div>',
+    '  </div>',
     '</div>',
 
     '<div class="jt-footer">',
@@ -271,6 +300,88 @@
   var closeBtn = shadow.getElementById('jt-btn-close');
   var cancelBtn = shadow.getElementById('jt-btn-cancel');
   var saveBtn = shadow.getElementById('jt-btn-save');
+
+  // Document upload state & handlers
+  var resumeFileData = null;
+  var coverFileData = null;
+
+  var inpFileResume = shadow.getElementById('jt-file-resume');
+  var btnUploadResume = shadow.getElementById('jt-btn-upload-resume');
+  var pillResume = shadow.getElementById('jt-pill-resume');
+  var nameResume = shadow.getElementById('jt-name-resume');
+  var removeResume = shadow.getElementById('jt-remove-resume');
+
+  btnUploadResume.addEventListener('click', function () {
+    inpFileResume.click();
+  });
+
+  inpFileResume.addEventListener('change', function () {
+    var file = inpFileResume.files && inpFileResume.files[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File too large (maximum 15MB)');
+      inpFileResume.value = '';
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      resumeFileData = {
+        name: file.name,
+        data: e.target.result,
+        mimeType: file.type || 'application/pdf'
+      };
+      nameResume.textContent = '📄 ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+      btnUploadResume.style.display = 'none';
+      pillResume.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  removeResume.addEventListener('click', function () {
+    resumeFileData = null;
+    inpFileResume.value = '';
+    pillResume.style.display = 'none';
+    btnUploadResume.style.display = 'flex';
+  });
+
+  var inpFileCover = shadow.getElementById('jt-file-cover');
+  var btnUploadCover = shadow.getElementById('jt-btn-upload-cover');
+  var pillCover = shadow.getElementById('jt-pill-cover');
+  var nameCover = shadow.getElementById('jt-name-cover');
+  var removeCover = shadow.getElementById('jt-remove-cover');
+
+  btnUploadCover.addEventListener('click', function () {
+    inpFileCover.click();
+  });
+
+  inpFileCover.addEventListener('change', function () {
+    var file = inpFileCover.files && inpFileCover.files[0];
+    if (!file) return;
+    if (file.size > 15 * 1024 * 1024) {
+      alert('File too large (maximum 15MB)');
+      inpFileCover.value = '';
+      return;
+    }
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      coverFileData = {
+        name: file.name,
+        data: e.target.result,
+        mimeType: file.type || 'application/pdf'
+      };
+      nameCover.textContent = '✉️ ' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)';
+      btnUploadCover.style.display = 'none';
+      pillCover.style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+  });
+
+  removeCover.addEventListener('click', function () {
+    coverFileData = null;
+    inpFileCover.value = '';
+    pillCover.style.display = 'none';
+    btnUploadCover.style.display = 'flex';
+  });
 
   function removePopout() {
     host.remove();
@@ -304,6 +415,9 @@
       portal_notes: shadow.getElementById('jt-inp-notes').value.trim(),
       custom_tags: 'Clipped'
     };
+
+    if (resumeFileData) payload.resume_file = resumeFileData;
+    if (coverFileData) payload.cover_letter_file = coverFileData;
 
     fetch(origin + '/api/clipper/quick-add', {
       method: 'POST',

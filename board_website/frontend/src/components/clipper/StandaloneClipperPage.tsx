@@ -14,17 +14,22 @@ import {
   CheckCircle2,
   Calendar,
   Lock,
-  ArrowRight
+  ArrowRight,
+  Paperclip,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { ApplicationCategory, ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
+import { api } from '../../services/api';
 
 export const StandaloneClipperPage: React.FC = () => {
   const {
     isAuthenticated,
     addApplication,
     versions,
+    storageMode,
     login,
     googleLogin,
     showToast
@@ -51,6 +56,8 @@ export const StandaloneClipperPage: React.FC = () => {
   const [portalNotes, setPortalNotes] = useState('');
   const [customTags, setCustomTags] = useState('Clipped');
   const [resumeVersionId, setResumeVersionId] = useState<number | null>(null);
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -142,6 +149,29 @@ export const StandaloneClipperPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const selectedResume = versions.find(v => v.id === resumeVersionId);
+      let resumePathToSave = selectedResume?.pdf_name || '';
+      let coverPathToSave = '';
+
+      if (resumeFile) {
+        try {
+          const up = await api.uploadDocument(resumeFile, 'resume', undefined, storageMode);
+          resumePathToSave = up.fullPath || up.path || resumeFile.name;
+        } catch (upErr: any) {
+          console.warn('[Clipper] Resume file upload fallback:', upErr);
+          resumePathToSave = resumeFile.name;
+        }
+      }
+
+      if (coverLetterFile) {
+        try {
+          const up = await api.uploadDocument(coverLetterFile, 'cover_letter', undefined, storageMode);
+          coverPathToSave = up.fullPath || up.path || coverLetterFile.name;
+        } catch (upErr: any) {
+          console.warn('[Clipper] Cover letter file upload fallback:', upErr);
+          coverPathToSave = coverLetterFile.name;
+        }
+      }
+
       await addApplication({
         company: company.trim(),
         role: role.trim() || 'Software Engineer',
@@ -157,7 +187,8 @@ export const StandaloneClipperPage: React.FC = () => {
         portal_notes: portalNotes.trim(),
         custom_tags: customTags.trim() || 'Clipped',
         resume_version_id: resumeVersionId,
-        resume_path: selectedResume?.pdf_name || '',
+        resume_path: resumePathToSave,
+        cover_letter_path: coverPathToSave,
       });
 
       setIsSaved(true);
@@ -513,22 +544,109 @@ export const StandaloneClipperPage: React.FC = () => {
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-[#18181c] text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 resize-none"
                   />
                 </div>
-                {versions.length > 0 && (
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                      Resume Version
+              </div>
+            </div>
+
+            {/* Documents & Attachments */}
+            <div className="rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#121316] p-3.5 shadow-2xs">
+              <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2.5">
+                <Paperclip size={13} className="text-blue-600 dark:text-blue-400" />
+                Documents & Attachments
+              </span>
+              <div className="space-y-3">
+                {/* Resume Upload / Picker */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Resume Document (.pdf, .docx)
+                  </label>
+                  {resumeFile ? (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span className="truncate font-semibold text-blue-700 dark:text-blue-300">
+                          {resumeFile.name} ({Math.round(resumeFile.size / 1024)} KB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setResumeFile(null)}
+                        className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                        title="Remove resume"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <label className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-white/20 bg-slate-50/50 dark:bg-[#18181c] hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer transition-colors">
+                        <Upload size={13} />
+                        <span>Upload Custom Resume File</span>
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx"
+                          className="hidden"
+                          onChange={e => {
+                            if (e.target.files?.[0]) setResumeFile(e.target.files[0]);
+                          }}
+                        />
+                      </label>
+                      {versions.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-slate-400 shrink-0">or select version:</span>
+                          <select
+                            value={resumeVersionId || ''}
+                            onChange={e => setResumeVersionId(Number(e.target.value) || null)}
+                            className="flex-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-[#18181c] text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500/50 cursor-pointer truncate"
+                          >
+                            {versions.map(v => (
+                              <option key={v.id} value={v.id}>
+                                {v.label} ({v.region})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Cover Letter Upload */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Cover Letter (.pdf, .docx, .txt)
+                  </label>
+                  {coverLetterFile ? (
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-purple-50 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 text-xs">
+                      <div className="flex items-center gap-2 truncate">
+                        <FileText size={14} className="text-purple-600 dark:text-purple-400 shrink-0" />
+                        <span className="truncate font-semibold text-purple-700 dark:text-purple-300">
+                          {coverLetterFile.name} ({Math.round(coverLetterFile.size / 1024)} KB)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCoverLetterFile(null)}
+                        className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                        title="Remove cover letter"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 w-full px-3 py-2 rounded-xl border border-dashed border-slate-300 dark:border-white/20 bg-slate-50/50 dark:bg-[#18181c] hover:bg-slate-100 dark:hover:bg-white/5 text-xs font-semibold text-slate-600 dark:text-slate-300 cursor-pointer transition-colors">
+                      <Upload size={13} />
+                      <span>Upload Cover Letter File</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.txt"
+                        className="hidden"
+                        onChange={e => {
+                          if (e.target.files?.[0]) setCoverLetterFile(e.target.files[0]);
+                        }}
+                      />
                     </label>
-                    <select
-                      value={resumeVersionId || ''}
-                      onChange={e => setResumeVersionId(Number(e.target.value) || null)}
-                      className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-[#18181c] text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 cursor-pointer"
-                    >
-                      {versions.map(v => (
-                        <option key={v.id} value={v.id}>{v.label} ({v.region})</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -48,6 +48,47 @@ exports.quickAdd = async (req, res, next) => {
     ).trim();
     const recruiterName = (b.recruiter_name || '').trim();
     const recruiterEmail = (b.recruiter_email || '').trim();
+    let resumePath = (b.resume_path || '').trim();
+    let coverLetterPath = (b.cover_letter_path || '').trim();
+    const resumeVersionId = b.resume_version_id ? Number(b.resume_version_id) : null;
+    const crypto = require('crypto');
+    const createdDocIds = [];
+
+    // Handle base64 resume upload from clipper
+    if (b.resume_file && b.resume_file.data) {
+      try {
+        const docId = `doc_${crypto.randomUUID()}`;
+        const name = (b.resume_file.name || 'resume.pdf').trim();
+        const dataStr = b.resume_file.data.includes(',') ? b.resume_file.data.split(',')[1] : b.resume_file.data;
+        const mimeType = b.resume_file.mimeType || 'application/pdf';
+        db.prepare(`
+          INSERT INTO document_files (id, user_id, app_id, type, name, mime_type, data, created_at)
+          VALUES (?, ?, NULL, 'resume', ?, ?, ?, datetime('now'))
+        `).run(docId, userId, name, mimeType, dataStr);
+        resumePath = `/api/document-content?doc_id=${docId}&name=${encodeURIComponent(name)}`;
+        createdDocIds.push(docId);
+      } catch (err) {
+        console.warn('[Clipper Document Error - Resume]:', err.message);
+      }
+    }
+
+    // Handle base64 cover letter upload from clipper
+    if (b.cover_letter_file && b.cover_letter_file.data) {
+      try {
+        const docId = `doc_${crypto.randomUUID()}`;
+        const name = (b.cover_letter_file.name || 'cover_letter.pdf').trim();
+        const dataStr = b.cover_letter_file.data.includes(',') ? b.cover_letter_file.data.split(',')[1] : b.cover_letter_file.data;
+        const mimeType = b.cover_letter_file.mimeType || 'application/pdf';
+        db.prepare(`
+          INSERT INTO document_files (id, user_id, app_id, type, name, mime_type, data, created_at)
+          VALUES (?, ?, NULL, 'cover_letter', ?, ?, ?, datetime('now'))
+        `).run(docId, userId, name, mimeType, dataStr);
+        coverLetterPath = `/api/document-content?doc_id=${docId}&name=${encodeURIComponent(name)}`;
+        createdDocIds.push(docId);
+      } catch (err) {
+        console.warn('[Clipper Document Error - Cover Letter]:', err.message);
+      }
+    }
 
     // Shift existing cards in targetStage down by 1 so the new card is at position 0 (top)
     runInTransaction(() => {
@@ -57,14 +98,28 @@ exports.quickAdd = async (req, res, next) => {
     const insertResult = db.prepare(`
       INSERT INTO applications (
         company, role, stage, position, category, deadline, salary, currency, city, country,
-        date_applied, jd_url, jd, portal_notes, custom_tags, recruiter_name, recruiter_email, user_id
-      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        date_applied, jd_url, jd, portal_notes, custom_tags, recruiter_name, recruiter_email,
+        resume_version_id, resume_path, cover_letter_path, user_id
+      ) VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       company, role, stage, category, deadline, salary, currency, city, country,
-      dateApplied, jdUrl, jd, portalNotes, customTags, recruiterName, recruiterEmail, userId
+      dateApplied, jdUrl, jd, portalNotes, customTags, recruiterName, recruiterEmail,
+      resumeVersionId, resumePath, coverLetterPath, userId
     );
 
     const appId = Number(insertResult.lastInsertRowid);
+
+    // Link any created document files to this new application
+    if (createdDocIds.length > 0) {
+      try {
+        const updateDocStmt = db.prepare("UPDATE document_files SET app_id = ? WHERE id = ?");
+        for (const docId of createdDocIds) {
+          updateDocStmt.run(appId, docId);
+        }
+      } catch (docLinkErr) {
+        console.warn('[Clipper Document Link Warning]:', docLinkErr.message);
+      }
+    }
 
     // Save into roles table if new
     if (role) {
