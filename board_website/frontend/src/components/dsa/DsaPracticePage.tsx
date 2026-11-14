@@ -18,6 +18,9 @@ import {
   Check,
   X,
   Flame,
+  Brain,
+  Clock,
+  RotateCcw,
   ListOrdered,
   Type,
   GitCommitHorizontal,
@@ -52,6 +55,7 @@ export const DsaPracticePage: React.FC = () => {
     dsaProgress,
     toggleDsaProblem,
     updateDsaNotes,
+    advanceDsaReview,
     isDataLoading,
     searchQuery = '',
     setSearchQuery,
@@ -68,6 +72,23 @@ export const DsaPracticePage: React.FC = () => {
   });
 
   const [activeNotesProblemId, setActiveNotesProblemId] = useState<string | null>(null);
+  const [activeRecallProblemId, setActiveRecallProblemId] = useState<string | null>(null);
+
+  // User's local date formatted as YYYY-MM-DD
+  const todayStr = useMemo(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: tz,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      return formatter.format(new Date());
+    } catch {
+      return new Date().toISOString().slice(0, 10);
+    }
+  }, []);
 
   // Total problems count
   const allProblems = useMemo(() => {
@@ -79,6 +100,32 @@ export const DsaPracticePage: React.FC = () => {
   const solvedProblems = useMemo(() => {
     return allProblems.filter(p => dsaProgress[p.id]?.status === 'solved');
   }, [allProblems, dsaProgress]);
+
+  // Spaced Repetition Due Today (The 1-4-7 Rule)
+  const dueProblems = useMemo(() => {
+    return solvedProblems
+      .map(p => {
+        const prog = dsaProgress[p.id];
+        const category = DSA_CATEGORIES.find(c => c.problems.some(cp => cp.id === p.id));
+        return {
+          ...p,
+          categoryName: category?.name || 'DSA',
+          prog,
+        };
+      })
+      .filter(item => {
+        const prog = item.prog;
+        if (!prog || prog.status !== 'solved') return false;
+        const stage = Number(prog.repetition_stage ?? 0);
+        if (stage >= 4) return false; // Permanently Mastered
+        if (!prog.next_review_date) return false;
+        return prog.next_review_date <= todayStr;
+      });
+  }, [solvedProblems, dsaProgress, todayStr]);
+
+  const masteredProblemsCount = useMemo(() => {
+    return solvedProblems.filter(p => Number(dsaProgress[p.id]?.repetition_stage ?? 0) >= 4).length;
+  }, [solvedProblems, dsaProgress]);
 
   const solvedCount = solvedProblems.length;
   const overallPercentage = totalProblems > 0 ? Math.round((solvedCount / totalProblems) * 100) : 0;
@@ -229,7 +276,188 @@ export const DsaPracticePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. Controls Toolbar (Category Filter & Accordion Expand / Collapse) */}
+      {/* 2. Spaced Repetition: The 1-4-7 Rule Banner & Due Review Section */}
+      <section className="bg-white/80 dark:bg-[#141417] border border-slate-200/90 dark:border-white/10 rounded-2xl p-4 sm:p-5 shadow-xs transition-all">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+              <Brain size={20} className="shrink-0" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                  Spaced Repetition: Due for Review Today
+                </h3>
+                {dueProblems.length > 0 ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                    <Clock size={11} />
+                    {dueProblems.length} Due
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <CheckCircle2 size={11} />
+                    All Caught Up
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                The 1-4-7 Rule: Problems you conquer undergo active mental recalls on Day 1, Day 4, and Day 7 to cement in long-term memory.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs font-semibold shrink-0">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300">
+              <Trophy size={13} className="text-emerald-500" />
+              <span>{masteredProblemsCount} Mastered</span>
+            </div>
+          </div>
+        </div>
+
+        {dueProblems.length === 0 ? (
+          <div className="py-6 px-4 text-center">
+            <div className="inline-flex p-2.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 mb-2">
+              <Sparkles size={20} />
+            </div>
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              All caught up! No algorithms due for review today.
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5 max-w-md mx-auto">
+              Solve new problems from the list below to enter them into your 1-4-7 spaced repetition queue and earn mastery badges.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
+            {dueProblems.map((problem) => {
+              const currentStage = Number(problem.prog?.repetition_stage ?? 0);
+              const isRecallOpen = activeRecallProblemId === problem.id;
+              const notes = problem.prog?.notes?.trim();
+
+              const stageBadge =
+                currentStage === 0
+                  ? { label: 'Review 1: Day 1', desc: 'Recall pattern & invariants', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30' }
+                  : currentStage === 1
+                  ? { label: 'Review 2: Day 4', desc: 'Re-check core edge cases', color: 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/30' }
+                  : { label: 'Review 3: Day 7', desc: 'Final validation → Mastered', color: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30' };
+
+              const diffColor =
+                problem.difficulty === 'Easy'
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
+                  : problem.difficulty === 'Medium'
+                  ? 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/20'
+                  : 'text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10 border-rose-200 dark:border-rose-500/20';
+
+              return (
+                <div
+                  key={problem.id}
+                  className="p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] hover:border-purple-500/30 transition-all flex flex-col justify-between gap-3 shadow-2xs"
+                >
+                  <div>
+                    {/* Top row: Category & Difficulty */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/20">
+                        {problem.categoryName}
+                      </span>
+                      <span className={`text-[9.5px] font-bold px-1.5 py-0.5 rounded-md border ${diffColor}`}>
+                        {problem.difficulty}
+                      </span>
+                    </div>
+
+                    {/* Problem Title Link */}
+                    <a
+                      href={problem.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 hover:text-purple-600 dark:hover:text-purple-400 inline-flex items-center gap-1.5 group min-w-0"
+                    >
+                      <span className="truncate">{problem.title}</span>
+                      <ExternalLink size={11} className="opacity-40 group-hover:opacity-100 shrink-0" />
+                    </a>
+
+                    {/* Repetition Stage Pill */}
+                    <div className="mt-2 flex flex-col gap-0.5">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${stageBadge.color}`}>
+                          <Clock size={10} />
+                          {stageBadge.label}
+                        </span>
+                      </div>
+                      <span className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                        {stageBadge.desc}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Recall Drawer */}
+                  {isRecallOpen && (
+                    <div className="p-2.5 rounded-lg bg-white dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs space-y-2 animate-in fade-in duration-150">
+                      <div className="flex items-center gap-1 font-bold text-purple-700 dark:text-purple-300 text-[11px]">
+                        <Brain size={12} />
+                        <span>Mental Check & Invariants:</span>
+                      </div>
+                      <ul className="text-[10.5px] text-slate-600 dark:text-slate-400 list-disc list-inside space-y-0.5">
+                        <li>Core pattern & data structures used?</li>
+                        <li>Optimal Time & Space complexity?</li>
+                        <li>Key edge cases (empty, negative, single element)?</li>
+                      </ul>
+                      {notes ? (
+                        <div className="pt-1.5 border-t border-slate-100 dark:border-white/5">
+                          <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400">Your Saved Notes:</span>
+                          <p className="mt-0.5 text-[11px] text-slate-700 dark:text-slate-300 whitespace-pre-wrap font-mono bg-slate-50 dark:bg-black/20 p-1.5 rounded border border-slate-100 dark:border-white/5 max-h-24 overflow-y-auto">
+                            {notes}
+                          </p>
+                        </div>
+                      ) : (
+                        <p className="text-[10.5px] text-slate-400 italic">No notes saved yet for this problem.</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Actions Bar */}
+                  <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-200/60 dark:border-white/5">
+                    <button
+                      type="button"
+                      onClick={() => setActiveRecallProblemId(isRecallOpen ? null : problem.id)}
+                      className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-1 rounded-lg border transition-colors cursor-pointer ${
+                        isRecallOpen
+                          ? 'bg-purple-50 dark:bg-purple-500/10 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-500/20'
+                          : 'border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-300'
+                      }`}
+                      title="Reveal saved notes and checklist"
+                    >
+                      <Brain size={11} className="text-purple-500" />
+                      <span>{isRecallOpen ? 'Hide' : 'Quick Recall'}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => advanceDsaReview(problem.id, 'reset')}
+                        className="text-[10px] font-medium text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-1.5 py-1 rounded transition-colors cursor-pointer"
+                        title="Struggled to recall? Reset back to Day 1"
+                      >
+                        <RotateCcw size={10} className="inline mr-0.5" />
+                        Reset
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => advanceDsaReview(problem.id, 'advance')}
+                        className="inline-flex items-center gap-1 text-[11px] font-extrabold px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-2xs hover:shadow-xs transition-all cursor-pointer active:scale-95"
+                      >
+                        <Sparkles size={11} />
+                        <span>Mastered (+15 XP)</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 3. Controls Toolbar (Category Filter & Accordion Expand / Collapse) */}
       <div className="flex flex-wrap items-center justify-between gap-2 bg-white/80 dark:bg-[#141417] border border-slate-200/90 dark:border-white/10 rounded-xl p-2 sm:p-2.5 shadow-2xs">
         {/* Left: Category Dropdown & Active Search Tag */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -446,8 +674,40 @@ export const DsaPracticePage: React.FC = () => {
                               </a>
                             </div>
 
-                            {/* Difficulty & Quick Notes Toggle */}
+                            {/* Spaced Repetition Stage Badge, Difficulty & Quick Notes Toggle */}
                             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                              {isSolved && (
+                                (() => {
+                                  const stage = Number(dsaProgress[problem.id]?.repetition_stage ?? 0);
+                                  const nextDate = dsaProgress[problem.id]?.next_review_date;
+                                  const isDue = stage < 4 && nextDate && nextDate <= todayStr;
+
+                                  if (stage >= 4) {
+                                    return (
+                                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                        <Trophy size={10} className="shrink-0" />
+                                        <span>Mastered</span>
+                                      </span>
+                                    );
+                                  }
+                                  if (isDue) {
+                                    const stageLabel = stage === 0 ? 'Day 1 Due' : stage === 1 ? 'Day 4 Due' : 'Day 7 Due';
+                                    return (
+                                      <span className="inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 animate-pulse">
+                                        <Clock size={10} className="shrink-0" />
+                                        <span>{stageLabel}</span>
+                                      </span>
+                                    );
+                                  }
+                                  const stageLabel = stage === 0 ? 'Day 1' : stage === 1 ? 'Day 4' : 'Day 7';
+                                  return (
+                                    <span className="text-[9px] sm:text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 hidden sm:inline-flex">
+                                      {stageLabel} ({nextDate || 'Scheduled'})
+                                    </span>
+                                  );
+                                })()
+                              )}
+
                               <span className={`text-[9.5px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-md border ${diffColor}`}>
                                 {problem.difficulty}
                               </span>
