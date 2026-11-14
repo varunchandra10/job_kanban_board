@@ -122,6 +122,68 @@ export interface UserProfile {
   projects: string;
   experience: string;
   gdrive_folder_id?: string;
+  portfolio_slug?: string;
+  is_portfolio_public?: number | boolean;
+  portfolio_headline?: string;
+  portfolio_bio?: string;
+}
+
+export interface PublicPortfolioData {
+  user: {
+    id: string;
+    name: string;
+    headline: string;
+    bio: string;
+    portfolio_slug: string;
+    avatar_url?: string;
+  };
+  contact: {
+    email: string;
+    linkedin: string;
+    github: string;
+    school: string;
+    degree: string;
+    grad_date: string;
+    skills: string;
+    projects: string;
+    experience: string;
+  };
+  gamification: {
+    streak: number;
+    longestStreak: number;
+    totalXP: number;
+    level: {
+      tier: number;
+      title: string;
+      icon: string;
+      color: string;
+    };
+    activePunchcard: boolean[];
+    todayCompleted: boolean;
+  };
+  dsa: {
+    totalMastered: number;
+    totalSolved: number;
+    totalCatalog: number;
+    categoryProgress: Array<{
+      id: string;
+      name: string;
+      iconName: string;
+      solved: number;
+      total: number;
+      pct: number;
+    }>;
+  };
+  learnings: Array<{
+    date: string;
+    tags: string;
+    duration_minutes: number;
+  }>;
+  resume: {
+    available: boolean;
+    downloadUrl: string;
+    updatedAt: string | null;
+  };
 }
 
 export interface ResumeVersion {

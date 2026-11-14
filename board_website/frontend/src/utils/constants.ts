@@ -304,6 +304,10 @@ export const INITIAL_PROFILE: UserProfile = {
   projects: '',
   experience: '',
   gdrive_folder_id: '',
+  portfolio_slug: '',
+  is_portfolio_public: 0,
+  portfolio_headline: '',
+  portfolio_bio: '',
 };
 
 export const INITIAL_RESUME_VERSIONS: ResumeVersion[] = [];

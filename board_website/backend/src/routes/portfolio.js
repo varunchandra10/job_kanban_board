@@ -7,3 +7,4 @@ router.get('/:slug/resume', portfolioController.downloadPublicResume);
 router.get('/:slug', portfolioController.getPublicPortfolio);
 
 module.exports = router;
+

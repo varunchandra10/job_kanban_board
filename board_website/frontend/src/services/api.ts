@@ -1,4 +1,4 @@
-import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress } from '../types';
+import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress, PublicPortfolioData } from '../types';
 
 export const isTauri = typeof window !== 'undefined' && (
   Boolean((window as any).__TAURI_INTERNALS__) ||
@@ -218,6 +218,25 @@ export const api = {
       body: JSON.stringify({ problem_id, action, tz: userTz }),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async checkPortfolioSlug(slug: string): Promise<{
+    available: boolean;
+    slug: string;
+    message?: string;
+  }> {
+    const res = await fetch(`${API_BASE}/portfolio/check-slug/${encodeURIComponent(slug)}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async getPublicPortfolio(slug: string): Promise<PublicPortfolioData> {
+    const res = await fetch(`${API_BASE}/portfolio/${encodeURIComponent(slug)}`);
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || `HTTP ${res.status}`);
+    }
     return res.json();
   },
 

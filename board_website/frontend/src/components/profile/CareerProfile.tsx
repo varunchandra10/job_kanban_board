@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getApiEndpoint } from '../../services/api';
+import { api, getApiEndpoint } from '../../services/api';
 import { SkeletonProfilePage } from '../common/SkeletonLoader';
 import {
   Flame,
@@ -39,6 +39,13 @@ import {
   Bell,
   BellRing,
   Smartphone,
+  Globe,
+  Share2,
+  ShieldCheck,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import {
   subscribeToPush,
@@ -532,7 +539,153 @@ export const CareerProfile: React.FC = () => {
     dsaProgress,
     isDataLoading,
     setIsClipperModalOpen,
+    updateProfile,
   } = useApp();
+
+  // Public Recruiter Portfolio state
+  const [portfolioSlug, setPortfolioSlug] = useState('');
+  const [isPortfolioPublic, setIsPortfolioPublic] = useState(false);
+  const [portfolioHeadline, setPortfolioHeadline] = useState('');
+  const [portfolioBio, setPortfolioBio] = useState('');
+  const [slugStatus, setSlugStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [slugMessage, setSlugMessage] = useState('');
+  const [isCopiedPortfolio, setIsCopiedPortfolio] = useState(false);
+  const [isSavingPortfolio, setIsSavingPortfolio] = useState(false);
+  const [isPortfolioEditorOpen, setIsPortfolioEditorOpen] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      const defaultSlug = (profile.full_name || currentUser?.name || currentUser?.email?.split('@')[0] || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]/g, '')
+        .slice(0, 30);
+      setPortfolioSlug(profile.portfolio_slug || defaultSlug);
+      setIsPortfolioPublic(Boolean(profile.is_portfolio_public));
+      setPortfolioHeadline(profile.portfolio_headline || '');
+      setPortfolioBio(profile.portfolio_bio || '');
+    }
+  }, [profile?.portfolio_slug, profile?.is_portfolio_public, profile?.portfolio_headline, profile?.portfolio_bio, currentUser]);
+
+  useEffect(() => {
+    if (!portfolioSlug) {
+      setSlugStatus('idle');
+      setSlugMessage('');
+      return;
+    }
+    const clean = portfolioSlug.trim().toLowerCase();
+    if (!/^[a-z0-9_-]{3,30}$/.test(clean)) {
+      setSlugStatus('invalid');
+      setSlugMessage('Must be 3-30 letters, numbers, hyphens or underscores');
+      return;
+    }
+    if (clean === (profile?.portfolio_slug || '').toLowerCase()) {
+      setSlugStatus('available');
+      setSlugMessage('Current username');
+      return;
+    }
+    setSlugStatus('checking');
+    setSlugMessage('Checking availability...');
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.checkPortfolioSlug(clean);
+        if (res.available) {
+          setSlugStatus('available');
+          setSlugMessage('Username available');
+        } else {
+          setSlugStatus('taken');
+          setSlugMessage('Username already claimed');
+        }
+      } catch (_) {
+        setSlugStatus('idle');
+        setSlugMessage('');
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [portfolioSlug, profile?.portfolio_slug]);
+
+  const handleTogglePublic = async () => {
+    if (!isAuthenticated) {
+      showToast('Please sign in to configure your public portfolio');
+      openAuthModal();
+      return;
+    }
+    const nextVal = !isPortfolioPublic;
+    const cleanSlug = (portfolioSlug || profile?.portfolio_slug || 'user-' + Math.floor(1000 + Math.random() * 9000)).trim().toLowerCase();
+    setIsPortfolioPublic(nextVal);
+    setPortfolioSlug(cleanSlug);
+    try {
+      await updateProfile({
+        is_portfolio_public: nextVal ? 1 : 0,
+        portfolio_slug: cleanSlug,
+        portfolio_headline: portfolioHeadline,
+        portfolio_bio: portfolioBio,
+      });
+      showToast(nextVal ? '🌟 Public Portfolio is now LIVE!' : '🔒 Public Portfolio is now private');
+    } catch (_) {
+      showToast('Failed to update portfolio visibility');
+    }
+  };
+
+  const handleSavePortfolio = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!isAuthenticated) {
+      showToast('Please sign in to update your portfolio');
+      openAuthModal();
+      return;
+    }
+    if (slugStatus === 'invalid') {
+      showToast('Please enter a valid slug (3-30 characters)');
+      return;
+    }
+    if (slugStatus === 'taken') {
+      showToast('This username is already taken. Please choose another.');
+      return;
+    }
+    setIsSavingPortfolio(true);
+    try {
+      const cleanSlug = portfolioSlug.trim().toLowerCase();
+      await updateProfile({
+        portfolio_slug: cleanSlug,
+        is_portfolio_public: isPortfolioPublic ? 1 : 0,
+        portfolio_headline: portfolioHeadline.trim(),
+        portfolio_bio: portfolioBio.trim(),
+      });
+      showToast('🌟 Portfolio settings saved successfully!');
+    } catch (_) {
+      showToast('Failed to save portfolio settings');
+    } finally {
+      setIsSavingPortfolio(false);
+    }
+  };
+
+  const getPortfolioFullUrl = () => {
+    const origin = typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+      ? 'https://kanban-board-job.vercel.app'
+      : (typeof window !== 'undefined' ? window.location.origin : 'https://kanban-board-job.vercel.app');
+    const slug = portfolioSlug.trim().toLowerCase() || profile?.portfolio_slug || 'user';
+    return `${origin}/u/${slug}`;
+  };
+
+  const handleCopyPortfolioLink = async () => {
+    const url = getPortfolioFullUrl();
+    try {
+      await navigator.clipboard.writeText(url);
+      setIsCopiedPortfolio(true);
+      showToast('📋 Portfolio link copied to clipboard!');
+      setTimeout(() => setIsCopiedPortfolio(false), 2500);
+    } catch (_) {
+      showToast('Failed to copy. URL: ' + url);
+    }
+  };
+
+  const handleOpenPortfolioPreview = () => {
+    const slug = portfolioSlug.trim().toLowerCase() || profile?.portfolio_slug;
+    if (!slug) {
+      showToast('Please set a username slug first');
+      return;
+    }
+    window.open(`/u/${slug}`, '_blank', 'noopener,noreferrer');
+  };
 
   // Momentum Activity Matrix Date controls
   const [momentumDate, setMomentumDate] = useState(() => new Date());
@@ -1398,6 +1551,240 @@ export const CareerProfile: React.FC = () => {
           </div>
         </section>
       </div>
+
+      {/* 🌟 Public Recruiter Portfolio Showcase Card */}
+      <section
+        className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs"
+        aria-label="Public Recruiter Portfolio"
+      >
+        {/* Subtle decorative background gradient */}
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
+
+        <div className="relative flex flex-col gap-4">
+          {/* Header Row: Title, Live/Private Status, and Toggle */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-white/5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-pink-500/20 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 shadow-inner">
+                <Globe size={20} className={isPortfolioPublic ? 'animate-pulse text-indigo-500' : ''} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
+                    Public Recruiter Portfolio
+                  </h2>
+                  {isPortfolioPublic ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-full">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      LIVE / PUBLIC
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-white/10 border border-slate-200 dark:border-white/10 px-2.5 py-0.5 rounded-full">
+                      <Lock size={10} />
+                      PRIVATE / HIDDEN
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
+                  Share a verified proof-of-work link with recruiters showcasing your daily streaks, DSA mastery, and resume.
+                </p>
+              </div>
+            </div>
+
+            {/* Enable / Disable Public Switch */}
+            <div className="flex items-center gap-3 sm:self-center">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 select-none">
+                {isPortfolioPublic ? 'Public Showcase Active' : 'Enable Public Portfolio'}
+              </span>
+              <button
+                type="button"
+                onClick={handleTogglePublic}
+                className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                  isPortfolioPublic ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-neutral-700'
+                }`}
+                role="switch"
+                aria-checked={isPortfolioPublic}
+                aria-label="Toggle Public Portfolio"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                    isPortfolioPublic ? 'translate-x-6' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* URL Slug Bar & Action Buttons */}
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 p-3.5 rounded-xl bg-slate-50/90 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
+            {/* Slug Input Group */}
+            <div className="flex-1 min-w-0">
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-1">
+                Your Public Portfolio URL
+              </label>
+              <div className="flex items-center rounded-xl bg-white dark:bg-[#18181b] border border-slate-200 dark:border-white/10 overflow-hidden px-3 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500/40 focus-within:border-indigo-500 transition-all">
+                <span className="text-xs sm:text-sm font-mono text-slate-400 dark:text-slate-500 select-none shrink-0">
+                  {typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? window.location.host : 'kanban-board-job.vercel.app'}/u/
+                </span>
+                <input
+                  type="text"
+                  value={portfolioSlug}
+                  onChange={e => setPortfolioSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  placeholder="username"
+                  maxLength={30}
+                  className="flex-1 min-w-[80px] bg-transparent text-xs sm:text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 outline-none px-1"
+                />
+                {/* Live validation indicator */}
+                <div className="shrink-0 flex items-center pl-2">
+                  {slugStatus === 'checking' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                      <Loader2 size={12} className="animate-spin text-indigo-500" />
+                      <span className="hidden sm:inline">Checking</span>
+                    </span>
+                  )}
+                  {slugStatus === 'available' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                      <Check size={13} strokeWidth={2.5} />
+                      <span className="hidden sm:inline">Available</span>
+                    </span>
+                  )}
+                  {slugStatus === 'taken' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-500">
+                      <AlertCircle size={13} />
+                      <span className="hidden sm:inline">Taken</span>
+                    </span>
+                  )}
+                  {slugStatus === 'invalid' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-500">
+                      <AlertCircle size={13} />
+                      <span className="hidden sm:inline">Invalid</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons: Copy Link & Open Preview */}
+            <div className="flex items-center gap-2 pt-1 lg:pt-5 shrink-0">
+              <button
+                type="button"
+                onClick={handleCopyPortfolioLink}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white text-xs font-bold shadow-sm shadow-indigo-500/25 transition-all cursor-pointer"
+                title="Copy portfolio link to clipboard"
+              >
+                {isCopiedPortfolio ? (
+                  <>
+                    <CheckCheck size={14} strokeWidth={2.5} className="text-emerald-200" />
+                    <span>Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} />
+                    <span>Copy Link</span>
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenPortfolioPreview}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 active:scale-95 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all cursor-pointer"
+                title="Open public portfolio in new tab"
+              >
+                <ExternalLink size={14} />
+                <span>Open in New Tab</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPortfolioEditorOpen(!isPortfolioEditorOpen)}
+                className={`inline-flex items-center justify-center gap-1 px-3 py-2.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                  isPortfolioEditorOpen
+                    ? 'border-indigo-500/40 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
+                    : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10'
+                }`}
+                title="Edit recruiter headline & bio"
+              >
+                <span>Edit Bio</span>
+                <ChevronDown size={14} className={`transform transition-transform ${isPortfolioEditorOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Expandable Headline & Bio Editor */}
+          {isPortfolioEditorOpen && (
+            <form onSubmit={handleSavePortfolio} className="space-y-4 p-4 rounded-xl bg-slate-50/60 dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/10 animate-in fade-in duration-200">
+              <div className="grid grid-cols-1 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Recruiter Headline
+                  </label>
+                  <input
+                    type="text"
+                    value={portfolioHeadline}
+                    onChange={e => setPortfolioHeadline(e.target.value)}
+                    placeholder="e.g. Full Stack & AI Engineer | 45-Day LeetCode Streak | Open to Work"
+                    maxLength={120}
+                    className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                    A punchy tagline displayed directly under your name on your public recruiter portfolio.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Recruiter Bio & Summary
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={portfolioBio}
+                    onChange={e => setPortfolioBio(e.target.value)}
+                    placeholder="e.g. Software engineer specializing in distributed systems and modern web applications. Consistent daily builder practicing core algorithmic problem-solving."
+                    maxLength={500}
+                    className="w-full p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPortfolioEditorOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingPortfolio}
+                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 disabled:opacity-50 text-white text-xs font-bold shadow-sm shadow-indigo-500/25 transition-all cursor-pointer"
+                >
+                  {isSavingPortfolio ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check size={14} strokeWidth={2.5} />
+                      <span>Save Changes</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Privacy Shield Informational Banner */}
+          <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-indigo-500/[0.06] border border-indigo-500/15 text-xs text-indigo-900 dark:text-indigo-300">
+            <ShieldCheck size={16} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+            <span className="leading-relaxed">
+              <strong>Recruiter Proof-of-Work Shield:</strong> Visitors see your verified daily streak, active punchcard, 79 DSA topic mastery breakdown, and public resume. Confidential job applications, company targets, and interview notes remain strictly private.
+            </span>
+          </div>
+        </div>
+      </section>
 
       {/* 2. 2-Card Row: Left = Quick Links & Profiles | Right = Activity & Momentum Matrix */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch">

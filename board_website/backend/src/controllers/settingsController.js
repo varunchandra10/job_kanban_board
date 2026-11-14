@@ -16,6 +16,12 @@ exports.updateProfile = (req, res, next) => {
     }
 
     patch('resume_profile', targetId, req.body, userId);
+    if (req.body.portfolio_slug !== undefined) {
+      try {
+        const cleanSlug = req.body.portfolio_slug ? String(req.body.portfolio_slug).trim().toLowerCase() : null;
+        db.prepare("update users set portfolio_slug = ? where id = ?").run(cleanSlug, userId);
+      } catch (_) {}
+    }
     res.json({ ok: 1 });
   } catch (err) {
     next(err);
