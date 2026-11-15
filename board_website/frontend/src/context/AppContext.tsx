@@ -38,6 +38,7 @@ import {
   encryptApplicationsForStorage,
   decryptApplicationsFromStorage,
 } from '../utils/security';
+import { generateTempNumericId, generateUniqueStringId } from '../utils/idGenerator';
 
 interface ToastState {
   message: string;
@@ -785,7 +786,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Applications CRUD
   const addApplication = async (data: Partial<Application>) => {
     const newApp: Application = {
-      id: Date.now(),
+      id: generateTempNumericId(),
       company: data.company || 'New Company',
       role: data.role || 'Software Engineer',
       stage: (data.stage as ApplicationStage) || 'Applied',
@@ -1004,7 +1005,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   // Learnings CRUD
   const addLearning = async (data: Partial<Learning>) => {
     const newLearning: Learning = {
-      id: Date.now(),
+      id: generateTempNumericId(),
       title: data.title || 'New Concept',
       topic: data.topic || '',
       category: data.category || 'DSA',
@@ -1159,7 +1160,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     const newLink: QuickLink = {
       ...link,
-      id: String(Date.now()),
+      id: generateUniqueStringId('ql'),
     };
     setQuickLinks(prev => [...prev, newLink]);
     showToast(`Added quick link: ${newLink.title}`);

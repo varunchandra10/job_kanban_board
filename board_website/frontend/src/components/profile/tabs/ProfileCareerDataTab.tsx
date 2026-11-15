@@ -10,6 +10,7 @@ import {
   ResumeVersion,
 } from '../../../types';
 import { sanitizeUrl } from '../../../utils/security';
+import { generateUniqueStringId } from '../../../utils/idGenerator';
 import {
   User,
   GraduationCap,
@@ -456,7 +457,7 @@ export const ProfileCareerDataTab: React.FC = () => {
       return;
     }
     const item: EducationItem = {
-      id: `edu-${Date.now()}`,
+      id: generateUniqueStringId('edu'),
       school: newEdu.school?.trim() || '',
       degree: newEdu.degree?.trim() || '',
       startDate: newEdu.startDate?.trim() || '',
@@ -495,7 +496,7 @@ export const ProfileCareerDataTab: React.FC = () => {
       return;
     }
     const item: ProjectItem = {
-      id: `proj-${Date.now()}`,
+      id: generateUniqueStringId('proj'),
       title: newProj.title?.trim() || '',
       role: newProj.role?.trim() || '',
       startDate: newProj.startDate?.trim() || '',
@@ -591,7 +592,7 @@ export const ProfileCareerDataTab: React.FC = () => {
       return;
     }
     const item: AchievementItem = {
-      id: `ach-${Date.now()}`,
+      id: generateUniqueStringId('ach'),
       title: newAch.title?.trim() || '',
       issuer: newAch.issuer?.trim() || '',
       year: newAch.year?.trim() || '',
