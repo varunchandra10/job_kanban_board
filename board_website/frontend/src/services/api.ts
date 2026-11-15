@@ -1,5 +1,54 @@
 import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress, PublicPortfolioData } from '../types';
 
+export interface WeeklyChestData {
+  weekId: string;
+  mondayDate: string;
+  sundayDate: string;
+  targets: {
+    apps: number;
+    dsa: number;
+    studyMinutes: number;
+  };
+  progress: {
+    apps: number;
+    dsa: number;
+    studyMinutes: number;
+  };
+  percentages: {
+    apps: number;
+    dsa: number;
+    study: number;
+    overall: number;
+  };
+  isUnlocked: boolean;
+  isClaimed: boolean;
+  claimedAt: string | null;
+  bonusXpAwarded: number;
+}
+
+export interface WeeklyChestVaultBadge {
+  id: number;
+  weekId: string;
+  claimedAt: string;
+  bonusXp: number;
+  targets: {
+    apps: number;
+    dsa: number;
+    studyMinutes: number;
+  };
+  achieved: {
+    apps: number;
+    dsa: number;
+    studyMinutes: number;
+  };
+}
+
+export interface WeeklyChestVaultData {
+  badges: WeeklyChestVaultBadge[];
+  totalClaimed: number;
+  totalBonusXp: number;
+}
+
 export const isTauri = typeof window !== 'undefined' && (
   Boolean((window as any).__TAURI_INTERNALS__) ||
   Boolean((window as any).__TAURI__) ||
@@ -877,6 +926,57 @@ export const api = {
     }
 
     return { uploadedToDrive, downloadedToLocal, errors };
+  },
+
+  async getWeeklyChest(tz?: string): Promise<WeeklyChestData> {
+    const tzParam = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+    const res = await fetch(`${API_BASE}/weekly-chest/current${tzParam}`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async claimWeeklyChest(tz?: string): Promise<{
+    ok: number;
+    message: string;
+    bonusXp: number;
+    claimedAt: string;
+    weekId: string;
+    gamification?: any;
+  }> {
+    const res = await fetch(`${API_BASE}/weekly-chest/claim`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ tz }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to claim weekly reward chest');
+    return json;
+  },
+
+  async getWeeklyChestVault(): Promise<WeeklyChestVaultData> {
+    const res = await fetch(`${API_BASE}/weekly-chest/vault`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async updateWeeklyChestTargets(targets: {
+    target_apps?: number;
+    target_dsa?: number;
+    target_study_minutes?: number;
+    tz?: string;
+  }): Promise<{ ok: number; message: string; targets: any }> {
+    const res = await fetch(`${API_BASE}/weekly-chest/targets`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(targets),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to update weekly quest targets');
+    return json;
   },
 };
 

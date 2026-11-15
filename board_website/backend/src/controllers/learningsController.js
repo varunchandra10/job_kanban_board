@@ -290,7 +290,16 @@ function calculateGamification(userId = null, tz = null) {
   const dsaXP = totalDsaSolved * 25;
   const spacedRepetitionXP = totalRepetitionStagesAdvanced * 15;
   const streakBonusXP = streak * 50;
-  const totalXP = baseLogXP + timeXP + dsaXP + spacedRepetitionXP + streakBonusXP;
+
+  let chestBonusXP = 0;
+  if (userId) {
+    try {
+      const chestRow = db.prepare('SELECT COALESCE(SUM(bonus_xp_awarded), 0) as total FROM weekly_chests WHERE user_id = ? AND is_claimed = 1').get(userId);
+      chestBonusXP = chestRow?.total || 0;
+    } catch (_) {}
+  }
+
+  const totalXP = baseLogXP + timeXP + dsaXP + spacedRepetitionXP + streakBonusXP + chestBonusXP;
 
   let currentTier = XP_THRESHOLDS[0];
   for (const t of XP_THRESHOLDS) {
@@ -310,6 +319,7 @@ function calculateGamification(userId = null, tz = null) {
     totalDsaSolved,
     totalRepetitionStagesAdvanced,
     spacedRepetitionXP,
+    chestBonusXP,
     totalXP,
     level: currentTier.level,
     title: currentTier.title,

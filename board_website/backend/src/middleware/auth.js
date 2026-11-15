@@ -57,7 +57,9 @@ function authMiddleware(req, res, next) {
   // Allow them to proceed with req.user = null so controllers return empty/zero data
   const readOnlyPaths = [
     '/api/state', '/api/learnings', '/api/gamification', '/api/storage/status', '/api/storage/local-info', '/api/dsa/progress',
-    '/state', '/learnings', '/gamification', '/storage/status', '/storage/local-info', '/dsa/progress'
+    '/api/weekly-chest/current', '/api/weekly-chest/vault',
+    '/state', '/learnings', '/gamification', '/storage/status', '/storage/local-info', '/dsa/progress',
+    '/weekly-chest/current', '/weekly-chest/vault'
   ];
   if (req.method === 'GET' && (readOnlyPaths.includes(fullPath) || readOnlyPaths.includes(req.path))) {
     req.user = null;
