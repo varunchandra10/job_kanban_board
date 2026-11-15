@@ -168,6 +168,28 @@ function openDatabaseWithRetry(DbConstructor, dbPath, maxRetries = 3, initialDel
   throw new Error(criticalMsg);
 }
 
+function applyPragmas(databaseInstance) {
+  if (!databaseInstance || typeof databaseInstance.exec !== 'function') return;
+  if (databaseInstance.isRemoteTurso) return;
+
+  try {
+    if (process.env.VERCEL) {
+      try { databaseInstance.exec("PRAGMA journal_mode = DELETE;"); } catch (_) {}
+    } else {
+      try { databaseInstance.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
+    }
+    // Set 5-second busy timeout to eliminate SQLITE_BUSY errors during concurrent writes
+    try { databaseInstance.exec("PRAGMA busy_timeout = 5000;"); } catch (_) {}
+    // Set synchronous to NORMAL for optimal write throughput and WAL crash resilience
+    try { databaseInstance.exec("PRAGMA synchronous = NORMAL;"); } catch (_) {}
+    // Autocheckpoint WAL file every 1000 pages (~4MB) to prevent disk bloat
+    try { databaseInstance.exec("PRAGMA wal_autocheckpoint = 1000;"); } catch (_) {}
+    try { databaseInstance.exec("PRAGMA foreign_keys = ON;"); } catch (_) {}
+  } catch (pragmaErr) {
+    console.warn('[Database Engine] Pragmas setup note:', pragmaErr.message);
+  }
+}
+
 if (!db) {
   if (DatabaseSync) {
     db = openDatabaseWithRetry(DatabaseSync, config.dbPath);
@@ -183,13 +205,7 @@ if (!db) {
     };
   }
 
-  try {
-    if (process.env.VERCEL) {
-      try { db.exec("PRAGMA journal_mode = DELETE;"); } catch (_) {}
-    } else {
-      try { db.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
-    }
-  } catch (_) {}
+  applyPragmas(db);
 }
 
 try {
@@ -479,5 +495,6 @@ module.exports = {
   encryptCredential,
   decryptCredential,
   runInTransaction,
-  openDatabaseWithRetry
+  openDatabaseWithRetry,
+  applyPragmas
 };
