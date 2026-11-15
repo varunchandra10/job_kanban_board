@@ -13,6 +13,7 @@ import { DriveModal } from '../ui/DriveModal';
 import { StorageSwitchModal } from '../ui/StorageSwitchModal';
 import { JobClipperModal } from '../common/JobClipperModal';
 import { DeleteApplicationModal } from '../common/DeleteApplicationModal';
+import { PomodoroFocusTimer } from '../learnings/PomodoroFocusTimer';
 import { useApp } from '../../context/AppContext';
 
 export const AppLayout: React.FC = () => {
@@ -74,6 +75,9 @@ export const AppLayout: React.FC = () => {
         onCancel={cancelDeleteApplication}
         isDeleting={isDeletingApp}
       />
+
+      {/* Floating Pomodoro Focus Sprint Widget */}
+      <PomodoroFocusTimer />
     </div>
   );
 };

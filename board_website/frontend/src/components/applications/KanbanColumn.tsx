@@ -5,6 +5,7 @@ import { ApplicationCard } from './ApplicationCard';
 import { SkeletonColumn } from '../common/SkeletonLoader';
 import { useApp } from '../../context/AppContext';
 import { Bookmark, Send, Users, Trophy, XCircle, Inbox, ChevronDown } from 'lucide-react';
+import { soundEffects } from '../../utils/soundEffects';
 
 interface KanbanColumnProps {
   stage: ApplicationStage;
@@ -51,8 +52,10 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
     if (appId) {
       if (isBookmarkColumn) {
         toggleBookmark(appId, true);
+        soundEffects.play('swoosh');
       } else {
         moveApplication(appId, stage);
+        soundEffects.play('swoosh');
       }
     }
   };

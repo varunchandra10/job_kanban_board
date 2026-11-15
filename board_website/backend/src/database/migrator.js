@@ -61,6 +61,26 @@ function runMigrations(db) {
       UNIQUE(user_id, endpoint)
     );
     CREATE INDEX IF NOT EXISTS idx_push_sub_user ON push_subscriptions(user_id);
+
+    CREATE TABLE IF NOT EXISTS weekly_chests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      week_id TEXT NOT NULL,
+      target_apps INTEGER DEFAULT 10,
+      target_dsa INTEGER DEFAULT 5,
+      target_study_minutes INTEGER DEFAULT 180,
+      current_apps INTEGER DEFAULT 0,
+      current_dsa INTEGER DEFAULT 0,
+      current_study_minutes INTEGER DEFAULT 0,
+      is_claimed INTEGER DEFAULT 0,
+      claimed_at TEXT DEFAULT NULL,
+      bonus_xp_awarded INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(user_id, week_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_weekly_chests_user_week ON weekly_chests(user_id, week_id);
+    CREATE INDEX IF NOT EXISTS idx_weekly_chests_user ON weekly_chests(user_id);
   `);
 
   try {
@@ -271,6 +291,12 @@ function runMigrations(db) {
               if (!profCols.includes(col)) {
                 try { db.prepare(`alter table resume_profile add column ${col} ${def}`).run(); } catch (_) {}
               }
+            }
+          } else if (file.includes('011')) {
+            try {
+              db.exec(sql);
+            } catch (err) {
+              console.warn('[Migrator] Note applying 011 migration directly:', err.message);
             }
           } else {
             db.exec(sql);

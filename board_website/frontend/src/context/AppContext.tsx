@@ -26,6 +26,7 @@ import {
 } from '../utils/constants';
 import { api } from '../services/api';
 import { getInitialStorageMode, StorageMode } from '../utils/environment';
+import { soundEffects } from '../utils/soundEffects';
 import {
   enqueueMutation,
   flushMutationQueue,
@@ -57,6 +58,7 @@ interface AppContextType {
   applications: Application[];
   learnings: Learning[];
   gamification: GamificationStats;
+  setGamification: React.Dispatch<React.SetStateAction<GamificationStats>>;
   profile: UserProfile;
   versions: ResumeVersion[];
   quickLinks: QuickLink[];
@@ -349,6 +351,16 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
     return INITIAL_GAMIFICATION;
   });
+
+  // Level Up sound effect listener
+  const prevLevelRef = useRef<number>(gamification.level || 1);
+  useEffect(() => {
+    const currentLevel = gamification.level || 1;
+    if (prevLevelRef.current && currentLevel > prevLevelRef.current) {
+      soundEffects.play('levelUp');
+    }
+    prevLevelRef.current = currentLevel;
+  }, [gamification.level]);
 
   const [profile, setProfile] = useState<UserProfile>(() => {
     const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
@@ -784,6 +796,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const wasCompleted = !!prev.todayCompleted;
       const isNowCompleted = newHasApp && hasStudy;
       const streakDelta = (!wasCompleted && isNowCompleted) ? 1 : 0;
+      if (streakDelta > 0) {
+        soundEffects.play('streakSafe');
+      }
       const newStreak = (prev.streak || 0) + streakDelta;
       const newLongest = Math.max(prev.longestStreak || 0, newStreak);
       const updated: GamificationStats = {
@@ -980,6 +995,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const wasCompleted = !!prev.todayCompleted;
       const isNowCompleted = hasApp && newHasStudy;
       const streakDelta = (!wasCompleted && isNowCompleted) ? 1 : 0;
+      if (streakDelta > 0) {
+        soundEffects.play('streakSafe');
+      }
       const newStreak = (prev.streak || 0) + streakDelta;
       const newLongest = Math.max(prev.longestStreak || 0, newStreak);
       const updated: GamificationStats = {
@@ -1187,6 +1205,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       const hasApp = !!prev.todayHasApp || (prev.todayAppCount || 0) > 0;
       const isNowCompleted = hasStudy && hasApp;
       const streakDelta = (!wasCompletedToday && isNowCompleted) ? 1 : (wasCompletedToday && !isNowCompleted) ? -1 : 0;
+      if (streakDelta > 0) {
+        soundEffects.play('streakSafe');
+      }
       const newStreak = Math.max(0, (prev.streak || 0) + streakDelta);
       const newLongest = Math.max(prev.longestStreak || 0, newStreak);
 
@@ -1499,6 +1520,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         applications,
         learnings,
         gamification,
+        setGamification,
         profile,
         versions,
         quickLinks,

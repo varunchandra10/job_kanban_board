@@ -15,7 +15,12 @@ import {
   RotateCcw,
   Code2,
   Zap,
+  Volume2,
+  VolumeX,
+  Flame,
 } from 'lucide-react';
+import { soundEffects } from '../../utils/soundEffects';
+import { pomodoroEngine, PomodoroState } from '../../utils/pomodoroEngine';
 
 export const AppHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +49,21 @@ export const AppHeader: React.FC = () => {
   const isProfileActive = location.pathname === '/profile';
 
   const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
+
+  const [isSoundMuted, setIsSoundMuted] = React.useState<boolean>(() => soundEffects.getIsMuted());
+  const [pomodoro, setPomodoro] = React.useState<PomodoroState>(() => pomodoroEngine.getState());
+
+  useEffect(() => {
+    return soundEffects.subscribe(() => {
+      setIsSoundMuted(soundEffects.getIsMuted());
+    });
+  }, []);
+
+  useEffect(() => {
+    return pomodoroEngine.subscribe(next => {
+      setPomodoro(next);
+    });
+  }, []);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -297,6 +317,27 @@ export const AppHeader: React.FC = () => {
           </button>
         )}
 
+        {/* Active Pomodoro Timer Chip in Navbar */}
+        {(pomodoro.isRunning || pomodoro.isPaused) && (
+          <button
+            type="button"
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open_pomodoro_modal'));
+            }}
+            className={`hidden sm:inline-flex h-9 items-center gap-1.5 px-2.5 rounded-xl border text-xs font-mono font-bold cursor-pointer transition-all ${
+              pomodoro.isRunning
+                ? 'bg-orange-500/10 border-orange-500/35 text-orange-600 dark:text-orange-400 shadow-[0_0_12px_rgba(249,115,22,0.18)] animate-pulse'
+                : 'bg-slate-100 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-500'
+            }`}
+            title="Focus Sprint Active - Click to view cockpit"
+          >
+            <Flame size={13} className={pomodoro.isRunning ? 'text-orange-500 fill-orange-500/20' : 'text-slate-400'} />
+            <span className="tabular-nums">
+              {Math.floor(pomodoro.remainingSeconds / 60)}:{String(pomodoro.remainingSeconds % 60).padStart(2, '0')}
+            </span>
+          </button>
+        )}
+
         {/* Profile Button */}
         <button
           type="button"
@@ -319,6 +360,21 @@ export const AppHeader: React.FC = () => {
           {isAuthenticated && (
             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#121214]" />
           )}
+        </button>
+
+        {/* Sound FX Toggle Button */}
+        <button
+          type="button"
+          onClick={() => soundEffects.toggleMute()}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
+            isSoundMuted
+              ? 'border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'
+              : 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/60 dark:hover:bg-indigo-500/20'
+          }`}
+          title={isSoundMuted ? 'Sound FX: Muted (Click to Unmute)' : 'Sound FX: Active (Click to Mute)'}
+          aria-label={isSoundMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
+        >
+          {isSoundMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
 
         {/* Theme Toggle Button */}

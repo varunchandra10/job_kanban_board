@@ -19,6 +19,7 @@ const learningsRoutes = require('./routes/learnings');
 const dsaRoutes = require('./routes/dsa');
 const clipperRoutes = require('./routes/clipper');
 const portfolioRoutes = require('./routes/portfolio');
+const weeklyChestRoutes = require('./routes/weeklyChest');
 
 // ---------------------------------------------------------------------
 // HTTP Security Headers & CORS Configuration
@@ -179,6 +180,7 @@ app.use('/api', dsaRoutes);
 app.use('/api', clipperRoutes);
 app.use('/api/clipper', clipperRoutes);
 app.use('/api/portfolio', portfolioRoutes);
+app.use('/api', weeklyChestRoutes);
 app.use('/api/backup', backupRoutes);
 
 // Background Schedulers (Evening Streak Safeguard Reminders)

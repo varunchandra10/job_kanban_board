@@ -28,7 +28,12 @@ import {
   Mail,
   Zap,
   Trophy,
+  Volume2,
+  VolumeX,
+  Volume1,
+  Play,
 } from 'lucide-react';
+import { soundEffects, SoundCue } from '../../../utils/soundEffects';
 import {
   subscribeToPush,
   unsubscribeFromPush,
@@ -83,6 +88,35 @@ export const ProfileSettingsTab: React.FC = () => {
   const userLevel = gamification?.level || 1;
   const currentTierConfig = TROPHY_TIER_CONFIG[userLevel] || TROPHY_TIER_CONFIG[1];
   const [isTrophyRoadOpen, setIsTrophyRoadOpen] = useState(false);
+
+  // -------------------------------------------------------------
+  // 3. Sound FX & Audio Synthesizer State
+  // -------------------------------------------------------------
+  const [isSoundMuted, setIsSoundMuted] = useState<boolean>(() => soundEffects.getIsMuted());
+  const [soundVolume, setSoundVolume] = useState<number>(() => soundEffects.getVolume());
+
+  useEffect(() => {
+    return soundEffects.subscribe(() => {
+      setIsSoundMuted(soundEffects.getIsMuted());
+      setSoundVolume(soundEffects.getVolume());
+    });
+  }, []);
+
+  const handleToggleSoundMute = () => {
+    soundEffects.toggleMute();
+  };
+
+  const handleSoundVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    soundEffects.setVolume(val);
+  };
+
+  const handleTestSound = (cue: SoundCue) => {
+    if (isSoundMuted) {
+      soundEffects.setMuted(false);
+    }
+    soundEffects.play(cue);
+  };
 
   // -------------------------------------------------------------
   // 3. Notifications & Reminders State
@@ -654,7 +688,176 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. NOTIFICATION & STREAK PREFERENCES */}
+      {/* 4. INTERACTIVE AUDIO ENGINE (WEB AUDIO API) */}
+      <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+              <Volume2 size={16} />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
+                4. Interactive Audio Engine &amp; Sound FX
+              </h2>
+              <span className="text-[11px] text-slate-400">
+                Synthesized in real-time with Web Audio API &bull; Zero network lag &bull; Offline-ready
+              </span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleSoundMute}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              !isSoundMuted
+                ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-300'
+            }`}
+          >
+            {isSoundMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
+            <span>{!isSoundMuted ? 'Sound Enabled' : 'Sound Muted'}</span>
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Master Volume Slider */}
+          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
+                {isSoundMuted || soundVolume === 0 ? (
+                  <VolumeX size={16} />
+                ) : soundVolume < 0.5 ? (
+                  <Volume1 size={16} />
+                ) : (
+                  <Volume2 size={16} />
+                )}
+              </div>
+              <div>
+                <div className="font-bold text-xs text-slate-900 dark:text-white">
+                  Master Sound FX Volume
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  Controls synthesized tone amplitude across all UI interactions
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-60">
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={soundVolume}
+                onChange={handleSoundVolumeChange}
+                disabled={isSoundMuted}
+                className="w-full h-1.5 bg-slate-200 dark:bg-white/10 rounded-lg appearance-none cursor-pointer accent-violet-600 disabled:opacity-40"
+              />
+              <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-300 w-10 text-right">
+                {Math.round(soundVolume * 100)}%
+              </span>
+            </div>
+          </div>
+
+          {/* Real-time Audition Grid */}
+          <div>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+              Audition Mathematical Waveforms
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {/* Swoosh */}
+              <button
+                type="button"
+                onClick={() => handleTestSound('swoosh')}
+                className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] hover:border-violet-500/40 hover:bg-violet-500/[0.03] transition-all text-left cursor-pointer group flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">💨</span>
+                  <span className="p-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:text-violet-500 transition-colors">
+                    <Play size={12} fill="currentColor" />
+                  </span>
+                </div>
+                <div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    swoosh
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Kanban card drag &amp; drop
+                  </div>
+                </div>
+              </button>
+
+              {/* Chime */}
+              <button
+                type="button"
+                onClick={() => handleTestSound('chime')}
+                className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] hover:border-violet-500/40 hover:bg-violet-500/[0.03] transition-all text-left cursor-pointer group flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">🔔</span>
+                  <span className="p-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:text-violet-500 transition-colors">
+                    <Play size={12} fill="currentColor" />
+                  </span>
+                </div>
+                <div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    chime
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Focus sprint completion
+                  </div>
+                </div>
+              </button>
+
+              {/* LevelUp */}
+              <button
+                type="button"
+                onClick={() => handleTestSound('levelUp')}
+                className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] hover:border-violet-500/40 hover:bg-violet-500/[0.03] transition-all text-left cursor-pointer group flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">🎺</span>
+                  <span className="p-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:text-violet-500 transition-colors">
+                    <Play size={12} fill="currentColor" />
+                  </span>
+                </div>
+                <div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    levelUp
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Tier rank &amp; chest unlock
+                  </div>
+                </div>
+              </button>
+
+              {/* StreakSafe */}
+              <button
+                type="button"
+                onClick={() => handleTestSound('streakSafe')}
+                className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white dark:bg-[#18181b] hover:border-violet-500/40 hover:bg-violet-500/[0.03] transition-all text-left cursor-pointer group flex flex-col justify-between gap-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">🔥</span>
+                  <span className="p-1 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 group-hover:text-violet-500 transition-colors">
+                    <Play size={12} fill="currentColor" />
+                  </span>
+                </div>
+                <div>
+                  <div className="font-bold text-xs text-slate-900 dark:text-white">
+                    streakSafe
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    Daily streak requirement satisfied
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. NOTIFICATION & STREAK PREFERENCES */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -663,7 +866,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                4. Habit &amp; Streak Notifications
+                5. Habit &amp; Streak Notifications
               </h2>
               <span className="text-[11px] text-slate-400">
                 Stay consistent with proactive reminders and streak defense alerts
@@ -735,7 +938,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. PUBLIC RECRUITER PORTFOLIO SHOWCASE */}
+      {/* 6. PUBLIC RECRUITER PORTFOLIO SHOWCASE */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -744,7 +947,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                5. Public Recruiter Showcase (/u/:slug)
+                6. Public Recruiter Showcase (/u/:slug)
               </h2>
               <span className="text-[11px] text-slate-400">
                 A verified showcase URL with your active discipline streak, DSA progress &amp; resume
@@ -923,7 +1126,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. DATA BACKUP & ACCOUNT CONTROLS */}
+      {/* 7. DATA BACKUP & ACCOUNT CONTROLS */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -932,7 +1135,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                6. Data Backup &amp; Account Controls
+                7. Data Backup &amp; Account Controls
               </h2>
               <span className="text-[11px] text-slate-400">
                 Download your complete application dataset or safely sign out

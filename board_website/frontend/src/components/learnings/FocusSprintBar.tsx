@@ -13,39 +13,8 @@ import {
   Check,
 } from 'lucide-react';
 
-// Web Audio API Crystal Bell Chime
-const playChimeSound = () => {
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
-    // Harmonics for a soothing Tibetan singing bowl chime (C5, E5, G5, C6)
-    const frequencies = [523.25, 659.25, 783.99, 1046.5];
-    frequencies.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-
-      gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
-      gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + idx * 0.1 + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.1 + 1.8);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(ctx.currentTime + idx * 0.1);
-      osc.stop(ctx.currentTime + idx * 0.1 + 2.0);
-    });
-  } catch (err) {
-    // Audio context was blocked or not supported
-  }
-};
+import { soundEffects } from '../../utils/soundEffects';
+import { pomodoroEngine, PomodoroState } from '../../utils/pomodoroEngine';
 
 export const FocusSprintBar: React.FC = () => {
   const {
@@ -57,60 +26,30 @@ export const FocusSprintBar: React.FC = () => {
   const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
   const totalLearningsCount = learnings.length + solvedDsaCount;
 
-  // User input minutes (only numbers allowed, default: 45)
-  const [inputMinutes, setInputMinutes] = useState<string>('45');
-  const [selectedMinutes, setSelectedMinutes] = useState<number>(45);
-  const [timeLeft, setTimeLeft] = useState<number>(45 * 60);
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [isFinished, setIsFinished] = useState<boolean>(false);
+  // Synced Pomodoro state
+  const [pomodoro, setPomodoro] = useState<PomodoroState>(() => pomodoroEngine.getState());
+  const [inputMinutes, setInputMinutes] = useState<string>(() => String(pomodoroEngine.getState().selectedMinutes || 25));
 
-  // Sound preferences
-  const [isMuted, setIsMuted] = useState<boolean>(() => {
-    return localStorage.getItem('focus_timer_muted') === '1';
-  });
+  // Sound preferences synced with centralized Web Audio engine
+  const [isMuted, setIsMuted] = useState<boolean>(() => soundEffects.getIsMuted());
 
-  // Interval ref - using ReturnType<typeof setInterval>
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const endTimeRef = useRef<number | null>(null);
-
-  // Tick timer with timestamp synchronization (prevents background tab clock drift)
   useEffect(() => {
-    if (isRunning) {
-      if (!endTimeRef.current) {
-        endTimeRef.current = Date.now() + timeLeft * 1000;
-      }
+    return pomodoroEngine.subscribe(next => {
+      setPomodoro(next);
+      setInputMinutes(String(next.selectedMinutes || 25));
+    });
+  }, []);
 
-      timerRef.current = setInterval(() => {
-        if (!endTimeRef.current) return;
-        const remaining = Math.max(0, Math.round((endTimeRef.current - Date.now()) / 1000));
-        setTimeLeft(remaining);
+  useEffect(() => {
+    return soundEffects.subscribe(() => {
+      setIsMuted(soundEffects.getIsMuted());
+    });
+  }, []);
 
-        if (remaining <= 0) {
-          clearInterval(timerRef.current!);
-          endTimeRef.current = null;
-          setIsRunning(false);
-          setIsFinished(true);
-          if (!isMuted) {
-            playChimeSound();
-          }
-          if ('Notification' in window && Notification.permission === 'granted') {
-            try {
-              new Notification('🔔 Focus Sprint Completed!', {
-                body: `Great job! Your ${selectedMinutes}-minute focus session is complete.`,
-              });
-            } catch (_) {}
-          }
-        }
-      }, 500);
-    } else {
-      endTimeRef.current = null;
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isRunning, isMuted, selectedMinutes]);
+  const timeLeft = pomodoro.remainingSeconds;
+  const isRunning = pomodoro.isRunning;
+  const isFinished = pomodoro.isFinished;
+  const selectedMinutes = pomodoro.selectedMinutes;
 
   // Handle user typing minutes (only numbers allowed)
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -119,56 +58,39 @@ export const FocusSprintBar: React.FC = () => {
     setInputMinutes(sanitized);
 
     const parsed = parseInt(sanitized, 10);
-    if (!isNaN(parsed) && parsed > 0) {
-      setSelectedMinutes(parsed);
-      if (!isRunning) {
-        setTimeLeft(parsed * 60);
-        setIsFinished(false);
-      }
+    if (!isNaN(parsed) && parsed > 0 && !isRunning) {
+      pomodoroEngine.setPreset(parsed);
     }
   };
 
   // Start timer
   const handleStartTimer = () => {
-    const parsed = parseInt(inputMinutes, 10) || selectedMinutes || 45;
-    let initialSecs = timeLeft;
-    if (isFinished || timeLeft <= 0) {
-      initialSecs = parsed * 60;
-      setTimeLeft(initialSecs);
-      setIsFinished(false);
+    const parsed = parseInt(inputMinutes, 10) || selectedMinutes || 25;
+    if (pomodoro.isPaused) {
+      pomodoroEngine.resume();
+    } else {
+      pomodoroEngine.start(parsed);
     }
-    endTimeRef.current = Date.now() + initialSecs * 1000;
-    setIsRunning(true);
   };
 
-  // Stop timer
+  // Stop / Pause timer
   const handleStopTimer = () => {
-    endTimeRef.current = null;
-    setIsRunning(false);
+    pomodoroEngine.pause();
   };
 
   // Reset timer
   const handleResetTimer = () => {
-    endTimeRef.current = null;
-    setIsRunning(false);
-    setIsFinished(false);
-    const parsed = parseInt(inputMinutes, 10) || selectedMinutes || 45;
-    setTimeLeft(parsed * 60);
+    const parsed = parseInt(inputMinutes, 10) || 25;
+    pomodoroEngine.reset(parsed);
   };
 
   // Toggle sound & request notification permission
   const handleToggleMute = () => {
-    setIsMuted(prev => {
-      const next = !prev;
-      localStorage.setItem('focus_timer_muted', next ? '1' : '0');
-      if (!next) {
-        playChimeSound();
-        if ('Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission().catch(() => {});
-        }
-      }
-      return next;
-    });
+    const unmuted = !soundEffects.getIsMuted();
+    soundEffects.toggleMute();
+    if (unmuted && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
   };
 
   // Format MM:SS or HH:MM:SS
