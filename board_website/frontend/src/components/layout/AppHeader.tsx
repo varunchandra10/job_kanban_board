@@ -15,7 +15,10 @@ import {
   RotateCcw,
   Code2,
   Zap,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
+import { soundEffects } from '../../utils/soundEffects';
 
 export const AppHeader: React.FC = () => {
   const navigate = useNavigate();
@@ -44,6 +47,14 @@ export const AppHeader: React.FC = () => {
   const isProfileActive = location.pathname === '/profile';
 
   const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
+
+  const [isSoundMuted, setIsSoundMuted] = React.useState<boolean>(() => soundEffects.getIsMuted());
+
+  useEffect(() => {
+    return soundEffects.subscribe(() => {
+      setIsSoundMuted(soundEffects.getIsMuted());
+    });
+  }, []);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -319,6 +330,21 @@ export const AppHeader: React.FC = () => {
           {isAuthenticated && (
             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#121214]" />
           )}
+        </button>
+
+        {/* Sound FX Toggle Button */}
+        <button
+          type="button"
+          onClick={() => soundEffects.toggleMute()}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
+            isSoundMuted
+              ? 'border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'
+              : 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/60 dark:hover:bg-indigo-500/20'
+          }`}
+          title={isSoundMuted ? 'Sound FX: Muted (Click to Unmute)' : 'Sound FX: Active (Click to Mute)'}
+          aria-label={isSoundMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
+        >
+          {isSoundMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
 
         {/* Theme Toggle Button */}

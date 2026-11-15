@@ -13,39 +13,7 @@ import {
   Check,
 } from 'lucide-react';
 
-// Web Audio API Crystal Bell Chime
-const playChimeSound = () => {
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const ctx = new AudioContextClass();
-    if (ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-
-    // Harmonics for a soothing Tibetan singing bowl chime (C5, E5, G5, C6)
-    const frequencies = [523.25, 659.25, 783.99, 1046.5];
-    frequencies.forEach((freq, idx) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.1);
-
-      gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.1);
-      gain.gain.linearRampToValueAtTime(0.22, ctx.currentTime + idx * 0.1 + 0.04);
-      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.1 + 1.8);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start(ctx.currentTime + idx * 0.1);
-      osc.stop(ctx.currentTime + idx * 0.1 + 2.0);
-    });
-  } catch (err) {
-    // Audio context was blocked or not supported
-  }
-};
+import { soundEffects } from '../../utils/soundEffects';
 
 export const FocusSprintBar: React.FC = () => {
   const {
@@ -64,10 +32,14 @@ export const FocusSprintBar: React.FC = () => {
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFinished, setIsFinished] = useState<boolean>(false);
 
-  // Sound preferences
-  const [isMuted, setIsMuted] = useState<boolean>(() => {
-    return localStorage.getItem('focus_timer_muted') === '1';
-  });
+  // Sound preferences synced with centralized Web Audio engine
+  const [isMuted, setIsMuted] = useState<boolean>(() => soundEffects.getIsMuted());
+
+  useEffect(() => {
+    return soundEffects.subscribe(() => {
+      setIsMuted(soundEffects.getIsMuted());
+    });
+  }, []);
 
   // Interval ref - using ReturnType<typeof setInterval>
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -91,7 +63,7 @@ export const FocusSprintBar: React.FC = () => {
           setIsRunning(false);
           setIsFinished(true);
           if (!isMuted) {
-            playChimeSound();
+            soundEffects.play('chime');
           }
           if ('Notification' in window && Notification.permission === 'granted') {
             try {
@@ -158,17 +130,11 @@ export const FocusSprintBar: React.FC = () => {
 
   // Toggle sound & request notification permission
   const handleToggleMute = () => {
-    setIsMuted(prev => {
-      const next = !prev;
-      localStorage.setItem('focus_timer_muted', next ? '1' : '0');
-      if (!next) {
-        playChimeSound();
-        if ('Notification' in window && Notification.permission === 'default') {
-          Notification.requestPermission().catch(() => {});
-        }
-      }
-      return next;
-    });
+    const unmuted = !soundEffects.getIsMuted();
+    soundEffects.toggleMute();
+    if (unmuted && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
   };
 
   // Format MM:SS or HH:MM:SS
