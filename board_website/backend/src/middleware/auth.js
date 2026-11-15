@@ -8,8 +8,10 @@ function authMiddleware(req, res, next) {
   const isFileViewPath =
     fullPath.startsWith('/api/file-content') ||
     fullPath.startsWith('/api/document-content') ||
+    /^\/api\/versions\/\d+\/pdf(\/|$)/.test(fullPath) ||
     reqPath.startsWith('/file-content') ||
-    reqPath.startsWith('/document-content');
+    reqPath.startsWith('/document-content') ||
+    /^\/versions\/\d+\/pdf(\/|$)/.test(reqPath);
 
   // Parse token: standard Authorization header or x-auth-token header are accepted across all routes.
   // Query-string tokens (?token=...) are strictly restricted to file viewing & streaming endpoints

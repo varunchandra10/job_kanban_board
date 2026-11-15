@@ -2187,6 +2187,10 @@ export const ProfileCareerDataTab: React.FC = () => {
                         href={pdfUrl}
                         target="_blank"
                         rel="noreferrer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          api.viewResumeVersionPdf(ver.id);
+                        }}
                         className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1f1f23] text-slate-700 dark:text-slate-200 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
                         title="Preview PDF in browser"
                       >

@@ -250,6 +250,29 @@ export const api = {
     return `${API_BASE}/versions/${id}/pdf${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   },
 
+  async fetchResumeVersionPdfBlob(id: number): Promise<Blob> {
+    const res = await fetch(`${API_BASE}/versions/${id}/pdf`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.blob();
+  },
+
+  async viewResumeVersionPdf(id: number): Promise<void> {
+    try {
+      const blob = await this.fetchResumeVersionPdfBlob(id);
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank');
+      if (!win) {
+        window.location.href = blobUrl;
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (_) {
+      const directUrl = this.getResumeVersionPdfUrl(id);
+      window.open(directUrl, '_blank');
+    }
+  },
+
   async updateSetting(key: string, value: string): Promise<{ ok: number }> {
     const res = await fetch(`${API_BASE}/settings/${encodeURIComponent(key)}`, {
       method: 'PUT',
