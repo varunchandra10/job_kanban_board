@@ -10,6 +10,8 @@ import {
   Briefcase,
   Layers,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   BookOpen,
   Calendar,
   Lock,
@@ -24,13 +26,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-interface HoveredHeatmapDay {
-  dateStr: string;
-  appsCount: number;
-  studyCount: number;
-  dsaCount: number;
-  totalCount: number;
-  dayOfWeek: number;
+interface DayCellData {
+  dayNum: number | null;
+  dateStr: string | null;
+  count: number;
   isToday: boolean;
 }
 
@@ -45,10 +44,8 @@ export const ProfileOverviewTab: React.FC = () => {
     storageMode,
     requestStorageModeChange,
     showToast,
-    setIsDriveModalOpen,
   } = useApp();
 
-  const [hoveredDay, setHoveredDay] = useState<HoveredHeatmapDay | null>(null);
   const [isTrophyRoadOpen, setIsTrophyRoadOpen] = useState(false);
 
   // 1. User Demographics & Rank calculations
@@ -113,120 +110,144 @@ export const ProfileOverviewTab: React.FC = () => {
     showToast('Exported applications to CSV');
   };
 
-  // 3. 365-Day / 52-Week GitHub Style Heatmap Calculation
-  const heatmapData = useMemo(() => {
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    const todayYMD = today.toISOString().slice(0, 10);
+  // 3. Side-by-Side Month Stepper & Activity Matrix Calculations
+  const [momentumDate, setMomentumDate] = useState(() => new Date());
+  const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
+    dateStr: string;
+    dayNum: number;
+    count: number;
+    type: 'applications' | 'learnings';
+    isToday: boolean;
+  } | null>(null);
 
-    // Group Applications by date
-    const appsMap: Record<string, number> = {};
+  const selectedYear = momentumDate.getFullYear();
+  const selectedMonth = momentumDate.getMonth();
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const currentYear = new Date().getFullYear();
+  const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+
+  const stepMonth = (delta: number) => {
+    setMomentumDate(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  };
+  const setMonthByIndex = (m: number) => {
+    setMomentumDate(prev => new Date(prev.getFullYear(), m, 1));
+  };
+  const setYearByValue = (y: number) => {
+    setMomentumDate(prev => new Date(y, prev.getMonth(), 1));
+  };
+  const resetToCurrentMonth = () => {
+    setMomentumDate(new Date());
+  };
+
+  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
+  const toYMD = (d: number) =>
+    `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const todayYMD = new Date().toISOString().slice(0, 10);
+
+  // Group applications by date string YYYY-MM-DD
+  const appsByDate: Record<string, number> = useMemo(() => {
+    const map: Record<string, number> = {};
     applications.forEach(a => {
       const d = (a.date_applied || (a as any).created_at || '').slice(0, 10);
-      if (d) appsMap[d] = (appsMap[d] || 0) + 1;
+      if (d) map[d] = (map[d] || 0) + 1;
     });
+    return map;
+  }, [applications]);
 
-    // Group Learnings by date
-    const learningsMap: Record<string, number> = {};
+  // Group learnings & solved DSA by date string YYYY-MM-DD
+  const learningsByDate: Record<string, number> = useMemo(() => {
+    const map: Record<string, number> = {};
     learnings.forEach(l => {
       const d = (l.date_logged || (l as any).date || '').slice(0, 10);
-      if (d) learningsMap[d] = (learningsMap[d] || 0) + 1;
+      if (d) map[d] = (map[d] || 0) + 1;
     });
-
-    // Group Solved DSA by date
-    const dsaMap: Record<string, number> = {};
     Object.values(dsaProgress || {}).forEach(prog => {
       if (prog.status === 'solved' && prog.updated_at) {
         const d = prog.updated_at.slice(0, 10);
-        dsaMap[d] = (dsaMap[d] || 0) + 1;
+        map[d] = (map[d] || 0) + 1;
       }
     });
+    return map;
+  }, [learnings, dsaProgress]);
 
-    // We generate 52 weeks (364 days). Week starts on Sunday (day 0) to Saturday (day 6).
-    const weeks: Array<Array<{
-      dateStr: string;
-      appsCount: number;
-      studyCount: number;
-      dsaCount: number;
-      totalCount: number;
-      dayOfWeek: number;
-      isToday: boolean;
-      month: number;
-      dayNum: number;
-    }>> = [];
+  // Calculate month activities & active days
+  let monthAppsTotal = 0;
+  let monthLearningsTotal = 0;
+  let monthActiveDays = 0;
 
-    // Find the end date: this Saturday or today
-    const daysFromSunday = today.getDay(); // 0 = Sun, 6 = Sat
-    const endOfWeek = new Date(today);
-    endOfWeek.setDate(today.getDate() + (6 - daysFromSunday));
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = toYMD(d);
+    const appCnt = appsByDate[dateStr] || 0;
+    const learnCnt = learningsByDate[dateStr] || 0;
+    monthAppsTotal += appCnt;
+    monthLearningsTotal += learnCnt;
+    if (appCnt > 0 || learnCnt > 0) monthActiveDays++;
+  }
 
-    // Start date is 52 weeks back from endOfWeek
-    const totalDays = 52 * 7;
-    const startDate = new Date(endOfWeek);
-    startDate.setDate(endOfWeek.getDate() - totalDays + 1);
+  const buildMonthGrid = (countMap: Record<string, number>) => {
+    const weeks: DayCellData[][] = [];
+    let currentWeek: DayCellData[] = [];
 
-    const monthHeaders: Array<{ weekIdx: number; monthName: string }> = [];
-    let lastMonth = -1;
+    // First day of month (0=Sun, 1=Mon, ..., 6=Sat) -> Convert to Monday=0 .. Sunday=6
+    const firstDayIndex = (new Date(selectedYear, selectedMonth, 1).getDay() + 6) % 7;
 
-    let currentDayIter = new Date(startDate);
-    let currentWeek: any[] = [];
+    for (let p = 0; p < firstDayIndex; p++) {
+      currentWeek.push({ dayNum: null, dateStr: null, count: 0, isToday: false });
+    }
 
-    for (let i = 0; i < totalDays; i++) {
-      const dateStr = currentDayIter.toISOString().slice(0, 10);
-      const m = currentDayIter.getMonth();
-      const dayNum = currentDayIter.getDate();
-      const dayOfWeek = currentDayIter.getDay();
-
-      const appsCount = appsMap[dateStr] || 0;
-      const studyCount = learningsMap[dateStr] || 0;
-      const dsaCount = dsaMap[dateStr] || 0;
-      const totalCount = appsCount + studyCount + dsaCount;
-      const isToday = dateStr === todayYMD;
-
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = toYMD(day);
+      const count = countMap[dateStr] || 0;
       currentWeek.push({
+        dayNum: day,
         dateStr,
-        appsCount,
-        studyCount,
-        dsaCount,
-        totalCount,
-        dayOfWeek,
-        isToday,
-        month: m,
-        dayNum,
+        count,
+        isToday: dateStr === todayYMD,
       });
 
-      if (dayOfWeek === 6 || i === totalDays - 1) {
-        const weekIdx = weeks.length;
-        if (m !== lastMonth) {
-          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-          monthHeaders.push({ weekIdx, monthName: monthNames[m] });
-          lastMonth = m;
-        }
+      if (currentWeek.length === 7) {
         weeks.push(currentWeek);
         currentWeek = [];
       }
-
-      currentDayIter.setDate(currentDayIter.getDate() + 1);
     }
 
-    let activeDaysCount = 0;
-    let totalContributions = 0;
-    weeks.forEach(week => {
-      week.forEach(day => {
-        if (day.totalCount > 0) {
-          activeDaysCount++;
-          totalContributions += day.totalCount;
-        }
-      });
-    });
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) {
+        currentWeek.push({ dayNum: null, dateStr: null, count: 0, isToday: false });
+      }
+      weeks.push(currentWeek);
+    }
 
-    return {
-      weeks,
-      monthHeaders,
-      activeDaysCount,
-      totalContributions,
-    };
-  }, [applications, learnings, dsaProgress]);
+    return weeks;
+  };
+
+  const appWeeks = useMemo(() => buildMonthGrid(appsByDate), [appsByDate, selectedYear, selectedMonth]);
+  const learnWeeks = useMemo(() => buildMonthGrid(learningsByDate), [learningsByDate, selectedYear, selectedMonth]);
+
+  const getAppCellClass = (cell: DayCellData) => {
+    if (!cell.dayNum) return 'opacity-0 pointer-events-none';
+    const c = cell.count;
+    if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
+    if (c === 1) return 'bg-blue-200 dark:bg-[#163354] border-blue-300/80 dark:border-blue-700/60';
+    if (c === 2) return 'bg-blue-400 dark:bg-[#1d4ed8] border-blue-500 dark:border-blue-600';
+    if (c === 3) return 'bg-blue-600 dark:bg-[#2563eb] border-blue-700 dark:border-blue-500 shadow-2xs shadow-blue-500/20';
+    return 'bg-blue-700 dark:bg-[#3b82f6] border-blue-800 dark:border-blue-400 shadow-xs shadow-blue-500/30';
+  };
+
+  const getLearnCellClass = (cell: DayCellData) => {
+    if (!cell.dayNum) return 'opacity-0 pointer-events-none';
+    const c = cell.count;
+    if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
+    if (c === 1) return 'bg-emerald-200 dark:bg-[#064e3b] border-emerald-300/80 dark:border-emerald-700/60';
+    if (c === 2) return 'bg-emerald-400 dark:bg-[#059669] border-emerald-500 dark:border-emerald-600';
+    if (c === 3) return 'bg-emerald-600 dark:bg-[#10b981] border-emerald-700 dark:border-emerald-500 shadow-2xs shadow-emerald-500/20';
+    return 'bg-emerald-700 dark:bg-[#34d399] border-emerald-800 dark:border-emerald-400 shadow-xs shadow-emerald-500/30';
+  };
 
   // 4. Job Search Funnel Calculations
   const totalApps = applications.length;
@@ -235,7 +256,6 @@ export const ProfileOverviewTab: React.FC = () => {
   const rejectedApps = applications.filter(a => a.stage === 'Rejected').length;
   const appliedApps = applications.filter(a => a.stage === 'Applied' || a.stage === 'Bookmarked').length;
   const responseRate = totalApps > 0 ? Math.round(((interviewingApps + offerApps) / totalApps) * 100) : 0;
-
   const pct = (count: number) => (totalApps > 0 ? Math.round((count / totalApps) * 100) : 0);
 
   // 5. DSA Mastery Calculations
@@ -245,7 +265,6 @@ export const ProfileOverviewTab: React.FC = () => {
   const totalCatalog = 79;
   const dsaMasteryPct = Math.round((solvedDsaCount / totalCatalog) * 100);
 
-  // Top Category Bars for DSA
   const solvedSet = new Set(solvedProblems.map(([id]) => id));
   const categoryMasteryList = DSA_CATEGORIES.slice(0, 6).map(cat => {
     const total = cat.problems.length;
@@ -458,95 +477,344 @@ export const ProfileOverviewTab: React.FC = () => {
         </section>
       </div>
 
-      {/* 2. FULL-WIDTH GITHUB-STYLE 365-DAY CONTRIBUTION HEATMAP */}
-      <section
-        className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4"
-        aria-label="GitHub-Style Contribution Heatmap"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <Calendar size={18} />
+      {/* 2. SIDE-BY-SIDE GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
+      <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+        {/* Header & Month Stepper Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+          <div>
+            <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
+              <Briefcase size={16} className="text-blue-600" />
+              <span>Activity &amp; Momentum Heatmaps</span>
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
-                  Activity &amp; Consistency Heatmap
-                </h2>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-                  52 Weeks
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-                Every job applied, learning logged, and DSA problem conquered across the past 365 days.
-              </p>
+            <div className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <span>{monthAppsTotal + monthLearningsTotal} activities in </span>
+              <strong className="text-slate-900 dark:text-white font-bold">
+                {monthNames[selectedMonth]} {selectedYear}
+              </strong>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-start sm:self-center">
-            <div className="text-right">
-              <div className="text-xs font-extrabold text-slate-900 dark:text-white tabular-nums">
-                {heatmapData.totalContributions} Contributions
-              </div>
-              <div className="text-[10px] text-slate-400">
-                {heatmapData.activeDaysCount} Active Days in past year
-              </div>
-            </div>
+          {/* Month & Year Navigation Controls */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10">
+            <button
+              type="button"
+              onClick={() => stepMonth(-1)}
+              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+              title="Previous Month"
+            >
+              <ChevronLeft size={14} />
+            </button>
+
+            <select
+              value={selectedMonth}
+              onChange={e => setMonthByIndex(Number(e.target.value))}
+              className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+            >
+              {shortMonths.map((m, idx) => (
+                <option key={m} value={idx} className="bg-white dark:bg-[#18181b]">{m}</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedYear}
+              onChange={e => setYearByValue(Number(e.target.value))}
+              className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+            >
+              {years.map(y => (
+                <option key={y} value={y} className="bg-white dark:bg-[#18181b]">{y}</option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => stepMonth(1)}
+              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+              title="Next Month"
+            >
+              <ChevronRight size={14} />
+            </button>
+
+            <button
+              type="button"
+              onClick={resetToCurrentMonth}
+              className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+              title="Jump to Current Month"
+            >
+              Today
+            </button>
           </div>
         </div>
 
-        {/* Heatmap Grid Container (Scrollable horizontally on smaller mobile screens) */}
-        <div className="overflow-x-auto pb-2">
-          <div className="min-w-[780px] space-y-1.5">
-            
-            {/* Month Labels Bar */}
-            <div className="flex text-[10px] font-bold text-slate-400 pl-8 h-4 relative">
-              {heatmapData.monthHeaders.map((hdr, i) => (
-                <span
-                  key={i}
-                  style={{ left: `${(hdr.weekIdx * 14.8) + 32}px` }}
-                  className="absolute transform -translate-x-1"
-                >
-                  {hdr.monthName}
+        {/* Live Hover Info Banner - Displays exact date and count */}
+        <div className="flex items-center justify-between px-3.5 py-2 mb-2 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs min-h-[42px] transition-all">
+          {hoveredMatrixDay ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
+                <Calendar size={13} className={hoveredMatrixDay.type === 'applications' ? 'text-blue-500' : 'text-emerald-500'} />
+                <span>
+                  {(() => {
+                    const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                    const d = new Date(selectedYear, selectedMonth, hoveredMatrixDay.dayNum);
+                    const dayOfWeek = daysNames[d.getDay()];
+                    return `${dayOfWeek}, ${monthNames[selectedMonth]} ${hoveredMatrixDay.dayNum}, ${selectedYear}`;
+                  })()}
                 </span>
-              ))}
+              </span>
+              <span className="text-slate-400 font-bold">&bull;</span>
+              <span
+                className={`font-black px-2.5 py-0.5 rounded-lg text-xs shadow-2xs flex items-center gap-1.5 ${
+                  hoveredMatrixDay.type === 'applications'
+                    ? 'bg-blue-600 text-white shadow-blue-500/25'
+                    : 'bg-emerald-600 text-white shadow-emerald-500/25'
+                }`}
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                <span>
+                  {hoveredMatrixDay.count}{' '}
+                  {hoveredMatrixDay.type === 'applications'
+                    ? `Job Application${hoveredMatrixDay.count === 1 ? '' : 's'}`
+                    : `Learning Note${hoveredMatrixDay.count === 1 ? '' : 's'}`}
+                </span>
+              </span>
+              {hoveredMatrixDay.isToday && (
+                <span className="text-[10px] font-black uppercase text-orange-600 dark:text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.5 rounded-md shadow-2xs">
+                  🔥 Today
+                </span>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between w-full text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center gap-2">
+                <Sparkles size={13} className="text-indigo-500" />
+                <span className="font-semibold">
+                  <strong className="text-slate-900 dark:text-white font-black">{monthActiveDays} active days</strong> ({Math.round((monthActiveDays / daysInMonth) * 100)}% consistency) in {monthNames[selectedMonth]}
+                </span>
+              </div>
+              <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
+                Hover any cell for daily details
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Dual Side-by-Side Activity Blocks: Applications (Left) & Learnings (Right) */}
+        <div
+          onMouseLeave={() => setHoveredMatrixDay(null)}
+          className="flex flex-col md:flex-row gap-4 sm:gap-6 items-stretch justify-around my-2.5 px-4 py-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] overflow-x-auto"
+        >
+          {/* 1. Job Applications Block (Blue Theme) */}
+          <div className="flex flex-col gap-2.5 flex-1 min-w-[200px]">
+            <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
+              <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                <Briefcase size={13} />
+                <span>Job Applications</span>
+              </span>
+              <span
+                className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
+                  monthAppsTotal > 0
+                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20'
+                    : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
+                }`}
+              >
+                {monthAppsTotal} applications
+              </span>
             </div>
 
-            {/* Matrix: Day Labels on Left + 52 Week Columns */}
-            <div className="flex items-start gap-2">
-              {/* Day-of-week labels */}
-              <div className="flex flex-col justify-between h-[100px] text-[9.5px] font-semibold text-slate-400 pr-1 select-none">
-                <span>Mon</span>
-                <span>Wed</span>
-                <span>Fri</span>
+            {/* Grid with Day-of-week labels (Mon, Wed, Fri) and week columns */}
+            <div className="flex gap-2 items-start">
+              <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
+                <div className="h-[18px] flex items-center leading-none">Mon</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px] flex items-center leading-none">Wed</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px] flex items-center leading-none">Fri</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px]" />
               </div>
 
-              {/* 52 Columns */}
-              <div className="flex gap-1 flex-1">
-                {heatmapData.weeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-1">
-                    {week.map((cell, cIdx) => {
-                      // Color Scale
-                      let cellColor = 'bg-slate-100 dark:bg-white/[0.04] border-slate-200/60 dark:border-white/5';
-                      if (cell.totalCount === 1) {
-                        cellColor = 'bg-emerald-500/30 border-emerald-500/40 text-emerald-400';
-                      } else if (cell.totalCount === 2 || cell.totalCount === 3) {
-                        cellColor = 'bg-emerald-500/65 border-emerald-500/70 text-emerald-200 shadow-2xs';
-                      } else if (cell.totalCount >= 4) {
-                        cellColor = 'bg-emerald-500 border-emerald-400 text-white shadow-xs shadow-emerald-500/40';
-                      }
+              <div className="flex gap-1.5 flex-1">
+                {appWeeks.map((week, wIdx) => (
+                  <div key={wIdx} className="flex flex-col gap-1.5">
+                    {week.map((cell, cIdx) => (
+                      <div
+                        key={cIdx}
+                        onMouseEnter={() => {
+                          if (cell.dayNum && cell.dateStr) {
+                            setHoveredMatrixDay({
+                              dateStr: cell.dateStr,
+                              dayNum: cell.dayNum,
+                              count: cell.count,
+                              type: 'applications',
+                              isToday: cell.isToday,
+                            });
+                          }
+                        }}
+                        className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
+                          cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                        } hover:ring-2 hover:ring-blue-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
+                      >
+                        {/* Hover Floating Popover */}
+                        {cell.dayNum && (
+                          <div
+                            className={`hidden group-hover/cell:flex pointer-events-none absolute ${
+                              cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
+                            } ${
+                              wIdx <= 1
+                                ? 'left-0'
+                                : wIdx >= appWeeks.length - 1
+                                ? 'right-0'
+                                : 'left-1/2 -translate-x-1/2'
+                            } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
+                          >
+                            {cIdx <= 2 && (
+                              <div
+                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
+                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                }`}
+                              />
+                            )}
 
-                      return (
-                        <div
-                          key={cIdx}
-                          onMouseEnter={() => setHoveredDay(cell)}
-                          onMouseLeave={() => setHoveredDay(null)}
-                          className={`w-[12px] h-[12px] sm:w-[13px] sm:h-[13px] rounded-[3px] border transition-all duration-150 cursor-pointer ${cellColor} ${
-                            cell.isToday ? 'ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                          } hover:ring-2 hover:ring-emerald-400 hover:scale-125 hover:z-20`}
-                        />
-                      );
-                    })}
+                            <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
+                              <div className="flex items-center justify-between gap-3 text-[10.5px]">
+                                <span className="font-bold text-slate-300">
+                                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
+                                </span>
+                                {cell.isToday && (
+                                  <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
+                                    Today
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
+                                <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.9)]' : 'bg-slate-500'} shrink-0`} />
+                                <span className="text-xs font-black text-white">
+                                  {cell.count > 0 ? `${cell.count} Application${cell.count === 1 ? '' : 's'}` : 'No applications'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {cIdx > 2 && (
+                              <div
+                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
+                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                }`}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Vertical Divider */}
+          <div className="w-px bg-slate-200 dark:border-white/10 hidden md:block shrink-0" />
+
+          {/* 2. Daily Learnings Block (Emerald Theme) */}
+          <div className="flex flex-col gap-2.5 flex-1 min-w-[200px]">
+            <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
+              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                <BookOpen size={13} />
+                <span>Daily Learnings &amp; Problem Solving</span>
+              </span>
+              <span
+                className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
+                  monthLearningsTotal > 0
+                    ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
+                    : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
+                }`}
+              >
+                {monthLearningsTotal} learnings
+              </span>
+            </div>
+
+            {/* Grid with Day-of-week labels and week columns */}
+            <div className="flex gap-2 items-start">
+              <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
+                <div className="h-[18px] flex items-center leading-none">Mon</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px] flex items-center leading-none">Wed</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px] flex items-center leading-none">Fri</div>
+                <div className="h-[18px]" />
+                <div className="h-[18px]" />
+              </div>
+
+              <div className="flex gap-1.5 flex-1">
+                {learnWeeks.map((week, wIdx) => (
+                  <div key={wIdx} className="flex flex-col gap-1.5">
+                    {week.map((cell, cIdx) => (
+                      <div
+                        key={cIdx}
+                        onMouseEnter={() => {
+                          if (cell.dayNum && cell.dateStr) {
+                            setHoveredMatrixDay({
+                              dateStr: cell.dateStr,
+                              dayNum: cell.dayNum,
+                              count: cell.count,
+                              type: 'learnings',
+                              isToday: cell.isToday,
+                            });
+                          }
+                        }}
+                        className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
+                          cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                        } hover:ring-2 hover:ring-emerald-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
+                      >
+                        {/* Hover Floating Popover */}
+                        {cell.dayNum && (
+                          <div
+                            className={`hidden group-hover/cell:flex pointer-events-none absolute ${
+                              cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
+                            } ${
+                              wIdx <= 1
+                                ? 'left-0'
+                                : wIdx >= learnWeeks.length - 1
+                                ? 'right-0'
+                                : 'left-1/2 -translate-x-1/2'
+                            } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
+                          >
+                            {cIdx <= 2 && (
+                              <div
+                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
+                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                }`}
+                              />
+                            )}
+
+                            <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
+                              <div className="flex items-center justify-between gap-3 text-[10.5px]">
+                                <span className="font-bold text-slate-300">
+                                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
+                                </span>
+                                {cell.isToday && (
+                                  <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
+                                    Today
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
+                                <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]' : 'bg-slate-500'} shrink-0`} />
+                                <span className="text-xs font-black text-white">
+                                  {cell.count > 0 ? `${cell.count} Note${cell.count === 1 ? '' : 's'}` : 'No learning notes'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {cIdx > 2 && (
+                              <div
+                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
+                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
+                                }`}
+                              />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 ))}
               </div>
@@ -554,43 +822,33 @@ export const ProfileOverviewTab: React.FC = () => {
           </div>
         </div>
 
-        {/* Dynamic Tooltip & Legend Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-white/5 text-xs">
-          {/* Tooltip Content or Default Prompt */}
-          <div className="min-h-[22px] flex items-center gap-2">
-            {hoveredDay ? (
-              <div className="flex items-center gap-2 text-xs font-semibold animate-in fade-in duration-100">
-                <span className="text-slate-900 dark:text-white font-mono font-bold">
-                  {hoveredDay.dateStr}
-                </span>
-                <span className="text-slate-400">•</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                  {hoveredDay.totalCount} {hoveredDay.totalCount === 1 ? 'activity' : 'activities'}
-                </span>
-                <span className="text-slate-400 text-[11px]">
-                  ({hoveredDay.appsCount} apps, {hoveredDay.studyCount} notes, {hoveredDay.dsaCount} DSA)
-                </span>
-                {hoveredDay.isToday && (
-                  <span className="text-[10px] font-black uppercase tracking-wider text-orange-600 dark:text-orange-400 bg-orange-500/15 border border-orange-500/30 px-1.5 py-0.2 rounded-md">
-                    Today
-                  </span>
-                )}
-              </div>
-            ) : (
-              <span className="text-slate-400 text-xs">
-                Hover over any day to inspect applications, study notes, and DSA solved.
-              </span>
-            )}
+        {/* Footer Legend & Monthly Totals */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
+            <Flame size={13} className="text-orange-500" />
+            <span>Active Days in {shortMonths[selectedMonth]}:</span>
+            <strong className="text-indigo-600 dark:text-indigo-400 font-extrabold">{monthActiveDays} Days</strong>
           </div>
 
-          {/* Scale Legend */}
-          <div className="flex items-center gap-1.5 text-[11px] text-slate-400 self-end sm:self-center">
-            <span>Less</span>
-            <span className="w-3 h-3 rounded-[3px] bg-slate-100 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/5" />
-            <span className="w-3 h-3 rounded-[3px] bg-emerald-500/30 border border-emerald-500/40" />
-            <span className="w-3 h-3 rounded-[3px] bg-emerald-500/65 border border-emerald-500/70" />
-            <span className="w-3 h-3 rounded-[3px] bg-emerald-500 border border-emerald-400" />
-            <span>More</span>
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-600 shadow-2xs shadow-blue-500/40" />
+              <span>Job Applications</span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 shadow-2xs shadow-emerald-500/40" />
+              <span>Daily Learnings</span>
+            </span>
+
+            {/* Less -> More Scale */}
+            <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400">
+              <span>Less</span>
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-slate-200/70 dark:bg-[#1b2230] border border-slate-300/40 dark:border-white/5" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-200 dark:bg-[#064e3b]" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-400 dark:bg-[#059669]" />
+              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 dark:bg-[#10b981]" />
+              <span>More</span>
+            </div>
           </div>
         </div>
       </section>
