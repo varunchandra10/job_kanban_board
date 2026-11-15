@@ -14,6 +14,7 @@ import { StorageSwitchModal } from '../ui/StorageSwitchModal';
 import { JobClipperModal } from '../common/JobClipperModal';
 import { DeleteApplicationModal } from '../common/DeleteApplicationModal';
 import { PomodoroFocusTimer } from '../learnings/PomodoroFocusTimer';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 import { useApp } from '../../context/AppContext';
 
 export const AppLayout: React.FC = () => {
@@ -53,7 +54,9 @@ export const AppLayout: React.FC = () => {
       <div className={`flex-1 px-2 sm:px-4 py-3 max-w-[1920px] w-full mx-auto relative z-10 flex flex-col ${
         isBoardLike ? 'min-h-0 md:overflow-hidden' : ''
       }`}>
-        <Outlet />
+        <ErrorBoundary level="route">
+          <Outlet />
+        </ErrorBoundary>
       </div>
 
       {/* Global Modals & Notifications */}

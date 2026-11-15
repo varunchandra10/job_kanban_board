@@ -15,6 +15,7 @@ import { ServerAwakeningLoader } from './components/common/ServerAwakeningLoader
 import { AuthModal } from './components/ui/AuthModal';
 import { DriveConsentModal } from './components/ui/DriveConsentModal';
 import { Toast } from './components/ui/Toast';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 export const App: React.FC = () => {
   const { isAuthenticated, isDsaEnabled } = useApp();
@@ -25,38 +26,40 @@ export const App: React.FC = () => {
       <AuthModal />
       <DriveConsentModal />
       <Toast />
-      <Routes>
-        {/* Route 1: '/' -> Redirect to /job-applications if logged in, otherwise Landing Page */}
-        <Route
-          path="/"
-          element={isAuthenticated ? <Navigate to="/job-applications" replace /> : <LandingPage />}
-        />
+      <ErrorBoundary level="route">
+        <Routes>
+          {/* Route 1: '/' -> Redirect to /job-applications if logged in, otherwise Landing Page */}
+          <Route
+            path="/"
+            element={isAuthenticated ? <Navigate to="/job-applications" replace /> : <LandingPage />}
+          />
 
-        {/* Application routes under standard app layout - ONLY accessible when logged in */}
-        {isAuthenticated && (
-          <Route element={<AppLayout />}>
-            <Route path="/job-applications" element={<ApplicationsPage />} />
-            <Route path="/board" element={<Navigate to="/job-applications" replace />} />
-            <Route path="/applications" element={<Navigate to="/job-applications" replace />} />
-            <Route path="/learnings" element={<LearningsPage />} />
-            <Route path="/profile" element={<CareerProfile />} />
-            {isDsaEnabled && <Route path="/dsa" element={<DsaPracticePage />} />}
-          </Route>
-        )}
+          {/* Application routes under standard app layout - ONLY accessible when logged in */}
+          {isAuthenticated && (
+            <Route element={<AppLayout />}>
+              <Route path="/job-applications" element={<ApplicationsPage />} />
+              <Route path="/board" element={<Navigate to="/job-applications" replace />} />
+              <Route path="/applications" element={<Navigate to="/job-applications" replace />} />
+              <Route path="/learnings" element={<LearningsPage />} />
+              <Route path="/profile" element={<CareerProfile />} />
+              {isDsaEnabled && <Route path="/dsa" element={<DsaPracticePage />} />}
+            </Route>
+          )}
 
-        {/* Dedicated 1-Click Top-Right Clipper Window Route */}
-        <Route path="/clipper" element={<StandaloneClipperPage />} />
+          {/* Dedicated 1-Click Top-Right Clipper Window Route */}
+          <Route path="/clipper" element={<StandaloneClipperPage />} />
 
-        {/* Public Legal / OAuth Verification Pages */}
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
+          {/* Public Legal / OAuth Verification Pages */}
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
 
-        {/* Public Recruiter Proof-of-Work Portfolio Route */}
-        <Route path="/u/:slug" element={<PublicPortfolioPage />} />
+          {/* Public Recruiter Proof-of-Work Portfolio Route */}
+          <Route path="/u/:slug" element={<PublicPortfolioPage />} />
 
-        {/* Fallback to landing */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+          {/* Fallback to landing */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ErrorBoundary>
     </>
   );
 };
