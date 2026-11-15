@@ -372,22 +372,22 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderRecruiterShowcaseSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <Globe size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               1. Public Recruiter Showcase (/u/:slug)
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Verified showcase URL with your active streak, DSA progress &amp; resume
             </span>
           </div>
         </div>
 
-        <label className="relative inline-flex items-center cursor-pointer">
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
           <input
             type="checkbox"
             checked={isPortfolioPublic}
@@ -564,62 +564,83 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderTrophyRoadSection = () => (
     <section
-      className={`relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-4 sm:p-6 shadow-xs transition-all duration-300 ${
-        isTrophyRoadOpen ? 'space-y-5' : 'space-y-0'
-      }`}
+      className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-4 sm:p-6 shadow-xs space-y-4 transition-all duration-300"
       aria-label="Career Mastery & Trophy Road"
     >
-      <div
-        className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-          isTrophyRoadOpen ? 'pb-4 border-b border-slate-100 dark:border-white/5' : ''
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/20 border border-amber-500/30 text-amber-500 shadow-inner">
-            <Trophy size={19} className="animate-pulse" />
+      {/* Header Row */}
+      <div className="flex items-start sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-white/5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/20 border border-amber-500/30 text-amber-500 shadow-inner">
+            <Trophy size={16} className="animate-pulse" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
                 2. Career Mastery &amp; Trophy Road
               </h2>
-              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
+              <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25 shrink-0">
                 7 Ranks
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 line-clamp-1">
-              Ascend ranks by submitting applications, logging study, and solving algorithms.
+            <p className="text-[11px] text-slate-400 m-0 mt-0.5 line-clamp-1">
+              Ascend ranks by submitting applications, logging study, and solving algorithms
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-          <span
-            className={`inline-flex items-center gap-1.5 font-black text-xs px-2.5 sm:px-3 py-1 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
-          >
-            <Tier3DIcon tier={userLevel} size={15} className="shrink-0" />
-            <span>Level {userLevel}: {currentTierConfig.title}</span>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setIsTrophyRoadOpen(prev => !prev)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
-          >
-            <span>{isTrophyRoadOpen ? 'Hide Ranks' : 'View Trophy Road'}</span>
-            <ChevronDown
-              size={14}
-              className={`transition-transform duration-300 text-slate-400 ${
-                isTrophyRoadOpen ? 'rotate-180 text-amber-500' : ''
-              }`}
-            />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={() => setIsTrophyRoadOpen(prev => !prev)}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95 shrink-0"
+        >
+          <span>{isTrophyRoadOpen ? 'Hide Ranks' : 'View Trophy Road'}</span>
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-300 text-slate-400 ${
+              isTrophyRoadOpen ? 'rotate-180 text-amber-500' : ''
+            }`}
+          />
+        </button>
       </div>
 
+      {/* Active Tier Spotlight Bar */}
+      <div className="p-3 sm:p-3.5 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-[#18181b] shadow-xs border border-slate-200/80 dark:border-white/10">
+            <Tier3DIcon tier={userLevel} size={28} />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                Level {userLevel}: {currentTierConfig.title}
+              </span>
+              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text} shrink-0`}>
+                Active Tier
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+              {currentTierConfig.min} – {currentTierConfig.max > 5000 ? '5,000+' : currentTierConfig.max} XP &bull; {currentTierConfig.description}
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsTrophyRoadOpen(prev => !prev)}
+          className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline shrink-0 cursor-pointer"
+        >
+          <span>{isTrophyRoadOpen ? 'Collapse' : 'Explore All'}</span>
+          <ChevronDown size={13} className={`transform transition-transform ${isTrophyRoadOpen ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {/* Expanded 7-Ranks Grid */}
       {isTrophyRoadOpen && (
-        <div className="space-y-4 pt-1 animate-in fade-in duration-200">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="space-y-3 pt-1 animate-in fade-in duration-200">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            7-Stage Candidate Ascension Roadmap
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2.5">
             {[1, 2, 3, 4, 5, 6, 7].map((lvl) => {
               const cfg = TROPHY_TIER_CONFIG[lvl];
               const isUnlocked = lvl <= userLevel;
@@ -628,7 +649,7 @@ export const ProfileSettingsTab: React.FC = () => {
               return (
                 <div
                   key={lvl}
-                  className={`relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-300 ${
+                  className={`relative flex flex-col justify-between p-3 rounded-xl border transition-all duration-300 ${
                     isCurrent
                       ? `${cfg.bg} ${cfg.border} ring-2 ring-indigo-500/40 shadow-md scale-[1.02]`
                       : isUnlocked
@@ -636,7 +657,7 @@ export const ProfileSettingsTab: React.FC = () => {
                       : 'bg-slate-50/40 dark:bg-white/[0.01] border-slate-200/60 dark:border-white/5 opacity-60'
                   }`}
                 >
-                  <div className="flex items-center justify-between gap-1 mb-2">
+                  <div className="flex items-center justify-between gap-1 mb-1.5">
                     <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md font-mono text-slate-500 dark:text-slate-400">
                       L{lvl}
                     </span>
@@ -656,10 +677,10 @@ export const ProfileSettingsTab: React.FC = () => {
                   </div>
 
                   <div className="flex flex-col items-center text-center my-1">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl mb-1.5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl mb-1">
                       <Tier3DIcon
                         tier={lvl}
-                        size={36}
+                        size={32}
                         className={isUnlocked ? '' : 'opacity-30 grayscale'}
                       />
                     </div>
@@ -684,22 +705,22 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderDsaTrackSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
             <Code2 size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               3. DSA Practice Tracker &amp; Coding Roadmap
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               79 curated challenges with 1-4-7 Spaced Repetition retention system
             </span>
           </div>
         </div>
 
-        <label className="relative inline-flex items-center cursor-pointer">
+        <label className="relative inline-flex items-center cursor-pointer shrink-0">
           <input
             type="checkbox"
             checked={isDsaEnabled}
@@ -733,16 +754,16 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderNotificationsSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <Bell size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               4. Habit &amp; Streak Notifications
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Stay consistent with proactive reminders and streak defense alerts
             </span>
           </div>
@@ -818,16 +839,16 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderAudioEngineSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-500/10 text-violet-600 dark:text-violet-400">
             <Volume2 size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               5. Interactive Audio Engine &amp; Sound FX
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Synthesized via Web Audio API &bull; Zero network latency &bull; Offline-ready
             </span>
           </div>
@@ -836,7 +857,7 @@ export const ProfileSettingsTab: React.FC = () => {
         <button
           type="button"
           onClick={handleToggleSoundMute}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
             !isSoundMuted
               ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
               : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-300'
@@ -991,23 +1012,23 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderStorageEngineSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
             <HardDrive size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               6. Storage Engine &amp; Cloud Sync
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Choose where your resumes, cover letters, and notes are securely stored
             </span>
           </div>
         </div>
 
         <span
-          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 ${
+          className={`px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 shrink-0 ${
             storageMode === 'g_drive'
               ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25'
               : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
@@ -1139,22 +1160,22 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderClipperSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
             <Zap size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               7. 1-Click Universal Job Clipper
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Import job postings from LinkedIn, Indeed, Naukri, &amp; company portals
             </span>
           </div>
         </div>
 
-        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25">
+        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25 shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
           Clipper Ready
         </span>
@@ -1187,16 +1208,16 @@ export const ProfileSettingsTab: React.FC = () => {
   // -------------------------------------------------------------
   const renderDataBackupSection = () => (
     <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400">
             <Download size={16} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
               8. Data Backup &amp; Account Controls
             </h2>
-            <span className="text-[11px] text-slate-400">
+            <span className="text-[11px] text-slate-400 block truncate">
               Download your application dataset or safely sign out
             </span>
           </div>
