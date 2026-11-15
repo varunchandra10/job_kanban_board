@@ -2,11 +2,28 @@ const config = require('../config');
 const { verifyToken } = require('../services/jwtService');
 
 function authMiddleware(req, res, next) {
-  // Try to parse user token if present on ANY request
+  const fullPath = (req.originalUrl || req.url || req.path || '').split('?')[0];
+  const reqPath = req.path || fullPath;
+
+  const isFileViewPath =
+    fullPath.startsWith('/api/file-content') ||
+    fullPath.startsWith('/api/document-content') ||
+    reqPath.startsWith('/file-content') ||
+    reqPath.startsWith('/document-content');
+
+  // Parse token: standard Authorization header or x-auth-token header are accepted across all routes.
+  // Query-string tokens (?token=...) are strictly restricted to file viewing & streaming endpoints
+  // where native HTML elements (<a>, <iframe>) cannot easily transmit custom HTTP headers.
   const authHeader = req.headers['authorization'];
-  const token = authHeader?.startsWith('Bearer ')
-    ? authHeader.slice(7).trim()
-    : (req.headers?.['x-auth-token'] || req.query?.token);
+  let token = null;
+
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.slice(7).trim();
+  } else if (req.headers?.['x-auth-token']) {
+    token = String(req.headers['x-auth-token']).trim();
+  } else if (isFileViewPath && req.query?.token) {
+    token = String(req.query.token).trim();
+  }
 
   if (token) {
     const decoded = verifyToken(token);
@@ -19,9 +36,6 @@ function authMiddleware(req, res, next) {
   if (req.method === 'OPTIONS') {
     return next();
   }
-
-  const fullPath = (req.originalUrl || req.url || req.path || '').split('?')[0];
-  const reqPath = req.path || fullPath;
 
   // Auth endpoints, health checks, public portfolio, vendor assets do not require prior login
   if (
@@ -41,11 +55,6 @@ function authMiddleware(req, res, next) {
   if (req.user && req.user.id) {
     // If token is scoped strictly for file viewing, reject any non-file-view endpoint
     if (req.user.scope === 'file_view') {
-      const isFileViewPath =
-        fullPath.startsWith('/api/file-content') ||
-        fullPath.startsWith('/api/document-content') ||
-        reqPath.startsWith('/file-content') ||
-        reqPath.startsWith('/document-content');
       if (!isFileViewPath) {
         return res.status(403).json({ error: 'Scoped file viewing token cannot access this endpoint.' });
       }

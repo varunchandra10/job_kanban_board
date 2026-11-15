@@ -134,7 +134,18 @@ async function testScopedFileToken() {
 
   console.log('✅ Frontend URL generator verified: never leaks primary login token, strictly uses scoped file token');
 
+  // --- 5. Test Query String Token Strictly Blocked on Standard REST Endpoints ---
+  console.log('\n--- 5. Testing Query-String Token Rejected on Standard REST Endpoints ---');
+  // Pass primary login token as a query parameter on POST /api/applications (without Authorization header)
+  const queryParamMutateRes = await executeRequest('POST', `/api/applications?token=${encodeURIComponent(primaryLoginToken)}`, {}, {
+    company: 'QueryTokenExploiter',
+    role: 'Hacker'
+  });
+  assert.strictEqual(queryParamMutateRes.status, 401, 'Passing ?token= on standard REST endpoints must NOT authenticate the request');
+  console.log('✅ Query-string token rejected on standard mutating REST endpoints (HTTP 401)');
+
   console.log('\n🎉 ALL TASK 8.4 SCOPED FILE TOKEN ENFORCEMENT TESTS PASSED!\n');
+  process.exit(0);
 }
 
 testScopedFileToken().catch(err => {
