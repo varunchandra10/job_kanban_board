@@ -12,14 +12,9 @@ import {
   LogIn,
   LogOut,
   ChevronDown,
-  RotateCcw,
   Code2,
-  Zap,
-  Volume2,
-  VolumeX,
   Flame,
 } from 'lucide-react';
-import { soundEffects } from '../../utils/soundEffects';
 import { pomodoroEngine, PomodoroState } from '../../utils/pomodoroEngine';
 
 export const AppHeader: React.FC = () => {
@@ -35,12 +30,10 @@ export const AppHeader: React.FC = () => {
     learnings,
     isAuthenticated,
     openAuthModal,
-    openDriveModal,
     logout,
     openQuickList,
     isDsaEnabled,
     dsaProgress,
-    setIsClipperModalOpen,
   } = useApp();
 
   const isBoardActive = location.pathname === '/job-applications' || location.pathname === '/board' || location.pathname === '/applications';
@@ -50,14 +43,7 @@ export const AppHeader: React.FC = () => {
 
   const solvedDsaCount = Object.values(dsaProgress || {}).filter(p => p.status === 'solved').length;
 
-  const [isSoundMuted, setIsSoundMuted] = React.useState<boolean>(() => soundEffects.getIsMuted());
   const [pomodoro, setPomodoro] = React.useState<PomodoroState>(() => pomodoroEngine.getState());
-
-  useEffect(() => {
-    return soundEffects.subscribe(() => {
-      setIsSoundMuted(soundEffects.getIsMuted());
-    });
-  }, []);
 
   useEffect(() => {
     return pomodoroEngine.subscribe(next => {
@@ -289,34 +275,6 @@ export const AppHeader: React.FC = () => {
           isProfileActive ? 'ml-auto' : 'ml-auto lg:ml-0'
         }`}
       >
-        {/* 1-Click Job Clipper Button */}
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() => setIsClipperModalOpen(true)}
-            className="inline-flex h-9 items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 transition-all cursor-pointer text-xs font-bold shadow-2xs"
-            title="1-Click Universal Job Clipper (LinkedIn, Indeed, Naukri, Company sites)"
-            aria-label="Open 1-Click Job Clipper"
-          >
-            <Zap size={14} className="fill-orange-500/25 shrink-0" />
-            <span className="hidden sm:inline">Clipper</span>
-          </button>
-        )}
-
-        {/* Quick Sync Button */}
-        {isAuthenticated && (
-          <button
-            type="button"
-            onClick={() => openDriveModal('sync')}
-            className="inline-flex h-9 items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-all cursor-pointer text-xs font-semibold"
-            title="Mirror & Sync Documents (Local Storage <-> Google Drive)"
-            aria-label="Mirror & Sync Documents"
-          >
-            <RotateCcw size={14} className="text-blue-600 dark:text-indigo-400" />
-            <span className="hidden sm:inline">Sync</span>
-          </button>
-        )}
-
         {/* Active Pomodoro Timer Chip in Navbar */}
         {(pomodoro.isRunning || pomodoro.isPaused) && (
           <button
@@ -360,21 +318,6 @@ export const AppHeader: React.FC = () => {
           {isAuthenticated && (
             <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-[#121214]" />
           )}
-        </button>
-
-        {/* Sound FX Toggle Button */}
-        <button
-          type="button"
-          onClick={() => soundEffects.toggleMute()}
-          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl border transition-all cursor-pointer ${
-            isSoundMuted
-              ? 'border-slate-200 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'
-              : 'border-indigo-200 dark:border-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100/60 dark:hover:bg-indigo-500/20'
-          }`}
-          title={isSoundMuted ? 'Sound FX: Muted (Click to Unmute)' : 'Sound FX: Active (Click to Mute)'}
-          aria-label={isSoundMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
-        >
-          {isSoundMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
 
         {/* Theme Toggle Button */}

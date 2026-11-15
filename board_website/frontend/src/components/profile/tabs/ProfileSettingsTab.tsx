@@ -32,6 +32,7 @@ import {
   VolumeX,
   Volume1,
   Play,
+  RotateCcw,
 } from 'lucide-react';
 import { soundEffects, SoundCue } from '../../../utils/soundEffects';
 import {
@@ -47,6 +48,7 @@ export const ProfileSettingsTab: React.FC = () => {
     storageMode,
     requestStorageModeChange,
     setIsDriveModalOpen,
+    openDriveModal,
     gdriveStatus,
     isDsaEnabled,
     toggleDsaTrack,
@@ -514,20 +516,65 @@ export const ProfileSettingsTab: React.FC = () => {
               <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
               <span>{isSyncing ? 'Syncing...' : 'Manual Sync Now'}</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => openDriveModal('sync')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-blue-500/30 bg-blue-50/50 dark:bg-blue-500/10 hover:bg-blue-100 dark:hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-bold transition-all cursor-pointer shadow-2xs"
+              title="Mirror & Sync Documents (Local Storage <-> Google Drive)"
+            >
+              <RotateCcw size={13} className="text-blue-600 dark:text-indigo-400" />
+              <span>Mirror &amp; Sync Documents</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 2. 1-CLICK UNIVERSAL JOB CLIPPER */}
+      <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+              <Zap size={16} />
+            </div>
+            <div>
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
+                2. 1-Click Universal Job Clipper
+              </h2>
+              <span className="text-[11px] text-slate-400">
+                Import job postings from LinkedIn, Indeed, Naukri, Glassdoor, &amp; company portals
+              </span>
+            </div>
+          </div>
+
+          <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border flex items-center gap-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/25">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+            Clipper Ready
+          </span>
+        </div>
+
+        <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1 max-w-xl">
+            <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
+              <span>Universal Web Bookmarklet &amp; Clipboard Parser</span>
+            </div>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 m-0 leading-relaxed">
+              Drag the 1-click bookmarklet to your browser bookmarks bar or paste raw job URLs/descriptions. Automatically extracts the job title, company, salary, location, requirements, and deadline directly into your Kanban board.
+            </p>
           </div>
 
           <button
             type="button"
             onClick={() => setIsClipperModalOpen(true)}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:brightness-105 active:scale-95 text-white text-xs font-bold shadow-md shadow-orange-500/20 transition-all cursor-pointer shrink-0"
           >
-            <Zap size={13} />
-            <span>Job Clipper Setup</span>
+            <Zap size={14} className="fill-current" />
+            <span>Launch Clipper &amp; Install Bookmarklet</span>
           </button>
         </div>
       </section>
 
-      {/* 2. CAREER MASTERY & TROPHY ROAD */}
+      {/* 3. CAREER MASTERY & TROPHY ROAD */}
       <section
         className={`relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-4 sm:p-6 shadow-xs transition-all duration-300 ${
           isTrophyRoadOpen ? 'space-y-6' : 'space-y-0'
@@ -546,7 +593,7 @@ export const ProfileSettingsTab: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
-                  2. Career Mastery &amp; Trophy Road
+                  3. Career Mastery &amp; Trophy Road
                 </h2>
                 <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
                   7 Ranks
@@ -643,7 +690,7 @@ export const ProfileSettingsTab: React.FC = () => {
         )}
       </section>
 
-      {/* 3. DSA ALGORITHMIC PRACTICE ROADMAP */}
+      {/* 4. DSA ALGORITHMIC PRACTICE ROADMAP */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -652,7 +699,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                3. DSA Practice Tracker &amp; Coding Roadmap
+                4. DSA Practice Tracker &amp; Coding Roadmap
               </h2>
               <span className="text-[11px] text-slate-400">
                 79 curated algorithmic challenges with the 1-4-7 Spaced Repetition retention system
@@ -688,7 +735,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 4. INTERACTIVE AUDIO ENGINE (WEB AUDIO API) */}
+      {/* 5. INTERACTIVE AUDIO ENGINE (WEB AUDIO API) */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -697,7 +744,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                4. Interactive Audio Engine &amp; Sound FX
+                5. Interactive Audio Engine &amp; Sound FX
               </h2>
               <span className="text-[11px] text-slate-400">
                 Synthesized in real-time with Web Audio API &bull; Zero network lag &bull; Offline-ready
@@ -857,7 +904,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 5. NOTIFICATION & STREAK PREFERENCES */}
+      {/* 6. NOTIFICATION & STREAK PREFERENCES */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -866,7 +913,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                5. Habit &amp; Streak Notifications
+                6. Habit &amp; Streak Notifications
               </h2>
               <span className="text-[11px] text-slate-400">
                 Stay consistent with proactive reminders and streak defense alerts
@@ -938,7 +985,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 6. PUBLIC RECRUITER PORTFOLIO SHOWCASE */}
+      {/* 7. PUBLIC RECRUITER PORTFOLIO SHOWCASE */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -947,7 +994,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                6. Public Recruiter Showcase (/u/:slug)
+                7. Public Recruiter Showcase (/u/:slug)
               </h2>
               <span className="text-[11px] text-slate-400">
                 A verified showcase URL with your active discipline streak, DSA progress &amp; resume
@@ -1126,7 +1173,7 @@ export const ProfileSettingsTab: React.FC = () => {
         </div>
       </section>
 
-      {/* 7. DATA BACKUP & ACCOUNT CONTROLS */}
+      {/* 8. DATA BACKUP & ACCOUNT CONTROLS */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-2.5">
@@ -1135,7 +1182,7 @@ export const ProfileSettingsTab: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white m-0">
-                7. Data Backup &amp; Account Controls
+                8. Data Backup &amp; Account Controls
               </h2>
               <span className="text-[11px] text-slate-400">
                 Download your complete application dataset or safely sign out
