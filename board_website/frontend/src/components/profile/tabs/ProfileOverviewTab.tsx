@@ -5,11 +5,8 @@ import { WeeklyGoalChest } from '../WeeklyGoalChest';
 import { DSA_CATEGORIES } from '../../../data/dsaTopics';
 import {
   Flame,
-  Download,
   Mail,
-  HardDrive,
   Briefcase,
-  Layers,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -44,9 +41,6 @@ export const ProfileOverviewTab: React.FC = () => {
     learnings,
     dsaProgress,
     currentUser,
-    storageMode,
-    requestStorageModeChange,
-    showToast,
   } = useApp();
 
   // 1. User Demographics & Rank calculations
@@ -85,33 +79,7 @@ export const ProfileOverviewTab: React.FC = () => {
     ? Math.min(100, Math.max(0, Math.round(((userXP - levelMinXP) / (levelMaxXP - levelMinXP)) * 100)))
     : 100;
 
-  // 2. CSV Export
-  const exportToCSV = () => {
-    const headers = ['Company', 'Role', 'Stage', 'Category', 'Country', 'City', 'Date Applied', 'Deadline', 'Salary'];
-    const rows = applications.map(a => [
-      `"${a.company || ''}"`,
-      `"${a.role || ''}"`,
-      `"${a.stage || ''}"`,
-      `"${a.category || ''}"`,
-      `"${a.country || ''}"`,
-      `"${a.city || ''}"`,
-      `"${a.date_applied || ''}"`,
-      `"${a.deadline || ''}"`,
-      `"${a.salary || ''}"`,
-    ]);
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `job_applications_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Exported applications to CSV');
-  };
-
-  // 3. Side-by-Side Multi-Month Stepper & Heatmap Calculations
+  // 2. Side-by-Side Multi-Month Stepper & Heatmap Calculations
   const [momentumDate, setMomentumDate] = useState(() => new Date());
   const [monthSpan, setMonthSpan] = useState<number>(6); // Default 6 months (~26 weeks) to fully fill the card width
   const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
@@ -455,100 +423,112 @@ export const ProfileOverviewTab: React.FC = () => {
           </div>
         </section>
 
-        {/* Right Card: Storage Engine & System Snapshot */}
+        {/* Right Card: Career Velocity & Pipeline Pulse */}
         <section
           className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4"
-          aria-label="Storage Engine & System Snapshot"
+          aria-label="Career Velocity & Pipeline Pulse"
         >
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <HardDrive size={14} className="text-indigo-500" />
-                <span>Storage &amp; System Engine</span>
+                <TrendingUp size={14} className="text-indigo-500" />
+                <span>Career Velocity &amp; Pipeline Pulse</span>
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                System Healthy
+                Pipeline Active
               </span>
             </div>
 
-            {/* Storage Mode Selector Pills */}
-            <div className="space-y-2">
-              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                Active Storage Provider
-              </div>
-              <div className="grid grid-cols-2 p-1 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 relative">
-                <button
-                  type="button"
-                  onClick={() => storageMode !== 'local_storage' && requestStorageModeChange('local_storage')}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    storageMode === 'local_storage'
-                      ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-300 shadow-sm border border-slate-200/80 dark:border-white/10'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <HardDrive size={13} className={storageMode === 'local_storage' ? 'text-indigo-500' : 'text-slate-400'} />
-                  <span>LOCAL_STORAGE</span>
-                  {storageMode === 'local_storage' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => storageMode !== 'g_drive' && requestStorageModeChange('g_drive')}
-                  className={`flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                    storageMode === 'g_drive'
-                      ? 'bg-white dark:bg-[#27272a] text-emerald-600 dark:text-emerald-300 shadow-sm border border-slate-200/80 dark:border-white/10'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                  }`}
-                >
-                  <Layers size={13} className={storageMode === 'g_drive' ? 'text-emerald-500' : 'text-slate-400'} />
-                  <span>GOOGLE_DRIVE</span>
-                  {storageMode === 'g_drive' && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Metrics Tiles */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]">
-                <div className="text-[10px] font-bold text-slate-400 uppercase">Tracked Roles</div>
-                <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
-                  {totalApps} <span className="text-xs font-normal text-slate-500">Apps</span>
+            {/* 4 Metric Tiles Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Tracked Roles</span>
+                  <Briefcase size={12} className="text-blue-500" />
+                </div>
+                <div className="mt-1">
+                  <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                    {totalApps} <span className="text-xs font-normal text-slate-500">Apps</span>
+                  </div>
+                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {interviewingApps} interviewing · {offerApps} offer(s)
+                  </div>
                 </div>
               </div>
 
-              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]">
-                <div className="text-[10px] font-bold text-slate-400 uppercase">Learning Logs</div>
-                <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
-                  {learnings.length} <span className="text-xs font-normal text-slate-500">Topics</span>
+              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">DSA Solved</span>
+                  <Code2 size={12} className="text-purple-500" />
+                </div>
+                <div className="mt-1">
+                  <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                    {solvedDsaCount} <span className="text-xs font-normal text-slate-500">/ {totalCatalog}</span>
+                  </div>
+                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {masteredDsaCount} permanent mastered
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Study Topics</span>
+                  <BookOpen size={12} className="text-emerald-500" />
+                </div>
+                <div className="mt-1">
+                  <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                    {learnings.length} <span className="text-xs font-normal text-slate-500">Logs</span>
+                  </div>
+                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Feeding weekly study quests
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex flex-col justify-between">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Response Rate</span>
+                  <Sparkles size={12} className="text-amber-500" />
+                </div>
+                <div className="mt-1">
+                  <div className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
+                    {responseRate}%
+                  </div>
+                  <div className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Interviews &amp; offers vs applied
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Export CSV CTA */}
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-            <span className="text-xs text-slate-500 dark:text-slate-400">
-              Download your entire application history:
+          {/* Quick jump to Weekly Goals & Heatmap */}
+          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Flame size={13} className="text-orange-500" />
+              <span>Streak protection active</span>
             </span>
             <button
               type="button"
-              onClick={exportToCSV}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-xs font-bold text-slate-800 dark:text-slate-200 transition-all cursor-pointer active:scale-95 shadow-xs"
+              onClick={() => {
+                const el = document.getElementById('weekly-goal-chest');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1 font-bold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
             >
-              <Download size={13} className="text-emerald-500" />
-              <span>Download CSV</span>
+              <span>Weekly Quests</span>
+              <ArrowRight size={13} />
             </button>
           </div>
         </section>
       </div>
 
       {/* 2. WEEKLY GOAL CHESTS & QUEST MILESTONES */}
-      <WeeklyGoalChest />
+      <div id="weekly-goal-chest">
+        <WeeklyGoalChest />
+      </div>
 
       {/* 3. SIDE-BY-SIDE MULTI-MONTH GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between">
