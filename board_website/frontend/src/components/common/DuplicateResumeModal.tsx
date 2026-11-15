@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { sanitizeUrl } from '../../utils/security';
 import {
   FileText,
   Copy,
@@ -136,7 +137,7 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
                   </p>
                   {existingLink && (
                     <a
-                      href={existingLink}
+                      href={sanitizeUrl(existingLink)}
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={e => e.stopPropagation()}

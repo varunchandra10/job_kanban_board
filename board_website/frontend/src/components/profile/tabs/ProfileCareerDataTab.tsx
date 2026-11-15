@@ -9,6 +9,7 @@ import {
   AchievementItem,
   ResumeVersion,
 } from '../../../types';
+import { sanitizeUrl } from '../../../utils/security';
 import {
   User,
   GraduationCap,
@@ -936,7 +937,7 @@ export const ProfileCareerDataTab: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {quickLinks.map(link => {
               const isEmail = link.url.includes('@') && !link.url.startsWith('http');
-              const href = isEmail ? `mailto:${link.url}` : link.url;
+              const href = isEmail ? `mailto:${link.url.replace(/^mailto:/i, '')}` : link.url;
 
               return (
                 <div
@@ -954,7 +955,7 @@ export const ProfileCareerDataTab: React.FC = () => {
 
                   <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-center">
                     <a
-                      href={href}
+                      href={sanitizeUrl(href)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-600 hover:text-white transition-colors"
@@ -1113,7 +1114,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                       </span>
                       {edu.thesisUrl ? (
                         <a
-                          href={edu.thesisUrl}
+                          href={sanitizeUrl(edu.thesisUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
@@ -1372,7 +1373,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-200/60 dark:border-white/5">
                     {proj.liveUrl && (
                       <a
-                        href={proj.liveUrl}
+                        href={sanitizeUrl(proj.liveUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
@@ -1384,7 +1385,7 @@ export const ProfileCareerDataTab: React.FC = () => {
 
                     {proj.repoUrl && (
                       <a
-                        href={proj.repoUrl}
+                        href={sanitizeUrl(proj.repoUrl)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 bg-slate-200/70 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
@@ -1928,7 +1929,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   {ach.url && (
                     <div className="pt-1">
                       <a
-                        href={ach.url}
+                        href={sanitizeUrl(ach.url)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"

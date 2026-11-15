@@ -25,6 +25,7 @@ import { ApplicationCategory, ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { api } from '../../services/api';
 import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
+import { sanitizeUrl } from '../../utils/security';
 
 export const StandaloneClipperPage: React.FC = () => {
   const {
@@ -599,7 +600,7 @@ export const StandaloneClipperPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <a
-                          href={existingDriveResumeLink}
+                          href={sanitizeUrl(existingDriveResumeLink)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"

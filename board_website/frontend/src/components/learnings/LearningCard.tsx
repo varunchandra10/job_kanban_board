@@ -2,6 +2,7 @@ import React from 'react';
 import { Learning } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { LEARNING_TRACKS } from '../../utils/constants';
+import { sanitizeUrl } from '../../utils/security';
 import {
   Clock,
   Calendar,
@@ -181,7 +182,7 @@ export const LearningCard: React.FC<LearningCardProps> = ({ learning: l }) => {
         {/* Resource External Link */}
         {l.resource_url && (
           <a
-            href={l.resource_url}
+            href={sanitizeUrl(l.resource_url)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

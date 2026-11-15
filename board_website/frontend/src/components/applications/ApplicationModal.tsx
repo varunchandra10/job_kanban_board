@@ -5,6 +5,7 @@ import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { ensureGoogleDriveToken, getStoredGoogleDriveToken } from '../../utils/googleAuth';
 import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
+import { sanitizeUrl } from '../../utils/security';
 import {
   Briefcase,
   Landmark,
@@ -966,7 +967,7 @@ export const ApplicationModal: React.FC = () => {
                           resumePath.startsWith('http') && (
                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20">
                               <a
-                                href={resumePath}
+                                href={sanitizeUrl(resumePath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-blue-600 dark:text-indigo-400 hover:underline truncate flex-1 font-mono"
@@ -975,7 +976,7 @@ export const ApplicationModal: React.FC = () => {
                                 {resumePath}
                               </a>
                               <a
-                                href={resumePath}
+                                href={sanitizeUrl(resumePath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 shrink-0"
@@ -1086,7 +1087,7 @@ export const ApplicationModal: React.FC = () => {
                           coverLetterPath.startsWith('http') && (
                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20">
                               <a
-                                href={coverLetterPath}
+                                href={sanitizeUrl(coverLetterPath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline truncate flex-1 font-mono"
@@ -1095,7 +1096,7 @@ export const ApplicationModal: React.FC = () => {
                                 {coverLetterPath}
                               </a>
                               <a
-                                href={coverLetterPath}
+                                href={sanitizeUrl(coverLetterPath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 shrink-0"
