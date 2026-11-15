@@ -387,7 +387,8 @@ function move(id, stage, before, userId = null) {
 
   const ids = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(stage, id, ...userParam).map(r => r.id);
   let i = before ? ids.indexOf(+before) : -1;
-  if (i < 0) i = 0;
+  // If before is null/undefined or card was not found, append to the bottom of the column (index ids.length)
+  if (i < 0) i = ids.length;
   ids.splice(i, 0, id);
 
   const updateStmt = db.prepare(`update applications set stage=?, position=? where id=?${userClause}`);
@@ -396,7 +397,16 @@ function move(id, stage, before, userId = null) {
     : null;
 
   runInTransaction(() => {
+    // 1. If moving across stages, re-normalize positions in the source stage
+    if (cur !== stage) {
+      const sourceIds = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(cur, id, ...userParam).map(r => r.id);
+      sourceIds.forEach((x, p) => updateStmt.run(cur, p, x, ...userParam));
+    }
+
+    // 2. Normalize positions in target stage
     ids.forEach((x, p) => updateStmt.run(stage, p, x, ...userParam));
+
+    // 3. Log activity
     if (logStmt) {
       logStmt.run(id, `Moved from ${cur} to ${stage}`, userId || 'default_user');
     }
