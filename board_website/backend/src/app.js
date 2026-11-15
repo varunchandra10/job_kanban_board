@@ -7,6 +7,7 @@ const fs = require('fs');
 const config = require('./config');
 const authMiddleware = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
+const requestIdMiddleware = require('./middleware/requestId');
 const { createRateLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
@@ -20,6 +21,8 @@ const dsaRoutes = require('./routes/dsa');
 const clipperRoutes = require('./routes/clipper');
 const portfolioRoutes = require('./routes/portfolio');
 const weeklyChestRoutes = require('./routes/weeklyChest');
+
+app.use(requestIdMiddleware);
 
 // ---------------------------------------------------------------------
 // HTTP Security Headers & CORS Configuration
@@ -244,7 +247,7 @@ app.use('/api', weeklyChestRoutes);
 app.use('/api/backup', backupRoutes);
 
 // Background Schedulers (Evening Streak Safeguard Reminders)
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   try {
     const { startStreakScheduler } = require('./services/streakReminderService');
     startStreakScheduler();
@@ -256,7 +259,12 @@ if (!process.env.VERCEL) {
 // Catch-all for API 404 and SPA fallback
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'Endpoint not found' });
+    return res.status(404).json({
+      ok: 0,
+      error: 'Endpoint not found',
+      code: 'NOT_FOUND',
+      ...(req.id ? { requestId: req.id } : {})
+    });
   }
   const indexPath = path.join(config.frontendDir, 'index.html');
   if (fs.existsSync(indexPath)) {

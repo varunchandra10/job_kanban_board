@@ -198,19 +198,21 @@ function startStreakScheduler() {
 
   console.log('[Streak Scheduler] Initialized. Scanning for local evening windows every 30 minutes.');
 
-  // Run initial check after 10 seconds of startup
-  setTimeout(() => {
+  // Run initial check after 10 seconds of startup (unreferenced to prevent holding process open)
+  const startupTimer = setTimeout(() => {
     checkAndSendStreakReminders().catch(err => {
       console.warn('[Streak Scheduler Startup Check]:', err.message);
     });
   }, 10000);
+  if (typeof startupTimer.unref === 'function') startupTimer.unref();
 
-  // Then check every 30 minutes
+  // Then check every 30 minutes (unreferenced so automated test runners or shutdown can exit freely)
   schedulerInterval = setInterval(() => {
     checkAndSendStreakReminders().catch(err => {
       console.warn('[Streak Scheduler Periodic Check]:', err.message);
     });
   }, 30 * 60 * 1000);
+  if (typeof schedulerInterval.unref === 'function') schedulerInterval.unref();
 }
 
 module.exports = {

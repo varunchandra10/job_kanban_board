@@ -1,4 +1,5 @@
 process.env.TURSO_DATABASE_URL = ''; // Local SQLite mode
+delete process.env.ALLOW_IN_MEMORY_FALLBACK;
 
 const assert = require('assert');
 const fs = require('fs');
@@ -71,6 +72,7 @@ async function runTests() {
   } catch (_) {}
 
   console.log('\n🎉 ALL TASK 3.1 DATABASE UNLINK SAFEGUARD TESTS PASSED!\n');
+  process.exit(0);
 }
 
 runTests().catch(err => {
