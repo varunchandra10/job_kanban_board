@@ -330,24 +330,37 @@ export const ProfileOverviewTab: React.FC = () => {
         
         {/* Left Card: Candidate Identity & Gamification Rank */}
         <section
-          className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4"
+          className={`relative overflow-hidden rounded-2xl border ${currentTierConfig.border} bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4 transition-all duration-300`}
           aria-label="Candidate Quick Card"
         >
-          <div className="flex flex-col gap-4">
+          {/* Ambient Tier Glow Aura */}
+          <div
+            className={`absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl opacity-25 dark:opacity-20 pointer-events-none bg-gradient-to-br ${currentTierConfig.gradient}`}
+          />
+
+          <div className="relative z-10 flex flex-col gap-4">
             <div className="flex items-center gap-4 sm:gap-5">
-              {/* User Avatar */}
-              {oauthAvatarUrl ? (
-                <img
-                  src={oauthAvatarUrl}
-                  alt={displayName}
-                  className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-2xl object-cover shadow-md ring-4 ring-white dark:ring-[#141417] border border-slate-200/60 dark:border-white/10"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="flex h-16 w-16 sm:h-20 sm:w-20 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]">
-                  {avatarInitials}
+              {/* User Avatar with Tier Ring & Floating Badge */}
+              <div className="relative shrink-0">
+                {oauthAvatarUrl ? (
+                  <img
+                    src={oauthAvatarUrl}
+                    alt={displayName}
+                    className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover shadow-md ring-4 ring-white dark:ring-[#141417] border border-slate-200/60 dark:border-white/10"
+                    referrerPolicy="no-referrer"
+                  />
+                ) : (
+                  <div className={`flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-2xl bg-gradient-to-tr ${currentTierConfig.gradient} text-white font-extrabold text-xl sm:text-2xl shadow-md ring-4 ring-white dark:ring-[#141417]`}>
+                    {avatarInitials}
+                  </div>
+                )}
+                <div
+                  className={`absolute -bottom-1 -right-1 p-1 rounded-xl bg-white dark:bg-[#18181b] shadow-md border ${currentTierConfig.border} flex items-center justify-center`}
+                  title={`Level ${userLevel}: ${currentTierConfig.title}`}
+                >
+                  <Tier3DIcon tier={userLevel} size={18} />
                 </div>
-              )}
+              </div>
 
               {/* Name, Verified Discipline, & Email */}
               <div className="min-w-0 flex-1 space-y-1">
@@ -367,9 +380,10 @@ export const ProfileOverviewTab: React.FC = () => {
                 </div>
 
                 <div className="pt-1 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-black bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
-                    <Tier3DIcon tier={userLevel} size={14} className="shrink-0" />
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black ${currentTierConfig.bg} ${currentTierConfig.text} border ${currentTierConfig.border} shadow-2xs`}>
+                    <Sparkles size={12} className="shrink-0 animate-pulse" />
                     <span>Tier {userLevel}: {currentTierConfig.title}</span>
+                    <span className="text-[10px] opacity-75 font-mono">({userXP} XP)</span>
                   </span>
                 </div>
               </div>
@@ -410,18 +424,19 @@ export const ProfileOverviewTab: React.FC = () => {
           </div>
 
           {/* XP Progress Bar to Next Rank */}
-          <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-white/5">
+          <div className="relative z-10 space-y-1.5 pt-2 border-t border-slate-100 dark:border-white/5">
             <div className="flex items-center justify-between text-xs font-semibold">
-              <span className="text-slate-500 dark:text-slate-400">
-                Progress to {nextTierConfig.title}
+              <span className="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <span>Progress to {nextTierConfig.title}</span>
+                <span className="text-[10px] font-mono text-slate-400">({userXP} / {levelMaxXP > 5000 ? '5,000+' : levelMaxXP} XP)</span>
               </span>
               <span className="font-mono font-bold text-slate-900 dark:text-white text-[11px]">
                 {progressPercent}%
               </span>
             </div>
-            <div className="h-2 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-white/5">
+            <div className="h-2.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-200/50 dark:border-white/5">
               <div
-                className={`h-full bg-gradient-to-r ${currentTierConfig.gradient} rounded-full transition-all duration-700`}
+                className={`h-full bg-gradient-to-r ${currentTierConfig.gradient} rounded-full transition-all duration-700 shadow-xs`}
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
@@ -433,6 +448,8 @@ export const ProfileOverviewTab: React.FC = () => {
           className="relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between gap-4"
           aria-label="Career Velocity & Pipeline Pulse"
         >
+          {/* Ambient Pipeline Glow Aura */}
+          <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full blur-3xl opacity-15 dark:opacity-10 pointer-events-none bg-gradient-to-br from-indigo-500 via-blue-500 to-cyan-500" />
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
