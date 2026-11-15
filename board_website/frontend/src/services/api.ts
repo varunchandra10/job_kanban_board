@@ -1,4 +1,5 @@
 import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress, PublicPortfolioData } from '../types';
+import { getUserTimezone } from '../utils/dateUtils';
 
 export interface WeeklyChestData {
   weekId: string;
@@ -952,7 +953,8 @@ export const api = {
   },
 
   async getWeeklyChest(tz?: string): Promise<WeeklyChestData> {
-    const tzParam = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+    const resolvedTz = tz || getUserTimezone();
+    const tzParam = `?tz=${encodeURIComponent(resolvedTz)}`;
     const res = await fetch(`${API_BASE}/weekly-chest/current${tzParam}`, {
       headers: getAuthHeaders(),
     });
@@ -968,10 +970,11 @@ export const api = {
     weekId: string;
     gamification?: any;
   }> {
+    const resolvedTz = tz || getUserTimezone();
     const res = await fetch(`${API_BASE}/weekly-chest/claim`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ tz }),
+      body: JSON.stringify({ tz: resolvedTz }),
     });
     const json = await res.json();
     if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to claim weekly reward chest');

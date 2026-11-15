@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { getLocalIsoDate } from '../../utils/dateUtils';
 import {
   ChevronLeft,
   ChevronRight,
@@ -95,7 +96,7 @@ export const MonthlyContributionHeatmap: React.FC = () => {
     const lastDayOfMonth = new Date(year, month + 1, 0);
     const totalDays = lastDayOfMonth.getDate();
 
-    const todayStr = new Date().toISOString().slice(0, 10);
+    const todayStr = getLocalIsoDate();
 
     let totalMinutes = 0;
     let activeDays = 0;
