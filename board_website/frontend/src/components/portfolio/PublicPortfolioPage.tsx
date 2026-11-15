@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api, API_BASE } from '../../services/api';
 import { PublicPortfolioResponse } from '../../types';
@@ -165,10 +165,70 @@ export const PublicPortfolioPage: React.FC = () => {
   const totalCatalogProblems = 79;
   const overallMasteryPct = Math.round((dsa.solvedProblemIds.length / totalCatalogProblems) * 100);
 
-  // Parse skill tags
-  const skillTags = user.skills
-    ? user.skills.split(/[,\n•|]+/).map(s => s.trim()).filter(Boolean)
-    : [];
+  // Parse skill tags & categorized matrix
+  const skillsMatrixData = useMemo(() => {
+    try {
+      if (user.skills_matrix) {
+        const parsed = JSON.parse(user.skills_matrix);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+    return { languages: [], frameworks: [], databases: [], tools: [] };
+  }, [user.skills_matrix]);
+
+  const skillTags = useMemo(() => {
+    const list: string[] = [];
+    if (skillsMatrixData.languages?.length) list.push(...skillsMatrixData.languages);
+    if (skillsMatrixData.frameworks?.length) list.push(...skillsMatrixData.frameworks);
+    if (skillsMatrixData.databases?.length) list.push(...skillsMatrixData.databases);
+    if (skillsMatrixData.tools?.length) list.push(...skillsMatrixData.tools);
+    if (list.length > 0) return Array.from(new Set(list));
+
+    return user.skills
+      ? user.skills.split(/[,\n•|]+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }, [skillsMatrixData, user.skills]);
+
+  // Parse structured Education History
+  const educationItems = useMemo(() => {
+    try {
+      if (user.education_history) {
+        const parsed = JSON.parse(user.education_history);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    if (user.school || user.degree) {
+      return [{
+        id: '1',
+        school: user.school || '',
+        degree: user.degree || '',
+        endDate: user.grad_date || '',
+      }];
+    }
+    return [];
+  }, [user.education_history, user.school, user.degree, user.grad_date]);
+
+  // Parse structured Technical Projects
+  const projectsItems = useMemo(() => {
+    try {
+      if (user.projects_list) {
+        const parsed = JSON.parse(user.projects_list);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [user.projects_list]);
+
+  // Parse structured Achievements & Honors
+  const achievementsItems = useMemo(() => {
+    try {
+      if (user.achievements) {
+        const parsed = JSON.parse(user.achievements);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [user.achievements]);
 
   const resumeDownloadUrl = resume?.downloadUrl
     ? `${API_BASE.replace('/api', '')}${resume.downloadUrl}`
@@ -618,6 +678,203 @@ export const PublicPortfolioPage: React.FC = () => {
               </section>
             )}
           </div>
+        )}
+
+        {/* 4b. Featured Technical Projects (with Live Demo & Source Code) */}
+        {projectsItems.length > 0 && (
+          <section className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Briefcase size={20} className="text-purple-400" />
+                <h3 className="text-base sm:text-lg font-bold text-white m-0">
+                  Featured Technical Projects
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                {projectsItems.length} {projectsItems.length === 1 ? 'Project' : 'Projects'}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {projectsItems.map(proj => (
+                <div
+                  key={proj.id}
+                  className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 sm:p-5 flex flex-col justify-between gap-3 hover:border-white/20 transition-all group"
+                >
+                  <div className="space-y-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-white m-0">
+                        {proj.title}
+                      </h4>
+                      {proj.role && (
+                        <span className="text-[11px] font-semibold text-purple-400">
+                          {proj.role}
+                        </span>
+                      )}
+                    </div>
+
+                    {proj.description && (
+                      <p className="text-xs text-slate-300 leading-relaxed m-0 line-clamp-3">
+                        {proj.description}
+                      </p>
+                    )}
+
+                    {proj.techStack && proj.techStack.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {proj.techStack.map(tag => (
+                          <span
+                            key={tag}
+                            className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white/10 text-slate-300"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {(proj.liveUrl || proj.repoUrl) && (
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
+                      {proj.liveUrl && (
+                        <a
+                          href={proj.liveUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+                        >
+                          <Globe size={13} />
+                          <span>Live Demo</span>
+                        </a>
+                      )}
+                      {proj.repoUrl && (
+                        <a
+                          href={proj.repoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/20 transition-colors"
+                        >
+                          <Code2 size={13} />
+                          <span>Source Code</span>
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 4c. Verified Achievements & Certifications */}
+        {achievementsItems.length > 0 && (
+          <section className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+              <div className="flex items-center gap-2">
+                <Award size={20} className="text-amber-400" />
+                <h3 className="text-base sm:text-lg font-bold text-white m-0">
+                  Achievements, Certifications &amp; Honors
+                </h3>
+              </div>
+              <span className="text-xs text-slate-400 font-mono">
+                {achievementsItems.length} Verified Credentials
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {achievementsItems.map(ach => (
+                <div
+                  key={ach.id}
+                  className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-4 space-y-2 hover:border-amber-500/30 transition-all group"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs sm:text-sm font-bold text-white m-0">
+                      {ach.title}
+                    </h4>
+                    {ach.year && (
+                      <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        {ach.year}
+                      </span>
+                    )}
+                  </div>
+
+                  {ach.issuer && (
+                    <div className="text-xs text-slate-400">
+                      {ach.issuer}
+                    </div>
+                  )}
+
+                  {ach.description && (
+                    <p className="text-xs text-slate-300 m-0">
+                      {ach.description}
+                    </p>
+                  )}
+
+                  {ach.url && (
+                    <div className="pt-1">
+                      <a
+                        href={ach.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:underline"
+                      >
+                        <ExternalLink size={12} />
+                        <span>Verify Credential</span>
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 4d. Education Timeline */}
+        {educationItems.length > 0 && (
+          <section className="rounded-3xl border border-white/10 bg-white/[0.03] backdrop-blur-xl p-6 sm:p-8 shadow-2xl space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-white/[0.08]">
+              <GraduationCap size={20} className="text-emerald-400" />
+              <h3 className="text-base sm:text-lg font-bold text-white m-0">
+                Education &amp; Academic Background
+              </h3>
+            </div>
+
+            <div className="space-y-3">
+              {educationItems.map(edu => (
+                <div
+                  key={edu.id}
+                  className="p-4 rounded-2xl border border-white/[0.08] bg-white/[0.02] flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                >
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-white m-0">
+                      {edu.degree || 'Degree Program'}
+                      {edu.school && <span className="text-slate-400 font-normal"> &bull; {edu.school}</span>}
+                    </h4>
+                    <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
+                      {(edu.startDate || edu.endDate) && (
+                        <span>{edu.startDate ? `${edu.startDate} – ` : ''}{edu.endDate}</span>
+                      )}
+                      {edu.gpa && <span className="text-indigo-400 font-bold">GPA: {edu.gpa}</span>}
+                      {edu.honors && <span className="text-amber-400 font-semibold">{edu.honors}</span>}
+                    </div>
+
+                    {(edu.thesisTitle || edu.thesisUrl) && (
+                      <div className="pt-1 text-xs">
+                        <span className="text-slate-400 font-semibold">Thesis / Research: </span>
+                        {edu.thesisUrl ? (
+                          <a href={edu.thesisUrl} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline inline-flex items-center gap-1">
+                            <span>{edu.thesisTitle || edu.thesisUrl}</span>
+                            <ExternalLink size={11} />
+                          </a>
+                        ) : (
+                          <span className="text-slate-200">{edu.thesisTitle}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* 5. Recent Technical Focus & Learning Logs */}

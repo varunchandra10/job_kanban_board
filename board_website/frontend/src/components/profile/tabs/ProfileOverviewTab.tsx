@@ -30,6 +30,8 @@ interface DayCellData {
   dayNum: number | null;
   dateStr: string | null;
   count: number;
+  month: number;
+  year: number;
   isToday: boolean;
 }
 
@@ -45,8 +47,6 @@ export const ProfileOverviewTab: React.FC = () => {
     requestStorageModeChange,
     showToast,
   } = useApp();
-
-  const [isTrophyRoadOpen, setIsTrophyRoadOpen] = useState(false);
 
   // 1. User Demographics & Rank calculations
   const userEmail = currentUser?.email || profile?.email || '';
@@ -110,8 +110,9 @@ export const ProfileOverviewTab: React.FC = () => {
     showToast('Exported applications to CSV');
   };
 
-  // 3. Side-by-Side Month Stepper & Activity Matrix Calculations
+  // 3. Side-by-Side Multi-Month Stepper & Heatmap Calculations
   const [momentumDate, setMomentumDate] = useState(() => new Date());
+  const [monthSpan, setMonthSpan] = useState<number>(6); // Default 6 months (~26 weeks) to fully fill the card width
   const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
     dateStr: string;
     dayNum: number;
@@ -144,9 +145,6 @@ export const ProfileOverviewTab: React.FC = () => {
     setMomentumDate(new Date());
   };
 
-  const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
-  const toYMD = (d: number) =>
-    `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const todayYMD = new Date().toISOString().slice(0, 10);
 
   // Group applications by date string YYYY-MM-DD
@@ -175,59 +173,130 @@ export const ProfileOverviewTab: React.FC = () => {
     return map;
   }, [learnings, dsaProgress]);
 
-  // Calculate month activities & active days
-  let monthAppsTotal = 0;
-  let monthLearningsTotal = 0;
-  let monthActiveDays = 0;
+  // Build multi-month grid structure (span of N months ending at selectedMonth)
+  const multiMonthGridData = useMemo(() => {
+    const startDate = new Date(selectedYear, selectedMonth - (monthSpan - 1), 1);
+    const endDate = new Date(selectedYear, selectedMonth + 1, 0);
 
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = toYMD(d);
-    const appCnt = appsByDate[dateStr] || 0;
-    const learnCnt = learningsByDate[dateStr] || 0;
-    monthAppsTotal += appCnt;
-    monthLearningsTotal += learnCnt;
-    if (appCnt > 0 || learnCnt > 0) monthActiveDays++;
-  }
+    const startMonthName = shortMonths[startDate.getMonth()];
+    const startYear = startDate.getFullYear();
+    const endMonthName = shortMonths[endDate.getMonth()];
+    const endYear = endDate.getFullYear();
 
-  const buildMonthGrid = (countMap: Record<string, number>) => {
-    const weeks: DayCellData[][] = [];
-    let currentWeek: DayCellData[] = [];
+    const rangeLabel = startYear === endYear
+      ? `${startMonthName} – ${endMonthName} ${endYear}`
+      : `${startMonthName} ${startYear} – ${endMonthName} ${endYear}`;
 
-    // First day of month (0=Sun, 1=Mon, ..., 6=Sat) -> Convert to Monday=0 .. Sunday=6
-    const firstDayIndex = (new Date(selectedYear, selectedMonth, 1).getDay() + 6) % 7;
+    const buildGrid = (countMap: Record<string, number>) => {
+      const weeks: DayCellData[][] = [];
+      let currentWeek: DayCellData[] = [];
 
-    for (let p = 0; p < firstDayIndex; p++) {
-      currentWeek.push({ dayNum: null, dateStr: null, count: 0, isToday: false });
-    }
+      // Padding for the first week (Monday = 0 ... Sunday = 6)
+      const firstDayIndex = (startDate.getDay() + 6) % 7;
+      for (let p = 0; p < firstDayIndex; p++) {
+        currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false });
+      }
 
-    for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = toYMD(day);
-      const count = countMap[dateStr] || 0;
-      currentWeek.push({
-        dayNum: day,
-        dateStr,
-        count,
-        isToday: dateStr === todayYMD,
-      });
+      // Iterate day by day from startDate to endDate
+      const iter = new Date(startDate);
+      while (iter <= endDate) {
+        const d = iter.getDate();
+        const m = iter.getMonth();
+        const y = iter.getFullYear();
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const count = countMap[dateStr] || 0;
 
-      if (currentWeek.length === 7) {
+        currentWeek.push({
+          dayNum: d,
+          dateStr,
+          count,
+          month: m,
+          year: y,
+          isToday: dateStr === todayYMD,
+        });
+
+        if (currentWeek.length === 7) {
+          weeks.push(currentWeek);
+          currentWeek = [];
+        }
+
+        iter.setDate(iter.getDate() + 1);
+      }
+
+      // Pad remaining days of last week
+      if (currentWeek.length > 0) {
+        while (currentWeek.length < 7) {
+          currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false });
+        }
         weeks.push(currentWeek);
-        currentWeek = [];
       }
+
+      return weeks;
+    };
+
+    const appWeeks = buildGrid(appsByDate);
+    const learnWeeks = buildGrid(learningsByDate);
+
+    // Calculate month headers along the week columns cleanly from appWeeks
+    const monthHeaders: Array<{ weekIdx: number; label: string }> = [];
+    let lastHeaderWeek = -999;
+    let lastMonth = -1;
+    appWeeks.forEach((week, wIdx) => {
+      const validDay = week.find(d => d.month !== -1 && d.dayNum !== null);
+      if (validDay && validDay.month !== lastMonth) {
+        if (wIdx - lastHeaderWeek >= 2) {
+          monthHeaders.push({ weekIdx: wIdx, label: shortMonths[validDay.month] });
+          lastHeaderWeek = wIdx;
+        }
+        lastMonth = validDay.month;
+      }
+    });
+
+    // Calculate totals across the displayed multi-month span
+    let periodAppsTotal = 0;
+    let periodLearningsTotal = 0;
+    let periodActiveDays = 0;
+    let totalDaysInPeriod = 0;
+
+    const countIter = new Date(startDate);
+    while (countIter <= endDate) {
+      totalDaysInPeriod++;
+      const y = countIter.getFullYear();
+      const m = countIter.getMonth();
+      const d = countIter.getDate();
+      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const appCnt = appsByDate[dateStr] || 0;
+      const learnCnt = learningsByDate[dateStr] || 0;
+
+      periodAppsTotal += appCnt;
+      periodLearningsTotal += learnCnt;
+      if (appCnt > 0 || learnCnt > 0) periodActiveDays++;
+
+      countIter.setDate(countIter.getDate() + 1);
     }
 
-    if (currentWeek.length > 0) {
-      while (currentWeek.length < 7) {
-        currentWeek.push({ dayNum: null, dateStr: null, count: 0, isToday: false });
-      }
-      weeks.push(currentWeek);
-    }
+    return {
+      appWeeks,
+      learnWeeks,
+      monthHeaders,
+      rangeLabel,
+      periodAppsTotal,
+      periodLearningsTotal,
+      periodActiveDays,
+      totalDaysInPeriod,
+    };
+  }, [appsByDate, learningsByDate, selectedYear, selectedMonth, monthSpan, todayYMD]);
 
-    return weeks;
-  };
-
-  const appWeeks = useMemo(() => buildMonthGrid(appsByDate), [appsByDate, selectedYear, selectedMonth]);
-  const learnWeeks = useMemo(() => buildMonthGrid(learningsByDate), [learningsByDate, selectedYear, selectedMonth]);
+  const {
+    appWeeks,
+    learnWeeks,
+    monthHeaders,
+    rangeLabel,
+    periodAppsTotal,
+    periodLearningsTotal,
+    periodActiveDays,
+    totalDaysInPeriod,
+  } = multiMonthGridData;
 
   const getAppCellClass = (cell: DayCellData) => {
     if (!cell.dayNum) return 'opacity-0 pointer-events-none';
@@ -477,76 +546,102 @@ export const ProfileOverviewTab: React.FC = () => {
         </section>
       </div>
 
-      {/* 2. SIDE-BY-SIDE GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
+      {/* 2. SIDE-BY-SIDE MULTI-MONTH GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between">
-        {/* Header & Month Stepper Controls */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        {/* Header, Range Label, Month Span Switcher, and Month Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
               <Briefcase size={16} className="text-blue-600" />
               <span>Activity &amp; Momentum Heatmaps</span>
             </div>
             <div className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-              <span>{monthAppsTotal + monthLearningsTotal} activities in </span>
+              <span>{periodAppsTotal + periodLearningsTotal} activities in </span>
               <strong className="text-slate-900 dark:text-white font-bold">
-                {monthNames[selectedMonth]} {selectedYear}
+                {rangeLabel}
               </strong>
             </div>
           </div>
 
-          {/* Month & Year Navigation Controls */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10">
-            <button
-              type="button"
-              onClick={() => stepMonth(-1)}
-              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-              title="Previous Month"
-            >
-              <ChevronLeft size={14} />
-            </button>
-
-            <select
-              value={selectedMonth}
-              onChange={e => setMonthByIndex(Number(e.target.value))}
-              className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              {shortMonths.map((m, idx) => (
-                <option key={m} value={idx} className="bg-white dark:bg-[#18181b]">{m}</option>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Multi-Month Span Toggle (3M / 6M / 9M / 1Y) */}
+            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-bold">
+              {[
+                { label: '3M', val: 3 },
+                { label: '6M', val: 6 },
+                { label: '9M', val: 9 },
+                { label: '1Y', val: 12 },
+              ].map(item => (
+                <button
+                  key={item.val}
+                  type="button"
+                  onClick={() => setMonthSpan(item.val)}
+                  className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
+                    monthSpan === item.val
+                      ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-400 shadow-2xs font-extrabold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                  title={`Display past ${item.label}`}
+                >
+                  {item.label}
+                </button>
               ))}
-            </select>
+            </div>
 
-            <select
-              value={selectedYear}
-              onChange={e => setYearByValue(Number(e.target.value))}
-              className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-            >
-              {years.map(y => (
-                <option key={y} value={y} className="bg-white dark:bg-[#18181b]">{y}</option>
-              ))}
-            </select>
+            {/* Month & Year Navigation Controls */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10">
+              <button
+                type="button"
+                onClick={() => stepMonth(-1)}
+                className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                title="Previous Month"
+              >
+                <ChevronLeft size={14} />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => stepMonth(1)}
-              className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-              title="Next Month"
-            >
-              <ChevronRight size={14} />
-            </button>
+              <select
+                value={selectedMonth}
+                onChange={e => setMonthByIndex(Number(e.target.value))}
+                className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                {shortMonths.map((m, idx) => (
+                  <option key={m} value={idx} className="bg-white dark:bg-[#18181b]">{m}</option>
+                ))}
+              </select>
 
-            <button
-              type="button"
-              onClick={resetToCurrentMonth}
-              className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-white dark:hover:bg-white/10 transition-colors cursor-pointer"
-              title="Jump to Current Month"
-            >
-              Today
-            </button>
+              <select
+                value={selectedYear}
+                onChange={e => setYearByValue(Number(e.target.value))}
+                className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
+              >
+                {years.map(y => (
+                  <option key={y} value={y} className="bg-white dark:bg-[#18181b]">{y}</option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={() => stepMonth(1)}
+                className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
+                title="Next Month"
+              >
+                <ChevronRight size={14} />
+              </button>
+
+              <button
+                type="button"
+                onClick={resetToCurrentMonth}
+                className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title="Jump to Current Month"
+              >
+                Today
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Live Hover Info Banner - Displays exact date and count */}
-        <div className="flex items-center justify-between px-3.5 py-2 mb-2 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs min-h-[42px] transition-all">
+        <div className="flex items-center justify-between px-3.5 py-2 mb-3 rounded-xl bg-slate-100/90 dark:bg-white/[0.04] border border-slate-200/90 dark:border-white/10 text-xs min-h-[42px] transition-all">
           {hoveredMatrixDay ? (
             <div className="flex items-center gap-2 flex-wrap">
               <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -554,9 +649,10 @@ export const ProfileOverviewTab: React.FC = () => {
                 <span>
                   {(() => {
                     const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    const d = new Date(selectedYear, selectedMonth, hoveredMatrixDay.dayNum);
+                    const d = new Date(hoveredMatrixDay.dateStr);
                     const dayOfWeek = daysNames[d.getDay()];
-                    return `${dayOfWeek}, ${monthNames[selectedMonth]} ${hoveredMatrixDay.dayNum}, ${selectedYear}`;
+                    const mName = shortMonths[d.getMonth()];
+                    return `${dayOfWeek}, ${mName} ${hoveredMatrixDay.dayNum}, ${d.getFullYear()}`;
                   })()}
                 </span>
               </span>
@@ -587,7 +683,7 @@ export const ProfileOverviewTab: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Sparkles size={13} className="text-indigo-500" />
                 <span className="font-semibold">
-                  <strong className="text-slate-900 dark:text-white font-black">{monthActiveDays} active days</strong> ({Math.round((monthActiveDays / daysInMonth) * 100)}% consistency) in {monthNames[selectedMonth]}
+                  <strong className="text-slate-900 dark:text-white font-black">{periodActiveDays} active days</strong> ({Math.round((periodActiveDays / totalDaysInPeriod) * 100)}% consistency) across {rangeLabel}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
@@ -600,10 +696,10 @@ export const ProfileOverviewTab: React.FC = () => {
         {/* Dual Side-by-Side Activity Blocks: Applications (Left) & Learnings (Right) */}
         <div
           onMouseLeave={() => setHoveredMatrixDay(null)}
-          className="flex flex-col md:flex-row gap-4 sm:gap-6 items-stretch justify-around my-2.5 px-4 py-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] overflow-x-auto"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch my-2.5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]"
         >
           {/* 1. Job Applications Block (Blue Theme) */}
-          <div className="flex flex-col gap-2.5 flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10">
             <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
               <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
                 <Briefcase size={13} />
@@ -611,110 +707,72 @@ export const ProfileOverviewTab: React.FC = () => {
               </span>
               <span
                 className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                  monthAppsTotal > 0
+                  periodAppsTotal > 0
                     ? 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20'
                     : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
                 }`}
               >
-                {monthAppsTotal} applications
+                {periodAppsTotal} applications
               </span>
             </div>
 
-            {/* Grid with Day-of-week labels (Mon, Wed, Fri) and week columns */}
-            <div className="flex gap-2 items-start">
-              <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
-                <div className="h-[18px] flex items-center leading-none">Mon</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px] flex items-center leading-none">Wed</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px] flex items-center leading-none">Fri</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px]" />
+            {/* Multi-month Grid with month labels on top and day labels on left */}
+            <div className="min-w-fit">
+              {/* Month labels bar */}
+              <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
+                {monthHeaders.map((hdr, i) => (
+                  <span
+                    key={i}
+                    style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
+                    className="absolute"
+                  >
+                    {hdr.label}
+                  </span>
+                ))}
               </div>
 
-              <div className="flex gap-1.5 flex-1">
-                {appWeeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-1.5">
-                    {week.map((cell, cIdx) => (
-                      <div
-                        key={cIdx}
-                        onMouseEnter={() => {
-                          if (cell.dayNum && cell.dateStr) {
-                            setHoveredMatrixDay({
-                              dateStr: cell.dateStr,
-                              dayNum: cell.dayNum,
-                              count: cell.count,
-                              type: 'applications',
-                              isToday: cell.isToday,
-                            });
-                          }
-                        }}
-                        className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
-                          cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                        } hover:ring-2 hover:ring-blue-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
-                      >
-                        {/* Hover Floating Popover */}
-                        {cell.dayNum && (
-                          <div
-                            className={`hidden group-hover/cell:flex pointer-events-none absolute ${
-                              cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
-                            } ${
-                              wIdx <= 1
-                                ? 'left-0'
-                                : wIdx >= appWeeks.length - 1
-                                ? 'right-0'
-                                : 'left-1/2 -translate-x-1/2'
-                            } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
-                          >
-                            {cIdx <= 2 && (
-                              <div
-                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
-                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
-                                }`}
-                              />
-                            )}
+              <div className="flex gap-1 items-start">
+                <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
+                  <div className="h-[14px] flex items-center leading-none">Mon</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px] flex items-center leading-none">Wed</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px] flex items-center leading-none">Fri</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px]" />
+                </div>
 
-                            <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
-                              <div className="flex items-center justify-between gap-3 text-[10.5px]">
-                                <span className="font-bold text-slate-300">
-                                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
-                                </span>
-                                {cell.isToday && (
-                                  <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
-                                    Today
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
-                                <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.9)]' : 'bg-slate-500'} shrink-0`} />
-                                <span className="text-xs font-black text-white">
-                                  {cell.count > 0 ? `${cell.count} Application${cell.count === 1 ? '' : 's'}` : 'No applications'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {cIdx > 2 && (
-                              <div
-                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
-                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= appWeeks.length - 1 ? 'self-end mr-2.5' : ''
-                                }`}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                <div className="flex gap-1 flex-1">
+                  {appWeeks.map((week, wIdx) => (
+                    <div key={wIdx} className="flex flex-col gap-1">
+                      {week.map((cell, cIdx) => (
+                        <div
+                          key={cIdx}
+                          onMouseEnter={() => {
+                            if (cell.dayNum && cell.dateStr) {
+                              setHoveredMatrixDay({
+                                dateStr: cell.dateStr,
+                                dayNum: cell.dayNum,
+                                count: cell.count,
+                                type: 'applications',
+                                isToday: cell.isToday,
+                              });
+                            }
+                          }}
+                          className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
+                            cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                          } hover:ring-2 hover:ring-blue-500/80 hover:scale-125 hover:z-20`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Vertical Divider */}
-          <div className="w-px bg-slate-200 dark:border-white/10 hidden md:block shrink-0" />
-
           {/* 2. Daily Learnings Block (Emerald Theme) */}
-          <div className="flex flex-col gap-2.5 flex-1 min-w-[200px]">
+          <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10 lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-5">
             <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
               <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <BookOpen size={13} />
@@ -722,112 +780,77 @@ export const ProfileOverviewTab: React.FC = () => {
               </span>
               <span
                 className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                  monthLearningsTotal > 0
+                  periodLearningsTotal > 0
                     ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
                     : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
                 }`}
               >
-                {monthLearningsTotal} learnings
+                {periodLearningsTotal} learnings
               </span>
             </div>
 
-            {/* Grid with Day-of-week labels and week columns */}
-            <div className="flex gap-2 items-start">
-              <div className="grid grid-rows-7 gap-1.5 text-[10px] font-bold text-slate-400 dark:text-slate-500 select-none">
-                <div className="h-[18px] flex items-center leading-none">Mon</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px] flex items-center leading-none">Wed</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px] flex items-center leading-none">Fri</div>
-                <div className="h-[18px]" />
-                <div className="h-[18px]" />
+            {/* Multi-month Grid with month labels on top and day labels on left */}
+            <div className="min-w-fit">
+              {/* Month labels bar */}
+              <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
+                {monthHeaders.map((hdr, i) => (
+                  <span
+                    key={i}
+                    style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
+                    className="absolute"
+                  >
+                    {hdr.label}
+                  </span>
+                ))}
               </div>
 
-              <div className="flex gap-1.5 flex-1">
-                {learnWeeks.map((week, wIdx) => (
-                  <div key={wIdx} className="flex flex-col gap-1.5">
-                    {week.map((cell, cIdx) => (
-                      <div
-                        key={cIdx}
-                        onMouseEnter={() => {
-                          if (cell.dayNum && cell.dateStr) {
-                            setHoveredMatrixDay({
-                              dateStr: cell.dateStr,
-                              dayNum: cell.dayNum,
-                              count: cell.count,
-                              type: 'learnings',
-                              isToday: cell.isToday,
-                            });
-                          }
-                        }}
-                        className={`relative group/cell w-[18px] h-[18px] rounded-[5px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
-                          cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                        } hover:ring-2 hover:ring-emerald-500/80 hover:scale-110 hover:z-30 hover:shadow-md`}
-                      >
-                        {/* Hover Floating Popover */}
-                        {cell.dayNum && (
-                          <div
-                            className={`hidden group-hover/cell:flex pointer-events-none absolute ${
-                              cIdx <= 2 ? 'top-full mt-2.5' : 'bottom-full mb-2.5'
-                            } ${
-                              wIdx <= 1
-                                ? 'left-0'
-                                : wIdx >= learnWeeks.length - 1
-                                ? 'right-0'
-                                : 'left-1/2 -translate-x-1/2'
-                            } z-50 flex-col items-center whitespace-nowrap animate-in fade-in zoom-in-95 duration-100`}
-                          >
-                            {cIdx <= 2 && (
-                              <div
-                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-t border-l border-slate-700/80 dark:border-white/15 -mb-1 z-10 ${
-                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
-                                }`}
-                              />
-                            )}
+              <div className="flex gap-1 items-start">
+                <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
+                  <div className="h-[14px] flex items-center leading-none">Mon</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px] flex items-center leading-none">Wed</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px] flex items-center leading-none">Fri</div>
+                  <div className="h-[14px]" />
+                  <div className="h-[14px]" />
+                </div>
 
-                            <div className="bg-slate-900/95 dark:bg-[#0b0f19]/95 text-white py-1.5 px-3 rounded-xl shadow-2xl border border-slate-700/80 dark:border-white/15 backdrop-blur-md flex flex-col gap-1 min-w-[130px]">
-                              <div className="flex items-center justify-between gap-3 text-[10.5px]">
-                                <span className="font-bold text-slate-300">
-                                  {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(selectedYear, selectedMonth, cell.dayNum).getDay()]}, {shortMonths[selectedMonth]} {cell.dayNum}
-                                </span>
-                                {cell.isToday && (
-                                  <span className="text-[9px] font-black uppercase text-amber-400 bg-amber-500/20 px-1 py-0.2 rounded">
-                                    Today
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 pt-0.5 border-t border-white/10">
-                                <span className={`w-2 h-2 rounded-full ${cell.count > 0 ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]' : 'bg-slate-500'} shrink-0`} />
-                                <span className="text-xs font-black text-white">
-                                  {cell.count > 0 ? `${cell.count} Note${cell.count === 1 ? '' : 's'}` : 'No learning notes'}
-                                </span>
-                              </div>
-                            </div>
-
-                            {cIdx > 2 && (
-                              <div
-                                className={`w-2 h-2 rotate-45 bg-slate-900/95 dark:bg-[#0b0f19]/95 border-b border-r border-slate-700/80 dark:border-white/15 -mt-1 z-10 ${
-                                  wIdx <= 1 ? 'self-start ml-2.5' : wIdx >= learnWeeks.length - 1 ? 'self-end mr-2.5' : ''
-                                }`}
-                              />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ))}
+                <div className="flex gap-1 flex-1">
+                  {learnWeeks.map((week, wIdx) => (
+                    <div key={wIdx} className="flex flex-col gap-1">
+                      {week.map((cell, cIdx) => (
+                        <div
+                          key={cIdx}
+                          onMouseEnter={() => {
+                            if (cell.dayNum && cell.dateStr) {
+                              setHoveredMatrixDay({
+                                dateStr: cell.dateStr,
+                                dayNum: cell.dayNum,
+                                count: cell.count,
+                                type: 'learnings',
+                                isToday: cell.isToday,
+                              });
+                            }
+                          }}
+                          className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
+                            cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                          } hover:ring-2 hover:ring-emerald-500/80 hover:scale-125 hover:z-20`}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Legend & Monthly Totals */}
+        {/* Footer Legend & Totals */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
             <Flame size={13} className="text-orange-500" />
-            <span>Active Days in {shortMonths[selectedMonth]}:</span>
-            <strong className="text-indigo-600 dark:text-indigo-400 font-extrabold">{monthActiveDays} Days</strong>
+            <span>Active Days ({rangeLabel}):</span>
+            <strong className="text-indigo-600 dark:text-indigo-400 font-extrabold">{periodActiveDays} Days</strong>
           </div>
 
           <div className="flex items-center gap-4">
@@ -870,7 +893,7 @@ export const ProfileOverviewTab: React.FC = () => {
             </div>
 
             {/* 4 Metric Boxes */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
               <div className="rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] p-2.5 text-center">
                 <div className="text-base sm:text-lg font-extrabold text-blue-600 dark:text-blue-400 tabular-nums">
                   {appliedApps}
@@ -944,7 +967,7 @@ export const ProfileOverviewTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500 dark:text-slate-400">
             <span>Active Pipeline: <strong>{interviewingApps + appliedApps} Roles</strong></span>
             <span>Outcome Rate: <strong>{offerApps} won / {rejectedApps} archived</strong></span>
           </div>
@@ -1002,128 +1025,12 @@ export const ProfileOverviewTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+          <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-slate-500 dark:text-slate-400">
             <span>Retention Rule: <strong>1-4-7 Day System</strong></span>
             <span>Permanent Mastered: <strong>{masteredDsaCount} Problems</strong></span>
           </div>
         </section>
       </div>
-
-      {/* 4. CARD C: CAREER MASTERY & TROPHY ROAD (Collapsible) */}
-      <section
-        className={`relative overflow-hidden rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-4 sm:p-6 shadow-xs transition-all duration-300 ${
-          isTrophyRoadOpen ? 'space-y-6' : 'space-y-0'
-        }`}
-        aria-label="Career Mastery & Trophy Road"
-      >
-        <div
-          className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-colors ${
-            isTrophyRoadOpen ? 'pb-4 border-b border-slate-100 dark:border-white/5' : ''
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-yellow-500/20 border border-amber-500/30 text-amber-500 shadow-inner">
-              <Trophy size={19} className="animate-pulse" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white m-0">
-                  Career Mastery &amp; Trophy Road
-                </h2>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-                  7 Ranks
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5 line-clamp-1">
-                Ascend the ranks by submitting applications, logging technical study, and mastering algorithms.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 self-start sm:self-center shrink-0">
-            <span
-              className={`inline-flex items-center gap-1.5 font-black text-xs px-2.5 sm:px-3 py-1 rounded-full border shadow-2xs ${currentTierConfig.bg} ${currentTierConfig.border} ${currentTierConfig.text}`}
-            >
-              <Tier3DIcon tier={userLevel} size={15} className="shrink-0" />
-              <span>Level {userLevel}: {currentTierConfig.title}</span>
-            </span>
-
-            <button
-              type="button"
-              onClick={() => setIsTrophyRoadOpen(prev => !prev)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-200 transition-all cursor-pointer shadow-xs active:scale-95"
-            >
-              <span>{isTrophyRoadOpen ? 'Hide Ranks' : 'View Trophy Road'}</span>
-              <ChevronDown
-                size={14}
-                className={`transition-transform duration-300 text-slate-400 ${
-                  isTrophyRoadOpen ? 'rotate-180 text-amber-500' : ''
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-
-        {isTrophyRoadOpen && (
-          <div className="space-y-4 pt-1 animate-in fade-in duration-200">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-3">
-              {[1, 2, 3, 4, 5, 6, 7].map((lvl) => {
-                const cfg = TROPHY_TIER_CONFIG[lvl];
-                const isUnlocked = lvl <= userLevel;
-                const isCurrent = lvl === userLevel;
-
-                return (
-                  <div
-                    key={lvl}
-                    className={`relative flex flex-col justify-between p-3.5 rounded-2xl border transition-all duration-300 ${
-                      isCurrent
-                        ? `${cfg.bg} ${cfg.border} ring-2 ring-indigo-500/40 shadow-md scale-[1.02]`
-                        : isUnlocked
-                        ? 'bg-slate-50/80 dark:bg-white/[0.03] border-slate-200 dark:border-white/10'
-                        : 'bg-slate-50/40 dark:bg-white/[0.01] border-slate-200/60 dark:border-white/5 opacity-60'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 mb-2">
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md font-mono text-slate-500 dark:text-slate-400">
-                        L{lvl}
-                      </span>
-                      {isCurrent ? (
-                        <span className="text-[9px] font-black uppercase text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 px-1.5 py-0.5 rounded-full">
-                          Current
-                        </span>
-                      ) : isUnlocked ? (
-                        <span className="text-[9px] font-black text-emerald-600 dark:text-emerald-400">
-                          Unlocked
-                        </span>
-                      ) : (
-                        <span className="text-[9px] text-slate-400">
-                          <Lock size={9} />
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex flex-col items-center text-center my-1">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl mb-1.5">
-                        <Tier3DIcon
-                          tier={lvl}
-                          size={36}
-                          className={isUnlocked ? '' : 'opacity-30 grayscale'}
-                        />
-                      </div>
-                      <h4 className="text-xs font-black truncate max-w-full m-0 text-slate-900 dark:text-white">
-                        {cfg.title}
-                      </h4>
-                      <span className="text-[10px] font-mono font-bold text-slate-400 mt-0.5">
-                        {cfg.min} - {cfg.max > 5000 ? '5k+' : cfg.max} XP
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
 
     </div>
   );

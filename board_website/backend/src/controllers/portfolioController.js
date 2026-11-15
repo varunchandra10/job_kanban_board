@@ -76,13 +76,23 @@ exports.getPublicPortfolio = (req, res, next) => {
 
     const masteredCount = dsaRows.filter(r => (r.repetition_stage ?? 0) >= 4).length;
 
-    // 3. Query verified latest resume
-    const resumeVersion = db.prepare(`
-      SELECT id, label, pdf_name, (pdf_data IS NOT NULL AND pdf_data != '') as has_pdf 
-      FROM resume_versions 
-      WHERE user_id = ? AND pdf_data IS NOT NULL AND pdf_data != '' 
-      ORDER BY id DESC LIMIT 1
-    `).get(targetUserId);
+    // 3. Query designated portfolio resume (or latest verified resume)
+    let resumeVersion = null;
+    if (prof?.portfolio_resume_id) {
+      resumeVersion = db.prepare(`
+        SELECT id, label, pdf_name, (pdf_data IS NOT NULL AND pdf_data != '') as has_pdf 
+        FROM resume_versions 
+        WHERE id = ? AND user_id = ? AND pdf_data IS NOT NULL AND pdf_data != ''
+      `).get(prof.portfolio_resume_id, targetUserId);
+    }
+    if (!resumeVersion) {
+      resumeVersion = db.prepare(`
+        SELECT id, label, pdf_name, (pdf_data IS NOT NULL AND pdf_data != '') as has_pdf 
+        FROM resume_versions 
+        WHERE user_id = ? AND pdf_data IS NOT NULL AND pdf_data != '' 
+        ORDER BY id DESC LIMIT 1
+      `).get(targetUserId);
+    }
 
     // 4. Query recent public technical learnings (topics studied, category, date)
     let publicLearnings = [];
@@ -101,7 +111,9 @@ exports.getPublicPortfolio = (req, res, next) => {
       user: {
         name: prof?.full_name || user?.name || 'Developer',
         headline: prof?.portfolio_headline || user?.portfolio_headline || '',
-        bio: prof?.portfolio_bio || user?.portfolio_bio || '',
+        bio: prof?.bio || prof?.portfolio_bio || user?.portfolio_bio || '',
+        age: prof?.age || '',
+        location: prof?.location || '',
         avatar_url: user?.avatar_url || '',
         linkedin: prof?.linkedin || '',
         github: prof?.github || '',
@@ -112,6 +124,10 @@ exports.getPublicPortfolio = (req, res, next) => {
         skills: prof?.skills || '',
         projects: prof?.projects || '',
         experience: prof?.experience || '',
+        education_history: prof?.education_history || '[]',
+        projects_list: prof?.projects_list || '[]',
+        skills_matrix: prof?.skills_matrix || '{}',
+        achievements: prof?.achievements || '[]',
       },
       stats: {
         streak: gamification.streak || 0,
@@ -154,12 +170,22 @@ exports.downloadPublicResume = (req, res, next) => {
     }
 
     const { targetUserId } = data;
-    const r = db.prepare(`
-      SELECT pdf_name, label, pdf_data 
-      FROM resume_versions 
-      WHERE user_id = ? AND pdf_data IS NOT NULL AND pdf_data != '' 
-      ORDER BY id DESC LIMIT 1
-    `).get(targetUserId);
+    let r = null;
+    if (data.prof?.portfolio_resume_id) {
+      r = db.prepare(`
+        SELECT pdf_name, label, pdf_data 
+        FROM resume_versions 
+        WHERE id = ? AND user_id = ? AND pdf_data IS NOT NULL AND pdf_data != ''
+      `).get(data.prof.portfolio_resume_id, targetUserId);
+    }
+    if (!r) {
+      r = db.prepare(`
+        SELECT pdf_name, label, pdf_data 
+        FROM resume_versions 
+        WHERE user_id = ? AND pdf_data IS NOT NULL AND pdf_data != '' 
+        ORDER BY id DESC LIMIT 1
+      `).get(targetUserId);
+    }
 
     if (!r || !r.pdf_data) {
       return res.status(404).json({ error: 'Verified resume PDF is not currently available.' });

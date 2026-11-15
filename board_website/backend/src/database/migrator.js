@@ -121,6 +121,30 @@ function runMigrations(db) {
         db.prepare("alter table resume_profile add column portfolio_bio text default ''").run();
         console.log('[Migrator] Added portfolio_bio column to resume_profile');
       }
+      if (!profCols.includes('age')) {
+        db.prepare("alter table resume_profile add column age text default ''").run();
+      }
+      if (!profCols.includes('location')) {
+        db.prepare("alter table resume_profile add column location text default ''").run();
+      }
+      if (!profCols.includes('bio')) {
+        db.prepare("alter table resume_profile add column bio text default ''").run();
+      }
+      if (!profCols.includes('education_history')) {
+        db.prepare("alter table resume_profile add column education_history text default '[]'").run();
+      }
+      if (!profCols.includes('projects_list')) {
+        db.prepare("alter table resume_profile add column projects_list text default '[]'").run();
+      }
+      if (!profCols.includes('skills_matrix')) {
+        db.prepare("alter table resume_profile add column skills_matrix text default '{}'").run();
+      }
+      if (!profCols.includes('achievements')) {
+        db.prepare("alter table resume_profile add column achievements text default '[]'").run();
+      }
+      if (!profCols.includes('portfolio_resume_id')) {
+        db.prepare("alter table resume_profile add column portfolio_resume_id integer default null").run();
+      }
       db.prepare('create unique index if not exists idx_resume_profile_portfolio_slug on resume_profile(portfolio_slug)').run();
     }
 
@@ -231,6 +255,23 @@ function runMigrations(db) {
               try { db.prepare("alter table resume_profile add column portfolio_bio text default ''").run(); } catch (_) {}
             }
             try { db.prepare('create unique index if not exists idx_resume_profile_portfolio_slug on resume_profile(portfolio_slug)').run(); } catch (_) {}
+          } else if (file.includes('010')) {
+            const profCols = db.prepare('pragma table_info(resume_profile)').all().map(c => c.name);
+            const needed = [
+              ['age', "text default ''"],
+              ['location', "text default ''"],
+              ['bio', "text default ''"],
+              ['education_history', "text default '[]'"],
+              ['projects_list', "text default '[]'"],
+              ['skills_matrix', "text default '{}'"],
+              ['achievements', "text default '[]'"],
+              ['portfolio_resume_id', "integer default null"]
+            ];
+            for (const [col, def] of needed) {
+              if (!profCols.includes(col)) {
+                try { db.prepare(`alter table resume_profile add column ${col} ${def}`).run(); } catch (_) {}
+              }
+            }
           } else {
             db.exec(sql);
           }

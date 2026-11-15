@@ -107,6 +107,46 @@ export interface GamificationStats {
   tiers?: TrophyTier[];
 }
 
+export interface EducationItem {
+  id: string;
+  school: string;
+  degree: string;
+  startDate?: string;
+  endDate?: string;
+  gpa?: string;
+  honors?: string;
+  thesisTitle?: string;
+  thesisUrl?: string;
+}
+
+export interface ProjectItem {
+  id: string;
+  title: string;
+  role?: string;
+  startDate?: string;
+  endDate?: string;
+  description: string;
+  techStack: string[];
+  liveUrl?: string;
+  repoUrl?: string;
+}
+
+export interface SkillsMatrix {
+  languages: string[];
+  frameworks: string[];
+  databases: string[];
+  tools: string[];
+}
+
+export interface AchievementItem {
+  id: string;
+  title: string;
+  issuer: string;
+  year?: string;
+  url?: string;
+  description?: string;
+}
+
 export interface UserProfile {
   id?: number | string;
   full_name: string;
@@ -126,6 +166,14 @@ export interface UserProfile {
   is_portfolio_public?: number | boolean;
   portfolio_headline?: string;
   portfolio_bio?: string;
+  age?: string;
+  location?: string;
+  bio?: string;
+  education_history?: string; // JSON string of EducationItem[]
+  projects_list?: string;     // JSON string of ProjectItem[]
+  skills_matrix?: string;     // JSON string of SkillsMatrix
+  achievements?: string;      // JSON string of AchievementItem[]
+  portfolio_resume_id?: number | null;
 }
 
 export interface PublicPortfolioResponse {
@@ -145,6 +193,12 @@ export interface PublicPortfolioResponse {
     skills?: string;
     projects?: string;
     experience?: string;
+    age?: string;
+    location?: string;
+    education_history?: string;
+    projects_list?: string;
+    skills_matrix?: string;
+    achievements?: string;
   };
   stats: {
     streak: number;

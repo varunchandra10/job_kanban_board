@@ -167,6 +167,40 @@ export const api = {
     return res.json();
   },
 
+  async createResumeVersion(label: string, region?: string): Promise<ResumeVersion> {
+    const res = await fetch(`${API_BASE}/versions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ label, region: region || '' }),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async updateResumeVersion(id: number, data: Partial<ResumeVersion> & { pdf_data?: string }): Promise<{ ok: number }> {
+    const res = await fetch(`${API_BASE}/versions/${id}`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  async deleteResumeVersion(id: number): Promise<{ ok: number }> {
+    const res = await fetch(`${API_BASE}/versions/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
+
+  getResumeVersionPdfUrl(id: number): string {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    return `${API_BASE}/versions/${id}/pdf${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+  },
+
   async updateSetting(key: string, value: string): Promise<{ ok: number }> {
     const res = await fetch(`${API_BASE}/settings/${encodeURIComponent(key)}`, {
       method: 'PUT',
