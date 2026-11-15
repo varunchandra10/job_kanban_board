@@ -34,6 +34,10 @@ import {
   resolveId,
   recordIdMapping,
 } from '../services/offlineSync';
+import {
+  encryptApplicationsForStorage,
+  decryptApplicationsFromStorage,
+} from '../utils/security';
 
 interface ToastState {
   message: string;
@@ -411,10 +415,33 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
-  // Sync to localStorage ONLY when authenticated
+  // Decrypt client-side at-rest secrets when loaded into memory from offline storage cache
+  useEffect(() => {
+    if (isAuthenticated && applications.some(a => a.portal_pass && a.portal_pass.startsWith('enc:v1:'))) {
+      let isMounted = true;
+      decryptApplicationsFromStorage(applications).then(decrypted => {
+        if (isMounted) {
+          setApplications(decrypted);
+        }
+      });
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [isAuthenticated, applications]);
+
+  // Sync to localStorage ONLY when authenticated (with portal passwords encrypted at rest via AES-256-GCM)
   useEffect(() => {
     if (isAuthenticated) {
-      localStorage.setItem('job_tracker_apps', JSON.stringify(applications));
+      let isCurrent = true;
+      encryptApplicationsForStorage(applications).then(encryptedApps => {
+        if (isCurrent) {
+          localStorage.setItem('job_tracker_apps', JSON.stringify(encryptedApps));
+        }
+      });
+      return () => {
+        isCurrent = false;
+      };
     }
   }, [applications, isAuthenticated]);
 
@@ -552,7 +579,9 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         if (mounted && stateData?.apps) {
           sessionStorage.setItem('job_tracker_server_warmed', 'true');
           setApplications(stateData.apps);
-          localStorage.setItem('job_tracker_apps', JSON.stringify(stateData.apps));
+          encryptApplicationsForStorage(stateData.apps).then(encrypted => {
+            if (mounted) localStorage.setItem('job_tracker_apps', JSON.stringify(encrypted));
+          });
           if (stateData.profile) setProfile(stateData.profile);
           if (stateData.versions) setVersions(stateData.versions);
           if (stateData.settings?.dsa_track_enabled !== undefined) {

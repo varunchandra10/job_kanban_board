@@ -5,7 +5,7 @@ import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { ensureGoogleDriveToken, getStoredGoogleDriveToken } from '../../utils/googleAuth';
 import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
-import { sanitizeUrl } from '../../utils/security';
+import { sanitizeUrl, decryptClientSecret } from '../../utils/security';
 import {
   Briefcase,
   Landmark,
@@ -29,6 +29,10 @@ import {
   Database,
   FolderOpen,
   RotateCcw,
+  Eye,
+  EyeOff,
+  Copy,
+  ShieldCheck,
 } from 'lucide-react';
 
 const getDisplayFileName = (pathStr: string, fallback: string = 'Document') => {
@@ -85,6 +89,8 @@ export const ApplicationModal: React.FC = () => {
   const [portalUrl, setPortalUrl] = useState('');
   const [portalUser, setPortalUser] = useState('');
   const [portalPass, setPortalPass] = useState('');
+  const [showPortalPass, setShowPortalPass] = useState(false);
+  const [copiedPortalPass, setCopiedPortalPass] = useState(false);
   const [portalNotes, setPortalNotes] = useState('');
   const [recruiterName, setRecruiterName] = useState('');
   const [recruiterEmail, setRecruiterEmail] = useState('');
@@ -165,7 +171,13 @@ export const ApplicationModal: React.FC = () => {
       setJdUrl(editingApp.jd_url || '');
       setPortalUrl(editingApp.portal_url || '');
       setPortalUser(editingApp.portal_user || '');
-      setPortalPass(editingApp.portal_pass || '');
+      if (editingApp.portal_pass?.startsWith('enc:v1:')) {
+        decryptClientSecret(editingApp.portal_pass).then(dec => setPortalPass(dec));
+      } else {
+        setPortalPass(editingApp.portal_pass || '');
+      }
+      setShowPortalPass(false);
+      setCopiedPortalPass(false);
       setPortalNotes(editingApp.portal_notes || '');
       setRecruiterName(editingApp.recruiter_name || '');
       setRecruiterEmail(editingApp.recruiter_email || '');
@@ -190,6 +202,8 @@ export const ApplicationModal: React.FC = () => {
       setPortalUrl('');
       setPortalUser('');
       setPortalPass('');
+      setShowPortalPass(false);
+      setCopiedPortalPass(false);
       setPortalNotes(appPrefill?.portal_notes || '');
       setRecruiterName('');
       setRecruiterEmail('');
@@ -721,14 +735,46 @@ export const ApplicationModal: React.FC = () => {
                     />
                   </div>
                   <div className="min-w-0">
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Password</label>
-                    <input
-                      type="text"
-                      placeholder="Saved password"
-                      value={portalPass}
-                      onChange={e => setPortalPass(e.target.value)}
-                      className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium" title="Client-side AES-256-GCM encrypted in storage">
+                        <ShieldCheck size={12} />
+                        <span>AES-256</span>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showPortalPass ? 'text' : 'password'}
+                        placeholder="Saved password"
+                        value={portalPass}
+                        onChange={e => setPortalPass(e.target.value)}
+                        className="w-full min-w-0 max-w-full box-border pl-3 pr-16 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      />
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {portalPass && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(portalPass);
+                              setCopiedPortalPass(true);
+                              setTimeout(() => setCopiedPortalPass(false), 2000);
+                            }}
+                            title={copiedPortalPass ? 'Copied to clipboard' : 'Copy password'}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                          >
+                            {copiedPortalPass ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowPortalPass(prev => !prev)}
+                          title={showPortalPass ? 'Hide password' : 'Show password'}
+                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                        >
+                          {showPortalPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
