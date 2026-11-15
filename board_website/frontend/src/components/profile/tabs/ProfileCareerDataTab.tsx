@@ -49,6 +49,13 @@ const DEFAULT_SKILLS_MATRIX: SkillsMatrix = {
   tools: ['Git', 'Linux', 'Postman'],
 };
 
+const SUGGESTED_SKILLS: Record<keyof SkillsMatrix, string[]> = {
+  languages: ['TypeScript', 'JavaScript', 'Python', 'Go', 'Java', 'C++', 'SQL', 'Rust'],
+  frameworks: ['React', 'Next.js', 'Node.js', 'Express', 'TailwindCSS', 'FastAPI', 'Django', 'Spring Boot'],
+  databases: ['PostgreSQL', 'MongoDB', 'Redis', 'Docker', 'MySQL', 'Prisma', 'Supabase'],
+  tools: ['Git', 'Linux', 'AWS', 'Docker', 'Postman', 'Vercel', 'Kubernetes', 'GitHub Actions'],
+};
+
 export const ProfileCareerDataTab: React.FC = () => {
   const { profile, updateProfile, versions, refreshState, showToast, currentUser, quickLinks, addQuickLink, removeQuickLink } = useApp();
 
@@ -565,6 +572,15 @@ export const ProfileCareerDataTab: React.FC = () => {
     markChanged();
   };
 
+  const handleQuickAddSkill = (category: keyof SkillsMatrix, skill: string) => {
+    setSkillsMatrix(prev => {
+      const current = prev[category] || [];
+      if (current.includes(skill)) return prev;
+      return { ...prev, [category]: [...current, skill] };
+    });
+    markChanged();
+  };
+
   // -------------------------------------------------------------
   // Achievements Handlers
   // -------------------------------------------------------------
@@ -782,7 +798,7 @@ export const ProfileCareerDataTab: React.FC = () => {
               placeholder="e.g. Alex Zhang"
               value={fullName}
               onChange={e => { setFullName(e.target.value); markChanged(); }}
-              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
             />
           </div>
 
@@ -795,7 +811,7 @@ export const ProfileCareerDataTab: React.FC = () => {
               placeholder="e.g. 24 or May 2002"
               value={age}
               onChange={e => { setAge(e.target.value); markChanged(); }}
-              className="w-full h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+              className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
             />
           </div>
 
@@ -804,13 +820,13 @@ export const ProfileCareerDataTab: React.FC = () => {
               Phone Number
             </label>
             <div className="relative">
-              <Phone size={14} className="absolute left-3.5 top-3 text-slate-400" />
+              <Phone size={14} className="absolute left-3.5 top-3.5 sm:top-3 text-slate-400" />
               <input
                 type="tel"
                 placeholder="e.g. +1 (555) 019-2834"
                 value={phone}
                 onChange={e => { setPhone(e.target.value); markChanged(); }}
-                className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-11 sm:h-10 pl-10 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -820,13 +836,13 @@ export const ProfileCareerDataTab: React.FC = () => {
               Current Location &amp; Timezone
             </label>
             <div className="relative">
-              <MapPin size={14} className="absolute left-3.5 top-3 text-slate-400" />
+              <MapPin size={14} className="absolute left-3.5 top-3.5 sm:top-3 text-slate-400" />
               <input
                 type="text"
                 placeholder="e.g. San Francisco, CA (PST)"
                 value={location}
                 onChange={e => { setLocation(e.target.value); markChanged(); }}
-                className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-11 sm:h-10 pl-10 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -836,13 +852,13 @@ export const ProfileCareerDataTab: React.FC = () => {
               LinkedIn Profile URL
             </label>
             <div className="relative">
-              <Globe size={14} className="absolute left-3.5 top-3 text-slate-400" />
+              <Globe size={14} className="absolute left-3.5 top-3.5 sm:top-3 text-slate-400" />
               <input
                 type="url"
                 placeholder="https://linkedin.com/in/..."
                 value={linkedin}
                 onChange={e => { setLinkedin(e.target.value); markChanged(); }}
-                className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-11 sm:h-10 pl-10 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -852,13 +868,13 @@ export const ProfileCareerDataTab: React.FC = () => {
               GitHub Profile URL
             </label>
             <div className="relative">
-              <Github size={14} className="absolute left-3.5 top-3 text-slate-400" />
+              <Github size={14} className="absolute left-3.5 top-3.5 sm:top-3 text-slate-400" />
               <input
                 type="url"
                 placeholder="https://github.com/..."
                 value={github}
                 onChange={e => { setGithub(e.target.value); markChanged(); }}
-                className="w-full h-10 pl-9 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full h-11 sm:h-10 pl-10 pr-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-colors"
               />
             </div>
           </div>
@@ -879,7 +895,7 @@ export const ProfileCareerDataTab: React.FC = () => {
             placeholder="e.g. Full Stack & AI Systems Engineer with 3+ years experience building distributed workflows. Passionate about real-time systems, clean API architectures, and algorithmic problem-solving."
             value={bio}
             onChange={e => { setBio(e.target.value); markChanged(); }}
-            className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-xs sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 leading-relaxed"
+            className="w-full p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#18181b] text-base sm:text-sm text-slate-900 dark:text-white outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 leading-relaxed transition-colors"
           />
         </div>
       </section>
@@ -1008,14 +1024,47 @@ export const ProfileCareerDataTab: React.FC = () => {
 
         {/* Existing Education Cards */}
         {educationList.length === 0 && !isAddingEdu ? (
-          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-2">
-            <GraduationCap size={24} className="text-slate-400" />
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              No Education Added Yet
+          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <GraduationCap size={24} />
             </div>
-            <p className="text-[11px] text-slate-400 max-w-sm m-0">
-              Click &quot;Add Education&quot; to list your university, degree, GPA, or thesis research link.
-            </p>
+            <div className="space-y-1">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                No Education Listed Yet
+              </div>
+              <p className="text-xs text-slate-400 max-w-sm m-0">
+                List your university degree, dates, GPA, or published research thesis.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewEdu(p => ({ ...p, degree: 'B.Tech / BS in Computer Science' }));
+                  setIsAddingEdu(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + B.Tech / BS in CS
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewEdu(p => ({ ...p, degree: "M.S. / Master's Degree" }));
+                  setIsAddingEdu(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-emerald-500/25 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + M.S. Degree
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddingEdu(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                + Add Degree
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1118,7 +1167,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Stanford University"
                   value={newEdu.school}
                   onChange={e => setNewEdu(p => ({ ...p, school: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1129,7 +1178,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. B.Tech in Computer Science"
                   value={newEdu.degree}
                   onChange={e => setNewEdu(p => ({ ...p, degree: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1140,7 +1189,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Aug 2022 – May 2026"
                   value={newEdu.endDate}
                   onChange={e => setNewEdu(p => ({ ...p, endDate: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1151,7 +1200,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. 3.9/4.0 • Magna Cum Laude"
                   value={newEdu.gpa}
                   onChange={e => setNewEdu(p => ({ ...p, gpa: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1162,7 +1211,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Optimizing Distributed Key-Value Stores"
                   value={newEdu.thesisTitle}
                   onChange={e => setNewEdu(p => ({ ...p, thesisTitle: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -1173,7 +1222,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="https://doi.org/... or PDF link"
                   value={newEdu.thesisUrl}
                   onChange={e => setNewEdu(p => ({ ...p, thesisUrl: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-emerald-500"
                 />
               </div>
             </div>
@@ -1182,14 +1231,14 @@ export const ProfileCareerDataTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAddingEdu(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddEducation}
-                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs"
+                className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-2xs cursor-pointer"
               >
                 Save Education
               </button>
@@ -1225,14 +1274,47 @@ export const ProfileCareerDataTab: React.FC = () => {
 
         {/* Existing Projects List */}
         {projectsList.length === 0 && !isAddingProj ? (
-          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-2">
-            <FolderGit2 size={24} className="text-slate-400" />
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              No Projects Added Yet
+          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
+              <FolderGit2 size={24} />
             </div>
-            <p className="text-[11px] text-slate-400 max-w-sm m-0">
-              Showcase your best engineering work, GitHub repos, and live deployments.
-            </p>
+            <div className="space-y-1">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                No Projects Added Yet
+              </div>
+              <p className="text-xs text-slate-400 max-w-sm m-0">
+                Showcase your standout engineering work, live deployments, and GitHub repositories.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewProj(p => ({ ...p, title: 'Full Stack Web Platform', role: 'Full Stack Engineer', techStack: ['React', 'Node.js', 'PostgreSQL', 'TailwindCSS'] }));
+                  setIsAddingProj(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-purple-500/25 bg-purple-500/5 hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + Full Stack App
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewProj(p => ({ ...p, title: 'AI / LLM Workflow Engine', role: 'AI Systems Engineer', techStack: ['Python', 'FastAPI', 'Redis', 'Docker'] }));
+                  setIsAddingProj(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-purple-500/25 bg-purple-500/5 hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + AI / LLM Application
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddingProj(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                + Add Project
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1342,7 +1424,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Distributed Cache Engine"
                   value={newProj.title}
                   onChange={e => setNewProj(p => ({ ...p, title: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -1353,7 +1435,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Lead Engineer / Backend Contributor"
                   value={newProj.role}
                   onChange={e => setNewProj(p => ({ ...p, role: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -1364,7 +1446,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="https://myproject.dev"
                   value={newProj.liveUrl}
                   onChange={e => setNewProj(p => ({ ...p, liveUrl: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
 
@@ -1375,7 +1457,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="https://github.com/..."
                   value={newProj.repoUrl}
                   onChange={e => setNewProj(p => ({ ...p, repoUrl: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
                 />
               </div>
             </div>
@@ -1389,7 +1471,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                 placeholder="Architected a fault-tolerant vector index supporting 10k QPS with sub-5ms latency..."
                 value={newProj.description}
                 onChange={e => setNewProj(p => ({ ...p, description: e.target.value }))}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                className="w-full p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-purple-500"
               />
             </div>
 
@@ -1398,7 +1480,7 @@ export const ProfileCareerDataTab: React.FC = () => {
               <label className="block text-[11px] font-bold text-slate-500 mb-1">
                 Tech Stack Tags (Press Enter or Comma)
               </label>
-              <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]">
+              <div className="flex flex-wrap items-center gap-1.5 p-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b]">
                 {(newProj.techStack || []).map(tag => (
                   <span
                     key={tag}
@@ -1420,7 +1502,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   value={newProjTagInput}
                   onChange={e => setNewProjTagInput(e.target.value)}
                   onKeyDown={handleAddProjTag}
-                  className="flex-1 min-w-[140px] text-xs bg-transparent outline-none py-0.5"
+                  className="flex-1 min-w-[140px] text-base sm:text-xs bg-transparent outline-none py-1"
                 />
               </div>
             </div>
@@ -1429,14 +1511,14 @@ export const ProfileCareerDataTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsAddingProj(false)}
-                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleAddProject}
-                className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-2xs"
+                className="px-4 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-2xs cursor-pointer"
               >
                 Save Project
               </button>
@@ -1463,194 +1545,282 @@ export const ProfileCareerDataTab: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Languages */}
-          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                Languages
-              </span>
-              <span className="text-[10.5px] font-semibold text-slate-400">
-                {skillsMatrix.languages.length} skills
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-              {skillsMatrix.languages.map(s => (
-                <span
-                  key={s}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 group"
-                >
-                  <span>{s}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill('languages', s)}
-                    className="text-indigo-400 hover:text-rose-500 transition-colors"
-                  >
-                    <X size={12} />
-                  </button>
+          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                  Languages
                 </span>
-              ))}
+                <span className="text-[10.5px] font-semibold text-slate-400">
+                  {skillsMatrix.languages.length} skills
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {skillsMatrix.languages.map(s => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-500/20 group"
+                  >
+                    <span>{s}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill('languages', s)}
+                      className="text-indigo-400 hover:text-rose-500 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Add language (e.g. Go, C++, Rust)..."
-                value={skillInputs.languages}
-                onChange={e => setSkillInputs(p => ({ ...p, languages: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('languages'))}
-                className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddSkill('languages')}
-                className="px-3 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold"
-              >
-                + Add
-              </button>
+            <div className="space-y-2 pt-1">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add language (e.g. Go, C++, Rust)..."
+                  value={skillInputs.languages}
+                  onChange={e => setSkillInputs(p => ({ ...p, languages: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('languages'))}
+                  className="flex-1 h-10 sm:h-8 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs outline-none focus:border-indigo-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddSkill('languages')}
+                  className="px-3.5 h-10 sm:h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </div>
+
+              {/* 1-Click Suggestions */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span className="text-slate-400 font-semibold text-[10px] uppercase">Quick Add:</span>
+                {SUGGESTED_SKILLS.languages
+                  .filter(s => !skillsMatrix.languages.includes(s))
+                  .slice(0, 5)
+                  .map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleQuickAddSkill('languages', s)}
+                      className="px-2 py-0.5 rounded-md border border-dashed border-indigo-300 dark:border-white/10 hover:border-indigo-500 bg-white dark:bg-white/5 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all cursor-pointer text-[10.5px] font-medium"
+                    >
+                      + {s}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
 
           {/* Frameworks & Libraries */}
-          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                Frameworks &amp; Libraries
-              </span>
-              <span className="text-[10.5px] font-semibold text-slate-400">
-                {skillsMatrix.frameworks.length} skills
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-              {skillsMatrix.frameworks.map(s => (
-                <span
-                  key={s}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 group"
-                >
-                  <span>{s}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill('frameworks', s)}
-                    className="text-blue-400 hover:text-rose-500 transition-colors"
-                  >
-                    <X size={12} />
-                  </button>
+          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                  Frameworks &amp; Libraries
                 </span>
-              ))}
+                <span className="text-[10.5px] font-semibold text-slate-400">
+                  {skillsMatrix.frameworks.length} skills
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {skillsMatrix.frameworks.map(s => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 group"
+                  >
+                    <span>{s}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill('frameworks', s)}
+                      className="text-blue-400 hover:text-rose-500 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Add framework (e.g. Next.js, Express)..."
-                value={skillInputs.frameworks}
-                onChange={e => setSkillInputs(p => ({ ...p, frameworks: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('frameworks'))}
-                className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddSkill('frameworks')}
-                className="px-3 h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold"
-              >
-                + Add
-              </button>
+            <div className="space-y-2 pt-1">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add framework (e.g. Next.js, Express)..."
+                  value={skillInputs.frameworks}
+                  onChange={e => setSkillInputs(p => ({ ...p, frameworks: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('frameworks'))}
+                  className="flex-1 h-10 sm:h-8 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs outline-none focus:border-blue-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddSkill('frameworks')}
+                  className="px-3.5 h-10 sm:h-8 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </div>
+
+              {/* 1-Click Suggestions */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span className="text-slate-400 font-semibold text-[10px] uppercase">Quick Add:</span>
+                {SUGGESTED_SKILLS.frameworks
+                  .filter(s => !skillsMatrix.frameworks.includes(s))
+                  .slice(0, 5)
+                  .map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleQuickAddSkill('frameworks', s)}
+                      className="px-2 py-0.5 rounded-md border border-dashed border-blue-300 dark:border-white/10 hover:border-blue-500 bg-white dark:bg-white/5 hover:bg-blue-50 dark:hover:bg-blue-500/10 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300 transition-all cursor-pointer text-[10.5px] font-medium"
+                    >
+                      + {s}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
 
           {/* Databases & Cloud */}
-          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                Databases &amp; Cloud Infrastructure
-              </span>
-              <span className="text-[10.5px] font-semibold text-slate-400">
-                {skillsMatrix.databases.length} skills
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-              {skillsMatrix.databases.map(s => (
-                <span
-                  key={s}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 group"
-                >
-                  <span>{s}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill('databases', s)}
-                    className="text-emerald-400 hover:text-rose-500 transition-colors"
-                  >
-                    <X size={12} />
-                  </button>
+          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                  Databases &amp; Cloud Infrastructure
                 </span>
-              ))}
+                <span className="text-[10.5px] font-semibold text-slate-400">
+                  {skillsMatrix.databases.length} skills
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {skillsMatrix.databases.map(s => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 group"
+                  >
+                    <span>{s}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill('databases', s)}
+                      className="text-emerald-400 hover:text-rose-500 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Add DB/Cloud (e.g. AWS, Redis, Kafka)..."
-                value={skillInputs.databases}
-                onChange={e => setSkillInputs(p => ({ ...p, databases: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('databases'))}
-                className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddSkill('databases')}
-                className="px-3 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold"
-              >
-                + Add
-              </button>
+            <div className="space-y-2 pt-1">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add DB/Cloud (e.g. AWS, Redis, Kafka)..."
+                  value={skillInputs.databases}
+                  onChange={e => setSkillInputs(p => ({ ...p, databases: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('databases'))}
+                  className="flex-1 h-10 sm:h-8 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs outline-none focus:border-emerald-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddSkill('databases')}
+                  className="px-3.5 h-10 sm:h-8 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </div>
+
+              {/* 1-Click Suggestions */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span className="text-slate-400 font-semibold text-[10px] uppercase">Quick Add:</span>
+                {SUGGESTED_SKILLS.databases
+                  .filter(s => !skillsMatrix.databases.includes(s))
+                  .slice(0, 5)
+                  .map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleQuickAddSkill('databases', s)}
+                      className="px-2 py-0.5 rounded-md border border-dashed border-emerald-300 dark:border-white/10 hover:border-emerald-500 bg-white dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-300 transition-all cursor-pointer text-[10.5px] font-medium"
+                    >
+                      + {s}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
 
           {/* Developer Tools */}
-          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
-                Developer Tools &amp; CI/CD
-              </span>
-              <span className="text-[10.5px] font-semibold text-slate-400">
-                {skillsMatrix.tools.length} skills
-              </span>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 min-h-[32px]">
-              {skillsMatrix.tools.map(s => (
-                <span
-                  key={s}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 group"
-                >
-                  <span>{s}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveSkill('tools', s)}
-                    className="text-amber-400 hover:text-rose-500 transition-colors"
-                  >
-                    <X size={12} />
-                  </button>
+          <div className="p-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2.5 flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                  Developer Tools &amp; CI/CD
                 </span>
-              ))}
+                <span className="text-[10.5px] font-semibold text-slate-400">
+                  {skillsMatrix.tools.length} skills
+                </span>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5 min-h-[32px]">
+                {skillsMatrix.tools.map(s => (
+                  <span
+                    key={s}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 group"
+                  >
+                    <span>{s}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill('tools', s)}
+                      className="text-amber-400 hover:text-rose-500 transition-colors cursor-pointer"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
-              <input
-                type="text"
-                placeholder="Add tool (e.g. Vitest, Docker, Figma)..."
-                value={skillInputs.tools}
-                onChange={e => setSkillInputs(p => ({ ...p, tools: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('tools'))}
-                className="flex-1 h-8 px-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
-              />
-              <button
-                type="button"
-                onClick={() => handleAddSkill('tools')}
-                className="px-3 h-8 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold"
-              >
-                + Add
-              </button>
+            <div className="space-y-2 pt-1">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Add tool (e.g. Vitest, Docker, Figma)..."
+                  value={skillInputs.tools}
+                  onChange={e => setSkillInputs(p => ({ ...p, tools: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), handleAddSkill('tools'))}
+                  className="flex-1 h-10 sm:h-8 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs outline-none focus:border-amber-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleAddSkill('tools')}
+                  className="px-3.5 h-10 sm:h-8 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold cursor-pointer"
+                >
+                  + Add
+                </button>
+              </div>
+
+              {/* 1-Click Suggestions */}
+              <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                <span className="text-slate-400 font-semibold text-[10px] uppercase">Quick Add:</span>
+                {SUGGESTED_SKILLS.tools
+                  .filter(s => !skillsMatrix.tools.includes(s))
+                  .slice(0, 5)
+                  .map(s => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleQuickAddSkill('tools', s)}
+                      className="px-2 py-0.5 rounded-md border border-dashed border-amber-300 dark:border-white/10 hover:border-amber-500 bg-white dark:bg-white/5 hover:bg-amber-50 dark:hover:bg-amber-500/10 text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-300 transition-all cursor-pointer text-[10.5px] font-medium"
+                    >
+                      + {s}
+                    </button>
+                  ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1683,14 +1853,47 @@ export const ProfileCareerDataTab: React.FC = () => {
 
         {/* Existing Achievements List */}
         {achievementsList.length === 0 && !isAddingAch ? (
-          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-2">
-            <Award size={24} className="text-slate-400" />
-            <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              No Achievements Added Yet
+          <div className="py-8 px-4 rounded-xl border border-dashed border-slate-200 dark:border-white/10 text-center flex flex-col items-center justify-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+              <Award size={24} />
             </div>
-            <p className="text-[11px] text-slate-400 max-w-sm m-0">
-              Add hackathons, AWS/GCP certifications, contest ratings, or patents with verifiable verification URLs.
-            </p>
+            <div className="space-y-1">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                No Achievements or Certifications Added Yet
+              </div>
+              <p className="text-xs text-slate-400 max-w-sm m-0">
+                Add verified certifications, hackathons won, academic honors, or published papers.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap justify-center pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setNewAch(p => ({ ...p, title: 'AWS Certified Solutions Architect', issuer: 'Amazon Web Services' }));
+                  setIsAddingAch(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + AWS / Cloud Certification
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setNewAch(p => ({ ...p, title: 'Hackathon Finalist / Winner', issuer: 'Devpost / Major League Hacking' }));
+                  setIsAddingAch(true);
+                }}
+                className="px-3 py-1.5 rounded-xl border border-amber-500/25 bg-amber-500/5 hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-semibold transition-all cursor-pointer"
+              >
+                + Hackathon Winner
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAddingAch(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-all cursor-pointer shadow-xs"
+              >
+                + Add Honor
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
@@ -1775,7 +1978,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. AWS Certified Solutions Architect Associate"
                   value={newAch.title}
                   onChange={e => setNewAch(p => ({ ...p, title: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1786,7 +1989,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. 2026"
                   value={newAch.year}
                   onChange={e => setNewAch(p => ({ ...p, year: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1797,7 +2000,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="e.g. Amazon Web Services, HackMIT, IEEE"
                   value={newAch.issuer}
                   onChange={e => setNewAch(p => ({ ...p, issuer: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
                 />
               </div>
 
@@ -1808,7 +2011,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   placeholder="https://credly.com/..."
                   value={newAch.url}
                   onChange={e => setNewAch(p => ({ ...p, url: e.target.value }))}
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                  className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-amber-500"
                 />
               </div>
             </div>
@@ -1865,7 +2068,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                 placeholder="e.g. Full Stack (SWE-2026)"
                 value={newResumeLabel}
                 onChange={e => setNewResumeLabel(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500"
               />
             </div>
 
@@ -1876,7 +2079,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                 placeholder="e.g. US Remote / EU / Backend"
                 value={newResumeRegion}
                 onChange={e => setNewResumeRegion(e.target.value)}
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                className="w-full h-11 sm:h-10 px-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs text-slate-900 dark:text-white outline-none focus:border-rose-500"
               />
             </div>
 
@@ -1887,7 +2090,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                 type="file"
                 accept=".pdf,application/pdf"
                 onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-                className="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-500/10 dark:file:text-indigo-300"
+                className="w-full h-11 sm:h-10 text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-500/10 dark:file:text-indigo-300"
               />
             </div>
           </div>
@@ -2043,7 +2246,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   value={linkTitle}
                   onChange={e => setLinkTitle(e.target.value)}
                   required
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] text-xs font-medium text-slate-900 dark:text-white"
+                  className="w-full h-11 sm:h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] text-base sm:text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                 />
               </div>
 
@@ -2057,7 +2260,7 @@ export const ProfileCareerDataTab: React.FC = () => {
                   value={linkUrl}
                   onChange={e => setLinkUrl(e.target.value)}
                   required
-                  className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] text-xs font-medium text-slate-900 dark:text-white"
+                  className="w-full h-11 sm:h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#121214] text-base sm:text-xs font-medium text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                 />
               </div>
 

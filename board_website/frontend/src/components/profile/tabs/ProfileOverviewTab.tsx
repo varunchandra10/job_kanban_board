@@ -81,7 +81,12 @@ export const ProfileOverviewTab: React.FC = () => {
 
   // 2. Side-by-Side Multi-Month Stepper & Heatmap Calculations
   const [momentumDate, setMomentumDate] = useState(() => new Date());
-  const [monthSpan, setMonthSpan] = useState<number>(6); // Default 6 months (~26 weeks) to fully fill the card width
+  // Auto-adapt month span: 3M on mobile (< 640px) to prevent horizontal overflow, 6M on desktop
+  const [monthSpan, setMonthSpan] = useState<number>(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) return 3;
+    return 6;
+  });
+  const [heatmapView, setHeatmapView] = useState<'both' | 'applications' | 'learnings'>('both');
   const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
     dateStr: string;
     dayNum: number;
@@ -548,6 +553,46 @@ export const ProfileOverviewTab: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* View Selector (All / Apps / Learnings) */}
+            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setHeatmapView('both')}
+                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                  heatmapView === 'both'
+                    ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-400 shadow-2xs font-extrabold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Display both Applications and Learnings"
+              >
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeatmapView('applications')}
+                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                  heatmapView === 'applications'
+                    ? 'bg-white dark:bg-[#27272a] text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Display only Job Applications"
+              >
+                Apps
+              </button>
+              <button
+                type="button"
+                onClick={() => setHeatmapView('learnings')}
+                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
+                  heatmapView === 'learnings'
+                    ? 'bg-white dark:bg-[#27272a] text-emerald-600 dark:text-emerald-400 shadow-2xs font-extrabold'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Display only Daily Learnings & DSA"
+              >
+                Learnings
+              </button>
+            </div>
+
             {/* Multi-Month Span Toggle (3M / 6M / 9M / 1Y) */}
             <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-bold">
               {[
@@ -680,153 +725,159 @@ export const ProfileOverviewTab: React.FC = () => {
         {/* Dual Side-by-Side Activity Blocks: Applications (Left) & Learnings (Right) */}
         <div
           onMouseLeave={() => setHoveredMatrixDay(null)}
-          className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-stretch my-2.5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]"
+          className={`grid ${heatmapView === 'both' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'} gap-5 items-stretch my-2.5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]`}
         >
           {/* 1. Job Applications Block (Blue Theme) */}
-          <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10">
-            <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
-              <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                <Briefcase size={13} />
-                <span>Job Applications</span>
-              </span>
-              <span
-                className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                  periodAppsTotal > 0
-                    ? 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20'
-                    : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
-                }`}
-              >
-                {periodAppsTotal} applications
-              </span>
-            </div>
-
-            {/* Multi-month Grid with month labels on top and day labels on left */}
-            <div className="min-w-fit">
-              {/* Month labels bar */}
-              <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
-                {monthHeaders.map((hdr, i) => (
-                  <span
-                    key={i}
-                    style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
-                    className="absolute"
-                  >
-                    {hdr.label}
-                  </span>
-                ))}
+          {(heatmapView === 'both' || heatmapView === 'applications') && (
+            <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10">
+              <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
+                <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                  <Briefcase size={13} />
+                  <span>Job Applications</span>
+                </span>
+                <span
+                  className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
+                    periodAppsTotal > 0
+                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20'
+                      : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
+                  }`}
+                >
+                  {periodAppsTotal} applications
+                </span>
               </div>
 
-              <div className="flex gap-1 items-start">
-                <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
-                  <div className="h-[14px] flex items-center leading-none">Mon</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px] flex items-center leading-none">Wed</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px] flex items-center leading-none">Fri</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px]" />
-                </div>
-
-                <div className="flex gap-1 flex-1">
-                  {appWeeks.map((week, wIdx) => (
-                    <div key={wIdx} className="flex flex-col gap-1">
-                      {week.map((cell, cIdx) => (
-                        <div
-                          key={cIdx}
-                          onMouseEnter={() => {
-                            if (cell.dayNum && cell.dateStr) {
-                              setHoveredMatrixDay({
-                                dateStr: cell.dateStr,
-                                dayNum: cell.dayNum,
-                                count: cell.count,
-                                type: 'applications',
-                                isToday: cell.isToday,
-                              });
-                            }
-                          }}
-                          className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
-                            cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                          } hover:ring-2 hover:ring-blue-500/80 hover:scale-125 hover:z-20`}
-                        />
-                      ))}
-                    </div>
+              {/* Multi-month Grid with month labels on top and day labels on left */}
+              <div className="min-w-fit">
+                {/* Month labels bar */}
+                <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
+                  {monthHeaders.map((hdr, i) => (
+                    <span
+                      key={i}
+                      style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
+                      className="absolute"
+                    >
+                      {hdr.label}
+                    </span>
                   ))}
                 </div>
+
+                <div className="flex gap-1 items-start">
+                  <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
+                    <div className="h-[14px] flex items-center leading-none">Mon</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px] flex items-center leading-none">Wed</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px] flex items-center leading-none">Fri</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px]" />
+                  </div>
+
+                  <div className="flex gap-1 flex-1">
+                    {appWeeks.map((week, wIdx) => (
+                      <div key={wIdx} className="flex flex-col gap-1">
+                        {week.map((cell, cIdx) => (
+                          <div
+                            key={cIdx}
+                            onMouseEnter={() => {
+                              if (cell.dayNum && cell.dateStr) {
+                                setHoveredMatrixDay({
+                                  dateStr: cell.dateStr,
+                                  dayNum: cell.dayNum,
+                                  count: cell.count,
+                                  type: 'applications',
+                                  isToday: cell.isToday,
+                                });
+                              }
+                            }}
+                            className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
+                              cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                            } hover:ring-2 hover:ring-blue-500/80 hover:scale-125 hover:z-20`}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* 2. Daily Learnings Block (Emerald Theme) */}
-          <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10 lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-5">
-            <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
-              <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                <BookOpen size={13} />
-                <span>Daily Learnings &amp; Problem Solving</span>
-              </span>
-              <span
-                className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                  periodLearningsTotal > 0
-                    ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
-                    : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
-                }`}
-              >
-                {periodLearningsTotal} learnings
-              </span>
-            </div>
-
-            {/* Multi-month Grid with month labels on top and day labels on left */}
-            <div className="min-w-fit">
-              {/* Month labels bar */}
-              <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
-                {monthHeaders.map((hdr, i) => (
-                  <span
-                    key={i}
-                    style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
-                    className="absolute"
-                  >
-                    {hdr.label}
-                  </span>
-                ))}
+          {(heatmapView === 'both' || heatmapView === 'learnings') && (
+            <div className={`flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10 ${
+              heatmapView === 'both' ? 'lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-5' : ''
+            }`}>
+              <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
+                <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <BookOpen size={13} />
+                  <span>Daily Learnings &amp; Problem Solving</span>
+                </span>
+                <span
+                  className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
+                    periodLearningsTotal > 0
+                      ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
+                      : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
+                  }`}
+                >
+                  {periodLearningsTotal} learnings
+                </span>
               </div>
 
-              <div className="flex gap-1 items-start">
-                <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
-                  <div className="h-[14px] flex items-center leading-none">Mon</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px] flex items-center leading-none">Wed</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px] flex items-center leading-none">Fri</div>
-                  <div className="h-[14px]" />
-                  <div className="h-[14px]" />
-                </div>
-
-                <div className="flex gap-1 flex-1">
-                  {learnWeeks.map((week, wIdx) => (
-                    <div key={wIdx} className="flex flex-col gap-1">
-                      {week.map((cell, cIdx) => (
-                        <div
-                          key={cIdx}
-                          onMouseEnter={() => {
-                            if (cell.dayNum && cell.dateStr) {
-                              setHoveredMatrixDay({
-                                dateStr: cell.dateStr,
-                                dayNum: cell.dayNum,
-                                count: cell.count,
-                                type: 'learnings',
-                                isToday: cell.isToday,
-                              });
-                            }
-                          }}
-                          className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
-                            cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                          } hover:ring-2 hover:ring-emerald-500/80 hover:scale-125 hover:z-20`}
-                        />
-                      ))}
-                    </div>
+              {/* Multi-month Grid with month labels on top and day labels on left */}
+              <div className="min-w-fit">
+                {/* Month labels bar */}
+                <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
+                  {monthHeaders.map((hdr, i) => (
+                    <span
+                      key={i}
+                      style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
+                      className="absolute"
+                    >
+                      {hdr.label}
+                    </span>
                   ))}
                 </div>
+
+                <div className="flex gap-1 items-start">
+                  <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
+                    <div className="h-[14px] flex items-center leading-none">Mon</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px] flex items-center leading-none">Wed</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px] flex items-center leading-none">Fri</div>
+                    <div className="h-[14px]" />
+                    <div className="h-[14px]" />
+                  </div>
+
+                  <div className="flex gap-1 flex-1">
+                    {learnWeeks.map((week, wIdx) => (
+                      <div key={wIdx} className="flex flex-col gap-1">
+                        {week.map((cell, cIdx) => (
+                          <div
+                            key={cIdx}
+                            onMouseEnter={() => {
+                              if (cell.dayNum && cell.dateStr) {
+                                setHoveredMatrixDay({
+                                  dateStr: cell.dateStr,
+                                  dayNum: cell.dayNum,
+                                  count: cell.count,
+                                  type: 'learnings',
+                                  isToday: cell.isToday,
+                                });
+                              }
+                            }}
+                            className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
+                              cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
+                            } hover:ring-2 hover:ring-emerald-500/80 hover:scale-125 hover:z-20`}
+                          />
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer Legend & Totals */}

@@ -1020,7 +1020,7 @@ export const ProfileSettingsTab: React.FC = () => {
           </label>
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="flex items-center flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3 h-10 shadow-2xs focus-within:border-indigo-500">
+            <div className="flex items-center flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3 h-11 sm:h-10 shadow-2xs focus-within:border-indigo-500">
               <span className="text-xs text-slate-400 font-mono select-none shrink-0 hidden sm:inline">
                 kanban-board-job.vercel.app/u/
               </span>
@@ -1033,7 +1033,7 @@ export const ProfileSettingsTab: React.FC = () => {
                 value={portfolioSlug}
                 onChange={e => setPortfolioSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
                 maxLength={30}
-                className="w-full bg-transparent text-xs font-mono font-bold text-slate-900 dark:text-white outline-none pl-1"
+                className="w-full bg-transparent text-base sm:text-xs font-mono font-bold text-slate-900 dark:text-white outline-none pl-1"
               />
               <div className="shrink-0 text-xs">
                 {slugStatus === 'checking' && (
@@ -1058,7 +1058,7 @@ export const ProfileSettingsTab: React.FC = () => {
               type="button"
               onClick={handleSaveSlug}
               disabled={isSavingPortfolio || slugStatus === 'taken' || slugStatus === 'invalid'}
-              className="px-4 h-10 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs shrink-0"
+              className="px-4 h-11 sm:h-10 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs shrink-0"
             >
               {isSavingPortfolio ? 'Saving...' : 'Save Slug'}
             </button>
@@ -1134,7 +1134,7 @@ export const ProfileSettingsTab: React.FC = () => {
                 value={portfolioHeadline}
                 onChange={e => setPortfolioHeadline(e.target.value)}
                 maxLength={120}
-                className="w-full h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                className="w-full h-11 sm:h-9 px-3 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs"
               />
             </div>
 
@@ -1148,7 +1148,7 @@ export const ProfileSettingsTab: React.FC = () => {
                 value={portfolioBio}
                 onChange={e => setPortfolioBio(e.target.value)}
                 maxLength={400}
-                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-xs"
+                className="w-full p-2.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-base sm:text-xs"
               />
             </div>
 
