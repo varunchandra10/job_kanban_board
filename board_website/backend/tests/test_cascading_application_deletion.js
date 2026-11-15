@@ -160,7 +160,28 @@ async function testCascadingDeletion() {
 
   console.log('✅ Bob’s application, logs, and document records are 100% intact');
 
+  // --- Test 4: Verify remaining cards in stage are re-normalized without position gaps ---
+  console.log('\n--- 4. Testing Stage Position Re-normalization on Deletion ---');
+  // Create 3 cards in stage 'Offer' for Alice: Card A (pos 0), Card B (pos 1), Card C (pos 2)
+  const appA = db.prepare("INSERT INTO applications (company, role, stage, position, user_id) VALUES ('A', 'Dev', 'Offer', 0, ?)").run(userA).lastInsertRowid;
+  const appB = db.prepare("INSERT INTO applications (company, role, stage, position, user_id) VALUES ('B', 'Dev', 'Offer', 1, ?)").run(userA).lastInsertRowid;
+  const appC = db.prepare("INSERT INTO applications (company, role, stage, position, user_id) VALUES ('C', 'Dev', 'Offer', 2, ?)").run(userA).lastInsertRowid;
+
+  // Delete Card B (pos 1)
+  const deleteB = mockReqRes(userA, appB);
+  await applicationsController.deleteApplication(deleteB.req, deleteB.res, (err) => { throw err; });
+  assert.strictEqual(deleteB.res.getJson().deleted, true);
+
+  // Retrieve remaining cards in 'Offer'
+  const remainingOfferCards = db.prepare("SELECT id, position FROM applications WHERE user_id = ? AND stage = 'Offer' ORDER BY position ASC").all(userA);
+  assert.strictEqual(remainingOfferCards.length, 2, 'Must have exactly 2 cards remaining');
+  assert.deepStrictEqual(remainingOfferCards.map(c => c.position), [0, 1], 'Remaining positions must be re-normalized to [0, 1] without gaps');
+  assert.strictEqual(remainingOfferCards[0].id, Number(appA));
+  assert.strictEqual(remainingOfferCards[1].id, Number(appC));
+  console.log('✅ Remaining cards in stage re-normalized to [0, 1] without gaps');
+
   console.log('\n🎉 ALL TASK 8.1 CASCADING APPLICATION DELETION TESTS PASSED!\n');
+  process.exit(0);
 }
 
 testCascadingDeletion().catch(err => {
