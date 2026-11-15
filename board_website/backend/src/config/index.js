@@ -137,6 +137,7 @@ const config = {
   uploadDir: storagePaths.uploadDir,
   backupDir: storagePaths.backupDir,
   tursoDatabaseUrl,
+  tursoUrl: tursoDatabaseUrl,
   tursoAuthToken,
   jwtSecret: process.env.JWT_SECRET || 'job-tracker-dev-secret-key-change-in-prod',
   frontendDir: fs.existsSync(path.resolve(boardWebsiteDir, 'frontend/dist'))
@@ -163,5 +164,9 @@ const config = {
   boardWebsiteDir,
   backendDir
 };
+
+if (config.isVercel && !config.tursoUrl) {
+  console.error('[CRITICAL CONFIG ERROR] Running on Vercel serverless without TURSO_DATABASE_URL! Data stored in /tmp will be destroyed on container recycle.');
+}
 
 module.exports = config;

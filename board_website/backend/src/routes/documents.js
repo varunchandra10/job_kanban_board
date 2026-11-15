@@ -135,6 +135,22 @@ router.post('/storage/set-local-folder', (req, res) => {
 // Storage Status & Multi-User Google Drive Settings
 router.get('/storage/status', (req, res) => {
   const userId = req.user?.id || null;
+  const isVercel = Boolean(config.isVercel || process.env.VERCEL);
+  const isTurso = Boolean(config.tursoDatabaseUrl || config.tursoUrl);
+  const isEphemeral = Boolean(isVercel && !isTurso);
+
+  const persistenceDiagnostic = {
+    isPermanent: !isEphemeral,
+    isEphemeral,
+    type: isTurso
+      ? 'permanent_turso_cloud'
+      : (isVercel ? 'ephemeral_tmp' : (config.isDesktop ? 'permanent_desktop_disk' : 'permanent_local_disk')),
+    storageLocation: isTurso ? (config.tursoDatabaseUrl || config.tursoUrl) : config.dbPath,
+    warning: isEphemeral
+      ? 'Running in Vercel serverless environment with ephemeral /tmp storage. Data will reset on function recycling. Set TURSO_DATABASE_URL for persistent cloud storage.'
+      : null
+  };
+
   if (!userId) {
     return res.json({
       ok: 1,
@@ -142,7 +158,8 @@ router.get('/storage/status', (req, res) => {
       connected: false,
       folderId: null,
       serviceAccountReady: false,
-      userEmail: null
+      userEmail: null,
+      persistence: persistenceDiagnostic
     });
   }
   let userFolderId = null;
@@ -165,7 +182,8 @@ router.get('/storage/status', (req, res) => {
     connected: !!activeFolderId,
     folderId: activeFolderId,
     serviceAccountReady: isKeyConfigured,
-    userEmail
+    userEmail,
+    persistence: persistenceDiagnostic
   });
 });
 
