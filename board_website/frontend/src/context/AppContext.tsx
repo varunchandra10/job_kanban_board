@@ -58,6 +58,7 @@ interface AppContextType {
   applications: Application[];
   learnings: Learning[];
   gamification: GamificationStats;
+  setGamification: React.Dispatch<React.SetStateAction<GamificationStats>>;
   profile: UserProfile;
   versions: ResumeVersion[];
   quickLinks: QuickLink[];
@@ -1519,6 +1520,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         applications,
         learnings,
         gamification,
+        setGamification,
         profile,
         versions,
         quickLinks,

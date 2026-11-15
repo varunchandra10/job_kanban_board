@@ -24,3 +24,4 @@ CREATE TABLE IF NOT EXISTS weekly_chests (
 
 CREATE INDEX IF NOT EXISTS idx_weekly_chests_user_week ON weekly_chests(user_id, week_id);
 CREATE INDEX IF NOT EXISTS idx_weekly_chests_user ON weekly_chests(user_id);
+

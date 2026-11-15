@@ -9,3 +9,4 @@ router.get('/weekly-chest/vault', weeklyChestController.getVault);
 router.put('/weekly-chest/targets', weeklyChestController.updateTargets);
 
 module.exports = router;
+

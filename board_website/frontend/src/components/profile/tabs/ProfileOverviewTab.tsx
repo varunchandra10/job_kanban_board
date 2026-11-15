@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../../context/AppContext';
 import { TROPHY_TIER_CONFIG, Tier3DIcon } from '../CareerProfile';
+import { WeeklyGoalChest } from '../WeeklyGoalChest';
 import { DSA_CATEGORIES } from '../../../data/dsaTopics';
 import {
   Flame,
@@ -546,7 +547,10 @@ export const ProfileOverviewTab: React.FC = () => {
         </section>
       </div>
 
-      {/* 2. SIDE-BY-SIDE MULTI-MONTH GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
+      {/* 2. WEEKLY GOAL CHESTS & QUEST MILESTONES */}
+      <WeeklyGoalChest />
+
+      {/* 3. SIDE-BY-SIDE MULTI-MONTH GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between">
         {/* Header, Range Label, Month Span Switcher, and Month Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
