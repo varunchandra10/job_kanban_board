@@ -41,6 +41,7 @@ console.log('\n3. Executing TypeScript compiler check (tsc -b):');
 try {
   execSync('npm run build --prefix board_website/frontend', {
     cwd: path.resolve(__dirname, '../../..'),
+    env: { ...process.env, NODE_ENV: 'production' },
     stdio: 'pipe',
   });
   console.log('   ✓ Full strict TypeScript compilation (tsc -b) and Vite build succeeded with 0 errors');

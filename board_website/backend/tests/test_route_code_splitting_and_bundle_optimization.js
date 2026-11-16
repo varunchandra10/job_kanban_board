@@ -86,9 +86,14 @@ assert(hasVendorReactChunk, 'vendor-react chunk must be emitted separately');
 assert(hasVendorIconsChunk, 'vendor-icons chunk must be emitted separately');
 
 // Verify main index bundle size is under 500 kB (eliminating the oversized chunk warning)
-const indexFile = assetFiles.find(f => f.startsWith('index-') && f.endsWith('.js'));
-assert(indexFile, 'index bundle file must exist');
-const indexStats = fs.statSync(path.join(DIST_ASSETS_DIR, indexFile));
+const indexFiles = assetFiles
+  .filter(f => f.startsWith('index-') && f.endsWith('.js'))
+  .map(f => ({ name: f, time: fs.statSync(path.join(DIST_ASSETS_DIR, f)).mtimeMs }))
+  .sort((a, b) => b.time - a.time);
+
+assert(indexFiles.length > 0, 'index bundle file must exist');
+const latestIndex = indexFiles[0].name;
+const indexStats = fs.statSync(path.join(DIST_ASSETS_DIR, latestIndex));
 const indexSizeKb = Math.round(indexStats.size / 1024);
 
 console.log(`   ✓ Emitted discrete route chunks (LandingPage, PublicPortfolioPage, CareerProfile, etc.)`);

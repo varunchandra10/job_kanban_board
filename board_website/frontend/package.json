@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node postbuild.js",
+    "build": "tsc -b && vite build --mode production && node postbuild.js",
     "preview": "vite preview"
   },
   "dependencies": {
