@@ -3,6 +3,7 @@ import { Application, ApplicationStage } from '../../types';
 import { useApp, isApplicationBookmarked } from '../../context/AppContext';
 import { api } from '../../services/api';
 import { STAGES, STAGE_CONFIG } from '../../utils/constants';
+import { formatDate } from '../../utils/dateUtils';
 import { CompanyLogo } from '../common/CompanyLogo';
 import {
   MapPin,
@@ -57,17 +58,7 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Format YYYY-MM-DD
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return '';
-    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr);
-    if (!match) return dateStr;
-    const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-    ];
-    return `${months[Number(match[2]) - 1]} ${Number(match[3])}, ${match[1]}`;
-  };
+
 
   // Deadline status calculation
   let deadlineStatus: 'overdue' | 'urgent' | 'normal' | null = null;

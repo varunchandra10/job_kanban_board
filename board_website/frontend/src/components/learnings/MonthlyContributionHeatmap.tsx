@@ -1,6 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { getLocalIsoDate } from '../../utils/dateUtils';
+import {
+  getLocalIsoDate,
+  formatFullDateLabel,
+  MONTH_NAMES_FULL,
+  DAY_NAMES_FULL,
+} from '../../utils/dateUtils';
 import {
   ChevronLeft,
   ChevronRight,
@@ -32,14 +37,8 @@ export const MonthlyContributionHeatmap: React.FC = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
-
-  const daysFullNames = [
-    'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday',
-  ];
+  const monthNames = MONTH_NAMES_FULL;
+  const daysFullNames = DAY_NAMES_FULL;
 
   // Quick navigation handlers
   const handlePrevMonth = () => {
@@ -204,11 +203,11 @@ export const MonthlyContributionHeatmap: React.FC = () => {
   };
 
   // Format date accurately without UTC timezone shifting
-  const formatDateLabel = (day: DayData) => {
-    const dayName = daysFullNames[day.dayOfWeek] || '';
-    const monthName = monthNames[month] || '';
-    return `${dayName}, ${monthName} ${day.dayNumber}, ${year}`;
-  };
+  const formatDateLabel = (day: DayData) =>
+    formatFullDateLabel(
+      { year, month, dayNumber: day.dayNumber, dayOfWeek: day.dayOfWeek },
+      { fullMonth: true }
+    );
 
   const daysLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 

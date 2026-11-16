@@ -3,6 +3,7 @@ import { useApp } from '../../../context/AppContext';
 import { TROPHY_TIER_CONFIG, Tier3DIcon } from '../CareerProfile';
 import { WeeklyGoalChest } from '../WeeklyGoalChest';
 import { DSA_CATEGORIES } from '../../../data/dsaTopics';
+import { getLocalIsoDate, formatFullDateLabel } from '../../../utils/dateUtils';
 import {
   Flame,
   Mail,
@@ -119,7 +120,7 @@ export const ProfileOverviewTab: React.FC = () => {
     setMomentumDate(new Date());
   };
 
-  const todayYMD = new Date().toISOString().slice(0, 10);
+  const todayYMD = getLocalIsoDate();
 
   // Group applications by date string YYYY-MM-DD
   const appsByDate: Record<string, number> = useMemo(() => {
@@ -693,13 +694,7 @@ export const ProfileOverviewTab: React.FC = () => {
               <span className="font-extrabold text-slate-900 dark:text-white flex items-center gap-1.5">
                 <Calendar size={13} className={hoveredMatrixDay.type === 'applications' ? 'text-blue-500' : 'text-emerald-500'} />
                 <span>
-                  {(() => {
-                    const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                    const d = new Date(hoveredMatrixDay.dateStr);
-                    const dayOfWeek = daysNames[d.getDay()];
-                    const mName = shortMonths[d.getMonth()];
-                    return `${dayOfWeek}, ${mName} ${hoveredMatrixDay.dayNum}, ${d.getFullYear()}`;
-                  })()}
+                  {formatFullDateLabel(hoveredMatrixDay.dateStr)}
                 </span>
               </span>
               <span className="text-slate-400 font-bold">&bull;</span>

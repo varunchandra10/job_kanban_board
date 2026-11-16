@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { api, WeeklyChestData, WeeklyChestVaultData, WeeklyChestVaultBadge } from '../../services/api';
-import { getUserTimezone, getLocalIsoDate, getMondayOfWeek, getSundayOfWeek } from '../../utils/dateUtils';
+import { getUserTimezone, getLocalIsoDate, getMondayOfWeek, getSundayOfWeek, formatDate } from '../../utils/dateUtils';
 import { soundEffects } from '../../utils/soundEffects';
 import {
   Trophy,
@@ -635,7 +635,7 @@ export const WeeklyGoalChest: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          Claimed {b.claimedAt ? new Date(b.claimedAt).toLocaleDateString() : 'Achieved'} &bull; {b.achieved.apps} apps, {b.achieved.dsa} DSA, {Math.round(b.achieved.studyMinutes / 60)}h study
+                          Claimed {b.claimedAt ? formatDate(b.claimedAt) : 'Achieved'} &bull; {b.achieved.apps} apps, {b.achieved.dsa} DSA, {Math.round(b.achieved.studyMinutes / 60)}h study
                         </div>
                       </div>
                     </div>

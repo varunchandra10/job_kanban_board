@@ -1,7 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Application, Learning } from '../../types';
-import { getLocalIsoDate } from '../../utils/dateUtils';
+import {
+  getLocalIsoDate,
+  formatWeekdayDate,
+  MONTH_NAMES_FULL,
+  DAY_NAMES_SHORT,
+} from '../../utils/dateUtils';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -40,10 +45,7 @@ export const CalendarView: React.FC = () => {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
+  const monthNames = MONTH_NAMES_FULL;
 
   // Pre-calculate month grid geometry with useMemo so it only runs when year/month changes
   const { prevDays, currentMonthDays, nextDays } = useMemo(() => {
@@ -146,20 +148,7 @@ export const CalendarView: React.FC = () => {
   const totalSelectedEvents = selectedApplied.length + selectedDue.length + selectedLearnings.length;
 
   // Format selected date nicely
-  const formattedSelectedDate = (() => {
-    try {
-      const [y, m, d] = selectedDateStr.split('-').map(Number);
-      const dateObj = new Date(y, m - 1, d);
-      return dateObj.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
-    } catch {
-      return selectedDateStr;
-    }
-  })();
+  const formattedSelectedDate = formatWeekdayDate(selectedDateStr);
 
   const isSelectedToday = selectedDateStr === todayStr;
 
@@ -470,7 +459,7 @@ export const CalendarView: React.FC = () => {
           <div className="min-w-[620px] md:min-w-full">
             {/* Weekday headers */}
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+              {DAY_NAMES_SHORT.map(d => (
                 <div
                   key={d}
                   className="text-center text-xs font-bold uppercase tracking-wider py-1.5 sm:py-2 text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-white/5 rounded-xl border border-slate-200/50 dark:border-white/5"
