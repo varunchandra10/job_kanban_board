@@ -49,3 +49,4 @@ export function getSundayOfWeek(d: Date = new Date()): Date {
   sunday.setHours(23, 59, 59, 999);
   return sunday;
 }
+

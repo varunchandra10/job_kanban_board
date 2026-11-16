@@ -20,6 +20,13 @@ import { useApp } from '../../context/AppContext';
 export const AppLayout: React.FC = () => {
   const location = useLocation();
   const {
+    isAddAppOpen,
+    isFollowUpOpen,
+    isAddLearningOpen,
+    isQuickListOpen,
+    isShutdownOpen,
+    isDriveModalOpen,
+    isStorageConfirmModalOpen,
     isClipperModalOpen,
     setIsClipperModalOpen,
     appToDelete,
@@ -59,25 +66,29 @@ export const AppLayout: React.FC = () => {
         </ErrorBoundary>
       </div>
 
-      {/* Global Modals & Notifications */}
-      <ApplicationModal />
-      <FollowUpModal />
-      <LearningModal />
-      <AllItemsListModal />
-      <ShutdownModal />
-      <DriveModal />
-      <StorageSwitchModal />
-      <JobClipperModal
-        isOpen={isClipperModalOpen}
-        onClose={() => setIsClipperModalOpen(false)}
-      />
-      <DeleteApplicationModal
-        isOpen={isDeleteAppModalOpen}
-        application={appToDelete}
-        onConfirm={confirmDeleteApplication}
-        onCancel={cancelDeleteApplication}
-        isDeleting={isDeletingApp}
-      />
+      {/* Global Modals & Notifications - Rendered Conditionally to Eliminate Mounting Overhead */}
+      {isAddAppOpen && <ApplicationModal />}
+      {isFollowUpOpen && <FollowUpModal />}
+      {isAddLearningOpen && <LearningModal />}
+      {isQuickListOpen && <AllItemsListModal />}
+      {isShutdownOpen && <ShutdownModal />}
+      {isDriveModalOpen && <DriveModal />}
+      {isStorageConfirmModalOpen && <StorageSwitchModal />}
+      {isClipperModalOpen && (
+        <JobClipperModal
+          isOpen={isClipperModalOpen}
+          onClose={() => setIsClipperModalOpen(false)}
+        />
+      )}
+      {isDeleteAppModalOpen && (
+        <DeleteApplicationModal
+          isOpen={isDeleteAppModalOpen}
+          application={appToDelete}
+          onConfirm={confirmDeleteApplication}
+          onCancel={cancelDeleteApplication}
+          isDeleting={isDeletingApp}
+        />
+      )}
 
       {/* Floating Pomodoro Focus Sprint Widget */}
       <PomodoroFocusTimer />
