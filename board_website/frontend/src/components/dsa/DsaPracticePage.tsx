@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useApp } from '../../context/AppContext';
 import { SkeletonDsaPage } from '../common/SkeletonLoader';
 import { DSA_CATEGORIES } from '../../data/dsaTopics';
@@ -168,9 +168,12 @@ export const DsaPracticePage: React.FC = () => {
     setExpandedCategories({});
   };
 
-  // Filter categories and problems by search & filter
+  // Defer search query so typing stays smooth during concurrent updates
+  const deferredSearch = useDeferredValue(searchQuery);
+
+  // Filter categories and problems by search & filter with useDeferredValue
   const filteredCategories = useMemo(() => {
-    const q = searchQuery.toLowerCase().trim();
+    const q = (deferredSearch || '').toLowerCase().trim();
 
     return DSA_CATEGORIES.map(category => {
       if (selectedCategory !== 'All' && category.id !== selectedCategory) {
@@ -194,7 +197,7 @@ export const DsaPracticePage: React.FC = () => {
         problems: q ? matchingProblems : category.problems,
       };
     }).filter(Boolean) as DsaCategory[];
-  }, [searchQuery, selectedCategory]);
+  }, [deferredSearch, selectedCategory]);
 
   if (isDataLoading) {
     return <SkeletonDsaPage />;
@@ -506,7 +509,7 @@ export const DsaPracticePage: React.FC = () => {
           </div>
         ) : (
           filteredCategories.map((category) => {
-            const isExpanded = Boolean(expandedCategories[category.id] || searchQuery);
+            const isExpanded = Boolean(expandedCategories[category.id] || deferredSearch);
             const categorySolved = category.problems.filter(p => dsaProgress[p.id]?.status === 'solved').length;
             const categoryTotal = category.problems.length;
             const categoryPercent = categoryTotal > 0 ? Math.round((categorySolved / categoryTotal) * 100) : 0;

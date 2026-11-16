@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useDebounce } from '../../utils/useDebounce';
 import { STAGES, STAGE_CONFIG } from '../../utils/constants';
 import { Search, X, Plus, Calendar } from 'lucide-react';
 
@@ -15,6 +16,19 @@ export const MobileUtilityBar: React.FC = () => {
     openAddLearningModal,
   } = useApp();
 
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debouncedSearch = useDebounce(localSearch, 150);
+
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (debouncedSearch !== searchQuery) {
+      setSearchQuery(debouncedSearch);
+    }
+  }, [debouncedSearch, searchQuery, setSearchQuery]);
+
   return (
     <div className="md:hidden flex flex-col gap-2 p-3 bg-white/95 dark:bg-[#121214]/95 border-b border-slate-200 dark:border-white/10">
       {/* Mobile Sub-Bar: Search + Add Button */}
@@ -25,15 +39,18 @@ export const MobileUtilityBar: React.FC = () => {
             type="text"
             className="w-full bg-transparent text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none"
             placeholder={viewMode === 'learnings' ? 'Search learnings...' : 'Search applications...'}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
+            value={localSearch}
+            onChange={e => setLocalSearch(e.target.value)}
             autoComplete="off"
           />
-          {searchQuery && (
+          {localSearch && (
             <button
               type="button"
               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer ml-1"
-              onClick={() => setSearchQuery('')}
+              onClick={() => {
+                setLocalSearch('');
+                setSearchQuery('');
+              }}
               aria-label="Clear search"
             >
               <X size={13} />
