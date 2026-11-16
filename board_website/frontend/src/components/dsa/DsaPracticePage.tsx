@@ -748,3 +748,5 @@ export const DsaPracticePage: React.FC = () => {
     </div>
   );
 };
+
+export default DsaPracticePage;

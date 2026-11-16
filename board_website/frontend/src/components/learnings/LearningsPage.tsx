@@ -10,3 +10,5 @@ export const LearningsPage: React.FC = () => {
 
   return isCalendar ? <CalendarView /> : <LearningsBoard />;
 };
+
+export default LearningsPage;

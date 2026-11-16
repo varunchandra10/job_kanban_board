@@ -563,3 +563,5 @@ export const CareerProfile: React.FC = () => {
     </div>
   );
 };
+
+export default CareerProfile;

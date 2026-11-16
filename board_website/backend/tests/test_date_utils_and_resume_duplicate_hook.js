@@ -126,3 +126,4 @@ assert(!clipperSource.includes('const [isDuplicateModalOpen, setIsDuplicateModal
 console.log('   ✓ StandaloneClipperPage delegates duplicate checks to useResumeDuplicateCheck()');
 
 console.log('\n✅ All Phase 5.2 and Phase 5.3 deduplication tests PASSED successfully!\n');
+

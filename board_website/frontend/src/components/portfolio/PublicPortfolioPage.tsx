@@ -947,3 +947,5 @@ export const PublicPortfolioPage: React.FC = () => {
   );
 };
 
+export default PublicPortfolioPage;
+

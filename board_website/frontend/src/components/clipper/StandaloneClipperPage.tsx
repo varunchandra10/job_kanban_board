@@ -745,3 +745,5 @@ export const StandaloneClipperPage: React.FC = () => {
   );
 };
 
+export default StandaloneClipperPage;
+
