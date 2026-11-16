@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { api, WeeklyChestData, WeeklyChestVaultData, WeeklyChestVaultBadge } from '../../services/api';
+import { getUserTimezone, getLocalIsoDate, getMondayOfWeek, getSundayOfWeek, formatDate } from '../../utils/dateUtils';
 import { soundEffects } from '../../utils/soundEffects';
 import {
   Trophy,
@@ -54,11 +55,7 @@ export const WeeklyGoalChest: React.FC = () => {
   useEffect(() => {
     const updateCountdown = () => {
       const now = new Date();
-      const day = now.getDay();
-      const daysUntilSunday = day === 0 ? 0 : 7 - day;
-      const sundayMidnight = new Date(now);
-      sundayMidnight.setDate(now.getDate() + daysUntilSunday);
-      sundayMidnight.setHours(23, 59, 59, 999);
+      const sundayMidnight = getSundayOfWeek(now);
 
       const diffMs = sundayMidnight.getTime() - now.getTime();
       if (diffMs <= 0) {
@@ -84,25 +81,21 @@ export const WeeklyGoalChest: React.FC = () => {
   // Fetch or calculate weekly chest progress
   const loadChestData = async () => {
     setIsLoading(true);
+    const userTz = getUserTimezone();
     try {
-      const data = await api.getWeeklyChest();
+      const data = await api.getWeeklyChest(userTz);
       setChestData(data);
       setTargetAppsInput(data.targets.apps);
       setTargetDsaInput(data.targets.dsa);
       setTargetStudyInput(data.targets.studyMinutes);
     } catch {
-      // Offline / guest local calculation fallback
+      // Offline / guest local calculation fallback using timezone-accurate dates
       const now = new Date();
-      const day = now.getDay() || 7;
-      const monday = new Date(now);
-      monday.setDate(now.getDate() - day + 1);
-      monday.setHours(0, 0, 0, 0);
-      const sunday = new Date(monday);
-      sunday.setDate(monday.getDate() + 6);
-      sunday.setHours(23, 59, 59, 999);
+      const monday = getMondayOfWeek(now);
+      const sunday = getSundayOfWeek(now);
 
-      const monStr = monday.toISOString().slice(0, 10);
-      const sunStr = sunday.toISOString().slice(0, 10);
+      const monStr = getLocalIsoDate(monday);
+      const sunStr = getLocalIsoDate(sunday);
 
       // Local applications count
       const localAppsCount = applications.filter(a => {
@@ -172,7 +165,8 @@ export const WeeklyGoalChest: React.FC = () => {
     setIsClaiming(true);
 
     try {
-      const res = await api.claimWeeklyChest();
+      const userTz = getUserTimezone();
+      const res = await api.claimWeeklyChest(userTz);
 
       // 1. Play LevelUp arpeggio audio
       soundEffects.play('levelUp');
@@ -641,7 +635,7 @@ export const WeeklyGoalChest: React.FC = () => {
                           </span>
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          Claimed {b.claimedAt ? new Date(b.claimedAt).toLocaleDateString() : 'Achieved'} &bull; {b.achieved.apps} apps, {b.achieved.dsa} DSA, {Math.round(b.achieved.studyMinutes / 60)}h study
+                          Claimed {b.claimedAt ? formatDate(b.claimedAt) : 'Achieved'} &bull; {b.achieved.apps} apps, {b.achieved.dsa} DSA, {Math.round(b.achieved.studyMinutes / 60)}h study
                         </div>
                       </div>
                     </div>

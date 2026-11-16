@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api, API_BASE } from '../../services/api';
 import { PublicPortfolioResponse } from '../../types';
 import { DSA_CATEGORIES } from '../../data/dsaTopics';
+import { sanitizeUrl } from '../../utils/security';
 import {
   Flame,
   Download,
@@ -392,7 +393,7 @@ export const PublicPortfolioPage: React.FC = () => {
             <div className="flex items-center gap-2.5 shrink-0">
               {user.github && (
                 <a
-                  href={user.github.startsWith('http') ? user.github : `https://${user.github}`}
+                  href={sanitizeUrl(user.github)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 transition-colors"
@@ -406,7 +407,7 @@ export const PublicPortfolioPage: React.FC = () => {
 
               {user.linkedin && (
                 <a
-                  href={user.linkedin.startsWith('http') ? user.linkedin : `https://${user.linkedin}`}
+                  href={sanitizeUrl(user.linkedin)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold text-slate-300 transition-colors"
@@ -721,7 +722,7 @@ export const PublicPortfolioPage: React.FC = () => {
 
                     {proj.techStack && proj.techStack.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {proj.techStack.map(tag => (
+                        {proj.techStack.map((tag: string) => (
                           <span
                             key={tag}
                             className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white/10 text-slate-300"
@@ -737,7 +738,7 @@ export const PublicPortfolioPage: React.FC = () => {
                     <div className="flex items-center gap-2 pt-2 border-t border-white/[0.06]">
                       {proj.liveUrl && (
                         <a
-                          href={proj.liveUrl}
+                          href={sanitizeUrl(proj.liveUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
@@ -748,7 +749,7 @@ export const PublicPortfolioPage: React.FC = () => {
                       )}
                       {proj.repoUrl && (
                         <a
-                          href={proj.repoUrl}
+                          href={sanitizeUrl(proj.repoUrl)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-200 bg-white/10 hover:bg-white/20 transition-colors"
@@ -812,7 +813,7 @@ export const PublicPortfolioPage: React.FC = () => {
                   {ach.url && (
                     <div className="pt-1">
                       <a
-                        href={ach.url}
+                        href={sanitizeUrl(ach.url)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex items-center gap-1.5 text-xs font-semibold text-indigo-400 hover:underline"
@@ -861,7 +862,7 @@ export const PublicPortfolioPage: React.FC = () => {
                       <div className="pt-1 text-xs">
                         <span className="text-slate-400 font-semibold">Thesis / Research: </span>
                         {edu.thesisUrl ? (
-                          <a href={edu.thesisUrl} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline inline-flex items-center gap-1">
+                          <a href={sanitizeUrl(edu.thesisUrl)} target="_blank" rel="noreferrer" className="text-emerald-400 hover:underline inline-flex items-center gap-1">
                             <span>{edu.thesisTitle || edu.thesisUrl}</span>
                             <ExternalLink size={11} />
                           </a>
@@ -945,4 +946,6 @@ export const PublicPortfolioPage: React.FC = () => {
     </div>
   );
 };
+
+export default PublicPortfolioPage;
 

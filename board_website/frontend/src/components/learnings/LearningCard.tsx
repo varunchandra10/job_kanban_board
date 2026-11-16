@@ -2,6 +2,8 @@ import React from 'react';
 import { Learning } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { LEARNING_TRACKS } from '../../utils/constants';
+import { sanitizeUrl } from '../../utils/security';
+import { formatDate } from '../../utils/dateUtils';
 import {
   Clock,
   Calendar,
@@ -39,13 +41,7 @@ export const LearningCard: React.FC<LearningCardProps> = ({ learning: l }) => {
     }
   };
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return 'Today';
-    const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(dateStr);
-    if (!m) return dateStr;
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return `${months[+m[2] - 1]} ${+m[3]}`;
-  };
+
 
   const tagsList = (l.tags || '')
     .split(',')
@@ -174,14 +170,14 @@ export const LearningCard: React.FC<LearningCardProps> = ({ learning: l }) => {
           {/* Date */}
           <span className="inline-flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500">
             <Calendar size={11} />
-            <span>{formatDate(l.date_logged)}</span>
+            <span>{formatDate(l.date_logged, { includeYear: false, fallback: 'Today' })}</span>
           </span>
         </div>
 
         {/* Resource External Link */}
         {l.resource_url && (
           <a
-            href={l.resource_url}
+            href={sanitizeUrl(l.resource_url)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}

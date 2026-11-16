@@ -353,17 +353,20 @@ exports.desktopGoogleStart = (req, res) => {
     prompt: 'consent select_account'
   }).toString();
 
-  try {
-    const { exec } = require('child_process');
-    if (process.platform === 'win32') {
-      exec(`start "" "${authUrl}"`);
-    } else if (process.platform === 'darwin') {
-      exec(`open "${authUrl}"`);
-    } else {
-      exec(`xdg-open "${authUrl}"`);
+  // Only attempt to spawn a local browser process if running in local desktop mode
+  if (config.isDesktop) {
+    try {
+      const { exec, execFile } = require('child_process');
+      if (process.platform === 'win32') {
+        exec(`start "" "${authUrl}"`);
+      } else if (process.platform === 'darwin') {
+        execFile('open', [authUrl]);
+      } else {
+        execFile('xdg-open', [authUrl]);
+      }
+    } catch (err) {
+      console.warn('[Desktop OAuth] Could not auto-launch browser:', err.message);
     }
-  } catch (err) {
-    console.warn('[Desktop OAuth] Could not auto-launch browser:', err.message);
   }
 
   res.json({ ok: 1, sessionId, url: authUrl });

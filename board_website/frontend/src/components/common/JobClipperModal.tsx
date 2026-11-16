@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import {
-  X,
   Zap,
   Copy,
   Check,
-  ExternalLink,
-  Bookmark,
   Smartphone,
   ChevronDown,
   Sparkles,
-  HelpCircle
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import clipperMinRaw from '../../../public/clipper.min.js?raw';
+import { Modal } from './Modal';
 
 interface JobClipperModalProps {
   isOpen: boolean;
@@ -20,7 +17,7 @@ interface JobClipperModalProps {
 }
 
 export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClose }) => {
-  const { showToast, currentUser } = useApp();
+  const { showToast } = useApp();
   const [copied, setCopied] = useState(false);
   const [showMobileGuide, setShowMobileGuide] = useState(false);
 
@@ -30,7 +27,7 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://kanban-board-job.vercel.app';
   const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('job_tracker_token') || '') : '';
 
-  // 100% In-Page Top-Right Popout Bookmarklet (Runs inside the same page in an isolated Shadow DOM, 0 separate windows)
+  // 100% In-Page Top-Right Popout Bookmarklet
   const bookmarkletCode = `javascript:(function(){window._JT_ORIGIN='${origin}';window._JT_TOKEN='${token}';${clipperMinRaw}})();`;
 
   const handleCopy = () => {
@@ -42,45 +39,27 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#131418] p-5 sm:p-6 shadow-2xl overflow-hidden relative animate-in zoom-in-95 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shadow-xs">
-              <Zap size={18} className="fill-orange-500/20" />
-            </div>
-            <div>
-              <h2 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>1-Click Universal Job Clipper</span>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white">
-                  Bookmarklet
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Clip job postings from LinkedIn, Indeed, Naukri, or any company careers page into your Kanban board with 1 click.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-            title="Close modal"
-          >
-            <X size={18} />
-          </button>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title="1-Click Universal Job Clipper"
+      badge={
+        <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white">
+          Bookmarklet
+        </span>
+      }
+      subtitle="Clip job postings from LinkedIn, Indeed, Naukri, or any company careers page into your Kanban board with 1 click."
+      icon={
+        <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center justify-center shadow-xs">
+          <Zap size={18} className="fill-orange-500/20" />
         </div>
-
+      }
+      maxWidth="xl"
+      hideFooter
+    >
+      <div className="space-y-4">
         {/* Main Drag-and-Drop Action Box */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-orange-500/[0.06] to-amber-500/[0.02] border border-orange-500/20 text-center mb-5">
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-orange-500/[0.06] to-amber-500/[0.02] border border-orange-500/20 text-center">
           <div className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2.5 flex items-center justify-center gap-1.5">
             <Sparkles size={14} className="text-orange-500" />
             <span>Drag this button to your Bookmarks Bar</span>
@@ -101,13 +80,20 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
             </a>
           </div>
 
-          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
-            (Don't see your bookmarks bar? Press <kbd className="px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-[10px]">Ctrl + Shift + B</kbd> or <kbd className="px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-[10px]">Cmd + Shift + B</kbd>)
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 m-0">
+            (Don't see your bookmarks bar? Press{' '}
+            <kbd className="px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-[10px]">
+              Ctrl + Shift + B
+            </kbd>{' '}
+            or{' '}
+            <kbd className="px-1.5 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 font-mono text-[10px]">
+              Cmd + Shift + B
+            </kbd>)
           </p>
         </div>
 
         {/* 3 Simple Steps */}
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2">
           <div className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">
             How It Works:
           </div>
@@ -161,7 +147,7 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
 
         {/* Collapsible Mobile Browser Guide */}
         {showMobileGuide && (
-          <div className="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 text-[11.5px] text-slate-600 dark:text-slate-400 leading-relaxed space-y-1 animate-in fade-in duration-150">
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 text-[11.5px] text-slate-600 dark:text-slate-400 leading-relaxed space-y-1 animate-in fade-in duration-150">
             <div className="font-bold text-slate-800 dark:text-slate-200">Using on Chrome / Safari Mobile:</div>
             <div>1. Click <strong>"Copy Bookmarklet Code"</strong> above.</div>
             <div>2. Bookmark any page on your phone and name it <strong>"Clip to Tracker"</strong>.</div>
@@ -170,7 +156,6 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 };
-

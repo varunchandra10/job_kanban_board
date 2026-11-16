@@ -106,7 +106,7 @@ class PomodoroEngine {
       if (this.state.isRunning && this.state.endTime) {
         const now = Date.now();
         const remaining = Math.max(0, Math.round((this.state.endTime - now) / 1000));
-        
+
         if (remaining !== this.state.remainingSeconds) {
           this.state.remainingSeconds = remaining;
 
@@ -114,8 +114,12 @@ class PomodoroEngine {
             this.state.isRunning = false;
             this.state.isFinished = true;
             this.state.endTime = null;
+            // Persist completion state to disk
+            this.persistState();
+          } else {
+            // Memory-only update for ticking: eliminates 2 Hz synchronous localStorage disk thrashing
+            this.notify();
           }
-          this.persistState();
         }
       }
     }, 500);

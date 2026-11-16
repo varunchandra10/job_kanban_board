@@ -4,7 +4,8 @@ import { api } from '../../services/api';
 import { ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { ensureGoogleDriveToken, getStoredGoogleDriveToken } from '../../utils/googleAuth';
-import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
+import { useResumeDuplicateCheck } from '../../hooks/useResumeDuplicateCheck';
+import { sanitizeUrl, decryptClientSecret } from '../../utils/security';
 import {
   Briefcase,
   Landmark,
@@ -28,6 +29,10 @@ import {
   Database,
   FolderOpen,
   RotateCcw,
+  Eye,
+  EyeOff,
+  Copy,
+  ShieldCheck,
 } from 'lucide-react';
 
 const getDisplayFileName = (pathStr: string, fallback: string = 'Document') => {
@@ -84,6 +89,8 @@ export const ApplicationModal: React.FC = () => {
   const [portalUrl, setPortalUrl] = useState('');
   const [portalUser, setPortalUser] = useState('');
   const [portalPass, setPortalPass] = useState('');
+  const [showPortalPass, setShowPortalPass] = useState(false);
+  const [copiedPortalPass, setCopiedPortalPass] = useState(false);
   const [portalNotes, setPortalNotes] = useState('');
   const [recruiterName, setRecruiterName] = useState('');
   const [recruiterEmail, setRecruiterEmail] = useState('');
@@ -94,14 +101,31 @@ export const ApplicationModal: React.FC = () => {
   const [coverLetterPath, setCoverLetterPath] = useState('');
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
-  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-  const [duplicateResumeInfo, setDuplicateResumeInfo] = useState<{
-    file: File;
-    fileName: string;
-    existingLink: string;
-  } | null>(null);
   const [localDocumentsDir, setLocalDocumentsDir] = useState<string>(() => {
     return typeof window !== 'undefined' ? (localStorage.getItem('job_tracker_custom_local_dir') || '') : '';
+  });
+
+  const {
+    checkForDuplicate,
+    renderDuplicateModal,
+  } = useResumeDuplicateCheck({
+    storageMode,
+    onSelectSame: (info) => {
+      setResumePath(info.existingLink);
+      showToast(`Linked existing "${info.fileName}" from Google Drive!`);
+    },
+    onSelectDifferent: async (renamedFile, newFileName) => {
+      setIsUploadingResume(true);
+      try {
+        const res = await api.uploadDocument(renamedFile, 'resume', editingApp?.id, storageMode);
+        setResumePath(res.fullPath || res.path || newFileName);
+        showToast(`Uploaded as "${newFileName}" to Google Drive!`);
+      } catch (err: any) {
+        showToast(err.message || 'Failed to upload renamed resume');
+      } finally {
+        setIsUploadingResume(false);
+      }
+    },
   });
 
   const resumeInputRef = useRef<HTMLInputElement>(null);
@@ -164,7 +188,13 @@ export const ApplicationModal: React.FC = () => {
       setJdUrl(editingApp.jd_url || '');
       setPortalUrl(editingApp.portal_url || '');
       setPortalUser(editingApp.portal_user || '');
-      setPortalPass(editingApp.portal_pass || '');
+      if (editingApp.portal_pass?.startsWith('enc:v1:')) {
+        decryptClientSecret(editingApp.portal_pass).then(dec => setPortalPass(dec));
+      } else {
+        setPortalPass(editingApp.portal_pass || '');
+      }
+      setShowPortalPass(false);
+      setCopiedPortalPass(false);
       setPortalNotes(editingApp.portal_notes || '');
       setRecruiterName(editingApp.recruiter_name || '');
       setRecruiterEmail(editingApp.recruiter_email || '');
@@ -189,6 +219,8 @@ export const ApplicationModal: React.FC = () => {
       setPortalUrl('');
       setPortalUser('');
       setPortalPass('');
+      setShowPortalPass(false);
+      setCopiedPortalPass(false);
       setPortalNotes(appPrefill?.portal_notes || '');
       setRecruiterName('');
       setRecruiterEmail('');
@@ -220,21 +252,11 @@ export const ApplicationModal: React.FC = () => {
         }
 
         // Check if file with same resume name already exists in Google Drive
-        try {
-          const checkRes = await api.checkDriveFile(file.name, 'resume');
-          if (checkRes.exists && checkRes.file?.webViewLink) {
-            setDuplicateResumeInfo({
-              file,
-              fileName: checkRes.file.name || file.name,
-              existingLink: checkRes.file.webViewLink,
-            });
-            setIsDuplicateModalOpen(true);
-            setIsUploadingResume(false);
-            if (e.target) e.target.value = '';
-            return;
-          }
-        } catch (checkErr) {
-          console.warn('[Check Drive Resume Duplicate Note]:', checkErr);
+        const hasCollision = await checkForDuplicate(file, storageMode);
+        if (hasCollision) {
+          setIsUploadingResume(false);
+          if (e.target) e.target.value = '';
+          return;
         }
       }
 
@@ -282,31 +304,7 @@ export const ApplicationModal: React.FC = () => {
     }
   };
 
-  const handleSelectSameResume = () => {
-    if (!duplicateResumeInfo) return;
-    setResumePath(duplicateResumeInfo.existingLink);
-    showToast(`Linked existing "${duplicateResumeInfo.fileName}" from Google Drive!`);
-    setIsDuplicateModalOpen(false);
-    setDuplicateResumeInfo(null);
-  };
 
-  const handleSelectDifferentResume = async (newFileName: string) => {
-    if (!duplicateResumeInfo) return;
-    const originalFile = duplicateResumeInfo.file;
-    setIsDuplicateModalOpen(false);
-    setIsUploadingResume(true);
-    try {
-      const renamedFile = new File([originalFile], newFileName, { type: originalFile.type });
-      const res = await api.uploadDocument(renamedFile, 'resume', editingApp?.id, storageMode);
-      setResumePath(res.fullPath || res.path || newFileName);
-      showToast(`Uploaded as "${newFileName}" to Google Drive!`);
-    } catch (err: any) {
-      showToast(err.message || 'Failed to upload renamed resume');
-    } finally {
-      setIsUploadingResume(false);
-      setDuplicateResumeInfo(null);
-    }
-  };
 
   const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -720,14 +718,46 @@ export const ApplicationModal: React.FC = () => {
                     />
                   </div>
                   <div className="min-w-0">
-                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">Password</label>
-                    <input
-                      type="text"
-                      placeholder="Saved password"
-                      value={portalPass}
-                      onChange={e => setPortalPass(e.target.value)}
-                      className="w-full min-w-0 max-w-full box-border px-3 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400">Password</label>
+                      <div className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium" title="Client-side AES-256-GCM encrypted in storage">
+                        <ShieldCheck size={12} />
+                        <span>AES-256</span>
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showPortalPass ? 'text' : 'password'}
+                        placeholder="Saved password"
+                        value={portalPass}
+                        onChange={e => setPortalPass(e.target.value)}
+                        className="w-full min-w-0 max-w-full box-border pl-3 pr-16 py-2 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                      />
+                      <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                        {portalPass && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(portalPass);
+                              setCopiedPortalPass(true);
+                              setTimeout(() => setCopiedPortalPass(false), 2000);
+                            }}
+                            title={copiedPortalPass ? 'Copied to clipboard' : 'Copy password'}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                          >
+                            {copiedPortalPass ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setShowPortalPass(prev => !prev)}
+                          title={showPortalPass ? 'Hide password' : 'Show password'}
+                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+                        >
+                          {showPortalPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -966,7 +996,7 @@ export const ApplicationModal: React.FC = () => {
                           resumePath.startsWith('http') && (
                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-blue-200/40 dark:border-blue-500/20">
                               <a
-                                href={resumePath}
+                                href={sanitizeUrl(resumePath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-blue-600 dark:text-indigo-400 hover:underline truncate flex-1 font-mono"
@@ -975,7 +1005,7 @@ export const ApplicationModal: React.FC = () => {
                                 {resumePath}
                               </a>
                               <a
-                                href={resumePath}
+                                href={sanitizeUrl(resumePath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 shrink-0"
@@ -1086,7 +1116,7 @@ export const ApplicationModal: React.FC = () => {
                           coverLetterPath.startsWith('http') && (
                             <div className="flex items-center justify-between gap-2 pt-1 border-t border-purple-200/40 dark:border-purple-500/20">
                               <a
-                                href={coverLetterPath}
+                                href={sanitizeUrl(coverLetterPath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-[10px] text-purple-600 dark:text-purple-400 hover:underline truncate flex-1 font-mono"
@@ -1095,7 +1125,7 @@ export const ApplicationModal: React.FC = () => {
                                 {coverLetterPath}
                               </a>
                               <a
-                                href={coverLetterPath}
+                                href={sanitizeUrl(coverLetterPath)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 shrink-0"
@@ -1192,21 +1222,7 @@ export const ApplicationModal: React.FC = () => {
       </aside>
 
       {/* Duplicate Resume Prompt Modal for Google Drive */}
-      {duplicateResumeInfo && (
-        <DuplicateResumeModal
-          isOpen={isDuplicateModalOpen}
-          fileName={duplicateResumeInfo.fileName}
-          existingLink={duplicateResumeInfo.existingLink}
-          company={company}
-          role={role}
-          onSelectSame={handleSelectSameResume}
-          onSelectDifferent={handleSelectDifferentResume}
-          onCancel={() => {
-            setIsDuplicateModalOpen(false);
-            setDuplicateResumeInfo(null);
-          }}
-        />
-      )}
+      {renderDuplicateModal(company, role)}
     </>
   );
 };

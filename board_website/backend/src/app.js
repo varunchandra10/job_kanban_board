@@ -7,6 +7,7 @@ const fs = require('fs');
 const config = require('./config');
 const authMiddleware = require('./middleware/auth');
 const errorHandler = require('./middleware/errorHandler');
+const requestIdMiddleware = require('./middleware/requestId');
 const { createRateLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
@@ -20,6 +21,8 @@ const dsaRoutes = require('./routes/dsa');
 const clipperRoutes = require('./routes/clipper');
 const portfolioRoutes = require('./routes/portfolio');
 const weeklyChestRoutes = require('./routes/weeklyChest');
+
+app.use(requestIdMiddleware);
 
 // ---------------------------------------------------------------------
 // HTTP Security Headers & CORS Configuration
@@ -125,22 +128,81 @@ app.get('/health', healthHandler);
 app.get('/api/health', healthHandler);
 app.healthHandler = healthHandler;
 
+const { verifyToken } = require('./services/jwtService');
+
 const handleShutdown = (req, res) => {
+  // 1. Strictly block remote shutdowns in web/cloud deployment mode
+  if (!config.isDesktop) {
+    return res.status(403).json({
+      ok: 0,
+      error: 'Server shutdown endpoint is disabled in web deployment mode.',
+      code: 'SHUTDOWN_DISABLED'
+    });
+  }
+
+  // 2. If an APP_PIN is configured, require authentication via header, body, query, or JWT bearer session
+  if (config.appPin) {
+    const providedPin = (
+      req.headers['x-app-pin'] ||
+      req.body?.pin ||
+      req.body?.app_pin ||
+      req.query?.pin ||
+      ''
+    ).toString().trim();
+
+    let isAuthorized = false;
+    if (providedPin && providedPin === config.appPin) {
+      isAuthorized = true;
+    } else {
+      // Allow authenticated user with valid JWT session
+      const authHeader = req.headers['authorization'];
+      const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+      if (token) {
+        const decoded = verifyToken(token);
+        if (decoded && decoded.id) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return res.status(401).json({
+        ok: 0,
+        error: 'Unauthorized: Valid PIN or authenticated session required to shut down.',
+        code: 'UNAUTHORIZED_SHUTDOWN'
+      });
+    }
+  }
+
   res.json({ ok: 1, message: 'Server is stopping gracefully...' });
   console.log('[Server] Graceful shutdown initiated...');
+
+  // In automated test runs, do not terminate the test process
+  if (process.env.NODE_ENV === 'test' || req._testing) {
+    return;
+  }
+
   setTimeout(() => {
     if (process.platform === 'win32' && process.ppid) {
       try {
-        const { exec } = require('child_process');
-        exec(`powershell -NoProfile -Command "(Get-Process -Id ${process.ppid} -ErrorAction SilentlyContinue).ProcessName"`, (err, stdout) => {
-          const pName = (stdout || '').trim().toLowerCase();
-          if (pName === 'cmd' || pName === 'windowsterminal') {
-            exec(`taskkill /F /PID ${process.ppid}`);
-          }
-          process.exit(0);
-        });
-        setTimeout(() => process.exit(0), 400);
-        return;
+        const { execFile } = require('child_process');
+        const ppid = parseInt(process.ppid, 10);
+        if (Number.isInteger(ppid) && ppid > 0) {
+          // Strictly verify if ppid is a terminal process without running unquoted shell scripts
+          execFile('powershell.exe', ['-NoProfile', '-Command', `(Get-Process -Id ${ppid} -ErrorAction SilentlyContinue).ProcessName`], (err, stdout) => {
+            const pName = (stdout || '').trim().toLowerCase();
+            if (pName === 'cmd' || pName === 'windowsterminal') {
+              execFile('taskkill', ['/F', '/PID', String(ppid)], () => {
+                process.exit(0);
+              });
+              setTimeout(() => process.exit(0), 300);
+              return;
+            }
+            process.exit(0);
+          });
+          setTimeout(() => process.exit(0), 400);
+          return;
+        }
       } catch (e) {}
     }
     process.exit(0);
@@ -149,6 +211,7 @@ const handleShutdown = (req, res) => {
 
 app.post('/shutdown', handleShutdown);
 app.post('/api/shutdown', handleShutdown);
+app.handleShutdown = handleShutdown;
 
 // ---------------------------------------------------------------------
 // Static assets & Front‑end handling
@@ -184,7 +247,7 @@ app.use('/api', weeklyChestRoutes);
 app.use('/api/backup', backupRoutes);
 
 // Background Schedulers (Evening Streak Safeguard Reminders)
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
   try {
     const { startStreakScheduler } = require('./services/streakReminderService');
     startStreakScheduler();
@@ -196,7 +259,12 @@ if (!process.env.VERCEL) {
 // Catch-all for API 404 and SPA fallback
 app.use((req, res) => {
   if (req.path.startsWith('/api/')) {
-    return res.status(404).json({ error: 'Endpoint not found' });
+    return res.status(404).json({
+      ok: 0,
+      error: 'Endpoint not found',
+      code: 'NOT_FOUND',
+      ...(req.id ? { requestId: req.id } : {})
+    });
   }
   const indexPath = path.join(config.frontendDir, 'index.html');
   if (fs.existsSync(indexPath)) {

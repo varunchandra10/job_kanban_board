@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { CompanyLogo } from '../common/CompanyLogo';
+import { Modal } from '../common/Modal';
 import {
   Mail,
   X,
@@ -338,62 +339,78 @@ ${applicantName}`;
     }
   };
 
+  if (!followUpApp) return null;
+
   return (
-    <>
-      {/* 1. Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-200"
-        onClick={closeFollowUpModal}
-        aria-hidden="true"
-      />
-
-      {/* 2. Modal Window */}
-      <div
-        className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[94vw] sm:max-w-[760px] max-h-[92vh] bg-white dark:bg-[#151518] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl z-50 flex flex-col overflow-hidden text-slate-900 dark:text-slate-100 animate-in zoom-in-95 duration-200"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="followup-title"
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-5 sm:px-6 py-4 bg-slate-50/80 dark:bg-white/[0.02]">
-          <div className="flex items-center gap-3 min-w-0">
-            <CompanyLogo company={followUpApp.company} size={40} />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 id="followup-title" className="text-base sm:text-lg font-black tracking-tight text-slate-900 dark:text-white truncate m-0">
-                  Follow Up with {followUpApp.company}
-                </h2>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                  {followUpApp.stage}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                <span>{followUpApp.role}</span>
-                {daysSinceApplied !== null && (
-                  <>
-                    <span>&middot;</span>
-                    <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
-                      <Clock size={11} className="text-amber-500" />
-                      {daysSinceApplied === 0 ? 'Applied today' : `Applied ${daysSinceApplied}d ago`}
-                    </span>
-                  </>
-                )}
-              </p>
-            </div>
-          </div>
-
+    <Modal
+      isOpen={isFollowUpOpen}
+      onClose={closeFollowUpModal}
+      maxWidth="3xl"
+      title={`Follow Up with ${followUpApp.company}`}
+      badge={
+        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+          {followUpApp.stage}
+        </span>
+      }
+      subtitle={
+        <span className="flex items-center gap-2">
+          <span>{followUpApp.role}</span>
+          {daysSinceApplied !== null && (
+            <>
+              <span>&middot;</span>
+              <span className="flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
+                <Clock size={11} className="text-amber-500" />
+                {daysSinceApplied === 0 ? 'Applied today' : `Applied ${daysSinceApplied}d ago`}
+              </span>
+            </>
+          )}
+        </span>
+      }
+      icon={<CompanyLogo company={followUpApp.company} size={40} />}
+      footer={
+        <div className="border-t border-slate-200 dark:border-white/10 px-5 sm:px-6 py-3.5 bg-slate-50/90 dark:bg-[#121215] flex flex-wrap items-center justify-between gap-3">
+          {/* Left: Save Note to Application */}
           <button
             type="button"
-            onClick={closeFollowUpModal}
-            className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 dark:border-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-            aria-label="Close follow-up modal"
+            disabled={isSavingNote}
+            onClick={handleSaveNote}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1e] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
+            title="Log that you prepared/sent this follow up to the application's notes"
           >
-            <X size={16} />
+            <Save size={13} />
+            <span>{isSavingNote ? 'Logging...' : 'Log to App Notes'}</span>
           </button>
-        </div>
 
-        {/* Modal Scrollable Body */}
-        <div className="flex-1 overflow-y-auto px-5 sm:px-6 py-4 space-y-4">
+          {/* Right: Copy & Send Actions */}
+          <div className="flex items-center gap-2">
+            {/* Copy Button */}
+            <button
+              type="button"
+              onClick={handleCopy}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border ${
+                copied
+                  ? 'bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-white dark:bg-[#1a1a1e] border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
+              }`}
+            >
+              {copied ? <Check size={14} /> : <Copy size={14} />}
+              <span>{copied ? 'Copied to Clipboard! ✨' : 'Copy Email'}</span>
+            </button>
+
+            {/* Open in Email Client Button */}
+            <button
+              type="button"
+              onClick={handleOpenMailClient}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all cursor-pointer shadow-md"
+            >
+              <Send size={13} />
+              <span>Open in Email App</span>
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-4">
           {/* Template Selection Tabs */}
           <div>
             <div className="flex items-center justify-between mb-2">
@@ -545,49 +562,6 @@ ${applicantName}`;
             )}
           </div>
         </div>
-
-        {/* Modal Footer Actions */}
-        <div className="border-t border-slate-200 dark:border-white/10 px-5 sm:px-6 py-3.5 bg-slate-50/90 dark:bg-[#121215] flex flex-wrap items-center justify-between gap-3">
-          {/* Left: Save Note to Application */}
-          <button
-            type="button"
-            disabled={isSavingNote}
-            onClick={handleSaveNote}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1a1a1e] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer disabled:opacity-50"
-            title="Log that you prepared/sent this follow up to the application's notes"
-          >
-            <Save size={13} />
-            <span>{isSavingNote ? 'Logging...' : 'Log to App Notes'}</span>
-          </button>
-
-          {/* Right: Copy & Send Actions */}
-          <div className="flex items-center gap-2">
-            {/* Copy Button */}
-            <button
-              type="button"
-              onClick={handleCopy}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-xs border ${
-                copied
-                  ? 'bg-emerald-600 text-white border-emerald-600'
-                  : 'bg-white dark:bg-[#1a1a1e] border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10'
-              }`}
-            >
-              {copied ? <Check size={14} /> : <Copy size={14} />}
-              <span>{copied ? 'Copied to Clipboard! ✨' : 'Copy Email'}</span>
-            </button>
-
-            {/* Open in Email Client Button */}
-            <button
-              type="button"
-              onClick={handleOpenMailClient}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-extrabold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 transition-all cursor-pointer shadow-md"
-            >
-              <Send size={13} />
-              <span>Open in Email App</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
+    </Modal>
   );
 };

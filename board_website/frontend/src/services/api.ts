@@ -1,4 +1,5 @@
 import { Application, Learning, GamificationStats, UserProfile, ResumeVersion, DsaProblemProgress, PublicPortfolioData } from '../types';
+import { getUserTimezone } from '../utils/dateUtils';
 
 export interface WeeklyChestData {
   weekId: string;
@@ -250,6 +251,29 @@ export const api = {
     return `${API_BASE}/versions/${id}/pdf${token ? `?token=${encodeURIComponent(token)}` : ''}`;
   },
 
+  async fetchResumeVersionPdfBlob(id: number): Promise<Blob> {
+    const res = await fetch(`${API_BASE}/versions/${id}/pdf`, {
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.blob();
+  },
+
+  async viewResumeVersionPdf(id: number): Promise<void> {
+    try {
+      const blob = await this.fetchResumeVersionPdfBlob(id);
+      const blobUrl = URL.createObjectURL(blob);
+      const win = window.open(blobUrl, '_blank');
+      if (!win) {
+        window.location.href = blobUrl;
+      }
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+    } catch (_) {
+      const directUrl = this.getResumeVersionPdfUrl(id);
+      window.open(directUrl, '_blank');
+    }
+  },
+
   async updateSetting(key: string, value: string): Promise<{ ok: number }> {
     const res = await fetch(`${API_BASE}/settings/${encodeURIComponent(key)}`, {
       method: 'PUT',
@@ -494,17 +518,18 @@ export const api = {
         if (tauriRes && tauriRes.path) {
           savedLocalPath = tauriRes.path;
           console.log('[Tauri Desktop] Document saved to local disk:', savedLocalPath);
+          const targetPath = savedLocalPath || file.name;
           return {
             ok: 1,
-            fullPath: savedLocalPath,
-            path: savedLocalPath,
-            relativePath: savedLocalPath,
+            fullPath: targetPath,
+            path: targetPath,
+            relativePath: targetPath,
             name: tauriRes.filename || file.name,
             size: tauriRes.size || file.size,
             isGoogleDrive: false,
             isLocalStorage: true,
-            savedDiskPath: savedLocalPath,
-            localDiskPath: savedLocalPath,
+            savedDiskPath: targetPath,
+            localDiskPath: targetPath,
           };
         }
       } catch (tauriErr: any) {
@@ -929,7 +954,8 @@ export const api = {
   },
 
   async getWeeklyChest(tz?: string): Promise<WeeklyChestData> {
-    const tzParam = tz ? `?tz=${encodeURIComponent(tz)}` : '';
+    const resolvedTz = tz || getUserTimezone();
+    const tzParam = `?tz=${encodeURIComponent(resolvedTz)}`;
     const res = await fetch(`${API_BASE}/weekly-chest/current${tzParam}`, {
       headers: getAuthHeaders(),
     });
@@ -945,10 +971,11 @@ export const api = {
     weekId: string;
     gamification?: any;
   }> {
+    const resolvedTz = tz || getUserTimezone();
     const res = await fetch(`${API_BASE}/weekly-chest/claim`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify({ tz }),
+      body: JSON.stringify({ tz: resolvedTz }),
     });
     const json = await res.json();
     if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to claim weekly reward chest');

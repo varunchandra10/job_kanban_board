@@ -49,15 +49,42 @@ export const KanbanColumn: React.FC<KanbanColumnProps> = ({ stage, applications 
     const idStr = e.dataTransfer.getData('text/plain');
     if (!idStr) return;
     const appId = Number(idStr);
-    if (appId) {
-      if (isBookmarkColumn) {
-        toggleBookmark(appId, true);
-        soundEffects.play('swoosh');
-      } else {
-        moveApplication(appId, stage);
-        soundEffects.play('swoosh');
+    if (!appId) return;
+
+    if (isBookmarkColumn) {
+      toggleBookmark(appId, true);
+      soundEffects.play('swoosh');
+      return;
+    }
+
+    // Determine target card position if dropped directly over or adjacent to a card
+    const targetCardEl = (e.target as HTMLElement).closest<HTMLElement>('[data-id]');
+    let beforeId: number | null = null;
+
+    if (targetCardEl && targetCardEl.dataset.id) {
+      const targetId = Number(targetCardEl.dataset.id);
+      if (targetId && targetId !== appId) {
+        const rect = targetCardEl.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const isAbove = e.clientY < midY;
+
+        if (isAbove) {
+          beforeId = targetId;
+        } else {
+          // Drop below target card -> insert before the next card (or null to append at bottom)
+          const idx = applications.findIndex(a => a.id === targetId);
+          if (idx !== -1 && idx + 1 < applications.length) {
+            const nextCard = applications[idx + 1];
+            beforeId = nextCard.id !== appId ? nextCard.id : (applications[idx + 2]?.id ?? null);
+          } else {
+            beforeId = null;
+          }
+        }
       }
     }
+
+    moveApplication(appId, stage, beforeId);
+    soundEffects.play('swoosh');
   };
 
   return (

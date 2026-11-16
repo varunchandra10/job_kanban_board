@@ -24,7 +24,9 @@ import { useApp } from '../../context/AppContext';
 import { ApplicationCategory, ApplicationStage } from '../../types';
 import { STAGES, COUNTRIES } from '../../utils/constants';
 import { api } from '../../services/api';
-import { DuplicateResumeModal } from '../common/DuplicateResumeModal';
+import { useResumeDuplicateCheck } from '../../hooks/useResumeDuplicateCheck';
+import { getLocalIsoDate } from '../../utils/dateUtils';
+import { sanitizeUrl } from '../../utils/security';
 
 export const StandaloneClipperPage: React.FC = () => {
   const {
@@ -48,7 +50,7 @@ export const StandaloneClipperPage: React.FC = () => {
   const [role, setRole] = useState('');
   const [category, setCategory] = useState<ApplicationCategory>('Industry');
   const [stage, setStage] = useState<ApplicationStage>('Applied');
-  const [dateApplied, setDateApplied] = useState(() => new Date().toISOString().slice(0, 10));
+  const [dateApplied, setDateApplied] = useState(() => getLocalIsoDate());
   const [deadline, setDeadline] = useState('');
   const [country, setCountry] = useState('US');
   const [city, setCity] = useState('');
@@ -62,12 +64,24 @@ export const StandaloneClipperPage: React.FC = () => {
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [existingDriveResumeLink, setExistingDriveResumeLink] = useState<string | null>(null);
   const [existingDriveResumeName, setExistingDriveResumeName] = useState<string>('');
-  const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
-  const [duplicateResumeInfo, setDuplicateResumeInfo] = useState<{
-    file: File;
-    fileName: string;
-    existingLink: string;
-  } | null>(null);
+
+  const {
+    checkForDuplicate,
+    renderDuplicateModal,
+  } = useResumeDuplicateCheck({
+    storageMode,
+    onSelectSame: (info) => {
+      setExistingDriveResumeLink(info.existingLink);
+      setExistingDriveResumeName(info.fileName);
+      setResumeFile(null);
+      showToast(`Linked existing "${info.fileName}" from Google Drive!`);
+    },
+    onSelectDifferent: (renamed, newFileName) => {
+      setResumeFile(renamed);
+      setExistingDriveResumeLink(null);
+      showToast(`Renamed to "${newFileName}".`);
+    },
+  });
 
   // UI state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -214,25 +228,7 @@ export const StandaloneClipperPage: React.FC = () => {
     }
   };
 
-  const handleSelectSameResume = () => {
-    if (!duplicateResumeInfo) return;
-    setExistingDriveResumeLink(duplicateResumeInfo.existingLink);
-    setExistingDriveResumeName(duplicateResumeInfo.fileName);
-    setResumeFile(null);
-    showToast(`Linked existing "${duplicateResumeInfo.fileName}" from Google Drive!`);
-    setIsDuplicateModalOpen(false);
-    setDuplicateResumeInfo(null);
-  };
 
-  const handleSelectDifferentResume = (newFileName: string) => {
-    if (!duplicateResumeInfo) return;
-    const renamed = new File([duplicateResumeInfo.file], newFileName, { type: duplicateResumeInfo.file.type });
-    setResumeFile(renamed);
-    setExistingDriveResumeLink(null);
-    setIsDuplicateModalOpen(false);
-    setDuplicateResumeInfo(null);
-    showToast(`Renamed to "${newFileName}".`);
-  };
 
   // If saved, show celebratory completion card
   if (isSaved) {
@@ -599,7 +595,7 @@ export const StandaloneClipperPage: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <a
-                          href={existingDriveResumeLink}
+                          href={sanitizeUrl(existingDriveResumeLink)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-0.5"
@@ -649,22 +645,10 @@ export const StandaloneClipperPage: React.FC = () => {
                           onChange={async e => {
                             const file = e.target.files?.[0];
                             if (!file) return;
-                            if (storageMode === 'g_drive') {
-                              try {
-                                const checkRes = await api.checkDriveFile(file.name, 'resume');
-                                if (checkRes.exists && checkRes.file?.webViewLink) {
-                                  setDuplicateResumeInfo({
-                                    file,
-                                    fileName: checkRes.file.name || file.name,
-                                    existingLink: checkRes.file.webViewLink,
-                                  });
-                                  setIsDuplicateModalOpen(true);
-                                  if (e.target) e.target.value = '';
-                                  return;
-                                }
-                              } catch (err) {
-                                console.warn('[Clipper Check Drive Duplicate Error]:', err);
-                              }
+                            const hasCollision = await checkForDuplicate(file, storageMode);
+                            if (hasCollision) {
+                              if (e.target) e.target.value = '';
+                              return;
                             }
                             setResumeFile(file);
                             setExistingDriveResumeLink(null);
@@ -756,22 +740,10 @@ export const StandaloneClipperPage: React.FC = () => {
       )}
 
       {/* Duplicate Resume Modal for Google Drive */}
-      {duplicateResumeInfo && (
-        <DuplicateResumeModal
-          isOpen={isDuplicateModalOpen}
-          fileName={duplicateResumeInfo.fileName}
-          existingLink={duplicateResumeInfo.existingLink}
-          company={company}
-          role={role}
-          onSelectSame={handleSelectSameResume}
-          onSelectDifferent={handleSelectDifferentResume}
-          onCancel={() => {
-            setIsDuplicateModalOpen(false);
-            setDuplicateResumeInfo(null);
-          }}
-        />
-      )}
+      {renderDuplicateModal(company, role)}
     </div>
   );
 };
+
+export default StandaloneClipperPage;
 

@@ -135,14 +135,15 @@ exports.deleteApplication = async (req, res, next) => {
     if (!id || isNaN(id)) return res.status(400).json({ error: 'Invalid application ID' });
 
     const userCondition = userId === 'default_user' ? '(user_id = ? OR user_id IS NULL)' : 'user_id = ?';
-    const app = db.prepare(`SELECT id, resume_path, cover_letter_path FROM applications WHERE id = ? AND ${userCondition}`).get(id, userId);
+    const app = db.prepare(`SELECT id, stage, resume_path, cover_letter_path FROM applications WHERE id = ? AND ${userCondition}`).get(id, userId);
 
     if (!app) {
       return res.json({ ok: 1, deleted: false });
     }
 
-    // Clean up physical and/or cloud documents attached to the application (including Google Drive)
-    const userAccessToken = req.headers['x-google-access-token'] || (req.headers['authorization']?.startsWith('Bearer ya29.') ? req.headers['authorization'].slice(7) : null);
+    // Phase 1: Clean up physical and/or cloud documents attached to the application (including Google Drive)
+    const headers = req.headers || {};
+    const userAccessToken = headers['x-google-access-token'] || (headers['authorization']?.startsWith('Bearer ya29.') ? headers['authorization'].slice(7) : null);
     let userRefreshToken = null;
     if (userId && userId !== 'default_user') {
       try {
@@ -160,12 +161,19 @@ exports.deleteApplication = async (req, res, next) => {
       }
     }
 
-    // Atomically cascade delete all related database records
+    // Phase 2: Atomically cascade delete all related database records and re-normalize stage positions
     try {
       runInTransaction(() => {
         db.prepare(`DELETE FROM document_files WHERE app_id = ? AND ${userCondition}`).run(id, userId);
         db.prepare(`DELETE FROM activity_log WHERE app_id = ? AND ${userCondition}`).run(id, userId);
         db.prepare(`DELETE FROM applications WHERE id = ? AND ${userCondition}`).run(id, userId);
+
+        // Re-normalize positions of remaining cards in the stage to eliminate position gaps
+        if (app.stage) {
+          const remaining = db.prepare(`SELECT id FROM applications WHERE stage = ? AND ${userCondition} ORDER BY position ASC, id DESC`).all(app.stage, userId);
+          const updatePosStmt = db.prepare(`UPDATE applications SET position = ? WHERE id = ? AND ${userCondition}`);
+          remaining.forEach((r, idx) => updatePosStmt.run(idx, r.id, userId));
+        }
       });
     } catch (dbErr) {
       console.error(`[Application Cleanup] Database transaction error for app ${id}:`, dbErr.message);

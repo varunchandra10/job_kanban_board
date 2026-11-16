@@ -10,3 +10,5 @@ export const ApplicationsPage: React.FC = () => {
 
   return isCalendar ? <CalendarView /> : <KanbanBoard />;
 };
+
+export default ApplicationsPage;

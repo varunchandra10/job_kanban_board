@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useDeferredValue } from 'react';
 import { useApp } from '../../context/AppContext';
 import { LEARNING_TRACKS, APTITUDE_TOPICS } from '../../utils/constants';
 import { LearningCard } from './LearningCard';
@@ -44,69 +44,76 @@ export const LearningsBoard: React.FC = () => {
   const [aptitudeStream, setAptitudeStream] = useState<'All' | 'English' | 'Quants' | 'Reasoning'>('All');
   const [aptitudeTopic, setAptitudeTopic] = useState<string>('All');
 
-  // Filter learnings
-  const filteredLearnings = learnings.filter(l => {
-    // 1. Category Filter from Toolbar
-    if (activeLearningCategory !== 'All' && activeLearningCategory !== 'Calendar') {
-      if ((l.category || '').toLowerCase() !== activeLearningCategory.toLowerCase()) return false;
-    }
+  // Defer search query so typing stays smooth on accounts with many notes
+  const deferredSearch = useDeferredValue(searchQuery);
 
-    // 2. Aptitude Stream Filter
-    if ((l.category || '').toUpperCase().includes('APTITUDE')) {
-      if (aptitudeStream !== 'All') {
-        const streamLower = aptitudeStream.toLowerCase();
-        const text = [l.title, l.topic, l.notes, l.tags].join(' ').toLowerCase();
-        if (!text.includes(streamLower)) return false;
+  // Filter learnings with useDeferredValue and useMemo
+  const filteredLearnings = useMemo(() => {
+    const q = (deferredSearch || '').trim().toLowerCase();
+
+    return learnings.filter(l => {
+      // 1. Category Filter from Toolbar
+      if (activeLearningCategory !== 'All' && activeLearningCategory !== 'Calendar') {
+        if ((l.category || '').toLowerCase() !== activeLearningCategory.toLowerCase()) return false;
       }
 
-      if (aptitudeTopic !== 'All') {
-        const topicLower = aptitudeTopic.toLowerCase();
-        const text = [l.title, l.topic, l.notes, l.tags].join(' ').toLowerCase();
-        if (!text.includes(topicLower)) return false;
+      // 2. Aptitude Stream Filter
+      if ((l.category || '').toUpperCase().includes('APTITUDE')) {
+        if (aptitudeStream !== 'All') {
+          const streamLower = aptitudeStream.toLowerCase();
+          const text = [l.title, l.topic, l.notes, l.tags].join(' ').toLowerCase();
+          if (!text.includes(streamLower)) return false;
+        }
+
+        if (aptitudeTopic !== 'All') {
+          const topicLower = aptitudeTopic.toLowerCase();
+          const text = [l.title, l.topic, l.notes, l.tags].join(' ').toLowerCase();
+          if (!text.includes(topicLower)) return false;
+        }
       }
-    }
 
-    // 3. Search Query Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      const matchTitle = (l.title || '').toLowerCase().includes(q);
-      const matchTopic = (l.topic || '').toLowerCase().includes(q);
-      const matchNotes = (l.notes || '').toLowerCase().includes(q);
-      const matchTags = (l.tags || '').toLowerCase().includes(q);
-      if (!matchTitle && !matchTopic && !matchNotes && !matchTags) return false;
-    }
+      // 3. Search Query Filter
+      if (q) {
+        const matchTitle = (l.title || '').toLowerCase().includes(q);
+        const matchTopic = (l.topic || '').toLowerCase().includes(q);
+        const matchNotes = (l.notes || '').toLowerCase().includes(q);
+        const matchTags = (l.tags || '').toLowerCase().includes(q);
+        if (!matchTitle && !matchTopic && !matchNotes && !matchTags) return false;
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }, [learnings, activeLearningCategory, aptitudeStream, aptitudeTopic, deferredSearch]);
 
   // Combine user tracks with any orphan categories present in existing learnings
-  const existingCategories = Array.from(new Set(learnings.map(l => l.category).filter(Boolean)));
-  const allTracks = [...learningTracks];
-  existingCategories.forEach(catName => {
-    if (!allTracks.some(t => t.name.toLowerCase() === catName.toLowerCase() || t.id.toLowerCase() === catName.toLowerCase())) {
-      allTracks.push({
-        id: catName,
-        name: catName,
-        color: '#6366f1',
-      });
-    }
-  });
+  const tracksToDisplay = useMemo(() => {
+    const existingCategories = Array.from(new Set(learnings.map(l => l.category).filter(Boolean)));
+    const allTracks = [...learningTracks];
+    existingCategories.forEach(catName => {
+      if (!allTracks.some(t => t.name.toLowerCase() === catName.toLowerCase() || t.id.toLowerCase() === catName.toLowerCase())) {
+        allTracks.push({
+          id: catName,
+          name: catName,
+          color: '#6366f1',
+        });
+      }
+    });
 
-  const tracksToDisplay =
-    activeLearningCategory === 'All' || activeLearningCategory === 'Calendar'
+    return activeLearningCategory === 'All' || activeLearningCategory === 'Calendar'
       ? allTracks
       : allTracks.filter(
           t =>
             t.id.toLowerCase() === activeLearningCategory.toLowerCase() ||
             t.name.toLowerCase() === activeLearningCategory.toLowerCase()
         );
+  }, [learnings, learningTracks, activeLearningCategory]);
 
   // Auto-expand tracks on search
   useEffect(() => {
-    if (searchQuery && searchQuery.trim()) {
+    if (deferredSearch && deferredSearch.trim()) {
       setCollapsedTracks({});
     }
-  }, [searchQuery]);
+  }, [deferredSearch]);
 
   const totalHours = (gamification.totalMinutes / 60).toFixed(1);
 

@@ -140,3 +140,5 @@ export const TermsPage: React.FC = () => {
     </div>
   );
 };
+
+export default TermsPage;

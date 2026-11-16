@@ -168,6 +168,28 @@ function openDatabaseWithRetry(DbConstructor, dbPath, maxRetries = 3, initialDel
   throw new Error(criticalMsg);
 }
 
+function applyPragmas(databaseInstance) {
+  if (!databaseInstance || typeof databaseInstance.exec !== 'function') return;
+  if (databaseInstance.isRemoteTurso) return;
+
+  try {
+    if (process.env.VERCEL) {
+      try { databaseInstance.exec("PRAGMA journal_mode = DELETE;"); } catch (_) {}
+    } else {
+      try { databaseInstance.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
+    }
+    // Set 5-second busy timeout to eliminate SQLITE_BUSY errors during concurrent writes
+    try { databaseInstance.exec("PRAGMA busy_timeout = 5000;"); } catch (_) {}
+    // Set synchronous to NORMAL for optimal write throughput and WAL crash resilience
+    try { databaseInstance.exec("PRAGMA synchronous = NORMAL;"); } catch (_) {}
+    // Autocheckpoint WAL file every 1000 pages (~4MB) to prevent disk bloat
+    try { databaseInstance.exec("PRAGMA wal_autocheckpoint = 1000;"); } catch (_) {}
+    try { databaseInstance.exec("PRAGMA foreign_keys = ON;"); } catch (_) {}
+  } catch (pragmaErr) {
+    console.warn('[Database Engine] Pragmas setup note:', pragmaErr.message);
+  }
+}
+
 if (!db) {
   if (DatabaseSync) {
     db = openDatabaseWithRetry(DatabaseSync, config.dbPath);
@@ -183,13 +205,7 @@ if (!db) {
     };
   }
 
-  try {
-    if (process.env.VERCEL) {
-      try { db.exec("PRAGMA journal_mode = DELETE;"); } catch (_) {}
-    } else {
-      try { db.exec("PRAGMA journal_mode = WAL;"); } catch (_) {}
-    }
-  } catch (_) {}
+  applyPragmas(db);
 }
 
 try {
@@ -387,7 +403,8 @@ function move(id, stage, before, userId = null) {
 
   const ids = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(stage, id, ...userParam).map(r => r.id);
   let i = before ? ids.indexOf(+before) : -1;
-  if (i < 0) i = 0;
+  // If before is null/undefined or card was not found, append to the bottom of the column (index ids.length)
+  if (i < 0) i = ids.length;
   ids.splice(i, 0, id);
 
   const updateStmt = db.prepare(`update applications set stage=?, position=? where id=?${userClause}`);
@@ -396,7 +413,16 @@ function move(id, stage, before, userId = null) {
     : null;
 
   runInTransaction(() => {
+    // 1. If moving across stages, re-normalize positions in the source stage
+    if (cur !== stage) {
+      const sourceIds = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(cur, id, ...userParam).map(r => r.id);
+      sourceIds.forEach((x, p) => updateStmt.run(cur, p, x, ...userParam));
+    }
+
+    // 2. Normalize positions in target stage
     ids.forEach((x, p) => updateStmt.run(stage, p, x, ...userParam));
+
+    // 3. Log activity
     if (logStmt) {
       logStmt.run(id, `Moved from ${cur} to ${stage}`, userId || 'default_user');
     }
@@ -469,5 +495,6 @@ module.exports = {
   encryptCredential,
   decryptCredential,
   runInTransaction,
-  openDatabaseWithRetry
+  openDatabaseWithRetry,
+  applyPragmas
 };

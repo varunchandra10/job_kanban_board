@@ -58,7 +58,11 @@ function verifyToken(token) {
     .replace(/\+/g, '-')
     .replace(/\//g, '_');
 
-  if (signature !== expectedSignature) return null;
+  const sigBuf = Buffer.from(signature);
+  const expBuf = Buffer.from(expectedSignature);
+  if (sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
+    return null;
+  }
 
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload));

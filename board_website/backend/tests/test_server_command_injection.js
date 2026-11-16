@@ -88,7 +88,36 @@ async function runTests() {
   assert.strictEqual(resStatus, 404, 'Non-existent or unsafe breakout paths rejected with 404');
   console.log('✅ Metacharacter breakout paths rejected with 404 before execution');
 
+  console.log('\n--- 4. Testing desktopGoogleStart avoids host process execution in web/cloud mode ---');
+  const authController = require('../src/controllers/authController');
+  const childProcess = require('child_process');
+  let execCalled = false;
+  const originalExec = childProcess.exec;
+  const originalExecFile = childProcess.execFile;
+  childProcess.exec = () => { execCalled = true; };
+  childProcess.execFile = () => { execCalled = true; };
+
+  try {
+    config.isDesktop = false;
+    resStatus = 200;
+    resJson = null;
+
+    authController.desktopGoogleStart(
+      { query: {}, get: () => 'my-cloud-server.com', secure: true, headers: {} },
+      mockRes
+    );
+
+    assert.strictEqual(resJson.ok, 1, 'Expected ok: 1 response');
+    assert.ok(resJson.url.startsWith('https://accounts.google.com'), 'Expected Google auth URL in response');
+    assert.strictEqual(execCalled, false, 'child_process.exec must NOT be called when isDesktop is false');
+    console.log('✅ desktopGoogleStart safely returns OAuth URL without launching browser on cloud/server host');
+  } finally {
+    childProcess.exec = originalExec;
+    childProcess.execFile = originalExecFile;
+  }
+
   console.log('\n🎉 ALL TASK 6.2 SERVER COMMAND INJECTION SAFEGUARD TESTS PASSED!');
+  process.exit(0);
 }
 
 runTests().catch(err => {

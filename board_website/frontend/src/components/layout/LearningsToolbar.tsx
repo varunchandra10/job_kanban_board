@@ -25,8 +25,6 @@ export const LearningsToolbar: React.FC = () => {
     learningTracks,
     deleteLearningTrack,
     openQuickList,
-    searchQuery,
-    setSearchQuery,
   } = useApp();
 
   const getTrackIcon = (name: string) => {

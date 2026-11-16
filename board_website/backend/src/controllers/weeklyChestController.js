@@ -66,16 +66,38 @@ function calculateLiveWeeklyMetrics(userId, mondayStr, sundayStr) {
   }
 
   // 1. Applications submitted in this Monday–Sunday window
-  const appsRow = db.prepare(`
-    SELECT COUNT(*) as count 
-    FROM applications 
-    WHERE user_id = ? 
-      AND (
-        (date_applied IS NOT NULL AND date_applied != '' AND date_applied >= ? AND date_applied <= ?)
-        OR
-        ((date_applied IS NULL OR date_applied = '') AND substr(created_at, 1, 10) >= ? AND substr(created_at, 1, 10) <= ?)
-      )
-  `).get(userId, mondayStr, sundayStr, mondayStr, sundayStr);
+  let appsCount = 0;
+  try {
+    const appCols = db.prepare('PRAGMA table_info(applications)').all().map(c => c.name);
+    const hasCreatedAt = appCols.includes('created_at');
+
+    if (hasCreatedAt) {
+      const appsRow = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM applications 
+        WHERE user_id = ? 
+          AND (
+            (date_applied IS NOT NULL AND date_applied != '' AND substr(date_applied, 1, 10) >= ? AND substr(date_applied, 1, 10) <= ?)
+            OR
+            ((date_applied IS NULL OR date_applied = '') AND substr(created_at, 1, 10) >= ? AND substr(created_at, 1, 10) <= ?)
+          )
+      `).get(userId, mondayStr, sundayStr, mondayStr, sundayStr);
+      appsCount = appsRow?.count || 0;
+    } else {
+      const appsRow = db.prepare(`
+        SELECT COUNT(*) as count 
+        FROM applications 
+        WHERE user_id = ? 
+          AND date_applied IS NOT NULL 
+          AND date_applied != '' 
+          AND substr(date_applied, 1, 10) >= ? 
+          AND substr(date_applied, 1, 10) <= ?
+      `).get(userId, mondayStr, sundayStr);
+      appsCount = appsRow?.count || 0;
+    }
+  } catch (appErr) {
+    console.warn('[Weekly Chest Metrics] applications query warning:', appErr.message);
+  }
 
   // 2. DSA problems solved in this Monday–Sunday window
   const dsaRow = db.prepare(`
@@ -100,7 +122,7 @@ function calculateLiveWeeklyMetrics(userId, mondayStr, sundayStr) {
   `).get(userId, mondayStr, sundayStr, mondayStr, sundayStr);
 
   return {
-    current_apps: appsRow?.count || 0,
+    current_apps: appsCount,
     current_dsa: dsaRow?.count || 0,
     current_study_minutes: studyRow?.total_minutes || 0,
   };
@@ -437,4 +459,7 @@ exports.updateTargets = (req, res, next) => {
     next(err);
   }
 };
+
+exports.getIsoWeekWindow = getIsoWeekWindow;
+exports.calculateLiveWeeklyMetrics = calculateLiveWeeklyMetrics;
 

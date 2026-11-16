@@ -13,6 +13,55 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+/**
+ * Standardized authenticated JWT token resolver for push notifications.
+ * Uses 'auth_token' with legacy fallback to 'job_tracker_token'.
+ */
+function getAuthToken(): string | null {
+  if (typeof localStorage === 'undefined') return null;
+  return localStorage.getItem('auth_token') || localStorage.getItem('job_tracker_token');
+}
+
+/**
+ * Resolves active authenticated user ID from input, profile cache, or JWT payload.
+ */
+function resolveUserId(fallback?: string): string | undefined {
+  if (fallback) return String(fallback);
+  if (typeof localStorage === 'undefined') return undefined;
+
+  // 1. Check auth_user profile object in storage
+  const rawUser = localStorage.getItem('auth_user');
+  if (rawUser) {
+    try {
+      const user = JSON.parse(rawUser);
+      if (user?.id) return String(user.id);
+    } catch (_) {}
+  }
+
+  // 2. Fallback: decode JWT payload from auth_token
+  const token = getAuthToken();
+  if (token && token.includes('.')) {
+    try {
+      const parts = token.split('.');
+      if (parts[1]) {
+        let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        const jsonPayload = decodeURIComponent(
+          window.atob(base64)
+            .split('')
+            .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        const decoded = JSON.parse(jsonPayload);
+        if (decoded?.id) return String(decoded.id);
+      }
+    } catch (_) {}
+  }
+  return undefined;
+}
+
 export async function registerServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
     return null;
@@ -78,7 +127,8 @@ export async function subscribeToPush(userId?: string): Promise<{ success: boole
     }
 
     // 4. Send subscription to server
-    const token = localStorage.getItem('job_tracker_token');
+    const token = getAuthToken();
+    const effectiveUserId = resolveUserId(userId);
     const saveRes = await fetch('/api/notifications/subscribe', {
       method: 'POST',
       headers: {
@@ -86,7 +136,7 @@ export async function subscribeToPush(userId?: string): Promise<{ success: boole
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify({
-        userId,
+        userId: effectiveUserId,
         subscription: subscription.toJSON(),
         userAgent: navigator.userAgent
       })
@@ -112,14 +162,15 @@ export async function unsubscribeFromPush(userId?: string): Promise<{ success: b
       const endpoint = subscription.endpoint;
       await subscription.unsubscribe();
 
-      const token = localStorage.getItem('job_tracker_token');
+      const token = getAuthToken();
+      const effectiveUserId = resolveUserId(userId);
       await fetch('/api/notifications/unsubscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {})
         },
-        body: JSON.stringify({ userId, endpoint })
+        body: JSON.stringify({ userId: effectiveUserId, endpoint })
       }).catch(() => {});
     }
 
@@ -132,8 +183,9 @@ export async function unsubscribeFromPush(userId?: string): Promise<{ success: b
 
 export async function checkServerPushStatus(userId?: string): Promise<{ hasPush: boolean; deviceCount: number }> {
   try {
-    const token = localStorage.getItem('job_tracker_token');
-    const res = await fetch(`/api/notifications/status${userId ? `?userId=${userId}` : ''}`, {
+    const token = getAuthToken();
+    const effectiveUserId = resolveUserId(userId);
+    const res = await fetch(`/api/notifications/status${effectiveUserId ? `?userId=${encodeURIComponent(effectiveUserId)}` : ''}`, {
       headers: {
         ...(token ? { Authorization: `Bearer ${token}` } : {})
       }

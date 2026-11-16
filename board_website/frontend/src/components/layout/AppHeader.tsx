@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
+import { useDebounce } from '../../utils/useDebounce';
 import {
   Briefcase,
   BookOpen,
@@ -52,6 +53,20 @@ export const AppHeader: React.FC = () => {
   }, []);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+  const debouncedSearch = useDebounce(localSearch, 150);
+
+  // Keep local search synchronized if searchQuery is modified externally (e.g. route change or clear)
+  useEffect(() => {
+    setLocalSearch(searchQuery);
+  }, [searchQuery]);
+
+  // Debounce propagation of search keystrokes to root AppContext by 150ms
+  useEffect(() => {
+    if (debouncedSearch !== searchQuery) {
+      setSearchQuery(debouncedSearch);
+    }
+  }, [debouncedSearch, searchQuery, setSearchQuery]);
 
   // Keyboard shortcut: Press / or Ctrl/Cmd + K to search, Escape to clear/blur, ArrowDown to open quick list
   useEffect(() => {
@@ -82,6 +97,7 @@ export const AppHeader: React.FC = () => {
       }
 
       if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
+        setLocalSearch('');
         setSearchQuery('');
         searchInputRef.current?.blur();
       }
@@ -219,7 +235,7 @@ export const AppHeader: React.FC = () => {
       {!isProfileActive ? (
         <div
           className={`order-4 flex h-9 min-w-0 w-full items-center gap-2 rounded-xl border px-3 transition-all duration-150 lg:order-none lg:ml-auto lg:w-auto lg:flex-1 lg:max-w-md ${
-            searchQuery
+            localSearch
               ? 'border-blue-500 dark:border-indigo-500 bg-white dark:bg-[#18181b] shadow-sm'
               : 'border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
           }`}
@@ -227,7 +243,7 @@ export const AppHeader: React.FC = () => {
           <Search
             size={15}
             className={`shrink-0 transition-colors ${
-              searchQuery ? 'text-blue-600 dark:text-indigo-400' : 'text-slate-400'
+              localSearch ? 'text-blue-600 dark:text-indigo-400' : 'text-slate-400'
             }`}
           />
 
@@ -236,19 +252,20 @@ export const AppHeader: React.FC = () => {
             type="text"
             className="h-full min-w-0 flex-1 border-0 bg-transparent text-xs text-slate-900 dark:text-slate-100 outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-0"
             placeholder={searchPlaceholder}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
             autoComplete="off"
             aria-label="Search applications or learnings"
           />
 
-          {searchQuery ? (
+          {localSearch ? (
             <button
               type="button"
               className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
               aria-label="Clear search"
               title="Clear search"
               onClick={() => {
+                setLocalSearch('');
                 setSearchQuery('');
                 searchInputRef.current?.focus();
               }}
