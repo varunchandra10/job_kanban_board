@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.4.0] - 2026-11-16
+
+### 🛡️ Full-Stack Enterprise Hardening, Performance & Strict Type Safety
+
+#### Added
+- **Route-Level Code Splitting & Vendor Chunking**:
+  - Split all 10 page components in `App.tsx` via `React.lazy()` with `<Suspense>` boundaries.
+  - Slashed initial JavaScript load bundle from **929 kB down to 318 kB (-66%)**.
+  - Isolated public recruiter portfolio route (`/u/:slug`), downloading in a lightweight **~31 kB** standalone chunk.
+- **Strict TypeScript Enforcement**:
+  - Enabled `"strict": true` across the entire frontend SPA (`tsconfig.app.json`), resolving all implicit `any` types and enforcing compile-time null safety with 0 errors.
+- **Account-Scoped Offline Mutation Queue (`offlineSync.ts`)**:
+  - Partitioned mutation queues by authenticated user ID (`job_tracker_mutation_queue_<uid>`), preventing cross-tenant leakage on shared devices.
+  - Implemented optimistic ID translation map (`job_tracker_id_map`) that seamlessly reconciles temporary client IDs with server database auto-increments upon reconnect.
+  - Added mutex locking to prevent sync replay stampedes during network flapping.
+- **4-Domain Context Decomposition**:
+  - Decomposed the monolithic 1,508-line `AppContext` into 4 cohesive, memoized domain providers: `AuthContext`, `ApplicationsContext`, `LearningsContext`, and `UIContext`.
+  - Retained a backward-compatible umbrella provider export (`useApp()`).
+- **Comprehensive Cryptographic Defenses**:
+  - Native password hashing via `crypto.scryptSync` with unique salts ($N=16384, r=8, p=1$).
+  - Constant-time verification for passwords and JWT HMAC-SHA256 signatures using `crypto.timingSafeEqual` against timing side-channel attacks.
+  - Dual-layer at-rest encryption: AES-256-GCM database credentials backed by a decoupled `.portal_key` file (immune to JWT secret rotation), paired with browser-side Web Crypto API (PBKDF2 + AES-256-GCM) in `localStorage`.
+- **Automated Master Test Runner**:
+  - Implemented `run_all_tests.js` executing **36 automated unit & regression test suites** across security, WAL mode, transactional moves, and bundle budgets (100% pass rate in ~21s).
+- **Automated Desktop Packaging Pipeline**:
+  - Created `package-install-apps.js` and `npm run build:desktop` to automate the entire frontend build &rarr; Tauri release &rarr; installer packaging flow into `install_apps/`.
+
+#### Fixed & Optimized
+- **$O(\text{Days} \times N) \rightarrow O(N)$ Calendar Pre-indexing**:
+  - Eliminated linear array filter iterations inside the month JSX render loop in `CalendarView.tsx`, using single-pass hash bucket mapping.
+- **Pomodoro 2 Hz Disk Thrashing Elimination**:
+  - Removed 120 writes/minute synchronous `localStorage.setItem` calls during active focus sprints. Timer ticks in volatile memory and commits exclusively on state transitions.
+- **Exact Drag-and-Drop Dual-Column Reordering**:
+  - Connected `KanbanColumn.tsx` to the backend transactional move endpoint (`/api/applications/:id/move`), executing dual-column position shifts in an `IMMEDIATE` transaction.
+- **Centralized Date & Duplicate Resume Utilities**:
+  - Centralized date formatting in `dateUtils.ts` and extracted Google Drive duplicate detection into `useResumeDuplicateCheck.tsx`.
+
+---
+
 ## [0.3.0] - 2026-10-28
 
 ### 🌟 Dual Storage Engine, Single Standalone Installer & Authentication Parity

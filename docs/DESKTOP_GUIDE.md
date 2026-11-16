@@ -76,14 +76,16 @@ If you log in with your email account (via email/password or Google OAuth), the 
 
 To compile your own desktop executable:
 
-1. **Prerequisites**: Node.js (v20+), Rust & Cargo, and Visual Studio C++ Build Tools.
-2. **Build commands**:
+1. **Prerequisites**: Node.js (v20+), Rust & Cargo, and Visual Studio C++ Build Tools (`vswhere` auto-detected).
+2. **Automated One-Command Build**:
    ```bash
-   cd board_website/frontend && npm run build
-   cd ../../desktop_app/src-tauri && cargo build --release
-   cd ../installer_src && cargo build --release
+   npm run build:desktop
    ```
-3. The newly generated standalone installer is located at:
+   *This automatically compiles the frontend, embeds it into the Tauri binary with `cargo build --release`, builds the single-file installer, and packages everything into `install_apps/`.*
+3. The newly generated standalone installer and packages are located at:
    ```text
-   install_apps/Job-Tracker-Setup.exe
+   install_apps/
+   ├── Job-Tracker-Setup.exe      # 1-Click Windows Setup Installer
+   ├── JobTracker.exe             # Standalone Portable App
+   └── Job-Tracker-Windows.zip    # Portable ZIP Package
    ```

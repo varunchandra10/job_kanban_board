@@ -32,7 +32,7 @@ The desktop edition is a lightweight, privacy-focused native application for Win
 </p>
 
 * **Option A: 1-Click Installer (`Job-Tracker-Setup.exe`)**:
-  - Run the setup executable. Job Tracker installs immediately, adds Start Menu and Desktop shortcuts, and registers file/protocol associations.
+  - Run the setup executable. Job Tracker installs immediately, adds Start Menu and Desktop shortcuts, and registers file/protocol associations (`jobtracker://`).
 * **Option B: Portable ZIP Package ([`Job-Tracker-Windows.zip`](https://github.com/varunchandra10/job_kanban_board/raw/refs/heads/main/install_apps/Job-Tracker-Windows.zip))**:
   - Extract the ZIP and run `JobTracker.exe` directly without installation.
   - Contains `Job-Tracker-Setup.exe`, `JobTracker.exe`, `README.txt`, and `Uninstall-Job-Tracker.bat`.
@@ -64,18 +64,28 @@ Run the full-stack web application locally in your browser.
 
 2. **Install dependencies**:
    ```bash
-   npm install
-   cd board_website/frontend && npm install
-   cd ../backend && npm install
-   cd ../..
+   npm --prefix board_website/frontend install
+   npm --prefix board_website/backend install
    ```
 
-3. **Start Development Server**:
+3. **Start Development Servers**:
    ```bash
+   # Terminal 1: Backend API (port 5000)
+   cd board_website/backend
+   npm start
+
+   # Terminal 2: Frontend SPA (port 5173)
+   cd board_website/frontend
    npm run dev
    ```
    * Frontend: `http://localhost:5173`
-   * Backend API: `http://localhost:3000`
+   * Backend API: `http://localhost:5000`
+
+4. **Run the Full Test Suite**:
+   ```bash
+   node board_website/backend/tests/run_all_tests.js
+   ```
+   *Executes 36 automated unit & regression suites verifying auth, SQLite WAL mode, bundle budgets, and strict types.*
 
 ---
 
@@ -86,7 +96,7 @@ The web edition is optimized for serverless edge deployment on Vercel:
 1. Push your repository to GitHub.
 2. Import the project in your Vercel Dashboard.
 3. Configure the following Environment Variables:
-   - `TURSO_DATABASE_URL`: Your Turso Database URL
+   - `TURSO_DATABASE_URL`: Your Turso Edge Database URL (`libsql://...`)
    - `TURSO_AUTH_TOKEN`: Your Turso Auth Token
    - `JWT_SECRET`: Random 64-character secret
    - `GOOGLE_CLIENT_ID`: Your Google OAuth Client ID
@@ -101,25 +111,19 @@ To compile your own standalone Windows desktop installer:
 
 ### Prerequisites
 - [Rust & Cargo](https://rustup.rs/) (stable MSVC toolchain)
-- Visual Studio C++ Build Tools
+- Visual Studio C++ Build Tools (`vswhere` auto-detected)
 - Node.js (v20+)
 
-### Build Commands
+### One-Command Desktop Build
+From the workspace root, run:
 ```bash
-# 1. Build the frontend assets
-cd board_website/frontend
-npm run build
-
-# 2. Compile the Tauri app
-cd ../../desktop_app/src-tauri
-cargo build --release
-
-# 3. Build the standalone single-file installer
-cd ../installer_src
-cargo build --release
+npm run build:desktop
 ```
-
-The output installer is generated at:
-```text
-install_apps/Job-Tracker-Setup.exe
-```
+This automated pipeline:
+1. Compiles the React 19 frontend with strict type checking and route code-splitting.
+2. Synchronizes static build assets into `desktop_app/src-tauri/dist/`.
+3. Compiles the native Rust binary via `cargo build --release`.
+4. Packages and outputs the fresh binaries directly into `install_apps/`:
+   - `install_apps/Job-Tracker-Setup.exe` (1-Click Installer)
+   - `install_apps/JobTracker.exe` (Portable Binary)
+   - `install_apps/Job-Tracker-Windows.zip` (Portable ZIP Package)

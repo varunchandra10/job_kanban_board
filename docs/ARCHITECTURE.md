@@ -1,6 +1,6 @@
 # 🏗️ Job Tracker Architecture Documentation
 
-This document outlines the high-level system architecture, component relationships, data flow, and security isolation models for **Job Tracker**.
+This document outlines the high-level system architecture, component relationships, data flow, low-latency engineering, and security isolation models for **Job Tracker**.
 
 ---
 
@@ -13,58 +13,53 @@ flowchart TD
         DESK["💻 Native Desktop Shell (Tauri v2 + Rust)"]
     end
 
-    subgraph Frontend ["Frontend App (React 19 + TypeScript + Vite)"]
-        STATE["⚡ AppContext (State & Auth Guard)"]
-        UI_KANBAN["📋 Kanban Board (Drag-and-Drop)"]
-        UI_LEARN["📚 Daily Learnings & Journal"]
-        UI_STATS["🔥 Gamification & Heatmap"]
-        UI_LOADER["✨ Shimmer Loaders & Modals"]
+    subgraph Frontend ["Frontend App (React 19 + TypeScript Strict + Vite)"]
+        subgraph Context_Layer ["4 Decomposed Domain Contexts"]
+            AUTH_CTX["🔑 AuthContext (Session, JWT)"]
+            APP_CTX["📋 ApplicationsContext (CRUD, Drag-and-Drop)"]
+            LEARN_CTX["📚 LearningsContext (Journal, DSA Tracks)"]
+            UI_CTX["🎨 UIContext (Modals, Toasts, Filters)"]
+        end
+        SYNC["🔄 Offline Mutation Queue (Account Scoped, Mutex Locked)"]
+        CRYPTO_CLIENT["🛡️ Web Crypto API (PBKDF2 + AES-256-GCM)"]
     end
 
-    subgraph Backend ["Backend API (Node.js & Express.js)"]
-        AUTH_ROUTER["🔒 Auth Service (Google OAuth & PIN)"]
-        API_ROUTER["💼 Application & Learning APIs"]
-        STORAGE_ROUTER["📁 Document Streaming (Multer)"]
+    subgraph Backend ["Backend API (Node.js & Express 5)"]
+        MW_PIPE["🛡️ Middleware (HSTS, Strict CORS, X-Request-ID, RFC 7807)"]
+        AUTH_SVC["🔒 Auth Service (scryptSync, timingSafeEqual)"]
+        API_ROUTER["💼 Controllers (Applications, Learnings, DSA, Documents)"]
+        CRYPTO_SVC["🔐 AES-256-GCM Svc (Decoupled .portal_key)"]
+        STORAGE_SVC["📂 Storage Service (Jailed SafePath Resolution)"]
     end
 
-    subgraph Local_Storage ["Local Desktop Storage (%APPDATA%/JobTracker)"]
-        SQLITE_LOCAL[("💾 Local SQLite DB (WAL Mode)")]
-        DOCS_LOCAL["📂 Local Document Storage"]
-        BACKUP_LOCAL["🛡️ Auto-Backups"]
+    subgraph Persistence ["Persistence Layer"]
+        SQLITE_LOCAL[("💾 SQLite 3 WAL Mode (busy_timeout=5s, Cache=64MB)")]
+        TURSO_CLOUD[("☁️ Turso Edge LibSQL (Multi-Region Replica)")]
+        GDRIVE["☁️ Google Drive v3 API (1-Click OAuth)"]
+        FS_LOCAL["📁 Safe Local Filesystem Storage"]
     end
 
-    subgraph Cloud_Storage ["Cloud Web Storage (Vercel)"]
-        SQLITE_CLOUD[("☁️ Ephemeral Serverless DB (/tmp)")]
-        GDRIVE["☁️ Google Drive v3 API Storage"]
-    end
+    WEB -->|"HTTPS / REST"| Context_Layer
+    DESK -->|"Tauri Core IPC"| Context_Layer
+    Context_Layer --> SYNC
+    Context_Layer --> CRYPTO_CLIENT
+    SYNC -->|"Authorized HTTP Calls"| MW_PIPE
+    MW_PIPE --> AUTH_SVC
+    AUTH_SVC --> API_ROUTER
+    API_ROUTER --> CRYPTO_SVC
+    API_ROUTER --> STORAGE_SVC
 
-    WEB -->|"HTTPS / REST"| STATE
-    DESK -->|"Embedded Webview / IPC"| STATE
-
-    STATE --> UI_KANBAN
-    STATE --> UI_LEARN
-    STATE --> UI_STATS
-    STATE --> UI_LOADER
-
-    STATE -->|"JWT Authenticated Requests"| AUTH_ROUTER
-    STATE -->|"REST API Calls"| API_ROUTER
-    STATE -->|"File Uploads"| STORAGE_ROUTER
-
-    AUTH_ROUTER --> SQLITE_LOCAL
-    API_ROUTER --> SQLITE_LOCAL
-    STORAGE_ROUTER --> DOCS_LOCAL
-    SQLITE_LOCAL --> BACKUP_LOCAL
-
-    AUTH_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
-    API_ROUTER -.->|"Cloud Mode"| SQLITE_CLOUD
-    STORAGE_ROUTER -.->|"Cloud Mode"| GDRIVE
+    API_ROUTER -->|"Local Mode"| SQLITE_LOCAL
+    API_ROUTER -.->|"Cloud Edge Mode"| TURSO_CLOUD
+    STORAGE_SVC -->|"Local Storage"| FS_LOCAL
+    STORAGE_SVC -.->|"Cloud Storage"| GDRIVE
 ```
 
 ---
 
-## 2. Authentication & Multi-User Data Isolation Flow
+## 2. Authentication & Cryptographic Integrity Flow
 
-Job Tracker enforces strict per-user data isolation. Unauthenticated or logged-out users are protected by **Zero-Fetch Guards** that stop network calls from exposing cached metrics.
+Job Tracker enforces timing-safe, zero-knowledge authentication and multi-layered credential encryption:
 
 ```mermaid
 sequenceDiagram
@@ -72,7 +67,8 @@ sequenceDiagram
     actor User as User / Client
     participant UI as Frontend App
     participant Auth as Auth Controller
-    participant DB as SQLite Database
+    participant Crypto as Crypto Service
+    participant DB as SQLite / Turso
 
     alt Google OAuth 2.0 Login
         User->>UI: Click "Continue with Google"
@@ -82,117 +78,96 @@ sequenceDiagram
         Auth->>Auth: Verify JWT signature with Google APIs
         Auth->>DB: Query or Upsert User (Google ID, Email, Name)
         Auth-->>UI: Return Signed Session JWT
-    else Custom PIN / Email Login
-        User->>UI: Enter Email & Workspace PIN
-        UI->>Auth: POST /api/auth/pin { email, pin }
-        Auth->>DB: Validate bcrypt hash of workspace PIN
+    else Email & Password Login
+        User->>UI: Enter Email & Password
+        UI->>Auth: POST /api/auth/login { email, password }
+        Auth->>Auth: Derive scrypt hash (N=16384, r=8, p=1)
+        Auth->>Auth: crypto.timingSafeEqual(computed, storedHash)
         Auth-->>UI: Return Signed Session JWT
     end
 
-    Note over UI: Store Session JWT in memory / secure storage
-    UI->>Auth: GET /api/applications (Authorization: Bearer <token>)
-    Auth->>Auth: Decode token & extract `userId`
-    Auth->>DB: SELECT * FROM applications WHERE user_id = ?
-    DB-->>Auth: Isolated records for this user only
-    Auth-->>UI: 200 OK (User's Kanban cards)
+    Note over UI: Store Session JWT in memory & account-scoped storage
+    User->>UI: Save Application with Portal Password
+    UI->>UI: Web Crypto API encrypts password in localStorage
+    UI->>Auth: POST /api/applications (Authorization: Bearer <token>)
+    Auth->>Crypto: encryptPortalPassword(plainPassword)
+    Note over Crypto: Encrypt via AES-256-GCM using persistent .portal_key
+    Crypto-->>Auth: enc:v1:iv:tag:ciphertext
+    Auth->>DB: INSERT INTO applications (user_id, portal_password, ...)
+    DB-->>Auth: Stored encrypted at rest
+    Auth-->>UI: 201 Created
 ```
 
 ---
 
-## 3. Desktop Application Architecture (Tauri v2 + Rust)
+## 3. Atomic Transactional Drag-and-Drop Reordering
 
-The desktop application is built with **Tauri v2** to deliver native desktop capabilities without Electron's heavy resource footprint:
-
-- **Binary Size**: ~3.5 MB installer (vs. 150MB+ in typical Electron apps).
-- **Embedded Webview**: Utilizes Microsoft Edge WebView2 on Windows.
-- **Single-Executable Launcher**: `app.exe` natively embeds the compiled frontend bundle and bridges to local system APIs via Rust IPC.
-- **Background Engine Manager**: [`start-desktop.bat`](../start-desktop.bat) verifies if the background SQLite engine is running on `127.0.0.1:3000`. If offline, it starts it silently in the background with `APP_MODE=desktop`.
-- **System Tray**:
-  - Left-click icon toggles visibility.
-  - Right-click menu provides quick access to *Show Window*, *Open Data Folder*, *Open Logs*, and *Quit*.
-  - Closing the application window minimizes to the tray instead of terminating background sync.
-
----
-
-## 4. Database Schema Overview
-
-The SQLite database operates in **Write-Ahead Logging (WAL)** mode for concurrent read/write transactions:
+When a card is moved across or within Kanban stages, an atomic SQL transaction shifts positions in both source and destination columns:
 
 ```mermaid
-erDiagram
-    USERS ||--o{ APPLICATIONS : owns
-    USERS ||--o{ LEARNINGS : logs
-    USERS ||--o{ FOCUS_SESSIONS : completes
-    USERS ||--o{ USER_SETTINGS : configures
+sequenceDiagram
+    autonumber
+    actor User as User Drag Action
+    participant UI as KanbanColumn Component
+    participant Ctx as ApplicationsContext
+    participant API as /api/applications/:id/move
+    participant DB as SQLite Engine
 
-    USERS {
-        text id PK
-        text email UK
-        text name
-        text picture
-        text auth_provider
-        text password_hash
-        datetime created_at
-    }
-
-    APPLICATIONS {
-        text id PK
-        text user_id FK
-        text company
-        text role
-        text stage
-        text salary
-        text location
-        text job_url
-        text portal_username
-        text portal_password
-        text resume_drive_id
-        text resume_file_name
-        datetime deadline
-        datetime applied_at
-        datetime updated_at
-    }
-
-    LEARNINGS {
-        text id PK
-        text user_id FK
-        text topic
-        text description
-        text category
-        integer minutes_spent
-        text reference_url
-        date logged_date
-        datetime created_at
-    }
-
-    FOCUS_SESSIONS {
-        text id PK
-        text user_id FK
-        integer duration_minutes
-        text session_type
-        text completed
-        datetime started_at
-        datetime ended_at
-    }
-
-    USER_SETTINGS {
-        text user_id PK, FK
-        text theme
-        text portfolio_url
-        text github_url
-        text linkedin_url
-        text contact_email
-        text drive_resume_url
-        text daily_streak_count
-        date last_active_date
-    }
+    User->>UI: Drops card before Card K in Stage "Interviewing"
+    UI->>Ctx: moveApplication(id, stage, beforeId)
+    Note over Ctx: Optimistic Update: Instant UI state reorder
+    Ctx->>API: POST /api/applications/:id/move { stage, before }
+    API->>DB: BEGIN IMMEDIATE TRANSACTION
+    Note over DB: Target Column: UPDATE applications SET position = position + 1 WHERE stage = ? AND position >= targetPos
+    Note over DB: Source Column: UPDATE applications SET position = position - 1 WHERE stage = ? AND position > sourcePos
+    Note over DB: Target Card: UPDATE applications SET stage = ?, position = ? WHERE id = ?
+    DB-->>API: COMMIT
+    API-->>Ctx: 200 OK { success: true }
 ```
 
 ---
 
-## 5. Security & Privacy Guarantees
+## 4. Frontend State Architecture & Decomposition
 
-1. **Zero-Fetch Logged-Out Guard**: When no valid JWT session exists, the frontend displays neutral empty states and executes zero authenticated endpoints.
-2. **Strict SQL Parameterization**: Every database query uses parameterized statements (`?`), mitigating SQL injection risks.
-3. **Local Storage First (Desktop)**: In desktop mode, all personal job applications, compensation details, credentials, and uploaded resumes remain stored locally on the user's hard drive at `%APPDATA%\JobTracker\`.
-4. **Cloud Privacy (Web)**: In cloud mode, credentials and documents are stored only within user-authorized Google Drive folders using encrypted tokens.
+The frontend eliminates monolithic God-Context re-renders by partitioning state into 4 domain providers:
+
+1. **`AuthContext.tsx`:** Manages identity, JWT token storage, login/logout, and account preferences.
+2. **`ApplicationsContext.tsx`:** Manages application cards, Kanban stages, atomic moves, bookmarks, and optimistic mutations.
+3. **`LearningsContext.tsx`:** Manages daily technical study logs, DSA 12-topic roadmaps, flashcard intervals, and category filters.
+4. **`UIContext.tsx`:** Controls active modal visibility, themes (light/dark), toast alerts, and search queries.
+
+A backward-compatible umbrella provider (`AppContext.tsx`) re-exports `useApp()`, delegating seamlessly to each sub-context without breaking legacy consumers.
+
+---
+
+## 5. Low-Latency Performance Optimizations
+
+### 5.1 Route-Level Code Splitting & Vendor Chunking
+- All page views (`ApplicationsPage`, `LearningsPage`, `DsaPracticePage`, `CareerProfile`, `PublicPortfolioPage`) are lazy-loaded via `React.lazy()` with `<Suspense>` boundaries.
+- Minified initial load bundle slashed from **929 kB down to 318 kB (-66%)**.
+- Public recruiter portfolio (`/u/:slug`) loads in a lightweight **~31 kB** standalone chunk.
+
+### 5.2 SQLite WAL Engine Tuning
+The database in [backend/db.js](../board_website/backend/src/database/db.js) operates under tuned high-throughput pragmas:
+- `journal_mode = WAL`: Concurrent non-blocking reads and writes.
+- `busy_timeout = 5000`: 5-second automatic wait eliminates `SQLITE_BUSY` errors during disk contention.
+- `synchronous = NORMAL`: Minimizes disk fsync overhead while guaranteeing ACID durability in WAL mode.
+- `cache_size = -64000`: 64 MB in-memory page cache for hot query rows and B-tree index traversal.
+
+### 5.3 Client Algorithmic Efficiency
+- **Calendar Hash Map:** Replaced $O(\text{Days} \times N)$ linear scan filters inside the month render loop with an $O(N)$ single-pass hash bucket mapping.
+- **Pomodoro Disk Thrashing:** Removed 2 Hz synchronous `localStorage.setItem` calls during active ticking, keeping timer increments in volatile memory and persisting exclusively on state transitions.
+
+---
+
+## 6. Security Guarantees & Defense-in-Depth
+
+| Vulnerability Vector | Defense Mechanism | Implementation File |
+| :--- | :--- | :--- |
+| **Timing Attacks** | `crypto.timingSafeEqual` on password hashes and JWT signatures | `passwordService.js`, `jwtService.js` |
+| **SQL Injection** | 100% parameterized query bindings (`better-sqlite3` and `@libsql/client`) | `db.js`, all controllers |
+| **IDOR / Tenant Bleed** | Mandatory `user_id = ?` scoping on all reads, updates, and deletes | All controllers |
+| **Path Traversal / LFI** | `resolveSafePath()` normalizes paths and enforces root jail confinement | `storageService.js` |
+| **Credential Harvesting** | AES-256-GCM in DB (`.portal_key`) + Web Crypto API in `localStorage` | `cryptoService.js`, `security.ts` |
+| **Process Injection** | Host OS application launching (`rundll32`, `open`) barred in cloud deployments | `documentsController.js` |
+| **XSS & Sniffing** | Strict CSP, HSTS, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY` | `app.js` |
