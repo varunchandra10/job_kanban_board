@@ -155,7 +155,7 @@ interface AppContextType {
   isDeletingApp: boolean;
   confirmDeleteApplication: () => Promise<void>;
   cancelDeleteApplication: () => void;
-  moveApplication: (id: number, stage: ApplicationStage) => Promise<void>;
+  moveApplication: (id: number, stage: ApplicationStage, before?: number | null) => Promise<void>;
   toggleBookmark: (id: number, forceState?: boolean) => Promise<void>;
 
   // Learning CRUD
@@ -967,7 +967,7 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   };
 
-  const moveApplication = async (id: number, stage: ApplicationStage) => {
+  const moveApplication = async (id: number, stage: ApplicationStage, before?: number | null) => {
     if (!isAuthenticated) {
       showToast('Please sign in to update application stages');
       setIsAuthModalOpen(true);
@@ -984,21 +984,75 @@ export const AppContextProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setApplications(prev => {
       const target = prev.find(a => a.id === id);
       if (!target) return prev;
-      const updated = { ...target, stage, position: 0 };
-      const others = prev
-        .filter(a => a.id !== id)
-        .map(a => (a.stage === stage ? { ...a, position: (a.position ?? 0) + 1 } : a));
-      return [updated, ...others];
+
+      // Exclude target from list of applications
+      const others = prev.filter(a => a.id !== id);
+
+      // Collect and sort apps in target stage
+      const targetStageApps = others
+        .filter(a => a.stage === stage)
+        .sort((a, b) => {
+          const posA = a.position ?? 0;
+          const posB = b.position ?? 0;
+          if (posA !== posB) return posA - posB;
+          return (b.id ?? 0) - (a.id ?? 0);
+        });
+
+      // Find insertion index based on 'before' id
+      let insertIndex = targetStageApps.length;
+      if (before != null) {
+        const idx = targetStageApps.findIndex(a => a.id === before);
+        if (idx !== -1) {
+          insertIndex = idx;
+        }
+      }
+
+      // Insert target into targetStageApps at insertIndex
+      const updatedTarget = { ...target, stage };
+      targetStageApps.splice(insertIndex, 0, updatedTarget);
+
+      // Re-normalize positions for target stage (0, 1, 2, ...)
+      const normalizedTargetApps = targetStageApps.map((a, pos) => ({
+        ...a,
+        position: pos,
+      }));
+
+      // If moving across stages, also re-normalize positions in source stage
+      const targetStageIds = new Set(targetStageApps.map(a => a.id));
+      let remainingApps = others.filter(a => !targetStageIds.has(a.id));
+
+      if (target.stage !== stage) {
+        const sourceStageApps = remainingApps
+          .filter(a => a.stage === target.stage)
+          .sort((a, b) => {
+            const posA = a.position ?? 0;
+            const posB = b.position ?? 0;
+            if (posA !== posB) return posA - posB;
+            return (b.id ?? 0) - (a.id ?? 0);
+          })
+          .map((a, pos) => ({
+            ...a,
+            position: pos,
+          }));
+
+        const sourceStageIds = new Set(sourceStageApps.map(a => a.id));
+        const otherStagesApps = remainingApps.filter(a => !sourceStageIds.has(a.id));
+        remainingApps = [...sourceStageApps, ...otherStagesApps];
+      }
+
+      return [...normalizedTargetApps, ...remainingApps];
     });
+
     showToast(`Moved to ${stage}`, () => {
       setApplications(prevApps);
     });
 
     try {
       const effectiveId = resolveId(id);
-      await api.moveApplication(effectiveId, stage);
+      const effectiveBefore = before != null ? resolveId(before) : undefined;
+      await api.moveApplication(effectiveId, stage, effectiveBefore);
     } catch (err) {
-      enqueueMutation('move_application', { stage }, undefined, id);
+      enqueueMutation('move_application', { stage, before }, undefined, id);
     }
   };
 
