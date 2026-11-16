@@ -23,12 +23,11 @@ export const JobClipperModal: React.FC<JobClipperModalProps> = ({ isOpen, onClos
 
   if (!isOpen) return null;
 
-  // Retrieve origin and token
+  // Retrieve origin for the popup window
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://kanban-board-job.vercel.app';
-  const token = typeof window !== 'undefined' ? (localStorage.getItem('auth_token') || localStorage.getItem('job_tracker_token') || '') : '';
 
-  // 100% In-Page Top-Right Popout Bookmarklet
-  const bookmarkletCode = `javascript:(function(){window._JT_ORIGIN='${origin}';window._JT_TOKEN='${token}';${clipperMinRaw}})();`;
+  // 1-Click Fast Top-Right Popup Bookmarklet (Zero CSP Blockers, Instant Auto-Fill)
+  const bookmarkletCode = `javascript:(function(){window._JT_ORIGIN='${origin}';${clipperMinRaw}})();`;
 
   const handleCopy = () => {
     navigator.clipboard.writeText(bookmarkletCode).then(() => {

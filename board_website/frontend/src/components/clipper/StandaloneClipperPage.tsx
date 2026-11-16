@@ -145,6 +145,17 @@ export const StandaloneClipperPage: React.FC = () => {
     } catch (_) {}
   };
 
+  // Close window on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!authEmail.trim() || !authPassword.trim()) {
@@ -245,11 +256,29 @@ export const StandaloneClipperPage: React.FC = () => {
           <span className="font-bold text-white">{company}</span> has been added to your{' '}
           <span className="text-emerald-400 font-bold">{stage}</span> column.
         </p>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold mb-5 shadow-xs">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-bold mb-4 shadow-xs">
           <Sparkles size={13} />
           <span>+25 XP & Streak Protected 🎯</span>
         </div>
-        <p className="text-xs text-slate-400">Closing window in a second...</p>
+        <p className="text-xs text-slate-400 mb-4">Auto-closing window in a moment...</p>
+        <div className="flex flex-col sm:flex-row items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="w-full sm:w-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition-all cursor-pointer border border-white/10"
+          >
+            Close Window
+          </button>
+          <a
+            href="/job-applications"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black transition-all cursor-pointer shadow-md shadow-emerald-500/30"
+          >
+            <span>Open Kanban Board</span>
+            <ArrowRight size={13} />
+          </a>
+        </div>
       </div>
     );
   }

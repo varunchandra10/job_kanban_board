@@ -15,6 +15,7 @@ import {
   ChevronDown,
   Code2,
   Flame,
+  Zap,
 } from 'lucide-react';
 import { pomodoroEngine, PomodoroState } from '../../utils/pomodoroEngine';
 
@@ -35,6 +36,7 @@ export const AppHeader: React.FC = () => {
     openQuickList,
     isDsaEnabled,
     dsaProgress,
+    setIsClipperModalOpen,
   } = useApp();
 
   const isBoardActive = location.pathname === '/job-applications' || location.pathname === '/board' || location.pathname === '/applications';
@@ -310,6 +312,20 @@ export const AppHeader: React.FC = () => {
             <span className="tabular-nums">
               {Math.floor(pomodoro.remainingSeconds / 60)}:{String(pomodoro.remainingSeconds % 60).padStart(2, '0')}
             </span>
+          </button>
+        )}
+
+        {/* 1-Click Job Clipper Button */}
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={() => setIsClipperModalOpen(true)}
+            className="inline-flex h-9 items-center gap-1.5 px-2.5 sm:px-3 rounded-xl border border-orange-500/25 bg-orange-500/10 hover:bg-orange-500/15 text-orange-600 dark:text-orange-400 transition-all cursor-pointer text-xs font-bold shadow-2xs"
+            title="1-Click Universal Job Clipper (LinkedIn, Indeed, Naukri, Company sites)"
+            aria-label="Open 1-Click Job Clipper"
+          >
+            <Zap size={14} className="fill-orange-500/25 shrink-0" />
+            <span className="hidden sm:inline">Clipper</span>
           </button>
         )}
 
