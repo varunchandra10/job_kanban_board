@@ -366,3 +366,4 @@ export const useApplications = () => {
   }
   return context;
 };
+

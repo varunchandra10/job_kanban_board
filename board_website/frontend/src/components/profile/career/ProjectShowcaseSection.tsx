@@ -379,3 +379,4 @@ export const ProjectShowcaseSection: React.FC<ProjectShowcaseSectionProps> = ({
     </section>
   );
 };
+

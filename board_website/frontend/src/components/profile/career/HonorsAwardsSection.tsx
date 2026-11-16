@@ -267,3 +267,4 @@ export const HonorsAwardsSection: React.FC<HonorsAwardsSectionProps> = ({
     </section>
   );
 };
+

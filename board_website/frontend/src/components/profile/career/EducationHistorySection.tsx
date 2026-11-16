@@ -316,3 +316,4 @@ export const EducationHistorySection: React.FC<EducationHistorySectionProps> = (
     </section>
   );
 };
+

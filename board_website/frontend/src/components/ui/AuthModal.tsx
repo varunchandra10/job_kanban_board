@@ -4,6 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { X, LogIn, Lock, Mail, Eye, EyeOff, KeyRound, ArrowLeft, CheckCircle2, ShieldCheck, ExternalLink, Loader2 } from 'lucide-react';
 import { GOOGLE_CLIENT_ID } from '../../utils/googleAuth';
 import { isTauri, api } from '../../services/api';
+import { Modal } from '../common/Modal';
 
 export const AuthModal: React.FC = () => {
   const navigate = useNavigate();
@@ -273,21 +274,20 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs transition-opacity"
-      onClick={handleClose}
-      aria-modal="true"
-      role="dialog"
+    <Modal
+      isOpen={isAuthModalOpen}
+      onClose={handleClose}
+      maxWidth="md"
+      hideHeader
+      hideFooter
+      panelClassName="p-6 sm:p-7 relative"
     >
-      <div
-        className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-150"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="relative">
         {/* Close Button */}
         <button
           type="button"
           onClick={handleClose}
-          className="absolute right-4 top-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
+          className="absolute -right-2 -top-2 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer"
           aria-label="Close"
         >
           <X size={18} />
@@ -621,6 +621,6 @@ export const AuthModal: React.FC = () => {
           </>
         )}
       </div>
-    </div>
+    </Modal>
   );
 };

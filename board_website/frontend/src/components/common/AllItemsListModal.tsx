@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { CompanyLogo } from '../common/CompanyLogo';
 import { STAGES, STAGE_CONFIG } from '../../utils/constants';
+import { Modal } from './Modal';
 import {
   Briefcase,
   BookOpen,
@@ -46,17 +47,6 @@ export const AllItemsListModal: React.FC = () => {
       }, 50);
     }
   }, [isQuickListOpen, isLearnings, quickListInitialFilter]);
-
-  // Handle ESC key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isQuickListOpen) {
-        closeQuickList();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isQuickListOpen, closeQuickList]);
 
   // Filtered applications
   const filteredApplications = useMemo(() => {
@@ -129,21 +119,19 @@ export const AllItemsListModal: React.FC = () => {
   if (!isQuickListOpen) return null;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-50 transition-opacity animate-in fade-in duration-150"
-        onClick={closeQuickList}
-      />
-
-      {/* Modal Dialog */}
-      <div
-        className="fixed inset-x-3 sm:inset-x-auto sm:left-1/2 sm:-translate-x-1/2 top-10 sm:top-14 bottom-10 sm:bottom-14 z-50 w-full sm:max-w-3xl bg-white dark:bg-[#141417] rounded-3xl shadow-2xl border border-slate-200 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
-        role="dialog"
-        aria-modal="true"
-        aria-label={isLearnings ? 'All Daily Learnings List' : 'All Job Applications List'}
-      >
-        {/* Header */}
+    <Modal
+      isOpen={isQuickListOpen}
+      onClose={closeQuickList}
+      maxWidth="3xl"
+      ariaLabel={isLearnings ? 'All Daily Learnings List' : 'All Job Applications List'}
+      bodyClassName="p-3 sm:p-5 space-y-2.5 no-scrollbar"
+      footer={
+        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between text-xs text-slate-400">
+          <span>Click any item to view or edit</span>
+          <span className="hidden sm:inline">Press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-[10px] font-mono">ESC</kbd> to close</span>
+        </div>
+      }
+      customHeader={
         <div className="shrink-0 p-4 sm:p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02]">
           <div className="flex items-center justify-between gap-3 mb-4">
             <div className="flex items-center gap-3">
@@ -319,9 +307,9 @@ export const AllItemsListModal: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Scrollable Items List */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 space-y-2.5 no-scrollbar">
+      }
+    >
+      <div className="space-y-2.5">
           {!isLearnings ? (
             // Render Applications
             filteredApplications.length === 0 ? (
@@ -470,14 +458,7 @@ export const AllItemsListModal: React.FC = () => {
               })
             )
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="shrink-0 p-3 sm:p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between text-xs text-slate-400">
-          <span>Click any item to view or edit</span>
-          <span className="hidden sm:inline">Press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-[10px] font-mono">ESC</kbd> to close</span>
-        </div>
       </div>
-    </>
+    </Modal>
   );
 };

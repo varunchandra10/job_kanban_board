@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { sanitizeUrl } from '../../utils/security';
 import {
-  FileText,
-  Copy,
-  ExternalLink,
   CheckCircle2,
   Sparkles,
-  AlertCircle,
-  X,
   HardDrive,
-  ArrowRight,
-  Edit3
+  ExternalLink,
+  Edit3,
 } from 'lucide-react';
+import { Modal } from './Modal';
 
 export function computeRenamedResume(originalName: string, company: string, role: string): string {
   const dotIndex = originalName.lastIndexOf('.');
@@ -68,44 +64,42 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
-      onClick={onCancel}
-    >
-      <div
-        className="w-full max-w-lg rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#131418] p-5 sm:p-6 shadow-2xl relative animate-in zoom-in-95 duration-150 text-slate-900 dark:text-slate-100"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between pb-3.5 mb-4 border-b border-slate-100 dark:border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
-              <HardDrive size={20} />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-slate-900 dark:text-white m-0">
-                  Resume Already Exists
-                </h3>
-                <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                  Google Drive
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 m-0 mt-0.5">
-                A file named <span className="font-semibold text-slate-800 dark:text-slate-200">"{fileName}"</span> is already in your Drive folder.
-              </p>
-            </div>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onCancel}
+      title="Resume Already Exists"
+      badge={
+        <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+          Google Drive
+        </span>
+      }
+      subtitle={
+        <>
+          A file named <span className="font-semibold text-slate-800 dark:text-slate-200">"{fileName}"</span> is already in your Drive folder.
+        </>
+      }
+      icon={
+        <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
+          <HardDrive size={20} />
+        </div>
+      }
+      maxWidth="lg"
+      zIndex={100}
+      footer={
+        <div className="shrink-0 flex items-center justify-end px-5 sm:px-6 py-3 border-t border-slate-100 dark:border-white/5 bg-slate-50/70 dark:bg-white/[0.02]">
           <button
+            type="button"
             onClick={onCancel}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 transition-colors"
+            className="px-4 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 font-semibold text-xs transition-colors"
           >
-            <X size={18} />
+            Cancel
           </button>
         </div>
-
+      }
+    >
+      <div className="space-y-4">
         {/* Question Prompt */}
-        <div className="mb-4 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
           <p className="text-xs font-bold text-slate-700 dark:text-slate-200 m-0">
             Is this the exact same resume, or a different resume tailored for this job?
           </p>
@@ -193,7 +187,7 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEditingName(true)}
-                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
                   >
                     <Edit3 size={10} />
                     <span>Edit name</span>
@@ -214,7 +208,7 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsEditingName(false)}
-                    className="px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors"
+                    className="px-2 py-1.5 rounded-lg bg-slate-200 dark:bg-white/10 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-white/20 transition-colors cursor-pointer"
                   >
                     Done
                   </button>
@@ -236,19 +230,7 @@ export const DuplicateResumeModal: React.FC<DuplicateResumeModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-white/5 flex justify-end">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-3.5 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/5 font-semibold text-xs transition-colors"
-          >
-            Cancel
-          </button>
-        </div>
       </div>
-    </div>
+    </Modal>
   );
 };
-

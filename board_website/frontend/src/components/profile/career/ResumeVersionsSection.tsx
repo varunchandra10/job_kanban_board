@@ -279,3 +279,4 @@ export const ResumeVersionsSection: React.FC<ResumeVersionsSectionProps> = ({
     </section>
   );
 };
+

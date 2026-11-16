@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { requestGoogleDriveAccess, getStoredGoogleDriveToken } from '../../utils/googleAuth';
-import { X, ShieldCheck, Check, HardDrive, ArrowRight, Loader2, Sparkles, Folder } from 'lucide-react';
+import { X, ShieldCheck, Check, Loader2, Sparkles, Folder } from 'lucide-react';
+import { Modal } from '../common/Modal';
 
 export const DriveConsentModal: React.FC = () => {
   const {
@@ -69,25 +70,25 @@ export const DriveConsentModal: React.FC = () => {
   };
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200"
-      aria-modal="true"
-      role="dialog"
-      onClick={handleDismiss}
+    <Modal
+      isOpen={isOpen}
+      onClose={handleDismiss}
+      maxWidth="md"
+      zIndex={9999}
+      hideHeader
+      hideFooter
+      panelClassName="p-6 sm:p-7"
     >
-      <div
-        className="relative w-full max-w-md rounded-3xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#151518] p-6 sm:p-7 shadow-2xl text-slate-900 dark:text-slate-100 animate-in fade-in zoom-in-95 duration-200 overflow-hidden"
-        onClick={e => e.stopPropagation()}
-      >
+      <div className="relative">
         {/* Glow ambient background accent */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 blur-2xl rounded-full pointer-events-none" />
+        <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-48 h-24 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 blur-2xl rounded-full pointer-events-none" />
 
         {/* Close Button */}
         <button
           type="button"
           onClick={handleDismiss}
           disabled={isConnecting}
-          className="absolute right-4 top-4 p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
+          className="absolute -right-2 -top-2 p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer disabled:opacity-50"
           aria-label="Remind me later"
         >
           <X size={18} />
@@ -195,7 +196,6 @@ export const DriveConsentModal: React.FC = () => {
           <span>Encrypted OAuth 2.0 &bull; Private JobTracker_Files folder</span>
         </div>
       </div>
-    </div>
+    </Modal>
   );
 };
-
