@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { Application, Learning } from '../../types';
+import { getLocalIsoDate } from '../../utils/dateUtils';
 import {
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -11,6 +13,14 @@ import {
   List,
   Grid,
 } from 'lucide-react';
+
+interface DayEvents {
+  applied: Application[];
+  due: Application[];
+  learnings: Learning[];
+}
+
+const EMPTY_DAY_EVENTS: DayEvents = { applied: [], due: [], learnings: [] };
 
 export const CalendarView: React.FC = () => {
   const {
@@ -24,8 +34,8 @@ export const CalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [mobileView, setMobileView] = useState<'agenda' | 'grid'>('agenda');
 
-  const todayStr = new Date().toISOString().slice(0, 10);
-  const [selectedDateStr, setSelectedDateStr] = useState<string>(todayStr);
+  const todayStr = useMemo(() => getLocalIsoDate(), []);
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => getLocalIsoDate());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -35,12 +45,37 @@ export const CalendarView: React.FC = () => {
     'July', 'August', 'September', 'October', 'November', 'December',
   ];
 
-  // First day of current month (0=Sun, 1=Mon, ...)
-  const firstDayIndex = new Date(year, month, 1).getDay();
-  // Total days in current month
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  // Days in previous month
-  const daysInPrevMonth = new Date(year, month, 0).getDate();
+  // Pre-calculate month grid geometry with useMemo so it only runs when year/month changes
+  const { prevDays, currentMonthDays, nextDays } = useMemo(() => {
+    // First day of current month (0=Sun, 1=Mon, ...)
+    const firstDayIndex = new Date(year, month, 1).getDay();
+    // Total days in current month
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // Days in previous month
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+    // Trailing previous month days
+    const pDays: number[] = [];
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      pDays.push(daysInPrevMonth - i);
+    }
+
+    // Days in current month
+    const cDays: number[] = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+      cDays.push(d);
+    }
+
+    // Leading next month days
+    const totalCells = firstDayIndex + daysInMonth;
+    const remCells = (7 - (totalCells % 7)) % 7;
+    const nDays: number[] = [];
+    for (let d = 1; d <= remCells; d++) {
+      nDays.push(d);
+    }
+
+    return { prevDays: pDays, currentMonthDays: cDays, nextDays: nDays };
+  }, [year, month]);
 
   const toYMD = (y: number, m: number, d: number) =>
     `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -56,35 +91,58 @@ export const CalendarView: React.FC = () => {
   const goToToday = () => {
     const now = new Date();
     setCurrentDate(now);
-    setSelectedDateStr(now.toISOString().slice(0, 10));
+    setSelectedDateStr(getLocalIsoDate(now));
   };
 
-  // Trailing previous month days
-  const prevDays = [];
-  for (let i = firstDayIndex - 1; i >= 0; i--) {
-    prevDays.push(daysInPrevMonth - i);
-  }
+  // Pre-index applications and learnings in a single O(N + M) pass:
+  // Eliminates ~80,000+ redundant linear search iterations in JSX render path
+  const eventsByDate = useMemo(() => {
+    const map = new Map<string, DayEvents>();
 
-  // Days in current month
-  const currentMonthDays = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    currentMonthDays.push(d);
-  }
+    const getOrCreate = (dateStr: string): DayEvents => {
+      let entry = map.get(dateStr);
+      if (!entry) {
+        entry = { applied: [], due: [], learnings: [] };
+        map.set(dateStr, entry);
+      }
+      return entry;
+    };
 
-  // Leading next month days
-  const totalCells = firstDayIndex + daysInMonth;
-  const remCells = (7 - (totalCells % 7)) % 7;
-  const nextDays = [];
-  for (let d = 1; d <= remCells; d++) {
-    nextDays.push(d);
-  }
+    // 1. Index applications by date_applied and deadline
+    for (let i = 0; i < applications.length; i++) {
+      const app = applications[i];
+      if (app.date_applied) {
+        getOrCreate(app.date_applied).applied.push(app);
+      }
+      if (app.deadline) {
+        getOrCreate(app.deadline).due.push(app);
+      }
+    }
 
-  // Selected date events
-  const selectedApplied = applications.filter(a => a.date_applied === selectedDateStr);
-  const selectedDue = applications.filter(a => a.deadline === selectedDateStr);
-  const selectedLearnings = learnings.filter(
-    l => (l.date_logged || '').slice(0, 10) === selectedDateStr
-  );
+    // 2. Index learnings by date_logged (sliced to YYYY-MM-DD)
+    for (let i = 0; i < learnings.length; i++) {
+      const l = learnings[i];
+      if (l.date_logged) {
+        const dateKey = l.date_logged.slice(0, 10);
+        if (dateKey) {
+          getOrCreate(dateKey).learnings.push(l);
+        }
+      }
+    }
+
+    return map;
+  }, [applications, learnings]);
+
+  // Helper to query day events in O(1) time
+  const getDayEvents = (dateStr: string): DayEvents => {
+    return eventsByDate.get(dateStr) || EMPTY_DAY_EVENTS;
+  };
+
+  // Selected date events (O(1) lookup)
+  const selectedEvents = getDayEvents(selectedDateStr);
+  const selectedApplied = selectedEvents.applied;
+  const selectedDue = selectedEvents.due;
+  const selectedLearnings = selectedEvents.learnings;
   const totalSelectedEvents = selectedApplied.length + selectedDue.length + selectedLearnings.length;
 
   // Format selected date nicely
@@ -231,12 +289,7 @@ export const CalendarView: React.FC = () => {
                 const isToday = dateStr === todayStr;
                 const isSelected = dateStr === selectedDateStr;
 
-                const appliedApps = applications.filter(a => a.date_applied === dateStr);
-                const dueApps = applications.filter(a => a.deadline === dateStr);
-                const dayLearnings = learnings.filter(
-                  l => (l.date_logged || '').slice(0, 10) === dateStr
-                );
-
+                const { applied: appliedApps, due: dueApps, learnings: dayLearnings } = getDayEvents(dateStr);
                 const hasEvents = appliedApps.length > 0 || dueApps.length > 0 || dayLearnings.length > 0;
 
                 return (
@@ -444,11 +497,7 @@ export const CalendarView: React.FC = () => {
                 const dateStr = toYMD(year, month, d);
                 const isToday = dateStr === todayStr;
 
-                const appliedApps = applications.filter(a => a.date_applied === dateStr);
-                const dueApps = applications.filter(a => a.deadline === dateStr);
-                const dayLearnings = learnings.filter(
-                  l => (l.date_logged || '').slice(0, 10) === dateStr
-                );
+                const { applied: appliedApps, due: dueApps, learnings: dayLearnings } = getDayEvents(dateStr);
 
                 return (
                   <div
