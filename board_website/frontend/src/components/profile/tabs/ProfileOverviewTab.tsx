@@ -32,6 +32,7 @@ interface DayCellData {
   month: number;
   year: number;
   isToday: boolean;
+  isFuture: boolean;
 }
 
 export const ProfileOverviewTab: React.FC = () => {
@@ -80,14 +81,10 @@ export const ProfileOverviewTab: React.FC = () => {
     ? Math.min(100, Math.max(0, Math.round(((userXP - levelMinXP) / (levelMaxXP - levelMinXP)) * 100)))
     : 100;
 
-  // 2. Side-by-Side Multi-Month Stepper & Heatmap Calculations
-  const [momentumDate, setMomentumDate] = useState(() => new Date());
-  // Auto-adapt month span: 3M on mobile (< 640px) to prevent horizontal overflow, 6M on desktop
-  const [monthSpan, setMonthSpan] = useState<number>(() => {
-    if (typeof window !== 'undefined' && window.innerWidth < 640) return 3;
-    return 6;
-  });
-  const [heatmapView, setHeatmapView] = useState<'both' | 'applications' | 'learnings'>('both');
+  // 2. Full-Year GitHub-Styled Heatmap State & Navigation
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState<number>(() => new Date().getFullYear());
+  const [activeHeatmapTab, setActiveHeatmapTab] = useState<'applications' | 'learnings'>('applications');
   const [hoveredMatrixDay, setHoveredMatrixDay] = useState<{
     dateStr: string;
     dayNum: number;
@@ -96,28 +93,16 @@ export const ProfileOverviewTab: React.FC = () => {
     isToday: boolean;
   } | null>(null);
 
-  const selectedYear = momentumDate.getFullYear();
-  const selectedMonth = momentumDate.getMonth();
-
-  const monthNames = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-  ];
   const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const currentYear = new Date().getFullYear();
-  const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
+  const canGoForward = selectedYear < currentYear;
 
-  const stepMonth = (delta: number) => {
-    setMomentumDate(prev => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+  const handlePrevYear = () => {
+    setSelectedYear(prev => prev - 1);
   };
-  const setMonthByIndex = (m: number) => {
-    setMomentumDate(prev => new Date(prev.getFullYear(), m, 1));
-  };
-  const setYearByValue = (y: number) => {
-    setMomentumDate(prev => new Date(y, prev.getMonth(), 1));
-  };
-  const resetToCurrentMonth = () => {
-    setMomentumDate(new Date());
+  const handleNextYear = () => {
+    if (selectedYear < currentYear) {
+      setSelectedYear(prev => prev + 1);
+    }
   };
 
   const todayYMD = getLocalIsoDate();
@@ -148,19 +133,9 @@ export const ProfileOverviewTab: React.FC = () => {
     return map;
   }, [learnings, dsaProgress]);
 
-  // Build multi-month grid structure (span of N months ending at selectedMonth)
-  const multiMonthGridData = useMemo(() => {
-    const startDate = new Date(selectedYear, selectedMonth - (monthSpan - 1), 1);
-    const endDate = new Date(selectedYear, selectedMonth + 1, 0);
-
-    const startMonthName = shortMonths[startDate.getMonth()];
-    const startYear = startDate.getFullYear();
-    const endMonthName = shortMonths[endDate.getMonth()];
-    const endYear = endDate.getFullYear();
-
-    const rangeLabel = startYear === endYear
-      ? `${startMonthName} – ${endMonthName} ${endYear}`
-      : `${startMonthName} ${startYear} – ${endMonthName} ${endYear}`;
+  // Build full calendar year GitHub-styled grid (Jan 1 to Dec 31 of selectedYear)
+  const yearGridData = useMemo(() => {
+    const startDate = new Date(selectedYear, 0, 1);
 
     const buildGrid = (countMap: Record<string, number>) => {
       const weeks: DayCellData[][] = [];
@@ -169,17 +144,19 @@ export const ProfileOverviewTab: React.FC = () => {
       // Padding for the first week (Monday = 0 ... Sunday = 6)
       const firstDayIndex = (startDate.getDay() + 6) % 7;
       for (let p = 0; p < firstDayIndex; p++) {
-        currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false });
+        currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false, isFuture: false });
       }
 
-      // Iterate day by day from startDate to endDate
-      const iter = new Date(startDate);
-      while (iter <= endDate) {
+      // Iterate day by day from Jan 1 to Dec 31
+      const iter = new Date(selectedYear, 0, 1);
+      while (iter.getFullYear() === selectedYear) {
         const d = iter.getDate();
         const m = iter.getMonth();
         const y = iter.getFullYear();
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const count = countMap[dateStr] || 0;
+        const isToday = dateStr === todayYMD;
+        const isFuture = dateStr > todayYMD;
 
         currentWeek.push({
           dayNum: d,
@@ -187,7 +164,8 @@ export const ProfileOverviewTab: React.FC = () => {
           count,
           month: m,
           year: y,
-          isToday: dateStr === todayYMD,
+          isToday,
+          isFuture,
         });
 
         if (currentWeek.length === 7) {
@@ -201,7 +179,7 @@ export const ProfileOverviewTab: React.FC = () => {
       // Pad remaining days of last week
       if (currentWeek.length > 0) {
         while (currentWeek.length < 7) {
-          currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false });
+          currentWeek.push({ dayNum: null, dateStr: null, count: 0, month: -1, year: -1, isToday: false, isFuture: false });
         }
         weeks.push(currentWeek);
       }
@@ -212,30 +190,24 @@ export const ProfileOverviewTab: React.FC = () => {
     const appWeeks = buildGrid(appsByDate);
     const learnWeeks = buildGrid(learningsByDate);
 
-    // Calculate month headers along the week columns cleanly from appWeeks
+    // Calculate month headers: find which week index contains day 1 of each month
     const monthHeaders: Array<{ weekIdx: number; label: string }> = [];
-    let lastHeaderWeek = -999;
-    let lastMonth = -1;
     appWeeks.forEach((week, wIdx) => {
-      const validDay = week.find(d => d.month !== -1 && d.dayNum !== null);
-      if (validDay && validDay.month !== lastMonth) {
-        if (wIdx - lastHeaderWeek >= 2) {
-          monthHeaders.push({ weekIdx: wIdx, label: shortMonths[validDay.month] });
-          lastHeaderWeek = wIdx;
-        }
-        lastMonth = validDay.month;
+      const firstOfMonth = week.find(d => d.dayNum === 1 && d.month !== -1);
+      if (firstOfMonth) {
+        monthHeaders.push({ weekIdx: wIdx, label: shortMonths[firstOfMonth.month] });
       }
     });
 
-    // Calculate totals across the displayed multi-month span
-    let periodAppsTotal = 0;
-    let periodLearningsTotal = 0;
-    let periodActiveDays = 0;
-    let totalDaysInPeriod = 0;
+    // Calculate totals across the selected year
+    let yearAppsTotal = 0;
+    let yearLearningsTotal = 0;
+    let yearActiveAppDays = 0;
+    let yearActiveLearnDays = 0;
+    let elapsedDaysInYear = 0;
 
-    const countIter = new Date(startDate);
-    while (countIter <= endDate) {
-      totalDaysInPeriod++;
+    const countIter = new Date(selectedYear, 0, 1);
+    while (countIter.getFullYear() === selectedYear) {
       const y = countIter.getFullYear();
       const m = countIter.getMonth();
       const d = countIter.getDate();
@@ -243,38 +215,48 @@ export const ProfileOverviewTab: React.FC = () => {
       const appCnt = appsByDate[dateStr] || 0;
       const learnCnt = learningsByDate[dateStr] || 0;
 
-      periodAppsTotal += appCnt;
-      periodLearningsTotal += learnCnt;
-      if (appCnt > 0 || learnCnt > 0) periodActiveDays++;
+      yearAppsTotal += appCnt;
+      yearLearningsTotal += learnCnt;
+      if (appCnt > 0) yearActiveAppDays++;
+      if (learnCnt > 0) yearActiveLearnDays++;
+
+      if (dateStr <= todayYMD) {
+        elapsedDaysInYear++;
+      }
 
       countIter.setDate(countIter.getDate() + 1);
     }
+
+    const yearActiveDays = activeHeatmapTab === 'applications' ? yearActiveAppDays : yearActiveLearnDays;
+    const denominatorDays = Math.max(1, elapsedDaysInYear);
+    const consistencyPercent = Math.min(100, Math.round((yearActiveDays / denominatorDays) * 100));
 
     return {
       appWeeks,
       learnWeeks,
       monthHeaders,
-      rangeLabel,
-      periodAppsTotal,
-      periodLearningsTotal,
-      periodActiveDays,
-      totalDaysInPeriod,
+      yearAppsTotal,
+      yearLearningsTotal,
+      yearActiveDays,
+      consistencyPercent,
     };
-  }, [appsByDate, learningsByDate, selectedYear, selectedMonth, monthSpan, todayYMD]);
+  }, [appsByDate, learningsByDate, selectedYear, activeHeatmapTab, todayYMD]);
 
   const {
     appWeeks,
     learnWeeks,
     monthHeaders,
-    rangeLabel,
-    periodAppsTotal,
-    periodLearningsTotal,
-    periodActiveDays,
-    totalDaysInPeriod,
-  } = multiMonthGridData;
+    yearAppsTotal,
+    yearLearningsTotal,
+    yearActiveDays,
+    consistencyPercent,
+  } = yearGridData;
+
+  const activeWeeks = activeHeatmapTab === 'applications' ? appWeeks : learnWeeks;
 
   const getAppCellClass = (cell: DayCellData) => {
     if (!cell.dayNum) return 'opacity-0 pointer-events-none';
+    if (cell.isFuture) return 'bg-slate-100/50 dark:bg-white/[0.02] border-slate-200/40 dark:border-white/[0.04] opacity-35 cursor-default';
     const c = cell.count;
     if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
     if (c === 1) return 'bg-blue-200 dark:bg-[#163354] border-blue-300/80 dark:border-blue-700/60';
@@ -285,6 +267,7 @@ export const ProfileOverviewTab: React.FC = () => {
 
   const getLearnCellClass = (cell: DayCellData) => {
     if (!cell.dayNum) return 'opacity-0 pointer-events-none';
+    if (cell.isFuture) return 'bg-slate-100/50 dark:bg-white/[0.02] border-slate-200/40 dark:border-white/[0.04] opacity-35 cursor-default';
     const c = cell.count;
     if (c === 0) return 'bg-slate-200/70 dark:bg-[#1b2230] border-slate-300/40 dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20';
     if (c === 1) return 'bg-emerald-200 dark:bg-[#064e3b] border-emerald-300/80 dark:border-emerald-700/60';
@@ -553,136 +536,126 @@ export const ProfileOverviewTab: React.FC = () => {
         <WeeklyGoalChest />
       </div>
 
-      {/* 3. SIDE-BY-SIDE MULTI-MONTH GITHUB-STYLED HEATMAP (Job Applications on Left | Daily Learnings on Right) */}
+      {/* 3. SINGLE FULL-YEAR GITHUB-STYLED HEATMAP (Job Applications / Learnings) */}
       <section className="rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white dark:bg-[#141417] p-5 sm:p-6 shadow-xs flex flex-col justify-between">
-        {/* Header, Range Label, Month Span Switcher, and Month Controls */}
+        {/* Header: Title + Subtitle on Left, 2 Buttons + Year Stepper on Right */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
           <div>
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900 dark:text-white">
-              <Briefcase size={16} className="text-blue-600" />
-              <span>Activity &amp; Momentum Heatmaps</span>
+              {activeHeatmapTab === 'applications' ? (
+                <Briefcase size={16} className="text-blue-600" />
+              ) : (
+                <BookOpen size={16} className="text-emerald-600" />
+              )}
+              <span>Activity &amp; Momentum Heatmap</span>
             </div>
             <div className="text-[11.5px] text-slate-500 dark:text-slate-400 mt-0.5">
-              <span>{periodAppsTotal + periodLearningsTotal} activities in </span>
+              <span>
+                {activeHeatmapTab === 'applications'
+                  ? `${yearAppsTotal} job application${yearAppsTotal === 1 ? '' : 's'} in `
+                  : `${yearLearningsTotal} learning${yearLearningsTotal === 1 ? '' : 's'} & DSA in `}
+              </span>
               <strong className="text-slate-900 dark:text-white font-bold">
-                {rangeLabel}
+                {selectedYear}
               </strong>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* View Selector (All / Apps / Learnings) */}
-            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-bold">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            {/* Exactly Two Toggle Buttons: Job Applications & Learnings */}
+            <div className="flex items-center p-0.5 sm:p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200/90 dark:border-white/10 text-xs font-bold shadow-2xs">
               <button
                 type="button"
-                onClick={() => setHeatmapView('both')}
-                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                  heatmapView === 'both'
-                    ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-400 shadow-2xs font-extrabold'
+                onClick={() => setActiveHeatmapTab('applications')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeHeatmapTab === 'applications'
+                    ? 'bg-white dark:bg-[#27272a] text-blue-600 dark:text-blue-400 shadow-xs font-extrabold'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
-                title="Display both Applications and Learnings"
+                title="Display Job Applications Heatmap"
               >
-                All
+                <Briefcase size={13} />
+                <span>Job Applications</span>
+                {yearAppsTotal > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeHeatmapTab === 'applications'
+                        ? 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300'
+                        : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {yearAppsTotal}
+                  </span>
+                )}
               </button>
+
               <button
                 type="button"
-                onClick={() => setHeatmapView('applications')}
-                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                  heatmapView === 'applications'
-                    ? 'bg-white dark:bg-[#27272a] text-blue-600 dark:text-blue-400 shadow-2xs font-extrabold'
+                onClick={() => setActiveHeatmapTab('learnings')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
+                  activeHeatmapTab === 'learnings'
+                    ? 'bg-white dark:bg-[#27272a] text-emerald-600 dark:text-emerald-400 shadow-xs font-extrabold'
                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
-                title="Display only Job Applications"
+                title="Display Daily Learnings & DSA Heatmap"
               >
-                Apps
-              </button>
-              <button
-                type="button"
-                onClick={() => setHeatmapView('learnings')}
-                className={`px-2 py-0.5 rounded-md transition-all cursor-pointer ${
-                  heatmapView === 'learnings'
-                    ? 'bg-white dark:bg-[#27272a] text-emerald-600 dark:text-emerald-400 shadow-2xs font-extrabold'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Display only Daily Learnings & DSA"
-              >
-                Learnings
+                <BookOpen size={13} />
+                <span>Learnings</span>
+                {yearLearningsTotal > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      activeHeatmapTab === 'learnings'
+                        ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                        : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {yearLearningsTotal}
+                  </span>
+                )}
               </button>
             </div>
 
-            {/* Multi-Month Span Toggle (3M / 6M / 9M / 1Y) */}
-            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[11px] font-bold">
-              {[
-                { label: '3M', val: 3 },
-                { label: '6M', val: 6 },
-                { label: '9M', val: 9 },
-                { label: '1Y', val: 12 },
-              ].map(item => (
+            {/* Year Stepper: Back Button (<) moves complete year back */}
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/90 dark:border-white/10 shadow-2xs">
+              <button
+                type="button"
+                onClick={handlePrevYear}
+                className="flex h-7 w-7 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                title={`Previous Year (${selectedYear - 1})`}
+                aria-label="Previous Year"
+              >
+                <ChevronLeft size={15} />
+              </button>
+
+              <span className="px-2 text-xs font-black text-slate-900 dark:text-white select-none">
+                {selectedYear}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleNextYear}
+                disabled={!canGoForward}
+                className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+                  canGoForward
+                    ? 'hover:bg-white dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 cursor-pointer'
+                    : 'text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-40'
+                }`}
+                title={canGoForward ? `Next Year (${selectedYear + 1})` : 'Current Year'}
+                aria-label="Next Year"
+              >
+                <ChevronRight size={15} />
+              </button>
+
+              {selectedYear !== currentYear && (
                 <button
-                  key={item.val}
                   type="button"
-                  onClick={() => setMonthSpan(item.val)}
-                  className={`px-2.5 py-0.5 rounded-md transition-all cursor-pointer ${
-                    monthSpan === item.val
-                      ? 'bg-white dark:bg-[#27272a] text-indigo-600 dark:text-indigo-400 shadow-2xs font-extrabold'
-                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                  title={`Display past ${item.label}`}
+                  onClick={() => setSelectedYear(currentYear)}
+                  className="ml-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-white dark:hover:bg-white/10 transition-colors cursor-pointer"
+                  title="Return to Current Year"
                 >
-                  {item.label}
+                  {currentYear}
                 </button>
-              ))}
-            </div>
-
-            {/* Month & Year Navigation Controls */}
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200 dark:border-white/10">
-              <button
-                type="button"
-                onClick={() => stepMonth(-1)}
-                className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                title="Previous Month"
-              >
-                <ChevronLeft size={14} />
-              </button>
-
-              <select
-                value={selectedMonth}
-                onChange={e => setMonthByIndex(Number(e.target.value))}
-                className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-              >
-                {shortMonths.map((m, idx) => (
-                  <option key={m} value={idx} className="bg-white dark:bg-[#18181b]">{m}</option>
-                ))}
-              </select>
-
-              <select
-                value={selectedYear}
-                onChange={e => setYearByValue(Number(e.target.value))}
-                className="h-6 px-1.5 rounded-lg border-0 bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 outline-none cursor-pointer"
-              >
-                {years.map(y => (
-                  <option key={y} value={y} className="bg-white dark:bg-[#18181b]">{y}</option>
-                ))}
-              </select>
-
-              <button
-                type="button"
-                onClick={() => stepMonth(1)}
-                className="flex h-6 w-6 items-center justify-center rounded-lg hover:bg-white dark:hover:bg-white/10 text-slate-600 dark:text-slate-400 transition-colors cursor-pointer"
-                title="Next Month"
-              >
-                <ChevronRight size={14} />
-              </button>
-
-              <button
-                type="button"
-                onClick={resetToCurrentMonth}
-                className="px-2 py-0.5 rounded-lg text-[11px] font-bold text-indigo-600 dark:text-indigo-400 hover:bg-white dark:hover:bg-white/10 transition-colors cursor-pointer"
-                title="Jump to Current Month"
-              >
-                Today
-              </button>
+              )}
             </div>
           </div>
         </div>
@@ -722,9 +695,9 @@ export const ProfileOverviewTab: React.FC = () => {
           ) : (
             <div className="flex items-center justify-between w-full text-xs text-slate-500 dark:text-slate-400">
               <div className="flex items-center gap-2">
-                <Sparkles size={13} className="text-indigo-500" />
+                <Sparkles size={13} className={activeHeatmapTab === 'applications' ? 'text-blue-500' : 'text-emerald-500'} />
                 <span className="font-semibold">
-                  <strong className="text-slate-900 dark:text-white font-black">{periodActiveDays} active days</strong> ({Math.round((periodActiveDays / totalDaysInPeriod) * 100)}% consistency) across {rangeLabel}
+                  <strong className="text-slate-900 dark:text-white font-black">{yearActiveDays} active days</strong> ({consistencyPercent}% consistency) in {selectedYear}
                 </span>
               </div>
               <span className="text-[11px] text-slate-400 dark:text-slate-500 hidden sm:inline">
@@ -734,189 +707,137 @@ export const ProfileOverviewTab: React.FC = () => {
           )}
         </div>
 
-        {/* Dual Side-by-Side Activity Blocks: Applications (Left) & Learnings (Right) */}
+        {/* Single GitHub-styled Heatmap Grid */}
         <div
           onMouseLeave={() => setHoveredMatrixDay(null)}
-          className={`grid ${heatmapView === 'both' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'} gap-5 items-stretch my-2.5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02]`}
+          className="my-2.5 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10"
         >
-          {/* 1. Job Applications Block (Blue Theme) */}
-          {(heatmapView === 'both' || heatmapView === 'applications') && (
-            <div className="flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10">
-              <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
-                <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                  <Briefcase size={13} />
-                  <span>Job Applications</span>
-                </span>
+          <div className="min-w-fit">
+            {/* Month labels bar */}
+            <div className="flex text-[10.5px] font-bold text-slate-400 h-4 relative mb-1.5 select-none pointer-events-none">
+              {monthHeaders.map((hdr, i) => (
                 <span
-                  className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                    periodAppsTotal > 0
-                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20'
-                      : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
-                  }`}
+                  key={i}
+                  style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
+                  className="absolute"
                 >
-                  {periodAppsTotal} applications
+                  {hdr.label}
                 </span>
+              ))}
+            </div>
+
+            {/* Heatmap Rows & Week Columns */}
+            <div className="flex gap-1 items-start">
+              {/* Day of Week Labels */}
+              <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
+                <div className="h-[14px] flex items-center leading-none">Mon</div>
+                <div className="h-[14px]" />
+                <div className="h-[14px] flex items-center leading-none">Wed</div>
+                <div className="h-[14px]" />
+                <div className="h-[14px] flex items-center leading-none">Fri</div>
+                <div className="h-[14px]" />
+                <div className="h-[14px]" />
               </div>
 
-              {/* Multi-month Grid with month labels on top and day labels on left */}
-              <div className="min-w-fit">
-                {/* Month labels bar */}
-                <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
-                  {monthHeaders.map((hdr, i) => (
-                    <span
-                      key={i}
-                      style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
-                      className="absolute"
-                    >
-                      {hdr.label}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex gap-1 items-start">
-                  <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
-                    <div className="h-[14px] flex items-center leading-none">Mon</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px] flex items-center leading-none">Wed</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px] flex items-center leading-none">Fri</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px]" />
-                  </div>
-
-                  <div className="flex gap-1 flex-1">
-                    {appWeeks.map((week, wIdx) => (
-                      <div key={wIdx} className="flex flex-col gap-1">
-                        {week.map((cell, cIdx) => (
-                          <div
-                            key={cIdx}
-                            onMouseEnter={() => {
-                              if (cell.dayNum && cell.dateStr) {
-                                setHoveredMatrixDay({
-                                  dateStr: cell.dateStr,
-                                  dayNum: cell.dayNum,
-                                  count: cell.count,
-                                  type: 'applications',
-                                  isToday: cell.isToday,
-                                });
-                              }
-                            }}
-                            className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getAppCellClass(cell)} ${
-                              cell.isToday ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                            } hover:ring-2 hover:ring-blue-500/80 hover:scale-125 hover:z-20`}
-                          />
-                        ))}
-                      </div>
+              {/* Weeks (52-53 columns) */}
+              <div className="flex gap-1">
+                {activeWeeks.map((week, wIdx) => (
+                  <div key={wIdx} className="flex flex-col gap-1 w-[14px] shrink-0">
+                    {week.map((cell, cIdx) => (
+                      <div
+                        key={cIdx}
+                        onMouseEnter={() => {
+                          if (cell.dayNum && cell.dateStr && !cell.isFuture) {
+                            setHoveredMatrixDay({
+                              dateStr: cell.dateStr,
+                              dayNum: cell.dayNum,
+                              count: cell.count,
+                              type: activeHeatmapTab,
+                              isToday: cell.isToday,
+                            });
+                          }
+                        }}
+                        className={`w-[14px] h-[14px] rounded-[3px] border transition-all duration-150 ${
+                          cell.isFuture ? 'cursor-default' : 'cursor-pointer'
+                        } ${
+                          activeHeatmapTab === 'applications'
+                            ? getAppCellClass(cell)
+                            : getLearnCellClass(cell)
+                        } ${
+                          cell.isToday
+                            ? (activeHeatmapTab === 'applications'
+                                ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-[#141417]'
+                                : 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]')
+                            : ''
+                        } ${
+                          !cell.isFuture && cell.dayNum
+                            ? `hover:ring-2 hover:scale-125 hover:z-20 ${
+                                activeHeatmapTab === 'applications'
+                                  ? 'hover:ring-blue-500/80'
+                                  : 'hover:ring-emerald-500/80'
+                              }`
+                            : ''
+                        }`}
+                      />
                     ))}
                   </div>
-                </div>
+                ))}
               </div>
             </div>
-          )}
-
-          {/* 2. Daily Learnings Block (Emerald Theme) */}
-          {(heatmapView === 'both' || heatmapView === 'learnings') && (
-            <div className={`flex flex-col gap-2.5 flex-1 min-w-0 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-white/10 ${
-              heatmapView === 'both' ? 'lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-5' : ''
-            }`}>
-              <div className="flex items-center justify-between text-xs font-bold pb-2 border-b border-slate-200/80 dark:border-white/10">
-                <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                  <BookOpen size={13} />
-                  <span>Daily Learnings &amp; Problem Solving</span>
-                </span>
-                <span
-                  className={`text-[10.5px] font-semibold px-2 py-0.5 rounded-full ${
-                    periodLearningsTotal > 0
-                      ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20'
-                      : 'text-slate-400 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10'
-                  }`}
-                >
-                  {periodLearningsTotal} learnings
-                </span>
-              </div>
-
-              {/* Multi-month Grid with month labels on top and day labels on left */}
-              <div className="min-w-fit">
-                {/* Month labels bar */}
-                <div className="flex text-[10px] font-bold text-slate-400 h-4 relative mb-1 select-none pointer-events-none">
-                  {monthHeaders.map((hdr, i) => (
-                    <span
-                      key={i}
-                      style={{ left: `${(hdr.weekIdx * 18) + 32}px` }}
-                      className="absolute"
-                    >
-                      {hdr.label}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex gap-1 items-start">
-                  <div className="grid grid-rows-7 gap-1 text-[9.5px] font-bold text-slate-400 select-none pt-0.5 w-7 shrink-0">
-                    <div className="h-[14px] flex items-center leading-none">Mon</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px] flex items-center leading-none">Wed</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px] flex items-center leading-none">Fri</div>
-                    <div className="h-[14px]" />
-                    <div className="h-[14px]" />
-                  </div>
-
-                  <div className="flex gap-1 flex-1">
-                    {learnWeeks.map((week, wIdx) => (
-                      <div key={wIdx} className="flex flex-col gap-1">
-                        {week.map((cell, cIdx) => (
-                          <div
-                            key={cIdx}
-                            onMouseEnter={() => {
-                              if (cell.dayNum && cell.dateStr) {
-                                setHoveredMatrixDay({
-                                  dateStr: cell.dateStr,
-                                  dayNum: cell.dayNum,
-                                  count: cell.count,
-                                  type: 'learnings',
-                                  isToday: cell.isToday,
-                                });
-                              }
-                            }}
-                            className={`w-[13px] h-[13px] sm:w-[14px] sm:h-[14px] rounded-[3px] border transition-all duration-150 cursor-pointer ${getLearnCellClass(cell)} ${
-                              cell.isToday ? 'ring-2 ring-emerald-500 ring-offset-1 dark:ring-offset-[#141417]' : ''
-                            } hover:ring-2 hover:ring-emerald-500/80 hover:scale-125 hover:z-20`}
-                          />
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
 
         {/* Footer Legend & Totals */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-3 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-white/5">
           <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
             <Flame size={13} className="text-orange-500" />
-            <span>Active Days ({rangeLabel}):</span>
-            <strong className="text-indigo-600 dark:text-indigo-400 font-extrabold">{periodActiveDays} Days</strong>
+            <span>Active Days in {selectedYear}:</span>
+            <strong
+              className={`font-extrabold ${
+                activeHeatmapTab === 'applications'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-emerald-600 dark:text-emerald-400'
+              }`}
+            >
+              {yearActiveDays} Days
+            </strong>
           </div>
 
           <div className="flex items-center gap-4">
             <span className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-600 shadow-2xs shadow-blue-500/40" />
-              <span>Job Applications</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400">
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 shadow-2xs shadow-emerald-500/40" />
-              <span>Daily Learnings</span>
+              <span
+                className={`w-2.5 h-2.5 rounded-[3px] ${
+                  activeHeatmapTab === 'applications'
+                    ? 'bg-blue-600 shadow-2xs shadow-blue-500/40'
+                    : 'bg-emerald-600 shadow-2xs shadow-emerald-500/40'
+                }`}
+              />
+              <span>
+                {activeHeatmapTab === 'applications'
+                  ? 'Job Applications'
+                  : 'Daily Learnings & DSA'}
+              </span>
             </span>
 
             {/* Less -> More Scale */}
-            <div className="hidden sm:flex items-center gap-1 text-[10px] text-slate-400">
+            <div className="flex items-center gap-1 text-[10px] text-slate-400">
               <span>Less</span>
               <span className="w-2.5 h-2.5 rounded-[3px] bg-slate-200/70 dark:bg-[#1b2230] border border-slate-300/40 dark:border-white/5" />
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-200 dark:bg-[#064e3b]" />
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-400 dark:bg-[#059669]" />
-              <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 dark:bg-[#10b981]" />
+              {activeHeatmapTab === 'applications' ? (
+                <>
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-200 dark:bg-[#163354]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-400 dark:bg-[#1d4ed8]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-600 dark:bg-[#2563eb]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-blue-700 dark:bg-[#3b82f6]" />
+                </>
+              ) : (
+                <>
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-200 dark:bg-[#064e3b]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-400 dark:bg-[#059669]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-600 dark:bg-[#10b981]" />
+                  <span className="w-2.5 h-2.5 rounded-[3px] bg-emerald-700 dark:bg-[#34d399]" />
+                </>
+              )}
               <span>More</span>
             </div>
           </div>
