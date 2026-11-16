@@ -722,7 +722,7 @@ export const PublicPortfolioPage: React.FC = () => {
 
                     {proj.techStack && proj.techStack.length > 0 && (
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {proj.techStack.map(tag => (
+                        {proj.techStack.map((tag: string) => (
                           <span
                             key={tag}
                             className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white/10 text-slate-300"

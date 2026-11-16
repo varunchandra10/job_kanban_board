@@ -97,3 +97,4 @@ console.log(`   ✓ Main application index bundle size: ${indexSizeKb} kB (Thres
 assert(indexSizeKb < 500, `Main index bundle (${indexSizeKb} kB) must be under 500 kB`);
 
 console.log('\n✅ All Phase 6.1 Route Code-Splitting & Bundle Optimization tests PASSED successfully!\n');
+

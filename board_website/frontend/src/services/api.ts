@@ -518,17 +518,18 @@ export const api = {
         if (tauriRes && tauriRes.path) {
           savedLocalPath = tauriRes.path;
           console.log('[Tauri Desktop] Document saved to local disk:', savedLocalPath);
+          const targetPath = savedLocalPath || file.name;
           return {
             ok: 1,
-            fullPath: savedLocalPath,
-            path: savedLocalPath,
-            relativePath: savedLocalPath,
+            fullPath: targetPath,
+            path: targetPath,
+            relativePath: targetPath,
             name: tauriRes.filename || file.name,
             size: tauriRes.size || file.size,
             isGoogleDrive: false,
             isLocalStorage: true,
-            savedDiskPath: savedLocalPath,
-            localDiskPath: savedLocalPath,
+            savedDiskPath: targetPath,
+            localDiskPath: targetPath,
           };
         }
       } catch (tauriErr: any) {

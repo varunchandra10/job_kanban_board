@@ -65,7 +65,7 @@ export const ProfileOverviewTab: React.FC = () => {
   const avatarInitials = (displayName || emailPrefix)
     .split(/[\s._-]+/)
     .filter(Boolean)
-    .map(s => s[0])
+    .map((s: string) => s[0])
     .join('')
     .toUpperCase()
     .slice(0, 2) || 'U';
