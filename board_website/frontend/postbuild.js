@@ -21,11 +21,18 @@ if (fs.existsSync(indexHtml)) {
     }
     fs.copyFileSync(indexHtml, path.join(routeDir, 'index.html'));
     fs.copyFileSync(indexHtml, path.join(dist, `${route}.html`));
+    // Also copy 404.html into subdirectories for static hosting fallback
+    fs.copyFileSync(indexHtml, path.join(routeDir, '404.html'));
   });
 
   // 3. Ensure vercel.json is present in dist
   const vercelConfig = {
+    cleanUrls: true,
     rewrites: [
+      {
+        source: '/u/(.*)',
+        destination: '/index.html'
+      },
       {
         source: '/(.*)',
         destination: '/index.html'

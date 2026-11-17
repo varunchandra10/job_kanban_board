@@ -404,12 +404,12 @@ export const ProfileSettingsTab: React.FC = () => {
           Custom Portfolio URL Slug
         </label>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-          <div className="flex items-center flex-1 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3 h-11 sm:h-10 shadow-2xs focus-within:border-indigo-500">
-            <span className="text-xs text-slate-400 font-mono select-none shrink-0 hidden sm:inline">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
+          <div className="flex items-center flex-1 min-w-0 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#18181b] px-3.5 h-11 sm:h-10 shadow-2xs focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+            <span className="text-xs text-slate-400 font-mono select-none shrink-0 hidden md:inline">
               kanban-board-job.vercel.app/u/
             </span>
-            <span className="text-xs text-slate-400 font-mono select-none shrink-0 sm:hidden">
+            <span className="text-xs text-slate-400 font-mono select-none shrink-0 md:hidden">
               /u/
             </span>
             <input
@@ -418,22 +418,27 @@ export const ProfileSettingsTab: React.FC = () => {
               value={portfolioSlug}
               onChange={e => setPortfolioSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
               maxLength={30}
-              className="w-full bg-transparent text-base sm:text-xs font-mono font-bold text-slate-900 dark:text-white outline-none pl-1"
+              className="flex-1 min-w-0 bg-transparent text-sm sm:text-xs font-mono font-bold text-slate-900 dark:text-white outline-none px-2"
             />
-            <div className="shrink-0 text-xs">
+            <div className="shrink-0 text-xs pl-2">
               {slugStatus === 'checking' && (
                 <Loader2 size={13} className="animate-spin text-slate-400" />
               )}
               {slugStatus === 'available' && (
-                <span className="text-emerald-500 font-bold flex items-center gap-1 text-[11px]">
-                  <Check size={13} />
+                <span className="text-emerald-500 font-bold flex items-center gap-1 text-[11px] bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                  <Check size={12} />
                   <span>Available</span>
                 </span>
               )}
               {slugStatus === 'taken' && (
-                <span className="text-rose-500 font-bold flex items-center gap-1 text-[11px]">
-                  <AlertCircle size={13} />
+                <span className="text-rose-500 font-bold flex items-center gap-1 text-[11px] bg-rose-500/10 px-2 py-0.5 rounded-md">
+                  <AlertCircle size={12} />
                   <span>Taken</span>
+                </span>
+              )}
+              {slugStatus === 'invalid' && (
+                <span className="text-amber-500 font-bold flex items-center gap-1 text-[11px] bg-amber-500/10 px-2 py-0.5 rounded-md">
+                  <span>Invalid</span>
                 </span>
               )}
             </div>
@@ -443,7 +448,7 @@ export const ProfileSettingsTab: React.FC = () => {
             type="button"
             onClick={handleSaveSlug}
             disabled={isSavingPortfolio || slugStatus === 'taken' || slugStatus === 'invalid'}
-            className="px-4 h-11 sm:h-10 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs shrink-0"
+            className="px-5 h-11 sm:h-10 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold transition-all disabled:opacity-40 cursor-pointer shadow-xs shrink-0"
           >
             {isSavingPortfolio ? 'Saving...' : 'Save Slug'}
           </button>

@@ -333,7 +333,9 @@ export const api = {
     slug: string;
     message?: string;
   }> {
-    const res = await fetch(`${API_BASE}/portfolio/check-slug/${encodeURIComponent(slug)}`);
+    const res = await fetch(`${API_BASE}/portfolio/check-slug/${encodeURIComponent(slug)}`, {
+      headers: getAuthHeaders(),
+    });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   },

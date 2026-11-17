@@ -22,6 +22,22 @@ exports.updateProfile = (req, res, next) => {
         db.prepare("update users set portfolio_slug = ? where id = ?").run(cleanSlug, userId);
       } catch (_) {}
     }
+    if (req.body.is_portfolio_public !== undefined) {
+      try {
+        const isPublic = req.body.is_portfolio_public ? 1 : 0;
+        db.prepare("update users set is_portfolio_public = ? where id = ?").run(isPublic, userId);
+      } catch (_) {}
+    }
+    if (req.body.portfolio_headline !== undefined) {
+      try {
+        db.prepare("update users set portfolio_headline = ? where id = ?").run(req.body.portfolio_headline || '', userId);
+      } catch (_) {}
+    }
+    if (req.body.portfolio_bio !== undefined) {
+      try {
+        db.prepare("update users set portfolio_bio = ? where id = ?").run(req.body.portfolio_bio || '', userId);
+      } catch (_) {}
+    }
     res.json({ ok: 1 });
   } catch (err) {
     next(err);
