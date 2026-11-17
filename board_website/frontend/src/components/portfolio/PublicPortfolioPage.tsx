@@ -87,6 +87,73 @@ export const PublicPortfolioPage: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
+  const profileUser = data?.user;
+
+  // Parse skill tags & categorized matrix (unconditional hooks)
+  const skillsMatrixData = useMemo(() => {
+    try {
+      if (profileUser?.skills_matrix) {
+        const parsed = JSON.parse(profileUser.skills_matrix);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch {}
+    return { languages: [], frameworks: [], databases: [], tools: [] };
+  }, [profileUser?.skills_matrix]);
+
+  const skillTags = useMemo(() => {
+    const list: string[] = [];
+    if (skillsMatrixData.languages?.length) list.push(...skillsMatrixData.languages);
+    if (skillsMatrixData.frameworks?.length) list.push(...skillsMatrixData.frameworks);
+    if (skillsMatrixData.databases?.length) list.push(...skillsMatrixData.databases);
+    if (skillsMatrixData.tools?.length) list.push(...skillsMatrixData.tools);
+    if (list.length > 0) return Array.from(new Set(list));
+
+    return profileUser?.skills
+      ? profileUser.skills.split(/[,\n•|]+/).map(s => s.trim()).filter(Boolean)
+      : [];
+  }, [skillsMatrixData, profileUser?.skills]);
+
+  // Parse structured Education History (unconditional hook)
+  const educationItems = useMemo(() => {
+    try {
+      if (profileUser?.education_history) {
+        const parsed = JSON.parse(profileUser.education_history);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    if (profileUser?.school || profileUser?.degree) {
+      return [{
+        id: '1',
+        school: profileUser?.school || '',
+        degree: profileUser?.degree || '',
+        endDate: profileUser?.grad_date || '',
+      }];
+    }
+    return [];
+  }, [profileUser?.education_history, profileUser?.school, profileUser?.degree, profileUser?.grad_date]);
+
+  // Parse structured Technical Projects (unconditional hook)
+  const projectsItems = useMemo(() => {
+    try {
+      if (profileUser?.projects_list) {
+        const parsed = JSON.parse(profileUser.projects_list);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [profileUser?.projects_list]);
+
+  // Parse structured Achievements & Honors (unconditional hook)
+  const achievementsItems = useMemo(() => {
+    try {
+      if (profileUser?.achievements) {
+        const parsed = JSON.parse(profileUser.achievements);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [profileUser?.achievements]);
+
   // Loading State with sleek glassmorphic skeleton
   if (isLoading) {
     return (
@@ -167,71 +234,6 @@ export const PublicPortfolioPage: React.FC = () => {
 
   const totalCatalogProblems = 79;
   const overallMasteryPct = Math.round((dsa.solvedProblemIds.length / totalCatalogProblems) * 100);
-
-  // Parse skill tags & categorized matrix
-  const skillsMatrixData = useMemo(() => {
-    try {
-      if (user.skills_matrix) {
-        const parsed = JSON.parse(user.skills_matrix);
-        if (parsed && typeof parsed === 'object') return parsed;
-      }
-    } catch {}
-    return { languages: [], frameworks: [], databases: [], tools: [] };
-  }, [user.skills_matrix]);
-
-  const skillTags = useMemo(() => {
-    const list: string[] = [];
-    if (skillsMatrixData.languages?.length) list.push(...skillsMatrixData.languages);
-    if (skillsMatrixData.frameworks?.length) list.push(...skillsMatrixData.frameworks);
-    if (skillsMatrixData.databases?.length) list.push(...skillsMatrixData.databases);
-    if (skillsMatrixData.tools?.length) list.push(...skillsMatrixData.tools);
-    if (list.length > 0) return Array.from(new Set(list));
-
-    return user.skills
-      ? user.skills.split(/[,\n•|]+/).map(s => s.trim()).filter(Boolean)
-      : [];
-  }, [skillsMatrixData, user.skills]);
-
-  // Parse structured Education History
-  const educationItems = useMemo(() => {
-    try {
-      if (user.education_history) {
-        const parsed = JSON.parse(user.education_history);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    if (user.school || user.degree) {
-      return [{
-        id: '1',
-        school: user.school || '',
-        degree: user.degree || '',
-        endDate: user.grad_date || '',
-      }];
-    }
-    return [];
-  }, [user.education_history, user.school, user.degree, user.grad_date]);
-
-  // Parse structured Technical Projects
-  const projectsItems = useMemo(() => {
-    try {
-      if (user.projects_list) {
-        const parsed = JSON.parse(user.projects_list);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [];
-  }, [user.projects_list]);
-
-  // Parse structured Achievements & Honors
-  const achievementsItems = useMemo(() => {
-    try {
-      if (user.achievements) {
-        const parsed = JSON.parse(user.achievements);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-      }
-    } catch {}
-    return [];
-  }, [user.achievements]);
 
   const resumeDownloadUrl = resume?.downloadUrl
     ? `${API_BASE.replace('/api', '')}${resume.downloadUrl}`
