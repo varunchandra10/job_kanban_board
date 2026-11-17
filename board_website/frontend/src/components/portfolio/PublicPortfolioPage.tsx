@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { api, API_BASE } from '../../services/api';
 import { PublicPortfolioResponse } from '../../types';
 import { DSA_CATEGORIES } from '../../data/dsaTopics';
@@ -33,7 +33,9 @@ import {
 } from 'lucide-react';
 
 export const PublicPortfolioPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug: pathSlug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
+  const slug = (pathSlug || searchParams.get('slug') || searchParams.get('user') || searchParams.get('u') || '').trim();
   const [data, setData] = useState<PublicPortfolioResponse | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

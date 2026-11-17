@@ -25,6 +25,17 @@ if (fs.existsSync(indexHtml)) {
     fs.copyFileSync(indexHtml, path.join(routeDir, '404.html'));
   });
 
+  // 2b. Pre-generate physical directories for known portfolio showcase slugs
+  const knownSlugs = ['kvarunchandra', 'varun', 'portfolio'];
+  knownSlugs.forEach(slug => {
+    const slugDir = path.join(dist, 'u', slug);
+    if (!fs.existsSync(slugDir)) {
+      fs.mkdirSync(slugDir, { recursive: true });
+    }
+    fs.copyFileSync(indexHtml, path.join(slugDir, 'index.html'));
+    fs.copyFileSync(indexHtml, path.join(dist, 'u', `${slug}.html`));
+  });
+
   // 3. Ensure vercel.json is present in dist
   const vercelConfig = {
     cleanUrls: true,

@@ -101,8 +101,9 @@ export const App: React.FC = () => {
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
 
-            {/* Public Recruiter Proof-of-Work Portfolio Route */}
+            {/* Public Recruiter Proof-of-Work Portfolio Route (supports both /u/:slug and /u?slug=...) */}
             <Route path="/u/:slug" element={<PublicPortfolioPage />} />
+            <Route path="/u" element={<PublicPortfolioPage />} />
 
             {/* Fallback to landing */}
             <Route path="*" element={<Navigate to="/" replace />} />
