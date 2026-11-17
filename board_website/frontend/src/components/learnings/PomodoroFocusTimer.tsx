@@ -20,11 +20,46 @@ import {
 } from 'lucide-react';
 
 export const PomodoroFocusTimer: React.FC = () => {
-  const { addLearning, learningTracks, showToast, gamification } = useApp();
+  const {
+    addLearning,
+    learningTracks,
+    showToast,
+    gamification,
+    isAddAppOpen,
+    isAddLearningOpen,
+    isFollowUpOpen,
+    isClipperModalOpen,
+    isDeleteAppModalOpen,
+    isQuickListOpen,
+    isShutdownOpen,
+    isDriveModalOpen,
+    isStorageConfirmModalOpen,
+    isAuthModalOpen,
+  } = useApp();
+
+  const isModalOpen = Boolean(
+    isAddAppOpen ||
+    isAddLearningOpen ||
+    isFollowUpOpen ||
+    isClipperModalOpen ||
+    isDeleteAppModalOpen ||
+    isQuickListOpen ||
+    isShutdownOpen ||
+    isDriveModalOpen ||
+    isStorageConfirmModalOpen ||
+    isAuthModalOpen
+  );
 
   const [state, setState] = useState<PomodoroState>(() => pomodoroEngine.getState());
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(() => soundEffects.getIsMuted());
+
+  // Auto-collapse expanded cockpit when any modal is opened
+  useEffect(() => {
+    if (isModalOpen && isExpanded) {
+      setIsExpanded(false);
+    }
+  }, [isModalOpen, isExpanded]);
 
   // Subscribe to pomodoroEngine updates
   useEffect(() => {
@@ -157,6 +192,12 @@ export const PomodoroFocusTimer: React.FC = () => {
       Notification.requestPermission().catch(() => {});
     }
   };
+
+  // Completely hide floating Pomodoro widget when any modal is open (e.g. Add/Edit Application, Add/Edit Learning)
+  // to prevent overlapping modal footer action buttons (Cancel, Add Application, Save Changes)
+  if (isModalOpen) {
+    return null;
+  }
 
   return (
     <aside
