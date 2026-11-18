@@ -130,12 +130,19 @@ async function checkAndSendStreakReminders(options = {}) {
         continue;
       }
 
-      // 5. Mutually exclusive notification delivery:
-      // If user has active mobile web push subscription -> send mobile push ONLY (close mail notification).
-      // If user has not enabled web push -> send mail notification ONLY. Not both!
-      const hasPush = pushNotificationService.hasActivePushSubscription(user.id);
-      let deliveryChannel = 'email';
+      // 5. Notification delivery:
+      // Send email reminder if user has streak reminders enabled
+      let emailSent = false;
+      try {
+        await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
+        emailSent = true;
+        console.log(`[Streak Reminder] Dispatched EMAIL (${currentSlot}) to ${user.email} (streak: ${stats.streak})`);
+      } catch (emailErr) {
+        console.error(`[Streak Reminder] Email delivery error for ${user.email}:`, emailErr.message);
+      }
 
+      // Also deliver mobile/browser push notifications if user has active devices
+      const hasPush = pushNotificationService.hasActivePushSubscription(user.id);
       if (hasPush) {
         try {
           const pushResult = await pushNotificationService.sendStreakPushNotification(
@@ -146,23 +153,11 @@ async function checkAndSendStreakReminders(options = {}) {
             currentSlot
           );
           if (pushResult.sentCount > 0) {
-            deliveryChannel = 'push';
             console.log(`[Streak Reminder] Dispatched MOBILE PUSH (${currentSlot}) to user ${user.id} (${pushResult.sentCount} devices)`);
-          } else {
-            // If all push endpoints failed or expired, gracefully fall back to email
-            await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
-            deliveryChannel = 'email_fallback';
-            console.log(`[Streak Reminder] Fallback to EMAIL (${currentSlot}) for ${user.email} (streak: ${stats.streak})`);
           }
         } catch (pushErr) {
-          console.warn(`[Streak Reminder] Push delivery error for user ${user.id}, falling back to email:`, pushErr.message);
-          await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
-          deliveryChannel = 'email_fallback';
+          console.warn(`[Streak Reminder] Push delivery error for user ${user.id}:`, pushErr.message);
         }
-      } else {
-        // No web push active: send email reminder only
-        await sendStreakReminderEmail(user, reminderType, stats.streak, stats, currentSlot);
-        console.log(`[Streak Reminder] Dispatched EMAIL (${currentSlot}) to ${user.email} (streak: ${stats.streak})`);
       }
 
       // 6. Record in DB to guarantee at most 1 reminder per slot per day

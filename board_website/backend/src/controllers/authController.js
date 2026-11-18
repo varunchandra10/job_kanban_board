@@ -28,7 +28,7 @@ exports.me = (req, res) => {
   }
 
   try {
-    const user = db.prepare('SELECT id, email, name, avatar_url, google_refresh_token, gdrive_folder_id, created_at FROM users WHERE id = ?').get(req.user.id);
+    const user = db.prepare('SELECT id, email, name, avatar_url, google_refresh_token, gdrive_folder_id, created_at, streak_reminders_enabled FROM users WHERE id = ?').get(req.user.id);
     if (!user) {
       return res.json({
         user: {
@@ -36,7 +36,8 @@ exports.me = (req, res) => {
           email: req.user.email || 'local@jobtracker.app',
           name: req.user.name || 'Default User',
           avatar_url: '',
-          has_gdrive: false
+          has_gdrive: false,
+          streak_reminders_enabled: true
         }
       });
     }
@@ -49,7 +50,8 @@ exports.me = (req, res) => {
         avatar_url: user.avatar_url || '',
         has_gdrive: !!user.google_refresh_token,
         gdrive_folder_id: user.gdrive_folder_id || '',
-        created_at: user.created_at
+        created_at: user.created_at,
+        streak_reminders_enabled: user.streak_reminders_enabled !== 0
       }
     });
   } catch (err) {

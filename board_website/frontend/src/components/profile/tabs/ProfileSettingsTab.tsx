@@ -112,7 +112,51 @@ export const ProfileSettingsTab: React.FC = () => {
     return typeof window !== 'undefined' && localStorage.getItem('job_tracker_push_active') === '1';
   });
   const [isPushLoading, setIsPushLoading] = useState(false);
-  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState<boolean>(true);
+  const [emailRemindersEnabled, setEmailRemindersEnabled] = useState<boolean>(() => {
+    return currentUser?.streak_reminders_enabled !== undefined
+      ? Boolean(currentUser.streak_reminders_enabled)
+      : true;
+  });
+  const [isSendingTestEmail, setIsSendingTestEmail] = useState(false);
+
+  useEffect(() => {
+    if (currentUser?.streak_reminders_enabled !== undefined) {
+      setEmailRemindersEnabled(Boolean(currentUser.streak_reminders_enabled));
+    }
+  }, [currentUser?.streak_reminders_enabled]);
+
+  const handleToggleEmailReminders = async (nextVal: boolean) => {
+    setEmailRemindersEnabled(nextVal);
+    try {
+      await updateProfile({ streak_reminders_enabled: nextVal ? 1 : 0 });
+      showToast(nextVal ? 'Streak safeguard reminders enabled' : 'Streak safeguard reminders paused');
+    } catch {
+      showToast('Failed to update reminder settings');
+      setEmailRemindersEnabled(!nextVal);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    if (!isAuthenticated) {
+      showToast('Please sign in first to test email reminders');
+      openAuthModal();
+      return;
+    }
+    setIsSendingTestEmail(true);
+    showToast('Sending test streak reminder email...');
+    try {
+      const res = await api.testStreakReminder();
+      if (res.sent > 0) {
+        showToast(`Streak reminder sent to ${currentUser?.email || 'your email'}!`);
+      } else {
+        showToast('Reminder check triggered! Check your inbox.');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to send test email');
+    } finally {
+      setIsSendingTestEmail(false);
+    }
+  };
 
   useEffect(() => {
     if (currentUser?.id) {
@@ -581,18 +625,27 @@ export const ProfileSettingsTab: React.FC = () => {
               </div>
             </div>
 
-            <label className="relative inline-flex items-center cursor-pointer shrink-0">
-              <input
-                type="checkbox"
-                checked={emailRemindersEnabled}
-                onChange={e => {
-                  setEmailRemindersEnabled(e.target.checked);
-                  showToast(e.target.checked ? 'Streak reminders enabled' : 'Streak reminders paused');
-                }}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
-            </label>
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                type="button"
+                onClick={handleSendTestEmail}
+                disabled={isSendingTestEmail}
+                className="px-2.5 py-1 rounded-lg text-[11px] font-bold border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10 transition-all cursor-pointer disabled:opacity-40"
+                title="Send a test reminder email right now"
+              >
+                {isSendingTestEmail ? 'Sending...' : 'Test Email'}
+              </button>
+
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                <input
+                  type="checkbox"
+                  checked={emailRemindersEnabled}
+                  onChange={e => handleToggleEmailReminders(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-white/10 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+              </label>
+            </div>
           </div>
 
           {/* Row 2: Device Push Alerts */}

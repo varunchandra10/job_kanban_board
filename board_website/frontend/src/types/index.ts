@@ -166,6 +166,7 @@ export interface UserProfile {
   is_portfolio_public?: number | boolean;
   portfolio_headline?: string;
   portfolio_bio?: string;
+  streak_reminders_enabled?: number | boolean;
   age?: string;
   location?: string;
   bio?: string;

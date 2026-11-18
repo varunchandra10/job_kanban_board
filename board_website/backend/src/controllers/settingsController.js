@@ -38,6 +38,12 @@ exports.updateProfile = (req, res, next) => {
         db.prepare("update users set portfolio_bio = ? where id = ?").run(req.body.portfolio_bio || '', userId);
       } catch (_) {}
     }
+    if (req.body.streak_reminders_enabled !== undefined) {
+      try {
+        const enabled = req.body.streak_reminders_enabled ? 1 : 0;
+        db.prepare("update users set streak_reminders_enabled = ? where id = ?").run(enabled, userId);
+      } catch (_) {}
+    }
     res.json({ ok: 1 });
   } catch (err) {
     next(err);

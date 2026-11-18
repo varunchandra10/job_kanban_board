@@ -39,7 +39,13 @@ function authMiddleware(req, res, next) {
     return next();
   }
 
-  // Auth endpoints, health checks, public portfolio, vendor assets do not require prior login
+  // Auth endpoints, health checks, streak reminder cron checks, public portfolio, vendor assets do not require prior login
+  const isStreakReminderCheck =
+    fullPath === '/api/learnings/streak-reminder-check' ||
+    reqPath === '/learnings/streak-reminder-check' ||
+    fullPath === '/api/streak-reminder-check' ||
+    reqPath === '/streak-reminder-check';
+
   if (
     fullPath.startsWith('/api/auth/') ||
     reqPath.startsWith('/auth/') ||
@@ -48,7 +54,8 @@ function authMiddleware(req, res, next) {
     fullPath === '/api/health' ||
     reqPath === '/health' ||
     fullPath.startsWith('/vendor/') ||
-    reqPath.startsWith('/vendor/')
+    reqPath.startsWith('/vendor/') ||
+    isStreakReminderCheck
   ) {
     return next();
   }

@@ -15,11 +15,16 @@ router.get('/gamification', learningsController.getGamificationStats);
 router.get('/learnings/gamification', learningsController.getGamificationStats);
 router.all(['/learnings/streak-reminder-check', '/streak-reminder-check'], async (req, res, next) => {
   try {
-    const forceAll = req.query.force === 'true' || req.body?.force === true;
-    const targetUserId = req.user?.id || req.query.userId || null;
+    const isCronAuthorized = !process.env.CRON_SECRET ||
+      req.headers['authorization'] === `Bearer ${process.env.CRON_SECRET}` ||
+      req.headers['x-vercel-cron'] === '1';
+
+    const wantsForce = req.query.force === 'true' || req.body?.force === true;
+    const forceAll = wantsForce && (Boolean(req.user?.id) || isCronAuthorized);
+    const targetUserId = req.user?.id || (isCronAuthorized ? req.query.userId : null);
     const slot = req.query.slot || req.body?.slot || null;
     const result = await checkAndSendStreakReminders({ forceAll, targetUserId, slot });
-    res.json(result);
+    res.json({ ok: 1, ...result });
   } catch (err) {
     next(err);
   }

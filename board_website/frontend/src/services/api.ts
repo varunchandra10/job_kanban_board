@@ -1007,5 +1007,14 @@ export const api = {
     if (!res.ok || !json.ok) throw new Error(json.error || 'Failed to update weekly quest targets');
     return json;
   },
+
+  async testStreakReminder(): Promise<{ ok: number; sent: number; totalChecked: number; message?: string }> {
+    const res = await fetch(`${API_BASE}/learnings/streak-reminder-check?force=true`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  },
 };
 
