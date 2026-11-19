@@ -1,0 +1,59 @@
+name: Streak Safeguard Reminder Cron
+
+on:
+  schedule:
+    # 🍱 Midday / Lunch reminder at 12:30 PM IST (07:00 UTC)
+    - cron: '0 7 * * *'
+    # 🍱 Midday backup / retry at 1:00 PM IST (07:30 UTC)
+    - cron: '30 7 * * *'
+    # 🔥 Evening / Dinner reminder at 7:30 PM IST (14:00 UTC)
+    - cron: '0 14 * * *'
+    # 🔥 Evening backup / retry at 8:30 PM IST (15:00 UTC)
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+    inputs:
+      slot:
+        description: 'Time slot for reminder (lunch / dinner / auto)'
+        required: false
+        default: 'auto'
+      force:
+        description: 'Force send (bypass already sent check)'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  check-reminders:
+    name: Dispatch Streak Reminders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Streak Reminder Endpoint
+        run: |
+          SLOT="${{ github.event.inputs.slot || 'auto' }}"
+          FORCE="${{ github.event.inputs.force || 'false' }}"
+          
+          # Determine slot if auto based on current UTC hour
+          if [ "$SLOT" = "auto" ]; then
+            HOUR=$(date -u +%H)
+            if [ "$HOUR" -ge 5 ] && [ "$HOUR" -lt 11 ]; then
+              SLOT="lunch"
+            else
+              SLOT="dinner"
+            fi
+          fi
+          
+          echo "Triggering streak reminder for slot: $SLOT (force: $FORCE)"
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X GET "https://kanban-board-job.vercel.app/api/learnings/streak-reminder-check?slot=${SLOT}&force=${FORCE}")
+          HTTP_BODY=$(echo "$RESPONSE" | sed '$d')
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n 1)
+          
+          echo "HTTP Code: $HTTP_CODE"
+          echo "Response Body: $HTTP_BODY"
+          
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Reminder check failed with HTTP $HTTP_CODE: $HTTP_BODY"
+            exit 1
+          fi
+          
+          echo "Streak reminder dispatch completed successfully."
