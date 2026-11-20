@@ -1,4 +1,5 @@
 import { isDesktopApp } from './environment';
+import { api } from '../services/api';
 
 export const GOOGLE_CLIENT_ID = '836791560954-04nmefe9kd3vnej9c5l9c36u5thr5je8.apps.googleusercontent.com';
 export const GOOGLE_DESKTOP_CLIENT_ID = '836791560954-ttg8psif4aqp8m4enpajbjab23hua8lc.apps.googleusercontent.com';
@@ -44,7 +45,6 @@ export function loadGsiScript(): Promise<void> {
 export async function requestGoogleDriveAccess(): Promise<string> {
   // If running inside desktop app shell, use full Desktop OAuth flow with system browser
   if (isDesktopApp()) {
-    const { api } = await import('../services/api');
     const startRes = await api.startDesktopGoogleAuth();
     const sessionId = startRes.sessionId;
     let attempts = 0;

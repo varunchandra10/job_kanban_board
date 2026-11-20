@@ -4,19 +4,14 @@ import { useApp } from '../../context/AppContext';
 import { getApiEndpoint, isTauri } from '../../services/api';
 
 export const ServerAwakeningLoader: React.FC = () => {
-  // Never show cloud server awakening modal in the native desktop app (runs on offline local SQLite)
-  if (isTauri) return null;
-  // Never show server awakening modal inside the standalone clipper popup
-  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/clipper')) return null;
+  const isClipper = typeof window !== 'undefined' && window.location.pathname.startsWith('/clipper');
+  const shouldSkip = isTauri || isClipper;
 
   const { showToast, isAuthenticated, isDataLoading, applications } = useApp();
 
-  // If user is not authenticated (e.g. browsing landing page), do not block them with cloud wakeup screen
-  if (!isAuthenticated) return null;
-
   // Has the server responded in this browser session?
   const [isWarmed, setIsWarmed] = useState<boolean>(() => {
-    return sessionStorage.getItem('job_tracker_server_warmed') === 'true';
+    return typeof window !== 'undefined' && sessionStorage.getItem('job_tracker_server_warmed') === 'true';
   });
 
   const [isVisible, setIsVisible] = useState<boolean>(false);
@@ -28,15 +23,16 @@ export const ServerAwakeningLoader: React.FC = () => {
 
   // If applications data is already loaded in memory or cache, mark server warmed immediately
   useEffect(() => {
+    if (shouldSkip || !isAuthenticated) return;
     if (!isDataLoading && applications.length > 0 && !isWarmed) {
       sessionStorage.setItem('job_tracker_server_warmed', 'true');
       setIsWarmed(true);
       setIsVisible(false);
     }
-  }, [isDataLoading, applications.length, isWarmed]);
+  }, [shouldSkip, isAuthenticated, isDataLoading, applications.length, isWarmed]);
 
   useEffect(() => {
-    if (isWarmed) return;
+    if (shouldSkip || !isAuthenticated || isWarmed) return;
 
     isMountedRef.current = true;
     isReadyRef.current = false;
@@ -117,9 +113,9 @@ export const ServerAwakeningLoader: React.FC = () => {
       clearInterval(timerInterval);
       if (pollTimeout) clearTimeout(pollTimeout);
     };
-  }, [isWarmed, showToast]);
+  }, [shouldSkip, isAuthenticated, isWarmed, showToast]);
 
-  if (isWarmed || !isVisible) return null;
+  if (shouldSkip || !isAuthenticated || isWarmed || !isVisible) return null;
 
   const handleDismiss = () => {
     sessionStorage.setItem('job_tracker_server_warmed', 'true');
