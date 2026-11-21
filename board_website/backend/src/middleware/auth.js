@@ -44,7 +44,11 @@ function authMiddleware(req, res, next) {
     fullPath === '/api/learnings/streak-reminder-check' ||
     reqPath === '/learnings/streak-reminder-check' ||
     fullPath === '/api/streak-reminder-check' ||
-    reqPath === '/streak-reminder-check';
+    reqPath === '/streak-reminder-check' ||
+    fullPath.startsWith('/api/streak-reminder/') ||
+    reqPath.startsWith('/streak-reminder/') ||
+    fullPath.startsWith('/api/learnings/streak-reminder/') ||
+    reqPath.startsWith('/learnings/streak-reminder/');
 
   if (
     fullPath.startsWith('/api/auth/') ||

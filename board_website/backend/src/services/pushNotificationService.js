@@ -110,30 +110,25 @@ async function sendStreakPushNotification(user, reminderType, streak, stats = {}
     return { sentCount: 0, total: 0 };
   }
 
-  const isLunch = slot === 'lunch';
+  const numStreak = Number(streak) || 0;
+  const isZeroStreak = numStreak <= 0;
   const isNeedsApp = reminderType === 'needs_app';
   const isNeedsStudy = reminderType === 'needs_study';
 
   let title = '';
   let body = '';
 
-  if (isLunch) {
-    title = `🍱 Midday Streak Check • ${streak}d Streak`;
-    if (isNeedsApp) {
-      body = 'You studied today! Submit 1 job application before lunch to keep your streak safe.';
-    } else if (isNeedsStudy) {
-      body = 'You applied today! Squeeze in 1 study topic or DSA problem before lunch.';
-    } else {
-      body = `Protect your ${streak}-day streak! 1 job app & 1 study topic needed today.`;
-    }
+  if (isZeroStreak) {
+    title = 'Job Tracker • Start Your Journey';
+    body = "In today's tough market, consistency sets you apart. Submit 1 application and log 1 study topic to build your streak.";
   } else {
-    title = `🔥 Evening Streak Safeguard • ${streak}d Streak`;
+    title = `Streak Safeguard • ${numStreak}d Streak`;
     if (isNeedsApp) {
-      body = 'Almost there! Submit 1 job application before midnight to protect your streak.';
+      body = `Your ${numStreak}-day streak is about to break: submit 1 job application today to keep your streak active.`;
     } else if (isNeedsStudy) {
-      body = 'Finish strong! Log 1 study topic or solve 1 DSA before midnight to save your streak.';
+      body = `Your ${numStreak}-day streak is about to break: log 1 study topic or solve 1 DSA problem today to keep your streak active.`;
     } else {
-      body = `Your ${streak}-day streak is on the line! 1 job app & 1 study topic needed before midnight.`;
+      body = `Your ${numStreak}-day streak is about to break: 1 job application and 1 study session needed today.`;
     }
   }
 

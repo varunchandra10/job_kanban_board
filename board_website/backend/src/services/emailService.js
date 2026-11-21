@@ -1,5 +1,6 @@
 const nodemailer = require('nodemailer');
 const config = require('../config');
+const { signToken } = require('./jwtService');
 
 let transporter = null;
 
@@ -185,82 +186,74 @@ The Job Tracker Team
 }
 
 /**
- * Send smart evening streak reminder email
- * @param {object} user - { email, name }
+ * Send smart streak reminder email (strictly professional, zero emojis, dark theme)
+ * @param {object} user - { id, email, name }
  * @param {string} reminderType - 'needs_study' | 'needs_app' | 'needs_both'
  * @param {number} streak - current active streak days
  * @param {object} stats - { todayAppCount, todayMinutes, todayStudyCount, todayDsaCount }
  * @param {string} slot - 'lunch' | 'dinner'
  */
-async function sendStreakReminderEmail(user, reminderType, streak, stats = {}, slot = 'dinner') {
+async function sendStreakReminderEmail(user, reminderType, streak = 0, stats = {}, slot = 'dinner') {
   const mailer = getTransporter();
   const toEmail = user.email;
-  const userName = user.name || 'Champion';
+  const userName = user.name || 'there';
   const fromAddress = config.smtp.from || `"Job Tracker" <${config.smtp.user}>`;
-
-  const isLunch = slot === 'lunch';
-  const isNeedsApp = reminderType === 'needs_app';
-  const isNeedsStudy = reminderType === 'needs_study';
-
-  const subject = isLunch
-    ? isNeedsApp
-      ? `🍱 Midday Streak Check: 1 job application needed before lunch!`
-      : isNeedsStudy
-      ? `🍱 Midday Streak Check: 1 study topic or DSA problem needed before lunch!`
-      : `🍱 Midday Streak Check: Protect your ${streak}-day streak before lunch!`
-    : isNeedsApp
-    ? `🔥 Protect your ${streak}-day streak! 1 job application needed`
-    : isNeedsStudy
-    ? `🔥 Protect your ${streak}-day streak! 1 study topic or DSA problem needed`
-    : `🔥 Action needed tonight! 1 job application + 1 study topic needed for your streak`;
-
-  const headerTitle = isLunch
-    ? isNeedsApp
-      ? '1 Job Application Needed Today'
-      : isNeedsStudy
-      ? 'Study Session / DSA Needed Today'
-      : 'Midday Streak Check-in'
-    : isNeedsApp
-    ? '1 Job Application Needed Tonight'
-    : isNeedsStudy
-    ? 'Study Session / DSA Needed Tonight'
-    : 'Job Application & Study Topic Needed Tonight';
-
-  const headerSubtitle = isLunch
-    ? isNeedsApp
-      ? 'You logged study time today—knock out 1 quick job application before lunch!'
-      : isNeedsStudy
-      ? 'You applied to jobs today—squeeze in 1 quick study topic or DSA problem!'
-      : 'Midday reminder to log your daily goals and keep your streak safe!'
-    : isNeedsApp
-    ? 'You studied today, but need 1 job application to maintain your streak!'
-    : isNeedsStudy
-    ? 'You applied to jobs today, but need 1 study topic to maintain your streak!'
-    : 'Neither goal logged yet today—keep your daily momentum burning strong!';
 
   const appCount = stats.todayAppCount || 0;
   const minsCount = stats.todayMinutes || 0;
   const dsaCount = stats.todayDsaCount || 0;
   const studyCount = stats.todayStudyCount || 0;
   const hasStudyDone = studyCount >= 1 || dsaCount >= 1 || minsCount >= 45;
+  const hasAppDone = appCount >= 1;
 
-  const bodyParagraph = isLunch
-    ? isNeedsApp
-      ? `You got an early start on your study session today (${studyCount > 0 ? `${studyCount} topic(s)` : ''}${dsaCount > 0 ? ` + ${dsaCount} DSA solved` : ''}${minsCount > 0 ? ` (${minsCount}m)` : ''})! To secure your <strong>${streak}-day streak</strong>, take 5 minutes to submit at least <strong>1 job application</strong> before lunch.`
-      : isNeedsStudy
-      ? `You applied to <strong>${appCount} ${appCount === 1 ? 'role' : 'roles'}</strong> today—great job! To keep your <strong>${streak}-day streak</strong> active, plan to log at least <strong>1 study topic</strong> or solve <strong>1 DSA problem</strong>.`
-      : `Midday check-in! You haven't logged any job applications or study topics yet today. Remember: for a proper streak, both goals are required—at least <strong>1 job application</strong> AND at least <strong>1 study topic (or 1 DSA problem)</strong>.`
-    : isNeedsApp
-    ? `You conquered your study session today (${studyCount > 0 ? `${studyCount} topic(s)` : ''}${dsaCount > 0 ? ` + ${dsaCount} DSA solved` : ''}${minsCount > 0 ? ` (${minsCount}m)` : ''})! To secure your <strong>${streak}-day streak</strong>, you just need to submit at least <strong>1 job application</strong> before midnight.`
-    : isNeedsStudy
-    ? `You applied to <strong>${appCount} ${appCount === 1 ? 'role' : 'roles'}</strong> today—solid work! To keep your <strong>${streak}-day streak</strong> active, you also need to log at least <strong>1 study topic</strong> or solve <strong>1 DSA problem</strong> before midnight.`
-    : `You haven't logged any job applications or study topics yet today. Remember: for a proper streak, both goals are required—at least <strong>1 job application</strong> AND at least <strong>1 study topic (or 1 DSA problem)</strong> before midnight!`;
+  const numStreak = Number(streak) || 0;
+  const isZeroStreak = numStreak <= 0;
+  const isNeedsApp = reminderType === 'needs_app';
+  const isNeedsStudy = reminderType === 'needs_study';
 
-  const ctaText = isNeedsApp
-    ? 'Submit 1 Job Application →'
-    : isNeedsStudy
-    ? 'Log 1 Study Topic / Solve DSA →'
-    : 'Open Job Tracker & Protect Streak →';
+  let subject = '';
+  let badgeTag = '';
+  let streakBadge = '';
+  let headline = '';
+  let bodyParagraph = '';
+  let ctaText = 'Open Job Tracker →';
+
+  if (isZeroStreak) {
+    subject = 'Start your journey today: Build your daily streak with us';
+    badgeTag = 'GET STARTED';
+    streakBadge = 'Day 1 Awaits';
+    headline = 'Build your daily streak today';
+    bodyParagraph = `In today's toughest job market scenario, daily consistency is what truly sets you apart. Start your journey with us today—submit <strong>1 job application</strong> and log <strong>1 study topic</strong> to build your streak and stay unstoppable.`;
+    ctaText = 'Start Day 1 of Your Streak →';
+  } else if (isNeedsApp) {
+    subject = `Your ${numStreak}-day streak is about to break: 1 job application needed`;
+    badgeTag = 'STREAK SAFEGUARD';
+    streakBadge = `${numStreak}-Day Streak Active`;
+    headline = `Protect your ${numStreak}-day streak`;
+    bodyParagraph = `You already logged your study time today. However, your streak is about to break: submit <strong>1 job application</strong> today to protect your <strong>${numStreak}-day streak</strong> and maintain your momentum.`;
+    ctaText = 'Submit Job Application →';
+  } else if (isNeedsStudy) {
+    subject = `Your ${numStreak}-day streak is about to break: 1 study topic needed`;
+    badgeTag = 'STREAK SAFEGUARD';
+    streakBadge = `${numStreak}-Day Streak Active`;
+    headline = `Protect your ${numStreak}-day streak`;
+    bodyParagraph = `You applied to jobs today. However, your streak is about to break: log <strong>1 study topic or solve 1 DSA problem</strong> today to keep your <strong>${numStreak}-day streak</strong> active.`;
+    ctaText = 'Log Study Session →';
+  } else {
+    subject = `Your ${numStreak}-day streak is about to break: Action needed today`;
+    badgeTag = 'STREAK SAFEGUARD';
+    streakBadge = `${numStreak}-Day Streak Active`;
+    headline = `Protect your ${numStreak}-day streak`;
+    bodyParagraph = `You have not logged progress yet today, and your <strong>${numStreak}-day streak is about to break</strong>. Complete at least <strong>1 job application</strong> and <strong>1 study session</strong> today to protect the momentum you have built.`;
+    ctaText = 'Protect Your Streak →';
+  }
+
+  // Generate secure 1-click unsubscribe token valid for 1 year
+  const unsubToken = signToken({ userId: user.id, action: 'unsubscribe' }, 365 * 24 * 3600);
+  const baseUrl = process.env.APP_URL || (config.isVercel ? 'https://kanban-board-job.vercel.app' : 'https://kanban-board-job.vercel.app');
+  const unsubUrl = `${baseUrl}/api/streak-reminder/unsubscribe?token=${unsubToken}`;
+  const settingsUrl = `${baseUrl}/profile`;
+  const appUrl = `${baseUrl}/`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -274,200 +267,217 @@ async function sendStreakReminderEmail(user, reminderType, streak, stats = {}, s
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background-color: #0b0c0e;
       margin: 0;
-      padding: 24px;
+      padding: 24px 16px;
       color: #f1f5f9;
     }
     .email-container {
-      max-width: 540px;
+      max-width: 480px;
       margin: 0 auto;
-      background: #141519;
-      border-radius: 24px;
+      background: #131418;
+      border-radius: 12px;
       overflow: hidden;
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
     }
-    .header {
-      background: linear-gradient(135deg, #ea580c, #f97316, #e11d48);
-      padding: 36px 28px;
-      text-align: center;
-      color: #ffffff;
-    }
-    .streak-pill {
-      display: inline-block;
-      background: rgba(0, 0, 0, 0.25);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      padding: 6px 14px;
-      border-radius: 50px;
-      font-size: 13px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      margin-bottom: 12px;
-    }
-    .header h1 {
-      margin: 0;
-      font-size: 26px;
-      font-weight: 900;
-      letter-spacing: -0.5px;
-    }
-    .header p {
-      margin: 8px 0 0 0;
-      font-size: 14px;
-      opacity: 0.95;
-      font-weight: 500;
+    .accent-line {
+      height: 2px;
+      background: #ea580c;
     }
     .content {
-      padding: 32px 28px;
+      padding: 26px 24px;
       line-height: 1.6;
       color: #cbd5e1;
     }
-    .content h2 {
-      margin-top: 0;
-      font-size: 18px;
-      color: #ffffff;
-      font-weight: 800;
-    }
-    .status-card {
-      background: #1b1c22;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 16px;
-      padding: 18px;
-      margin: 22px 0;
-    }
-    .status-item {
+    .header-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 13.5px;
+      margin-bottom: 16px;
     }
-    .status-item:last-child {
-      border-bottom: none;
-      padding-bottom: 0;
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #ea580c;
+      background: rgba(234, 88, 12, 0.1);
+      border: 1px solid rgba(234, 88, 12, 0.25);
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .streak-status {
+      font-size: 12px;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .headline {
+      margin: 0 0 10px 0;
+      font-size: 18px;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.3px;
+      line-height: 1.35;
+    }
+    .body-text {
+      margin: 0 0 20px 0;
+      font-size: 13.5px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+    .quest-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 22px;
+    }
+    .quest-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .quest-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+    }
+    .quest-item-border {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
     .badge-done {
-      background: rgba(16, 185, 129, 0.15);
+      background: rgba(16, 185, 129, 0.12);
       color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 11px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
     }
     .badge-pending {
-      background: rgba(249, 115, 22, 0.15);
+      background: rgba(249, 115, 22, 0.12);
       color: #fb923c;
-      border: 1px solid rgba(249, 115, 22, 0.3);
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 11px;
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
     }
     .cta-btn {
       display: block;
       width: 100%;
       box-sizing: border-box;
       text-align: center;
-      background: linear-gradient(135deg, #f97316, #ea580c);
+      background: #ea580c;
       color: #ffffff !important;
       text-decoration: none;
-      padding: 14px 24px;
-      border-radius: 14px;
-      font-size: 14px;
-      font-weight: 800;
-      margin: 24px 0 10px 0;
-      box-shadow: 0 8px 20px -4px rgba(249, 115, 22, 0.4);
+      padding: 11px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.1px;
     }
     .footer {
-      padding: 20px 28px;
-      background-color: #101114;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding: 14px 24px;
+      background: rgba(0, 0, 0, 0.2);
+      border-top: 1px solid rgba(255, 255, 255, 0.04);
       text-align: center;
-      font-size: 11.5px;
+      font-size: 11px;
       color: #64748b;
+      line-height: 1.5;
+    }
+    .footer a {
+      color: #94a3b8;
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
   <div class="email-container">
-    <div class="header">
-      <div class="streak-pill">${isLunch ? `🍱 ${streak}-DAY STREAK &bull; MIDDAY CHECK-IN` : `🔥 ${streak}-DAY STREAK ON THE LINE`}</div>
-      <h1>${headerTitle}</h1>
-      <p>${headerSubtitle}</p>
-    </div>
+    <div class="accent-line"></div>
     <div class="content">
-      <h2>Hey ${userName},</h2>
-      <p>
-        ${bodyParagraph}
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 16px;">
+        <tr>
+          <td align="left">
+            <span class="badge">${badgeTag}</span>
+          </td>
+          <td align="right">
+            <span class="streak-status">${streakBadge}</span>
+          </td>
+        </tr>
+      </table>
+
+      <h1 class="headline">${headline}</h1>
+      <p class="body-text">
+        Hello ${userName}, ${bodyParagraph}
       </p>
 
-      <div class="status-card">
-        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-bottom: 8px;">
-          Today's Streak Quest (Both Required)
-        </div>
+      <div class="quest-card">
+        <div class="quest-title">Daily Consistency Quest (Both Required)</div>
 
-        <div class="status-item">
-          <span style="color: #e2e8f0;">1. Apply to 1+ Job Role</span>
-          ${
-            appCount >= 1
-              ? `<span class="badge-done">✓ Done (${appCount})</span>`
-              : `<span class="badge-pending">⏳ Pending (0)</span>`
-          }
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" class="quest-item-border" style="padding-bottom: 6px; margin-bottom: 6px;">
+          <tr>
+            <td align="left" style="font-size: 13px; color: ${hasAppDone ? '#94a3b8' : '#f1f5f9'};">
+              ${hasAppDone ? '<span style="color: #10b981; font-weight: 700; margin-right: 6px;">✓</span>' : '<span style="color: #64748b; margin-right: 6px;">○</span>'} Apply to 1+ Job Role
+            </td>
+            <td align="right">
+              ${hasAppDone ? '<span class="badge-done">Completed</span>' : '<span class="badge-pending">Pending</span>'}
+            </td>
+          </tr>
+        </table>
 
-        <div class="status-item">
-          <span style="color: #e2e8f0;">2. 1+ Study Topic OR 1+ DSA Solved</span>
-          ${
-            hasStudyDone
-              ? `<span class="badge-done">✓ Done</span>`
-              : `<span class="badge-pending">⏳ Pending</span>`
-          }
-        </div>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td align="left" style="font-size: 13px; color: ${hasStudyDone ? '#94a3b8' : '#f1f5f9'};">
+              ${hasStudyDone ? '<span style="color: #10b981; font-weight: 700; margin-right: 6px;">✓</span>' : '<span style="color: #64748b; margin-right: 6px;">○</span>'} 1+ Study Topic or DSA Solved
+            </td>
+            <td align="right">
+              ${hasStudyDone ? '<span class="badge-done">Completed</span>' : '<span class="badge-pending">Pending</span>'}
+            </td>
+          </tr>
+        </table>
       </div>
 
-      <p style="font-size: 13px; color: #94a3b8;">
-        ${isLunch ? 'You have the afternoon and evening ahead. Knock out a quick task before or during lunch to stay ahead!' : 'You have ample evening time before midnight. Hop on for a quick session to protect your streak and earn extra XP!'}
-      </p>
-
-      <a href="https://kanban-board-job.vercel.app/" class="cta-btn">
+      <a href="${appUrl}" class="cta-btn">
         ${ctaText}
       </a>
     </div>
 
     <div class="footer">
-      Sent by Job Tracker &bull; ${isLunch ? 'Midday Streak Check-in &bull; Local Time: Lunchtime' : 'Streak Safeguard Reminder &bull; Local Time: Evening'}
+      Job Tracker &bull; 100% private to your Google Drive<br>
+      <a href="${unsubUrl}">Unsubscribe from streak alerts</a> &bull; <a href="${settingsUrl}">Notification Settings</a>
     </div>
   </div>
 </body>
 </html>
-  `;
+  `.trim();
 
   const textContent = `
-Job Tracker - ${isLunch ? 'Midday Streak Check-in' : 'Streak Safeguard Reminder'}
+Job Tracker - ${isZeroStreak ? 'Start Your Journey' : 'Streak Safeguard'}
 
-Hey ${userName},
-
-${isLunch ? `Keep your ${streak}-day streak going before lunch!` : `Your ${streak}-day streak is on the line!`}
+Hello ${userName},
 
 ${
-  isNeedsApp
-    ? isLunch
-      ? `You got an early start on study today! Don't forget to submit at least 1 job application today before lunch or this evening.`
-      : `You studied today, but still need to submit at least 1 job application before midnight.`
+  isZeroStreak
+    ? "In today's toughest job market scenario, daily consistency is what truly sets you apart. Start your journey with us today—submit 1 job application and log 1 study topic to build your streak and stay unstoppable."
+    : isNeedsApp
+    ? `You already logged your study time today. However, your streak is about to break: submit 1 job application today to protect your ${numStreak}-day streak.`
     : isNeedsStudy
-    ? isLunch
-      ? `You applied to ${appCount} role(s) today! Make time for 1 study topic or DSA problem before lunch or this evening.`
-      : `You applied to ${appCount} role(s) today, but still need at least 1 study topic OR 1 solved DSA problem before midnight.`
-    : isLunch
-    ? `Midday check-in: You haven't logged any job applications or study topics yet today. Both are required to keep your streak burning!`
-    : `You haven't logged any job applications or study topics yet today. Both are required before midnight to maintain your streak!`
+    ? `You applied to jobs today. However, your streak is about to break: log 1 study topic or solve 1 DSA problem today to keep your ${numStreak}-day streak active.`
+    : `You have not logged progress yet today, and your ${numStreak}-day streak is about to break. Complete at least 1 job application and 1 study session today to protect the momentum you have built.`
 }
 
 Today's Status:
-- 1+ Job Application: ${appCount >= 1 ? 'Done' : 'Pending'}
-- 1+ Study Topic / DSA: ${hasStudyDone ? 'Done' : 'Pending'}
+- Apply to 1+ Job Role: ${hasAppDone ? 'Completed' : 'Pending'}
+- 1+ Study Topic or DSA Solved: ${hasStudyDone ? 'Completed' : 'Pending'}
 
-Open Job Tracker: https://kanban-board-job.vercel.app/
+Open Job Tracker: ${appUrl}
+
+Unsubscribe from streak alerts: ${unsubUrl}
+Notification Settings: ${settingsUrl}
 
 The Job Tracker Team
   `.trim();
@@ -477,11 +487,15 @@ The Job Tracker Team
     to: toEmail,
     subject,
     text: textContent,
-    html: htmlContent
+    html: htmlContent,
+    headers: {
+      'List-Unsubscribe': `<${unsubUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click'
+    }
   };
 
   const info = await mailer.sendMail(mailOptions);
-  console.log(`[Email Service] Streak reminder email (${reminderType}) sent to ${toEmail}. MessageId: ${info.messageId}`);
+  console.log(`[Email Service] Streak reminder email sent to ${toEmail}. MessageId: ${info.messageId}`);
   return info;
 }
 
