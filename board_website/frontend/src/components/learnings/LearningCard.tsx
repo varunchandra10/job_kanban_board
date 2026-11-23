@@ -21,7 +21,7 @@ interface LearningCardProps {
   learning: Learning;
 }
 
-export const LearningCard: React.FC<LearningCardProps> = ({ learning: l }) => {
+export const LearningCard: React.FC<LearningCardProps> = React.memo(({ learning: l }) => {
   const { openEditLearningModal, deleteLearning } = useApp();
 
   const trackObj = LEARNING_TRACKS.find(t => t.id === l.category) || LEARNING_TRACKS[0];
@@ -191,4 +191,6 @@ export const LearningCard: React.FC<LearningCardProps> = ({ learning: l }) => {
       </div>
     </div>
   );
-};
+});
+
+LearningCard.displayName = 'LearningCard';

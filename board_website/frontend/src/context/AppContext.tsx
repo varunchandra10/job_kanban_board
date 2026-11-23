@@ -1,53 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
-  Application,
-  Learning,
-  GamificationStats,
-  UserProfile,
-  ResumeVersion,
-  QuickLink,
-  ViewMode,
-  ApplicationStage,
-  ApplicationCategory,
-  LearningCategory,
-  LearningTrack,
-  DsaProblemProgress,
+  Application, Learning, GamificationStats, UserProfile, ResumeVersion,
+  QuickLink, ViewMode, ApplicationStage, ApplicationCategory, LearningCategory,
+  LearningTrack, DsaProblemProgress,
 } from '../types';
-import {
-  INITIAL_GAMIFICATION,
-  INITIAL_PROFILE,
-} from '../utils/constants';
+import { INITIAL_GAMIFICATION, INITIAL_PROFILE } from '../utils/constants';
 import { api } from '../services/api';
 import { StorageMode } from '../utils/environment';
 import { soundEffects } from '../utils/soundEffects';
-import {
-  flushMutationQueue,
-  hasPendingMutations,
-} from '../services/offlineSync';
+import { flushMutationQueue, hasPendingMutations } from '../services/offlineSync';
 import { generateUniqueStringId } from '../utils/idGenerator';
-import {
-  AuthProvider,
-  useAuth,
-  AuthContextType,
-} from './AuthContext';
-import {
-  UIProvider,
-  useUI,
-  UIContextType,
-  ToastState,
-  AppPrefill,
-} from './UIContext';
-import {
-  ApplicationsProvider,
-  useApplications,
-  ApplicationsContextType,
-  isApplicationBookmarked,
-} from './ApplicationsContext';
-import {
-  LearningsProvider,
-  useLearnings,
-  LearningsContextType,
-} from './LearningsContext';
+import { AuthProvider, useAuth, AuthContextType } from './AuthContext';
+import { UIProvider, useUI, UIContextType, ToastState, AppPrefill } from './UIContext';
+import { ApplicationsProvider, useApplications, ApplicationsContextType, isApplicationBookmarked } from './ApplicationsContext';
+import { LearningsProvider, useLearnings, LearningsContextType } from './LearningsContext';
 
 export { useAuth } from './AuthContext';
 export { useUI } from './UIContext';
@@ -153,7 +119,15 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
 
   const [isDataLoading, setIsDataLoading] = useState<boolean>(() => {
     const isLoggedOut = localStorage.getItem('logged_out') === '1' || !localStorage.getItem('auth_token');
-    return !isLoggedOut;
+    if (isLoggedOut) return false;
+    const saved = localStorage.getItem('job_tracker_apps');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return false;
+      } catch (_) {}
+    }
+    return true;
   });
 
   useEffect(() => {
@@ -206,7 +180,13 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
       ]);
       if (stateRes.status === 'fulfilled' && stateRes.value?.apps) {
         sessionStorage.setItem('job_tracker_server_warmed', 'true');
-        apps.setApplications(stateRes.value.apps);
+        apps.setApplications(prev => {
+          const serverApps = stateRes.value.apps;
+          const serverIds = new Set(serverApps.map(a => a.id));
+          // Preserve optimistic in-flight applications (temp IDs >= 1_000_000_000) not yet present in server snapshot
+          const inFlight = prev.filter(a => a.id >= 1_000_000_000 && !serverIds.has(a.id));
+          return inFlight.length > 0 ? [...inFlight, ...serverApps] : serverApps;
+        });
         if (stateRes.value.profile) setProfile(stateRes.value.profile);
         if (stateRes.value.versions) setVersions(stateRes.value.versions);
         if (stateRes.value.settings?.dsa_track_enabled !== undefined) {
@@ -215,7 +195,12 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
         }
       }
       if (learnRes.status === 'fulfilled' && learnRes.value) {
-        learn.setLearnings(learnRes.value);
+        learn.setLearnings(prev => {
+          const serverLearnings = learnRes.value;
+          const serverIds = new Set(serverLearnings.map(l => l.id));
+          const inFlight = prev.filter(l => l.id >= 1_000_000_000 && !serverIds.has(l.id));
+          return inFlight.length > 0 ? [...inFlight, ...serverLearnings] : serverLearnings;
+        });
       }
       if (gamifyRes.status === 'fulfilled' && gamifyRes.value) {
         setGamification(gamifyRes.value);
@@ -228,6 +213,8 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
   };
 
   // Cross-device and offline sync listener
+  const lastFocusSyncRef = useRef<number>(0);
+
   useEffect(() => {
     if (!auth.isAuthenticated) return;
 
@@ -239,7 +226,16 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
       }
     };
 
-    const handleSync = () => {
+    const handleSync = (e?: Event) => {
+      // Throttle window focus sync: only re-fetch if at least 30s elapsed or offline mutations are pending
+      if (e?.type === 'focus') {
+        const now = Date.now();
+        if (now - lastFocusSyncRef.current < 30_000 && !hasPendingMutations()) {
+          return;
+        }
+        lastFocusSyncRef.current = now;
+      }
+
       if (syncDebounceTimerRef.current) {
         clearTimeout(syncDebounceTimerRef.current);
       }
@@ -278,13 +274,20 @@ const CompositeAppInner: React.FC<{ children: React.ReactNode }> = ({ children }
       const statePromise = api.getState().then(stateData => {
         if (mounted && stateData?.apps) {
           sessionStorage.setItem('job_tracker_server_warmed', 'true');
-          apps.setApplications(stateData.apps);
+          apps.setApplications(prev => {
+            const serverApps = stateData.apps;
+            const serverIds = new Set(serverApps.map(a => a.id));
+            const inFlight = prev.filter(a => a.id >= 1_000_000_000 && !serverIds.has(a.id));
+            return inFlight.length > 0 ? [...inFlight, ...serverApps] : serverApps;
+          });
           if (stateData.profile) setProfile(stateData.profile);
           if (stateData.versions) setVersions(stateData.versions);
           if (stateData.settings?.dsa_track_enabled !== undefined) {
             const isEnabled = stateData.settings.dsa_track_enabled === '1';
             learn.toggleDsaTrack(isEnabled);
           }
+          // Applications board data arrived - unblock board rendering immediately!
+          setIsDataLoading(false);
         }
       }).catch(() => {});
 

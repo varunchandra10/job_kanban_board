@@ -140,7 +140,17 @@ export const LearningsProvider: React.FC<LearningsProviderProps> = ({
       const serverLearning = await api.createLearning(newLearning);
       if (serverLearning?.id) {
         recordIdMapping(newLearning.id, serverLearning.id);
-        setLearnings(prev => prev.map(l => (l.id === newLearning.id ? serverLearning : l)));
+        setLearnings(prev => {
+          const hasTemp = prev.some(l => l.id === newLearning.id);
+          if (hasTemp) {
+            return prev.map(l => (l.id === newLearning.id ? serverLearning : l));
+          }
+          const alreadyHasServer = prev.some(l => l.id === serverLearning.id);
+          if (!alreadyHasServer) {
+            return [serverLearning, ...prev];
+          }
+          return prev;
+        });
       }
     } catch (err) {
       enqueueMutation('create_learning', newLearning, newLearning.id);

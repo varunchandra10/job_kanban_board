@@ -64,24 +64,27 @@ function resolveServerBase(): string {
   if (!isTauri) return '';
   const override = localStorage.getItem('job_tracker_api_base');
   if (override) return override;
-  return PROD_BASE;
+  // In desktop Tauri mode, default immediately to local server unless explicitly forced to cloud
+  if (localStorage.getItem('job_tracker_force_cloud') === '1') {
+    return PROD_BASE;
+  }
+  return 'http://127.0.0.1:3000';
 }
 
 export let SERVER_BASE = resolveServerBase();
 export let API_BASE = `${SERVER_BASE}/api`;
 
 if (isTauri && typeof window !== 'undefined') {
-  // If local server is running on port 3000, smoothly connect to it; otherwise default to live cloud API
-  fetch('http://127.0.0.1:3000/health', { signal: AbortSignal.timeout ? AbortSignal.timeout(600) : undefined })
-    .then(r => {
-      if (r.ok && !localStorage.getItem('job_tracker_force_cloud')) {
-        SERVER_BASE = 'http://127.0.0.1:3000';
-        API_BASE = 'http://127.0.0.1:3000/api';
-      }
-    })
-    .catch(() => {
-      // Local not running, smoothly stays on PROD_BASE
-    });
+  // If local server is not running or unreachable on port 3000, smoothly fall back to cloud API unless forced local
+  if (SERVER_BASE.includes('127.0.0.1') || SERVER_BASE.includes('localhost')) {
+    fetch(`${SERVER_BASE}/health`, { signal: AbortSignal.timeout ? AbortSignal.timeout(600) : undefined })
+      .catch(() => {
+        if (!localStorage.getItem('job_tracker_api_base') && localStorage.getItem('job_tracker_force_cloud') !== '0') {
+          SERVER_BASE = PROD_BASE;
+          API_BASE = `${PROD_BASE}/api`;
+        }
+      });
+  }
 }
 
 export function getApiEndpoint(path: string): string {

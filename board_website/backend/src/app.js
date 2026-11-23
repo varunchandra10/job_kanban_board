@@ -1,6 +1,9 @@
 const express = require('express');
 const app = express();
 
+// Trust reverse proxy (Vercel edge routers, AWS, Cloudflare) so req.ip correctly resolves real client IP
+app.set('trust proxy', 1);
+
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -84,8 +87,8 @@ app.use('/api/clipper', cors({
 
 app.use(cors(corsOptions));
 app.use('/api', createRateLimiter({ windowMs: 60 * 1000, max: 500 }));
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ extended: true, limit: '2mb' }));
 
 // ---------------------------------------------------------------------
 // Health & shutdown endpoints

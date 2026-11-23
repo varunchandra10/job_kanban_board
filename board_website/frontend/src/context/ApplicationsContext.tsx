@@ -141,7 +141,18 @@ export const ApplicationsProvider: React.FC<ApplicationsProviderProps> = ({
       const serverApp = await api.createApplication(newApp);
       if (serverApp?.id) {
         recordIdMapping(newApp.id, serverApp.id);
-        setApplications(prev => prev.map(a => (a.id === newApp.id ? serverApp : a)));
+        setApplications(prev => {
+          const hasTemp = prev.some(a => a.id === newApp.id);
+          if (hasTemp) {
+            return prev.map(a => (a.id === newApp.id ? serverApp : a));
+          }
+          // If temp ID was wiped by a concurrent background sync/fetch, retain serverApp
+          const alreadyHasServer = prev.some(a => a.id === serverApp.id);
+          if (!alreadyHasServer) {
+            return [serverApp, ...prev];
+          }
+          return prev;
+        });
       }
     } catch (err) {
       enqueueMutation('create_application', newApp, newApp.id);

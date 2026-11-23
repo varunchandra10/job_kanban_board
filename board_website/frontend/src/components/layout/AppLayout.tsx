@@ -1,21 +1,23 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { useLocation, Outlet } from 'react-router-dom';
 import { AppHeader } from './AppHeader';
 import { ApplicationsToolbar } from './ApplicationsToolbar';
 import { LearningsToolbar } from './LearningsToolbar';
 import { MobileUtilityBar } from './MobileUtilityBar';
-import { ApplicationModal } from '../applications/ApplicationModal';
-import { FollowUpModal } from '../applications/FollowUpModal';
-import { LearningModal } from '../learnings/LearningModal';
-import { AllItemsListModal } from '../common/AllItemsListModal';
 import { ShutdownModal } from '../ui/ShutdownModal';
 import { DriveModal } from '../ui/DriveModal';
 import { StorageSwitchModal } from '../ui/StorageSwitchModal';
-import { JobClipperModal } from '../common/JobClipperModal';
 import { DeleteApplicationModal } from '../common/DeleteApplicationModal';
 import { PomodoroFocusTimer } from '../learnings/PomodoroFocusTimer';
 import { ErrorBoundary } from '../common/ErrorBoundary';
 import { useApp } from '../../context/AppContext';
+
+// Code-split heavy modals to significantly shrink index entry bundle size
+const ApplicationModal = lazy(() => import('../applications/ApplicationModal').then(m => ({ default: m.ApplicationModal })));
+const FollowUpModal = lazy(() => import('../applications/FollowUpModal').then(m => ({ default: m.FollowUpModal })));
+const LearningModal = lazy(() => import('../learnings/LearningModal').then(m => ({ default: m.LearningModal })));
+const AllItemsListModal = lazy(() => import('../common/AllItemsListModal').then(m => ({ default: m.AllItemsListModal })));
+const JobClipperModal = lazy(() => import('../common/JobClipperModal').then(m => ({ default: m.JobClipperModal })));
 
 export const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -66,29 +68,31 @@ export const AppLayout: React.FC = () => {
         </ErrorBoundary>
       </div>
 
-      {/* Global Modals & Notifications - Rendered Conditionally to Eliminate Mounting Overhead */}
-      {isAddAppOpen && <ApplicationModal />}
-      {isFollowUpOpen && <FollowUpModal />}
-      {isAddLearningOpen && <LearningModal />}
-      {isQuickListOpen && <AllItemsListModal />}
-      {isShutdownOpen && <ShutdownModal />}
-      {isDriveModalOpen && <DriveModal />}
-      {isStorageConfirmModalOpen && <StorageSwitchModal />}
-      {isClipperModalOpen && (
-        <JobClipperModal
-          isOpen={isClipperModalOpen}
-          onClose={() => setIsClipperModalOpen(false)}
-        />
-      )}
-      {isDeleteAppModalOpen && (
-        <DeleteApplicationModal
-          isOpen={isDeleteAppModalOpen}
-          application={appToDelete}
-          onConfirm={confirmDeleteApplication}
-          onCancel={cancelDeleteApplication}
-          isDeleting={isDeletingApp}
-        />
-      )}
+      {/* Global Modals & Notifications - Lazy loaded with Suspense */}
+      <Suspense fallback={null}>
+        {isAddAppOpen && <ApplicationModal />}
+        {isFollowUpOpen && <FollowUpModal />}
+        {isAddLearningOpen && <LearningModal />}
+        {isQuickListOpen && <AllItemsListModal />}
+        {isShutdownOpen && <ShutdownModal />}
+        {isDriveModalOpen && <DriveModal />}
+        {isStorageConfirmModalOpen && <StorageSwitchModal />}
+        {isClipperModalOpen && (
+          <JobClipperModal
+            isOpen={isClipperModalOpen}
+            onClose={() => setIsClipperModalOpen(false)}
+          />
+        )}
+        {isDeleteAppModalOpen && (
+          <DeleteApplicationModal
+            isOpen={isDeleteAppModalOpen}
+            application={appToDelete}
+            onConfirm={confirmDeleteApplication}
+            onCancel={cancelDeleteApplication}
+            isDeleting={isDeletingApp}
+          />
+        )}
+      </Suspense>
 
       {/* Floating Pomodoro Focus Sprint Widget */}
       <PomodoroFocusTimer />

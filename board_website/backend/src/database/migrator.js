@@ -367,6 +367,56 @@ function runMigrations(db) {
       }
     }
   }
+
+  // ---------------------------------------------------------------------
+  // Composite Performance Indexes
+  // Ensures optimal indexing across applications, learnings, and documents
+  // ---------------------------------------------------------------------
+  try {
+    const tableNames = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map(t => t.name);
+
+    if (tableNames.includes('applications')) {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_apps_user_pos ON applications(user_id, stage, position);
+        DROP INDEX IF EXISTS idx_apps_user_order;
+        CREATE INDEX IF NOT EXISTS idx_apps_user_order ON applications(user_id, position ASC, id DESC);
+        CREATE INDEX IF NOT EXISTS idx_apps_user ON applications(user_id);
+      `);
+    }
+
+    if (tableNames.includes('learnings')) {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_learn_user_date ON learnings(user_id, date_logged);
+        CREATE INDEX IF NOT EXISTS idx_learn_user ON learnings(user_id);
+      `);
+    }
+
+    if (!tableNames.includes('document_files')) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS document_files (
+          id TEXT PRIMARY KEY,
+          user_id TEXT,
+          app_id INTEGER,
+          type TEXT,
+          name TEXT,
+          mime_type TEXT,
+          data TEXT,
+          created_at TEXT DEFAULT (datetime('now'))
+        );
+      `);
+    }
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_doc_files_user ON document_files(user_id, app_id);
+    `);
+
+    if (tableNames.includes('streak_reminders')) {
+      db.exec(`
+        CREATE INDEX IF NOT EXISTS idx_streak_reminders_lookup ON streak_reminders(user_id, date, slot);
+      `);
+    }
+  } catch (idxErr) {
+    console.warn('[Migrator] Composite index initialization note:', idxErr.message);
+  }
 }
 
 module.exports = { runMigrations };

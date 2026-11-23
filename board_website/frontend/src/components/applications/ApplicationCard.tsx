@@ -29,7 +29,32 @@ interface ApplicationCardProps {
   inBookmarkColumn?: boolean;
 }
 
-export const ApplicationCard: React.FC<ApplicationCardProps> = ({
+const areApplicationCardPropsEqual = (
+  prevProps: ApplicationCardProps,
+  nextProps: ApplicationCardProps
+): boolean => {
+  return (
+    prevProps.application.id === nextProps.application.id &&
+    prevProps.application.stage === nextProps.application.stage &&
+    prevProps.application.position === nextProps.application.position &&
+    prevProps.application.is_bookmarked === nextProps.application.is_bookmarked &&
+    prevProps.application.company === nextProps.application.company &&
+    prevProps.application.role === nextProps.application.role &&
+    prevProps.application.deadline === nextProps.application.deadline &&
+    prevProps.application.salary === nextProps.application.salary &&
+    prevProps.application.currency === nextProps.application.currency &&
+    prevProps.application.city === nextProps.application.city &&
+    prevProps.application.country === nextProps.application.country &&
+    prevProps.application.custom_tags === nextProps.application.custom_tags &&
+    prevProps.application.resume_path === nextProps.application.resume_path &&
+    prevProps.application.cover_letter_path === nextProps.application.cover_letter_path &&
+    prevProps.application.date_applied === nextProps.application.date_applied &&
+    prevProps.application.portal_pass === nextProps.application.portal_pass &&
+    prevProps.inBookmarkColumn === nextProps.inBookmarkColumn
+  );
+};
+
+const ApplicationCardComponent: React.FC<ApplicationCardProps> = ({
   application: app,
   inBookmarkColumn = false,
 }) => {
@@ -519,3 +544,6 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({
   </div>
   );
 };
+
+export const ApplicationCard = React.memo(ApplicationCardComponent, areApplicationCardPropsEqual);
+ApplicationCard.displayName = 'ApplicationCard';

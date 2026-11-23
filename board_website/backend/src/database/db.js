@@ -394,6 +394,33 @@ function runInTransaction(fn) {
   }
 }
 
+function updatePositionsBatch(itemIds, targetStage, userClause, userParam) {
+  if (!itemIds || itemIds.length === 0) return;
+
+  // Single item fast-path
+  if (itemIds.length === 1) {
+    db.prepare(`update applications set stage=?, position=0 where id=?${userClause}`).run(targetStage, itemIds[0], ...userParam);
+    return;
+  }
+
+  // Parameterized CASE statement:
+  // UPDATE applications SET stage = ?, position = CASE id WHEN ? THEN ? ... END WHERE id IN (?, ...)
+  const whenClauses = itemIds.map(() => 'WHEN ? THEN ?').join(' ');
+  const inPlaceholders = itemIds.map(() => '?').join(',');
+  const sql = `update applications set stage = ?, position = CASE id ${whenClauses} END where id in (${inPlaceholders})${userClause}`;
+
+  const params = [targetStage];
+  itemIds.forEach((itemId, idx) => {
+    params.push(itemId, idx);
+  });
+  params.push(...itemIds);
+  if (userParam && userParam.length > 0) {
+    params.push(...userParam);
+  }
+
+  db.prepare(sql).run(...params);
+}
+
 function move(id, stage, before, userId = null) {
   const userClause = userId ? (userId !== 'default_user' ? ' and user_id=?' : ' and (user_id=? or user_id is null)') : '';
   const userParam = userId ? [userId] : [];
@@ -407,20 +434,19 @@ function move(id, stage, before, userId = null) {
   if (i < 0) i = ids.length;
   ids.splice(i, 0, id);
 
-  const updateStmt = db.prepare(`update applications set stage=?, position=? where id=?${userClause}`);
   const logStmt = (cur !== stage)
     ? db.prepare("insert into activity_log(app_id, type, detail, user_id) values(?, 'stage_change', ?, ?)")
     : null;
 
   runInTransaction(() => {
-    // 1. If moving across stages, re-normalize positions in the source stage
+    // 1. If moving across stages, re-normalize positions in the source stage using consolidated batch SQL
     if (cur !== stage) {
       const sourceIds = db.prepare(`select id from applications where stage=? and id!=?${userClause} order by position asc, id desc`).all(cur, id, ...userParam).map(r => r.id);
-      sourceIds.forEach((x, p) => updateStmt.run(cur, p, x, ...userParam));
+      updatePositionsBatch(sourceIds, cur, userClause, userParam);
     }
 
-    // 2. Normalize positions in target stage
-    ids.forEach((x, p) => updateStmt.run(stage, p, x, ...userParam));
+    // 2. Normalize positions in target stage using consolidated batch SQL
+    updatePositionsBatch(ids, stage, userClause, userParam);
 
     // 3. Log activity
     if (logStmt) {
@@ -441,30 +467,71 @@ const getState = (userId = null) => {
     };
   }
 
-  let prof = db.prepare('select * from resume_profile where user_id=? limit 1').get(userId) || null;
+  let prof = null;
   try {
-    const userRow = db.prepare('select name, email from users where id=?').get(userId);
-    if (!prof && userRow) {
-      prof = {
-        user_id: userId,
-        full_name: userRow.name || (userRow.email ? userRow.email.split('@')[0] : ''),
-        email: userRow.email || '',
-        phone: '',
-        linkedin: '',
-        github: '',
-        school: '',
-        degree: '',
-        grad_date: '',
-        gpa: '',
-        skills: '',
-        projects: '',
-        experience: '',
-        gdrive_folder_id: ''
-      };
-    } else if (prof && (!prof.full_name || prof.full_name === 'Varun Chandra') && userRow && userRow.name && userRow.name !== 'Varun Chandra') {
-      prof.full_name = userRow.name;
+    const combined = db.prepare(`
+      SELECT p.*, u.name AS u_name, u.email AS u_email
+      FROM users u
+      LEFT JOIN resume_profile p ON p.user_id = u.id
+      WHERE u.id = ?
+      LIMIT 1
+    `).get(userId);
+
+    if (combined) {
+      const uName = combined.u_name;
+      const uEmail = combined.u_email;
+      if (combined.user_id) {
+        prof = { ...combined };
+        delete prof.u_name;
+        delete prof.u_email;
+        if ((!prof.full_name || prof.full_name === 'Varun Chandra') && uName && uName !== 'Varun Chandra') {
+          prof.full_name = uName;
+        }
+      } else {
+        prof = {
+          user_id: userId,
+          full_name: uName || (uEmail ? uEmail.split('@')[0] : ''),
+          email: uEmail || '',
+          phone: '',
+          linkedin: '',
+          github: '',
+          school: '',
+          degree: '',
+          grad_date: '',
+          gpa: '',
+          skills: '',
+          projects: '',
+          experience: '',
+          gdrive_folder_id: ''
+        };
+      }
     }
-  } catch (_) {}
+  } catch (_) {
+    try {
+      prof = db.prepare('select * from resume_profile where user_id=? limit 1').get(userId) || null;
+      const userRow = db.prepare('select name, email from users where id=?').get(userId);
+      if (!prof && userRow) {
+        prof = {
+          user_id: userId,
+          full_name: userRow.name || (userRow.email ? userRow.email.split('@')[0] : ''),
+          email: userRow.email || '',
+          phone: '',
+          linkedin: '',
+          github: '',
+          school: '',
+          degree: '',
+          grad_date: '',
+          gpa: '',
+          skills: '',
+          projects: '',
+          experience: '',
+          gdrive_folder_id: ''
+        };
+      } else if (prof && (!prof.full_name || prof.full_name === 'Varun Chandra') && userRow && userRow.name && userRow.name !== 'Varun Chandra') {
+        prof.full_name = userRow.name;
+      }
+    } catch (fallbackErr) {}
+  }
 
   const rawApps = db.prepare('select * from applications where user_id=? order by position asc, id desc').all(userId);
   const decryptedApps = rawApps.map(app => {
